@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import time
 from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
+from pydantic import BaseModel
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
@@ -383,3 +384,131 @@ def test_direct_timeout_no_delay():
 
     result = fast_function()
     assert result == "success"
+
+
+def test_timeout_with_exception():
+    @with_timeout(2)
+    def function_that_raises():
+        raise ValueError("Test exception")
+
+    with pytest.raises(ValueError) as exc_info:
+        function_that_raises()
+
+    assert "Test exception" in str(exc_info.value)
+
+
+def test_timeout_with_exception_type_preserved():
+    r"""Test that exception type is preserved when re-raised."""
+
+    class CustomException(Exception):
+        pass
+
+    @with_timeout(2)
+    def function_with_custom_exception():
+        raise CustomException("Custom error message")
+
+    with pytest.raises(CustomException) as exc_info:
+        function_with_custom_exception()
+
+    assert "Custom error message" in str(exc_info.value)
+
+
+def test_timeout_preserves_traceback():
+    r"""Test that the original traceback is preserved when exception is
+    re-raised.
+    """
+
+    @with_timeout(2)
+    def function_with_nested_calls():
+        def inner_function():
+            def deepest_function():
+                raise ValueError("Error from deepest function")
+
+            return deepest_function()
+
+        return inner_function()
+
+    with pytest.raises(ValueError) as exc_info:
+        function_with_nested_calls()
+
+    # Check that the traceback contains the function names from the original
+    # call stack
+    import traceback
+
+    tb_str = ''.join(traceback.format_tb(exc_info.tb))
+    # The traceback should contain references to our nested functions
+    assert "deepest_function" in tb_str
+    assert "inner_function" in tb_str
+    assert "Error from deepest function" in str(exc_info.value)
+
+
+# --- Tests for safe_extract_parsed ---
+
+
+class _DummySchema(BaseModel):
+    """Minimal Pydantic schema for safe_extract_parsed tests."""
+
+    value: str
+    score: int = 0
+
+
+def _make_response(parsed_value, num_msgs=1):
+    """Build a ChatAgentResponse with a controlled parsed value."""
+    from camel.messages.base import BaseMessage
+    from camel.responses.agent_responses import ChatAgentResponse
+    from camel.types import RoleType
+
+    if num_msgs == 0:
+        return ChatAgentResponse(msgs=[], terminated=False, info={})
+
+    msg = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="mock",
+        parsed=parsed_value,
+    )
+    return ChatAgentResponse(msgs=[msg], terminated=False, info={})
+
+
+def test_safe_extract_parsed_returns_valid_instance():
+    from camel.utils import safe_extract_parsed
+
+    expected = _DummySchema(value="hello", score=42)
+    response = _make_response(expected)
+    result = safe_extract_parsed(response, _DummySchema)
+    assert result is expected
+
+
+def test_safe_extract_parsed_constructs_from_dict():
+    from camel.utils import safe_extract_parsed
+
+    response = _make_response({"value": "from_dict", "score": 7})
+    result = safe_extract_parsed(response, _DummySchema)
+    assert isinstance(result, _DummySchema)
+    assert result.value == "from_dict"
+    assert result.score == 7
+
+
+def test_safe_extract_parsed_returns_none_for_invalid_dict():
+    from camel.utils import safe_extract_parsed
+
+    response = _make_response({"bad_key": "nope"})
+    result = safe_extract_parsed(response, _DummySchema)
+    assert result is None
+
+
+def test_safe_extract_parsed_returns_none_when_msg_is_none():
+    from camel.utils import safe_extract_parsed
+
+    response = _make_response(None, num_msgs=0)
+    result = safe_extract_parsed(response, _DummySchema)
+    assert result is None
+
+
+def test_safe_extract_parsed_returns_none_when_parsed_is_none():
+    from camel.utils import safe_extract_parsed
+
+    response = _make_response(None)
+    result = safe_extract_parsed(response, _DummySchema)
+    assert result is None

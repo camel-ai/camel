@@ -1,0 +1,333 @@
+<a id="camel.toolkits.context_summarizer_toolkit"></a>
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit"></a>
+
+## ContextSummarizerToolkit
+
+```python
+class ContextSummarizerToolkit(BaseToolkit):
+```
+
+A toolkit that provides intelligent context summarization and
+management for agents.
+
+This toolkit enables agents to compress conversation context through
+intelligent summarization, save conversation history to markdown files,
+and search through past conversations. It handles all context management
+needs in a single toolkit.
+
+Key features:
+- Intelligent context compression with over-compression prevention
+- Markdown file storage with session management
+- Simple text-based search through conversation history
+- Configurable summarization prompts
+- Context loading and saving capabilities
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    agent: 'ChatAgent',
+    working_directory: Optional[str] = None,
+    timeout: Optional[float] = None,
+    summary_prompt_template: Optional[str] = None
+):
+```
+
+Initialize the ContextSummarizerToolkit.
+
+**Parameters:**
+
+- **agent** (ChatAgent): The agent that is using the toolkit. This is required to access the agent's memory.
+- **working_directory** (str, optional): The directory path where notes will be stored. If not provided, a default directory will be used.
+- **timeout** (Optional[float]): The timeout for the toolkit.
+- **summary_prompt_template** (Optional[str]): Custom prompt template for summarization. If None, a default task-focused template is used. Users can customize this for different use cases.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit._setup_storage"></a>
+
+### _setup_storage
+
+```python
+def _setup_storage(self, working_directory: Optional[str]):
+```
+
+Initialize storage paths and create session-specific directories
+using ContextUtility for file management.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit._summarize_messages"></a>
+
+### _summarize_messages
+
+```python
+def _summarize_messages(self, memory_records: List['MemoryRecord']):
+```
+
+Generate a summary of the conversation context.
+
+**Parameters:**
+
+- **memory_records** (`List["MemoryRecord"]`): A list of memory records to summarize.
+
+**Returns:**
+
+  str: The summary of the conversation context.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit._save_summary"></a>
+
+### _save_summary
+
+```python
+def _save_summary(self, summary: str):
+```
+
+Persist conversation summary to markdown file with metadata
+including timestamp and session information.
+
+**Parameters:**
+
+- **summary** (str): The summary text to save.
+
+**Returns:**
+
+  str: "success" or error message starting with "Error:".
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit._save_history"></a>
+
+### _save_history
+
+```python
+def _save_history(self, memory_records: List['MemoryRecord']):
+```
+
+Export complete conversation transcript as formatted markdown
+with message roles, agent IDs, and content structure preserved.
+
+**Parameters:**
+
+- **memory_records** (`List["MemoryRecord"]`): The list of memory records to save.
+
+**Returns:**
+
+  str: "success" or error message starting with "Error:".
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit._compress_and_save"></a>
+
+### _compress_and_save
+
+```python
+def _compress_and_save(self, memory_records: List['MemoryRecord']):
+```
+
+Complete compression pipeline: summarize and save both history and
+summary.
+
+**Parameters:**
+
+- **memory_records** (`List["MemoryRecord"]`): The memory records to compress and save.
+
+**Returns:**
+
+  str: The generated summary text.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit._load_summary"></a>
+
+### _load_summary
+
+```python
+def _load_summary(self):
+```
+
+**Returns:**
+
+  str: The summary content, or empty string if not found.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit._load_history"></a>
+
+### _load_history
+
+```python
+def _load_history(self):
+```
+
+**Returns:**
+
+  str: The history content, or empty string if not found.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit._format_conversation"></a>
+
+### _format_conversation
+
+```python
+def _format_conversation(self, memory_records: List['MemoryRecord']):
+```
+
+Convert memory records into human-readable conversation format
+with role names and message content for summarization processing.
+
+**Parameters:**
+
+- **memory_records** (`List["MemoryRecord"]`): A list of memory records to format.
+
+**Returns:**
+
+  str: The formatted conversation.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit._create_summary_prompt"></a>
+
+### _create_summary_prompt
+
+```python
+def _create_summary_prompt(self, conversation_text: str):
+```
+
+Construct detailed summarization prompt with instructions
+for extracting key information, goals, and progress from conversation.
+
+**Parameters:**
+
+- **conversation_text** (str): The formatted conversation to summarize.
+
+**Returns:**
+
+  str: The complete prompt for summarization.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit.summarize_full_conversation_history"></a>
+
+### summarize_full_conversation_history
+
+```python
+def summarize_full_conversation_history(self):
+```
+
+**Returns:**
+
+  str: Success message with brief summary, or error message.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit._refresh_context_with_summary"></a>
+
+### _refresh_context_with_summary
+
+```python
+def _refresh_context_with_summary(self, summary: str):
+```
+
+Empty the agent's memory and replace it with a summary
+of the conversation history.
+
+**Parameters:**
+
+- **summary** (str): The summary of the conversation history.
+
+**Returns:**
+
+  bool: True if the context was refreshed successfully, False
+otherwise.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit.get_conversation_memory_info"></a>
+
+### get_conversation_memory_info
+
+```python
+def get_conversation_memory_info(self):
+```
+
+**Returns:**
+
+  str: Information about current memory and saved files.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit.search_full_conversation_history"></a>
+
+### search_full_conversation_history
+
+```python
+def search_full_conversation_history(self, keywords: List[str], top_k: int = 4):
+```
+
+Search the conversation history using keyword matching. This is
+used when information is missing from the summary and the current
+conversation, and can potentially be found in the full conversation
+history before it was summarized.
+
+Searches through the current session's history.md file to find the
+top messages that contain the most keywords.
+
+**Parameters:**
+
+- **keywords** (List[str]): List of keywords to search for. The keywords must be explicitly related to the information the user is looking for, and not general terms that might be found about any topic. For example, if the user is searching for the price of the flight to "Paris" which was discussed previously, the keywords should be ["Paris", "price", "flight", "$", "costs"].
+- **top_k** (int): The number of results to return (default 4).
+
+**Returns:**
+
+  str: The search results or error message.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit.should_compress_context"></a>
+
+### should_compress_context
+
+```python
+def should_compress_context(self, message_limit: int = 40, token_limit: Optional[int] = None):
+```
+
+Check if context should be compressed based on limits.
+
+**Parameters:**
+
+- **message_limit** (int): Maximum number of messages before compression.
+- **token_limit** (Optional[int]): Maximum number of tokens before compression.
+
+**Returns:**
+
+  bool: True if context should be compressed.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit.reset"></a>
+
+### reset
+
+```python
+def reset(self):
+```
+
+Clear all compression state including stored summaries,
+compressed message tracking, and compression counters.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit.get_current_summary"></a>
+
+### get_current_summary
+
+```python
+def get_current_summary(self):
+```
+
+**Returns:**
+
+  Optional[str]: The current summary, or None if no summary exists.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit.set_summary"></a>
+
+### set_summary
+
+```python
+def set_summary(self, summary: str):
+```
+
+Override the current in-memory summary with provided content
+without affecting saved files or compression tracking.
+
+**Parameters:**
+
+- **summary** (str): The summary to store.
+
+<a id="camel.toolkits.context_summarizer_toolkit.ContextSummarizerToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: The list of tools.

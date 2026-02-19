@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,20 +10,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-from __future__ import annotations
-
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
+from ssl import SSLContext
 from typing import TYPE_CHECKING, List, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer
 
 if TYPE_CHECKING:
-    from ssl import SSLContext
-
     from slack_sdk import WebClient
 
     from camel.agents import ChatAgent
@@ -260,7 +256,7 @@ class SlackToolkit(BaseToolkit):
         self,
         slack_token: Optional[str] = None,
         ssl: Optional[SSLContext] = None,
-    ) -> WebClient:
+    ) -> "WebClient":
         r"""Authenticate using the Slack API.
 
         Args:
@@ -441,7 +437,8 @@ class SlackToolkit(BaseToolkit):
     ) -> str:
         r"""Send a message to a Slack channel. When use this function you must
         call `get_slack_channel_information` function first to get the
-        `channel id`.
+        `channel id`. If use user, you must use `get_slack_user_list`
+        function first to get the user id.
 
         Args:
             message (str): The message to send.
@@ -960,6 +957,51 @@ class SlackToolkit(BaseToolkit):
             f"Failed to create valid Block Kit JSON after {max_retries} "
             f"attempts"
         )
+    def get_slack_user_list(self) -> str:
+        r"""Retrieve a list of all users in the Slack workspace.
+
+        Returns:
+            str: A JSON string representing a list of users. Each user
+                object contains 'id', 'name'.
+        """
+        from slack_sdk.errors import SlackApiError
+
+        try:
+            slack_client = self._login_slack()
+            response = slack_client.users_list()
+            users = response["members"]
+            filtered_users = [
+                {
+                    "id": user["id"],
+                    "name": user["name"],
+                }
+                for user in users
+            ]
+
+            return json.dumps(filtered_users, ensure_ascii=False)
+        except SlackApiError as e:
+            return f"Error retrieving user list: {e.response['error']}"
+
+    def get_slack_user_info(self, user_id: str) -> str:
+        r"""Retrieve information about a specific user in the Slack workspace.
+        normally, you don't need to use this method, when you need to get a
+        user's detailed information, use this method. Use `get_slack_user_list`
+        function first to get the user id.
+
+        Args:
+            user_id (str): The ID of the user to retrieve information about.
+
+        Returns:
+            str: A JSON string representing the user's information.
+        """
+        from slack_sdk.errors import SlackApiError
+
+        try:
+            slack_client = self._login_slack()
+            response = slack_client.users_info(user=user_id)
+            return json.dumps(response, ensure_ascii=False)
+        except SlackApiError as e:
+            return f"Error retrieving user info: {e.response['error']}"
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
@@ -977,6 +1019,8 @@ class SlackToolkit(BaseToolkit):
             FunctionTool(self.get_slack_channel_message),
             FunctionTool(self.send_slack_message),
             FunctionTool(self.delete_slack_message),
+            FunctionTool(self.get_slack_user_list),
+            FunctionTool(self.get_slack_user_info),
         ]
 
         # Only include create_slack_block_kit if model is configured

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
 import uuid
+
+import pytest
+from openai.types.chat import ChatCompletion, ChatCompletionMessage
+from openai.types.chat.chat_completion import Choice
 
 from camel.models import BaseModelBackend
 from camel.types import ModelType
@@ -437,3 +441,200 @@ class TestBaseModelBackend:
             processed[3]['role'] == 'assistant'
             and processed[3]['content'] == 'The weather is 72°F.'
         )
+
+    def _make_completion(self, content, reasoning_content=None):
+        r"""Helper to create a ChatCompletion with given content."""
+        msg = ChatCompletionMessage(role='assistant', content=content)
+        if reasoning_content is not None:
+            msg.reasoning_content = reasoning_content
+        return ChatCompletion(
+            id='test',
+            model='test',
+            object='chat.completion',
+            created=0,
+            choices=[Choice(index=0, finish_reason='stop', message=msg)],
+        )
+
+    def _make_model(self, extract_thinking_from_response=True):
+        r"""Helper to create a DummyModel for postprocess tests."""
+
+        class DummyModel(BaseModelBackend):
+            @property
+            def token_counter(self):
+                pass
+
+            def run(self, messages):
+                pass
+
+            def _run(self, messages, response_format=None, tools=None):
+                pass
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                pass
+
+        return DummyModel(
+            ModelType.GPT_4O_MINI,
+            extract_thinking_from_response=extract_thinking_from_response,
+        )
+
+    def test_postprocess_extracts_think_tags(self):
+        r"""Test that postprocess_response extracts <think> tags into
+        reasoning_content."""
+        model = self._make_model()
+        response = self._make_completion('<think>reasoning here</think>\n\n4')
+
+        result = model.postprocess_response(response)
+        assert result.choices[0].message.content == '4'
+        assert result.choices[0].message.reasoning_content == 'reasoning here'
+
+    def test_postprocess_multiline_think_tags(self):
+        r"""Test extraction of multiline think tags."""
+        model = self._make_model()
+        response = self._make_completion(
+            '<think>\nline1\nline2\n</think>\n\nanswer'
+        )
+
+        result = model.postprocess_response(response)
+        assert result.choices[0].message.content == 'answer'
+        assert result.choices[0].message.reasoning_content == 'line1\nline2'
+
+    def test_postprocess_no_think_tags(self):
+        r"""Test that content without think tags is unchanged."""
+        model = self._make_model()
+        response = self._make_completion('just a normal response')
+
+        result = model.postprocess_response(response)
+        assert result.choices[0].message.content == 'just a normal response'
+        assert (
+            getattr(result.choices[0].message, 'reasoning_content', None)
+            is None
+        )
+
+    def test_postprocess_preserves_existing_reasoning_content(self):
+        r"""Test that existing reasoning_content is not overridden."""
+        model = self._make_model()
+        response = self._make_completion(
+            '<think>in content</think>\n\n4',
+            reasoning_content='already set',
+        )
+
+        result = model.postprocess_response(response)
+        # Content should NOT be cleaned since reasoning_content exists
+        assert (
+            result.choices[0].message.content
+            == '<think>in content</think>\n\n4'
+        )
+        assert result.choices[0].message.reasoning_content == 'already set'
+
+    @pytest.mark.parametrize("extract_thinking_from_response", [True, False])
+    def test_think_tags(self, extract_thinking_from_response):
+        r"""Test that extract_thinking_from_response controls both
+        preprocessing (input) and postprocessing (output) of think tags."""
+        model = self._make_model(
+            extract_thinking_from_response=extract_thinking_from_response
+        )
+
+        # Test preprocessing
+        messages = [
+            {
+                'role': 'assistant',
+                'content': '<think>thinking</think>Response',
+            },
+            {
+                'role': 'user',
+                'content': 'Hello <think>thought</think> world',
+            },
+        ]
+        processed = model.preprocess_messages(messages)
+
+        # Test postprocessing
+        response = self._make_completion('<think>reasoning here</think>\n\n4')
+        result = model.postprocess_response(response)
+
+        if extract_thinking_from_response:
+            # Preprocessing: think tags should be stripped
+            assert processed[0]['content'] == 'Response'
+            assert processed[1]['content'] == 'Hello  world'
+            # Postprocessing: think tags extracted into reasoning_content
+            assert result.choices[0].message.content == '4'
+            assert (
+                result.choices[0].message.reasoning_content == 'reasoning here'
+            )
+        else:
+            # Preprocessing: think tags should be preserved
+            assert processed[0]['content'] == '<think>thinking</think>Response'
+            assert (
+                processed[1]['content'] == 'Hello <think>thought</think> world'
+            )
+            # Postprocessing: think tags should be preserved
+            assert (
+                result.choices[0].message.content
+                == '<think>reasoning here</think>\n\n4'
+            )
+            assert (
+                getattr(result.choices[0].message, 'reasoning_content', None)
+                is None
+            )
+
+    def test_postprocess_multiple_think_tags(self):
+        r"""Test extraction with multiple think tags in content."""
+        model = self._make_model()
+        response = self._make_completion(
+            '<think>first thought</think> middle '
+            '<think>second thought</think> end'
+        )
+
+        result = model.postprocess_response(response)
+        assert result.choices[0].message.content == 'middle  end'
+        assert result.choices[0].message.reasoning_content == 'first thought'
+
+    def test_postprocess_empty_think_tags(self):
+        r"""Test that empty think tags are stripped without setting
+        reasoning_content."""
+        model = self._make_model()
+        response = self._make_completion('<think></think>content after')
+
+        result = model.postprocess_response(response)
+        assert result.choices[0].message.content == 'content after'
+
+    def test_metaclass_postprocessing(self):
+        r"""Test that metaclass wraps run with postprocessing."""
+
+        class TestModel(BaseModelBackend):
+            @property
+            def token_counter(self):
+                pass
+
+            def run(self, messages, response_format=None, tools=None):
+                return self._make_response()
+
+            def _run(self, messages, response_format=None, tools=None):
+                pass
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                pass
+
+            def _make_response(self):
+                return ChatCompletion(
+                    id='test',
+                    model='test',
+                    object='chat.completion',
+                    created=0,
+                    choices=[
+                        Choice(
+                            index=0,
+                            finish_reason='stop',
+                            message=ChatCompletionMessage(
+                                role='assistant',
+                                content='<think>thought</think>answer',
+                            ),
+                        )
+                    ],
+                )
+
+        model = TestModel(ModelType.GPT_4O_MINI)
+        result = model.run([{'role': 'user', 'content': 'test'}])
+
+        # Metaclass should have applied postprocess_response
+        assert result.choices[0].message.content == 'answer'
+        assert result.choices[0].message.reasoning_content == 'thought'

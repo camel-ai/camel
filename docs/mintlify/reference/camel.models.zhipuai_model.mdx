@@ -5,7 +5,7 @@
 ## ZhipuAIModel
 
 ```python
-class ZhipuAIModel(OpenAICompatibleModel):
+class ZhipuAIModel(InterleavedThinkingMixin, OpenAICompatibleModel):
 ```
 
 ZhipuAI API in a unified OpenAICompatibleModel interface.
@@ -35,5 +35,31 @@ def __init__(
     timeout: Optional[float] = None,
     max_retries: int = 3,
     **kwargs: Any
+):
+```
+
+<a id="camel.models.zhipuai_model.ZhipuAIModel._prepare_request_config"></a>
+
+### _prepare_request_config
+
+```python
+def _prepare_request_config(self, tools: Optional[List[Dict[str, Any]]] = None):
+```
+
+Prepare the request configuration dictionary.
+
+Overrides the base method to remove interleaved_thinking parameter
+which is only used internally.
+
+<a id="camel.models.zhipuai_model.ZhipuAIModel._request_parse"></a>
+
+### _request_parse
+
+```python
+def _request_parse(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Type[BaseModel],
+    tools: Optional[List[Dict[str, Any]]] = None
 ):
 ```

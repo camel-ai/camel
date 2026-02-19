@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 from enum import Enum
 from threading import Lock
@@ -62,11 +62,15 @@ class UnifiedModelType(str):
 
     @property
     def token_limit(self) -> int:
-        r"""Returns the token limit for the model. Here we set the default
-        value as `999_999_999` if it's not provided from `model_config_dict`"""
+        r"""Returns the context window size for the model.
+
+        For unknown model types not defined in ModelType enum, this returns
+        a default value of 999_999_999 tokens.
+        """
         logging.warning(
-            "Invalid or missing `max_tokens` in `model_config_dict`. "
-            "Defaulting to 999_999_999 tokens."
+            "Unknown model '%s': context window size not defined. "
+            "Defaulting to 999_999_999.",
+            str(self),
         )
         return 999_999_999
 
@@ -103,6 +107,11 @@ class UnifiedModelType(str):
     @property
     def is_openrouter(self) -> bool:
         r"""Returns whether the model is a OpenRouter served model."""
+        return True
+
+    @property
+    def is_atlascloud(self) -> bool:
+        r"""Returns whether the model is a AtlasCloud served model."""
         return True
 
     @property
@@ -143,6 +152,11 @@ class UnifiedModelType(str):
     @property
     def is_cohere(self) -> bool:
         r"""Returns whether the model is a Cohere model."""
+        return True
+
+    @property
+    def is_cometapi(self) -> bool:
+        r"""Returns whether the model is a CometAPI served model."""
         return True
 
     @property
@@ -188,6 +202,11 @@ class UnifiedModelType(str):
     @property
     def is_crynux(self) -> bool:
         r"""Returns whether the model is a Crynux served model."""
+        return True
+
+    @property
+    def is_minimax(self) -> bool:
+        r"""Returns whether the model is a Minimax served model."""
         return True
 
     @property

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # ruff: noqa: I001
 from .function_tool import (
     FunctionTool,
     get_openai_function_schema,
     get_openai_tool_schema,
     generate_docstring,
+    tool,
 )
 from .open_api_specs.security_config import openapi_security_config
 
@@ -31,15 +32,19 @@ from .meshy_toolkit import MeshyToolkit
 from .openbb_toolkit import OpenBBToolkit
 from .bohrium_toolkit import BohriumToolkit
 
-from .base import BaseToolkit, RegisteredAgentToolkit
+from .base import BaseToolkit, RegisteredAgentToolkit, manual_timeout
 from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
 from .google_scholar_toolkit import GoogleScholarToolkit
 from .google_calendar_toolkit import GoogleCalendarToolkit
+from .gmail_toolkit import GmailToolkit
 from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
 from .whatsapp_toolkit import WhatsAppToolkit
+from .wechat_official_toolkit import WeChatOfficialToolkit
+from .dingtalk import DingtalkToolkit
+from .lark_toolkit import LarkToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
@@ -61,7 +66,7 @@ from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
 from .browser_toolkit import BrowserToolkit
 from .async_browser_toolkit import AsyncBrowserToolkit
-from .file_write_toolkit import FileWriteToolkit
+from .file_toolkit import FileToolkit, FileWriteToolkit
 from .pptx_toolkit import PPTXToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
@@ -69,12 +74,14 @@ from .data_commons_toolkit import DataCommonsToolkit
 from .thinking_toolkit import ThinkingToolkit
 from .pyautogui_toolkit import PyAutoGUIToolkit
 from .searxng_toolkit import SearxNGToolkit
+from .sql_toolkit import SQLToolkit
 from .jina_reranker_toolkit import JinaRerankerToolkit
 from .pulse_mcp_search_toolkit import PulseMCPSearchToolkit
 from .klavis_toolkit import KlavisToolkit
 from .aci_toolkit import ACIToolkit
 from .origene_mcp_toolkit import OrigeneToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
+from .resend_toolkit import ResendToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
 from .task_planning_toolkit import TaskPlanningToolkit
 from .hybrid_browser_toolkit import HybridBrowserToolkit
@@ -87,12 +94,20 @@ from .message_agent_toolkit import AgentCommunicationToolkit
 from .web_deploy_toolkit import WebDeployToolkit
 from .screenshot_toolkit import ScreenshotToolkit
 from .message_integration import ToolkitMessageIntegration
+from .context_summarizer_toolkit import ContextSummarizerToolkit
 from .notion_mcp_toolkit import NotionMCPToolkit
+from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
+from .imap_mail_toolkit import IMAPMailToolkit
+from .microsoft_outlook_mail_toolkit import OutlookMailToolkit
+from .earth_science_toolkit import EarthScienceToolkit
+from .skill_toolkit import SkillToolkit
 
 __all__ = [
     'BaseToolkit',
+    'manual_timeout',
     'FunctionTool',
+    'tool',
     'get_openai_function_schema',
     'get_openai_tool_schema',
     "generate_docstring",
@@ -103,6 +118,9 @@ __all__ = [
     'SearchToolkit',
     'SlackToolkit',
     'WhatsAppToolkit',
+    'WeChatOfficialToolkit',
+    'DingtalkToolkit',
+    'LarkToolkit',
     'ImageGenToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
@@ -115,6 +133,7 @@ __all__ = [
     'AsyncAskNewsToolkit',
     'GoogleScholarToolkit',
     'GoogleCalendarToolkit',
+    'GmailToolkit',
     'NotionToolkit',
     'ArxivToolkit',
     'HumanToolkit',
@@ -136,7 +155,8 @@ __all__ = [
     'ImageAnalysisToolkit',
     'BrowserToolkit',
     'AsyncBrowserToolkit',
-    'FileWriteToolkit',
+    'FileToolkit',
+    'FileWriteToolkit',  # Deprecated, use FileToolkit instead
     'PPTXToolkit',
     'TerminalToolkit',
     'PubMedToolkit',
@@ -144,12 +164,14 @@ __all__ = [
     'ThinkingToolkit',
     'PyAutoGUIToolkit',
     'SearxNGToolkit',
+    'SQLToolkit',
     'JinaRerankerToolkit',
     'OrigeneToolkit',
     'PulseMCPSearchToolkit',
     'KlavisToolkit',
     'ACIToolkit',
     'PlaywrightMCPToolkit',
+    'ResendToolkit',
     'WolframAlphaToolkit',
     'BohriumToolkit',
     'OpenAIImageToolkit',  # Backward compatibility
@@ -165,6 +187,12 @@ __all__ = [
     'ScreenshotToolkit',
     'RegisteredAgentToolkit',
     'ToolkitMessageIntegration',
+    'ContextSummarizerToolkit',
     'NotionMCPToolkit',
+    'VertexAIVeoToolkit',
     'MinimaxMCPToolkit',
+    'IMAPMailToolkit',
+    "OutlookMailToolkit",
+    'EarthScienceToolkit',
+    'SkillToolkit',
 ]

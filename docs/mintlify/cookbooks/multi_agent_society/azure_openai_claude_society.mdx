@@ -11,7 +11,7 @@ title: "🍳 CAMEL Cookbook: Building a Collaborative AI Research Society"
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>  
+</div>
 
 ⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
 
@@ -266,7 +266,7 @@ def create_claude_agent(self, role_name: str, persona: str, specialization: str,
     # Configure Claude model
     model = ModelFactory.create(
         model_platform=ModelPlatformType.ANTHROPIC,
-        model_type=ModelType.CLAUDE_3_5_SONNET,
+        model_type=ModelType.CLAUDE_HAIKU_4_5,
     )
 
     agent = ChatAgent(
@@ -635,9 +635,8 @@ Thanks from everyone at 🐫 CAMEL-AI
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>  
+</div>
 
 ⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
 
 ---
-

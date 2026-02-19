@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import Any, ClassVar, Dict, List, Optional
 
@@ -156,16 +156,68 @@ class E2BInterpreter(BaseInterpreter):
                 code=code, language=self._CODE_TYPE_MAPPING[code_type]
             )
 
-        if execution.text and execution.text.lower() != "none":
-            return execution.text
+        output_parts = []
+        has_text_output = bool(
+            execution.text and execution.text.lower() != "none"
+        )
+
+        if has_text_output:
+            output_parts.append(execution.text)
+
+        if execution.results:
+            for result in execution.results:
+                png_data = result._repr_png_()
+                if png_data:
+                    output_parts.append(
+                        f"\n![image](data:image/png;base64,{png_data})\n"
+                    )
+                    continue
+
+                jpeg_data = result._repr_jpeg_()
+                if jpeg_data:
+                    output_parts.append(
+                        f"\n![image](data:image/jpeg;base64," f"{jpeg_data})\n"
+                    )
+                    continue
+
+                svg_data = result._repr_svg_()
+                if svg_data:
+                    output_parts.append(f"\n{svg_data}\n")
+                    continue
+
+                html_data = result._repr_html_()
+                if html_data:
+                    output_parts.append(html_data)
+                    continue
+
+                is_main_result = getattr(result, "is_main_result", False)
+                text = str(result)
+                if text and text.lower() != "none":
+                    if not (
+                        is_main_result
+                        and has_text_output
+                        and text == execution.text
+                    ):
+                        output_parts.append(text)
 
         if execution.logs:
             if execution.logs.stdout:
-                return ",".join(execution.logs.stdout)
-            elif execution.logs.stderr:
-                return ",".join(execution.logs.stderr)
+                output_parts.append(",".join(execution.logs.stdout))
+            if execution.logs.stderr:
+                stderr_output = ",".join(execution.logs.stderr)
+                if stderr_output:
+                    output_parts.append(f"[stderr] {stderr_output}")
 
-        return str(execution.error)
+        if output_parts:
+            return "\n".join(output_parts)
+
+        if execution.error:
+            return (
+                f"{execution.error.name}: {execution.error.value}\n"
+                f"{execution.error.traceback}"
+            )
+
+        return "Code executed successfully (no output)."
 
     def supported_code_types(self) -> List[str]:
         r"""Provides supported code types by the interpreter."""

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import sys
 
 sys.path.append("..")
@@ -53,7 +53,7 @@ browser_simulator_toolkit = AsyncBrowserToolkit(
 
 web_agent = ChatAgent(
     """
-You are a helpful assistant that can search the web, simulate browser 
+You are a helpful assistant that can search the web, simulate browser
 actions, and provide relevant information to solve the given task.
 """,
     model=web_model,
@@ -87,7 +87,7 @@ workforce = Workforce(
 
 workforce.add_single_agent_worker(
     """
-    An agent that can search the web, simulate browser actions, 
+    An agent that can search the web, simulate browser actions,
     and provide relevant information to solve the given task.""",
     worker=web_agent,
 )
@@ -107,8 +107,8 @@ print(task_result.result)
 
 """
 ==========================================================================
-The current #1 best-selling product in the gaming category on Amazon is 
-'Minecraft: Switch Edition - Nintendo Switch'. The price is $35.97, and 
+The current #1 best-selling product in the gaming category on Amazon is
+'Minecraft: Switch Edition - Nintendo Switch'. The price is $35.97, and
 it has a rating of 4.8 stars based on 1,525 ratings.
 ==========================================================================
 """

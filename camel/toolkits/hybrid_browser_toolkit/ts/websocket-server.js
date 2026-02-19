@@ -10,7 +10,7 @@ class WebSocketBrowserServer {
 
   async start() {
     return new Promise((resolve, reject) => {
-      this.server = new WebSocket.Server({ 
+      this.server = new WebSocket.Server({
         port: this.port,
         maxPayload: 50 * 1024 * 1024 // 50MB limit instead of default 1MB
       }, () => {
@@ -21,33 +21,33 @@ class WebSocketBrowserServer {
 
       this.server.on('connection', (ws) => {
         console.log('Client connected');
-        
+
         ws.on('message', async (message) => {
           try {
             const data = JSON.parse(message.toString());
             const { id, command, params } = data;
-            
+
             console.log(`Received command: ${command} with id: ${id}`);
-            
+
             const result = await this.handleCommand(command, params);
-            
+
             const response = {
               id,
               success: true,
               result
             };
-            
+
             ws.send(JSON.stringify(response));
           } catch (error) {
             console.error('Error handling command:', error);
-            
+
             const errorResponse = {
               id: data?.id || 'unknown',
               success: false,
               error: error.message,
               stack: error.stack
             };
-            
+
             ws.send(JSON.stringify(errorResponse));
           }
         });
@@ -78,14 +78,20 @@ class WebSocketBrowserServer {
     switch (command) {
       case 'init':
         console.log('Initializing toolkit with params:', JSON.stringify(params, null, 2));
-        
+
         // Check if CDP is available first
         let useCdp = false;
         let cdpUrl = params.cdpUrl || 'http://localhost:9222';
-        
+
         // Extract base URL and port for validation
         const baseUrl = cdpUrl.includes('/devtools/') ? cdpUrl.split('/devtools/')[0] : cdpUrl;
-        
+
+        // Validate CDP URL to prevent SSRF - only allow localhost
+        const parsed = new URL(baseUrl);
+        if (!['localhost', '127.0.0.1'].includes(parsed.hostname)) {
+          throw new Error('CDP URL must use localhost or 127.0.0.1');
+        }
+
         try {
           // Test if Chrome debug port is accessible and get page URL
           const response = await fetch(`${baseUrl}/json`);
@@ -101,7 +107,7 @@ class WebSocketBrowserServer {
                 const firstPage = pages[0];
                 const pageUrl = firstPage.devtoolsFrontendUrl;
                 const pageId = pageUrl.match(/ws=localhost:\d+(.*)$/)?.[1];
-                
+
                 if (pageId) {
                   useCdp = true;
                   cdpUrl = `${baseUrl}${pageId}`;
@@ -113,14 +119,14 @@ class WebSocketBrowserServer {
         } catch (error) {
           console.log('Chrome debug port not accessible, will start new browser instance');
         }
-        
+
         const config = {
           connectOverCdp: useCdp,
           cdpUrl: useCdp ? cdpUrl : undefined,
           headless: false,
           ...params
         };
-        
+
         console.log('Final config:', JSON.stringify(config, null, 2));
         this.toolkit = new HybridBrowserToolkit(config);
         return { message: 'Toolkit initialized with CDP connection' };
@@ -158,6 +164,17 @@ class WebSocketBrowserServer {
         console.log(`Screenshot completed in ${endTime - startTime}ms`);
         return result;
       }
+
+      case 'get_screenshot': {
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        console.log('Starting plain screenshot (no SOM)...');
+        const startTime = Date.now();
+        const result = await this.toolkit.getScreenshot();
+        const endTime = Date.now();
+        console.log(`Plain screenshot completed in ${endTime - startTime}ms`);
+        return result;
+      }
+
       case 'click':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.click(params.ref);
@@ -184,18 +201,40 @@ class WebSocketBrowserServer {
       case 'enter':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.enter();
-      
+
       case 'mouse_control':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.mouseControl(params.control, params.x, params.y);
 
       case 'mouse_drag':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
-        return await this.toolkit.mouseDrag(params.from_ref, params.to_ref);
+        return await this.toolkit.mouseDrag(params);
 
       case 'press_key':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.pressKeys(params.keys);
+
+      case 'upload_file':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.uploadFile({
+          filePath: params.filePath,
+          ref: params.ref,
+          x: params.x,
+          y: params.y
+        });
+
+      case 'download_file':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.downloadFile({
+          ref: params.ref,
+          x: params.x,
+          y: params.y
+        });
+
+      case 'batch_keyboard_input':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        const skipStabilityWait = params.skipStabilityWait !== undefined ? params.skipStabilityWait : true;
+        return await this.toolkit.batchKeyboardInput(params.operations, skipStabilityWait);
 
       case 'back':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
@@ -231,7 +270,7 @@ class WebSocketBrowserServer {
 
       case 'shutdown': {
         console.log('Shutting down server...');
-        
+
         // Close browser first
         if (this.toolkit) {
           try {
@@ -240,10 +279,10 @@ class WebSocketBrowserServer {
             console.error('Error closing browser:', error);
           }
         }
-        
+
         // Return response immediately
         const shutdownResponse = { message: 'Server shutting down' };
-        
+
         // Schedule server shutdown after a short delay to ensure response is sent
         setTimeout(() => {
           // Close the WebSocket server properly
@@ -257,7 +296,7 @@ class WebSocketBrowserServer {
               console.log('Exiting process...');
               process.exit(0);
             });
-            
+
             // Fallback timeout in case server close hangs
             setTimeout(() => {
               console.log('Server close timeout, forcing exit...');
@@ -268,7 +307,7 @@ class WebSocketBrowserServer {
             process.exit(0);
           }
         }, 100);  // Delay to ensure response is sent
-        
+
         return shutdownResponse;
       }
 
@@ -288,7 +327,7 @@ class WebSocketBrowserServer {
 // Start server if this file is run directly
 if (require.main === module) {
   const server = new WebSocketBrowserServer();
-  
+
   server.start().then((port) => {
     // Output the port so the Python client can connect
     console.log(`SERVER_READY:${port}`);

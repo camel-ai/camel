@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.storages.vectordb_storages import (
     TiDBStorage,
@@ -23,10 +23,10 @@ Before the DATABASE_URL, you can setup the a TiDB database cluster first:
 
 (Option 1): TiDB Serverless
 
-1. Go to [TiDB Cloud](https://tidbcloud.com/console/clusters) to create 
+1. Go to [TiDB Cloud](https://tidbcloud.com/console/clusters) to create
     a serverless cluster
 2. Click the **Connect** button
-3. Select "SQLAlchemy" > "PyMySQL" for the **Connect With** option, then 
+3. Select "SQLAlchemy" > "PyMySQL" for the **Connect With** option, then
     you can get the DATABASE_URL like:
 
 DATABASE_URL="mysql+pymysql://<USERNAME>:<PASSWORD>@<HOST>:4000/test&ssl_verify_cert=true&ssl_verify_identity=true"

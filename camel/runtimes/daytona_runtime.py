@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import inspect
 import json
 import os
 from functools import wraps
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
@@ -25,6 +25,12 @@ from camel.runtimes import BaseRuntime
 from camel.toolkits.function_tool import FunctionTool
 
 logger = get_logger(__name__)
+
+_DEFAULT_IMAGES: Dict[str, str] = {
+    "python": "python:3.11",
+    "typescript": "node:20",
+    "javascript": "node:20",
+}
 
 
 class DaytonaRuntime(BaseRuntime):
@@ -39,25 +45,35 @@ class DaytonaRuntime(BaseRuntime):
             provided, it will try to use the DAYTONA_API_URL environment
             variable. If none is provided, it will use "http://localhost:8000".
             (default: :obj:`None`)
-        language (Optional[str]): The programming language for the sandbox.
+        language (Optional[Literal["python", "typescript", "javascript"]]):
+            The programming language for the sandbox.
             (default: :obj:`"python"`)
+        image (Optional[str]): The Docker image to use for the sandbox.
+            If not provided, a default image based on the language will be
+            used. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         api_key: Optional[str] = None,
         api_url: Optional[str] = None,
-        language: Optional[str] = "python",
+        language: Optional[
+            Literal["python", "typescript", "javascript"]
+        ] = "python",
+        image: Optional[str] = None,
     ):
-        from daytona_sdk import Daytona, DaytonaConfig
+        from daytona_sdk import Daytona, DaytonaConfig, Sandbox
 
         super().__init__()
         self.api_key = api_key or os.environ.get('DAYTONA_API_KEY')
         self.api_url = api_url or os.environ.get('DAYTONA_API_URL')
         self.language = language
+        self.image = image or _DEFAULT_IMAGES.get(
+            language or "python", "python:3.11"
+        )
         self.config = DaytonaConfig(api_key=self.api_key, api_url=self.api_url)
         self.daytona = Daytona(self.config)
-        self.sandbox = None
+        self.sandbox: Optional[Sandbox] = None
         self.entrypoint: Dict[str, str] = dict()
 
     def build(self) -> "DaytonaRuntime":
@@ -66,10 +82,12 @@ class DaytonaRuntime(BaseRuntime):
         Returns:
             DaytonaRuntime: The current runtime.
         """
-        from daytona_sdk import CreateSandboxParams
+        from daytona_sdk import CreateSandboxFromImageParams
 
         try:
-            params = CreateSandboxParams(language=self.language)
+            params = CreateSandboxFromImageParams(
+                image=self.image, language=self.language
+            )
             self.sandbox = self.daytona.create(params)
             if self.sandbox is None:
                 raise RuntimeError("Failed to create sandbox.")
@@ -79,11 +97,11 @@ class DaytonaRuntime(BaseRuntime):
             raise RuntimeError(f"Daytona sandbox creation failed: {e!s}")
         return self
 
-    def _cleanup(self):
-        r"""Clean up the sandbox when exiting."""
+    def cleanup(self) -> None:
+        r"""Release the Daytona sandbox (delete and remove reference)."""
         if self.sandbox:
             try:
-                self.daytona.remove(self.sandbox)
+                self.daytona.delete(self.sandbox)
                 logger.info(f"Sandbox {self.sandbox.id} removed")
                 self.sandbox = None
             except Exception as e:
@@ -112,7 +130,7 @@ class DaytonaRuntime(BaseRuntime):
         if arguments is not None:
             entrypoint += json.dumps(arguments, ensure_ascii=False)
 
-        def make_wrapper(inner_func, func_name, func_code):
+        def make_wrapper(inner_func: Callable, func_name: str, func_code: str):
             r"""Creates a wrapper for a function to execute it in the
             Daytona sandbox.
 
@@ -146,7 +164,7 @@ class DaytonaRuntime(BaseRuntime):
                 script_path = f"/home/daytona/{func_name}.py"
                 try:
                     self.sandbox.fs.upload_file(
-                        script_path, func_code.encode()
+                        remote_path=script_path, file=func_code.encode()
                     )
                 except Exception as e:
                     logger.error(
@@ -208,18 +226,17 @@ class DaytonaRuntime(BaseRuntime):
             RuntimeError: If the sandbox is not initialized.
         """
         if self.sandbox is None:
-            raise RuntimeError("Failed to create sandbox.")
-        info = self.sandbox.info()
+            raise RuntimeError("Sandbox not initialized.")
         return (
-            f"Sandbox {info.name}:\n"
-            f"State: {info.state}\n"
-            f"Resources: {info.resources.cpu} CPU, {info.resources.memory} RAM"
+            f"Sandbox {self.sandbox.id}:\n"
+            f"State: {self.sandbox.state}\n"
+            f"Resources: {self.sandbox.cpu} CPU, {self.sandbox.memory} RAM"
         )
 
     def __del__(self):
         r"""Clean up the sandbox when the object is deleted."""
         if hasattr(self, 'sandbox'):
-            self._cleanup()
+            self.cleanup()
 
     def stop(self) -> "DaytonaRuntime":
         r"""Stop and remove the sandbox.
@@ -227,7 +244,7 @@ class DaytonaRuntime(BaseRuntime):
         Returns:
             DaytonaRuntime: The current runtime.
         """
-        self._cleanup()
+        self.cleanup()
         return self
 
     def reset(self) -> "DaytonaRuntime":

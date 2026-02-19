@@ -1,0 +1,535 @@
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit"></a>
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.RedirectHandler"></a>
+
+## RedirectHandler
+
+```python
+class RedirectHandler(BaseHTTPRequestHandler):
+```
+
+Handler for OAuth redirect requests.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.RedirectHandler.do_GET"></a>
+
+### do_GET
+
+```python
+def do_GET(self):
+```
+
+Handles GET request and extracts authorization code.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.RedirectHandler.log_message"></a>
+
+### log_message
+
+```python
+def log_message(self, format, *args):
+```
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.CustomAzureCredential"></a>
+
+## CustomAzureCredential
+
+```python
+class CustomAzureCredential:
+```
+
+Creates a sync Azure credential to pass into MSGraph client.
+
+Implements Azure credential interface with automatic token refresh using
+a refresh token. Updates the refresh token file whenever Microsoft issues
+a new refresh token during the refresh flow.
+
+**Parameters:**
+
+- **client_id** (str): The OAuth client ID.
+- **client_secret** (str): The OAuth client secret.
+- **tenant_id** (str): The Microsoft tenant ID.
+- **refresh_token** (str): The refresh token from OAuth flow.
+- **scopes** (List[str]): List of OAuth permission scopes.
+- **refresh_token_file_path** (Optional[Path]): File path of json file with refresh token.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.CustomAzureCredential.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    client_id: str,
+    client_secret: str,
+    tenant_id: str,
+    refresh_token: str,
+    scopes: List[str],
+    refresh_token_file_path: Optional[Path]
+):
+```
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.CustomAzureCredential._refresh_access_token"></a>
+
+### _refresh_access_token
+
+```python
+def _refresh_access_token(self):
+```
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.CustomAzureCredential._save_refresh_token"></a>
+
+### _save_refresh_token
+
+```python
+def _save_refresh_token(self, refresh_token: str):
+```
+
+Saves the refresh token to file.
+
+**Parameters:**
+
+- **refresh_token** (str): The refresh token to save.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.CustomAzureCredential.get_token"></a>
+
+### get_token
+
+```python
+def get_token(self, *args, **kwargs):
+```
+
+Gets a valid AccessToken object for msgraph (sync).
+
+Called by Microsoft Graph SDK when making API requests.
+Automatically refreshes the token if expired.
+
+**Returns:**
+
+  AccessToken: Azure AccessToken with token and expiration.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit"></a>
+
+## OutlookMailToolkit
+
+```python
+class OutlookMailToolkit(BaseToolkit):
+```
+
+A comprehensive toolkit for Microsoft Outlook Mail operations.
+
+This class provides methods for Outlook Mail operations including sending
+emails, managing drafts, replying to mails, deleting mails, fetching
+mails and attachments and changing folder of mails.
+API keys can be accessed in the Azure portal (https://portal.azure.com/)
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    timeout: Optional[float] = None,
+    refresh_token_file_path: Optional[str] = None
+):
+```
+
+Initializes a new instance of the OutlookMailToolkit.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
+- **refresh_token_file_path** (Optional[str]): The path of json file where refresh token is stored. If None, authentication using web browser will be required on each initialization. If provided, the refresh token is read from the file, used, and automatically updated when it nears expiry. (default: :obj:`None`)
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._get_dynamic_redirect_uri"></a>
+
+### _get_dynamic_redirect_uri
+
+```python
+def _get_dynamic_redirect_uri(self):
+```
+
+**Returns:**
+
+  str: A redirect URI with format 'http://localhost:`<port>`' where
+port is an available port on the system.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._normalize_scopes"></a>
+
+### _normalize_scopes
+
+```python
+def _normalize_scopes(self, scopes: List[str]):
+```
+
+Normalizes OAuth scopes to what Azure Identity expects.
+
+Azure Identity credentials (used by Kiota/MSGraph) expect fully
+qualified scopes like `https://graph.microsoft.com/Mail.Send`.
+For backwards compatibility, this method also accepts short scopes
+like `Mail.Send` and prefixes them with Microsoft Graph resource.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._get_auth_url"></a>
+
+### _get_auth_url
+
+```python
+def _get_auth_url(
+    self,
+    client_id,
+    tenant_id,
+    redirect_uri,
+    scopes
+):
+```
+
+Constructs the Microsoft authorization URL.
+
+**Parameters:**
+
+- **client_id** (str): The OAuth client ID.
+- **tenant_id** (str): The Microsoft tenant ID.
+- **redirect_uri** (str): The redirect URI for OAuth callback.
+- **scopes** (List[str]): List of permission scopes.
+
+**Returns:**
+
+  str: The complete authorization URL.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._load_token_from_file"></a>
+
+### _load_token_from_file
+
+```python
+def _load_token_from_file(self):
+```
+
+**Returns:**
+
+  Optional[str]: Refresh token if file exists and valid, else None.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._save_token_to_file"></a>
+
+### _save_token_to_file
+
+```python
+def _save_token_to_file(self, refresh_token: str):
+```
+
+Saves refresh token to disk.
+
+**Parameters:**
+
+- **refresh_token** (str): The refresh token to save.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._authenticate_using_refresh_token"></a>
+
+### _authenticate_using_refresh_token
+
+```python
+def _authenticate_using_refresh_token(self):
+```
+
+**Returns:**
+
+  CustomAzureCredential: Credential with auto-refresh capability.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._authenticate_using_browser"></a>
+
+### _authenticate_using_browser
+
+```python
+def _authenticate_using_browser(self):
+```
+
+**Returns:**
+
+  CustomAzureCredential or AuthorizationCodeCredential :
+Credential for Microsoft Graph API.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._get_authorization_code_via_browser"></a>
+
+### _get_authorization_code_via_browser
+
+```python
+def _get_authorization_code_via_browser(self, auth_url: str):
+```
+
+Opens a browser and captures the authorization code via localhost.
+
+**Parameters:**
+
+- **auth_url** (str): The authorization URL to open in the browser.
+
+**Returns:**
+
+  str: The captured authorization code.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._exchange_authorization_code_for_tokens"></a>
+
+### _exchange_authorization_code_for_tokens
+
+```python
+def _exchange_authorization_code_for_tokens(self, authorization_code: str, scope: List[str]):
+```
+
+Exchanges an authorization code for tokens via OAuth token endpoint.
+
+**Parameters:**
+
+- **authorization_code** (str): Authorization code captured from browser.
+- **scope** (List[str]): Scopes requested in the authorization flow.
+
+**Returns:**
+
+  Dict[str, Any]: Token response JSON.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._authenticate"></a>
+
+### _authenticate
+
+```python
+def _authenticate(self):
+```
+
+**Returns:**
+
+  AuthorizationCodeCredential or CustomAzureCredential
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._get_graph_client"></a>
+
+### _get_graph_client
+
+```python
+def _get_graph_client(self, credentials, scopes):
+```
+
+Creates Microsoft Graph API client.
+
+**Parameters:**
+
+- **credentials**: AuthorizationCodeCredential or AsyncCustomAzureCredential.
+- **scopes** (List[str]): List of permission scopes.
+
+**Returns:**
+
+  GraphServiceClient: Microsoft Graph API client.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.is_email_valid"></a>
+
+### is_email_valid
+
+```python
+def is_email_valid(self, email: str):
+```
+
+Validates a single email address.
+
+**Parameters:**
+
+- **email** (str): Email address to validate.
+
+**Returns:**
+
+  bool: True if the email is valid, False otherwise.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._get_invalid_emails"></a>
+
+### _get_invalid_emails
+
+```python
+def _get_invalid_emails(self, *lists: Optional[List[str]]):
+```
+
+Finds invalid email addresses from multiple email lists.
+
+**Returns:**
+
+  List[str]: List of invalid email addresses. Empty list if all
+emails are valid.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._create_attachments"></a>
+
+### _create_attachments
+
+```python
+def _create_attachments(self, file_paths: List[str]):
+```
+
+Creates Microsoft Graph FileAttachment objects from file paths.
+
+**Parameters:**
+
+- **file_paths** (List[str]): List of local file paths to attach.
+
+**Returns:**
+
+  List[Any]: List of FileAttachment objects ready for Graph API use.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._create_recipients"></a>
+
+### _create_recipients
+
+```python
+def _create_recipients(self, email_list: List[str]):
+```
+
+Creates Microsoft Graph Recipient objects from email addresses.
+
+Supports both simple email format ("email@example.com") and
+name-email format ("John Doe `<email@example.com>`").
+
+**Parameters:**
+
+- **email_list** (List[str]): List of email addresses, which can include display names.
+
+**Returns:**
+
+  List[Any]: List of Recipient objects ready for Graph API use.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._create_message"></a>
+
+### _create_message
+
+```python
+def _create_message(
+    self,
+    to_email: Optional[List[str]] = None,
+    subject: Optional[str] = None,
+    content: Optional[str] = None,
+    is_content_html: bool = False,
+    attachments: Optional[List[str]] = None,
+    cc_recipients: Optional[List[str]] = None,
+    bcc_recipients: Optional[List[str]] = None,
+    reply_to: Optional[List[str]] = None
+):
+```
+
+Creates a message object for sending or updating emails.
+
+This helper method is used internally to construct Microsoft Graph
+message objects. It's used by methods like send_email,
+create_draft_email, and update_draft_message. All parameters are
+optional to allow partial updates when modifying existing messages.
+
+**Parameters:**
+
+- **to_email** (Optional[List[str]]): List of recipient email addresses. (default: :obj:`None`)
+- **subject** (Optional[str]): The subject of the email. (default: :obj:`None`)
+- **content** (Optional[str]): The body content of the email. (default: :obj:`None`)
+- **is_content_html** (bool): If True, the content type will be set to HTML; otherwise, it will be Text. (default: :obj:`False`)
+- **attachments** (Optional[List[str]]): List of file paths to attach to the email. (default: :obj:`None`)
+- **cc_recipients** (Optional[List[str]]): List of CC recipient email addresses. (default: :obj:`None`)
+- **bcc_recipients** (Optional[List[str]]): List of BCC recipient email addresses. (default: :obj:`None`)
+- **reply_to** (Optional[List[str]]): List of email addresses that will receive replies when recipients use the "Reply" button. This allows replies to be directed to different addresses than the sender's address. (default: :obj:`None`)
+
+**Returns:**
+
+  message.Message: A Microsoft Graph message object with only the
+provided fields set.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._build_attachment_query"></a>
+
+### _build_attachment_query
+
+```python
+def _build_attachment_query(self):
+```
+
+**Returns:**
+
+  AttachmentsRequestBuilderGetRequestConfiguration: Query config
+for the Graph API request.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._process_attachment"></a>
+
+### _process_attachment
+
+```python
+def _process_attachment(
+    self,
+    attachment,
+    metadata_only: bool,
+    save_path: Optional[str]
+):
+```
+
+Processes a single attachment and extracts its information.
+
+**Parameters:**
+
+- **attachment**: The attachment object from Graph API.
+- **metadata_only** (bool): Whether to include content bytes.
+- **save_path** (Optional[str]): Path to save attachment file.
+
+**Returns:**
+
+  Dict: Dictionary containing attachment information.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._save_attachment_file"></a>
+
+### _save_attachment_file
+
+```python
+def _save_attachment_file(
+    self,
+    save_path: str,
+    attachment_name: str,
+    content_bytes: bytes,
+    cannot_overwrite: bool = True
+):
+```
+
+Saves attachment content to a file on disk.
+
+**Parameters:**
+
+- **save_path** (str): Directory path where file should be saved.
+- **attachment_name** (str): Name of the attachment file.
+- **content_bytes** (bytes): The file content as bytes.
+- **cannot_overwrite** (bool): If True, appends counter to filename if file exists. (default: :obj:`True`)
+
+**Returns:**
+
+  str: The full file path where the attachment was saved.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._handle_html_body"></a>
+
+### _handle_html_body
+
+```python
+def _handle_html_body(self, body_content: str):
+```
+
+Converts HTML email body to plain text.
+
+**Parameters:**
+
+- **body_content** (str): The HTML content of the email body. This content is already sanitized by Microsoft Graph API.
+
+**Returns:**
+
+  str: Plain text version of the email body with cleaned whitespace
+and removed HTML tags.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._get_recipients"></a>
+
+### _get_recipients
+
+```python
+def _get_recipients(self, recipient_list: Optional[List[Any]]):
+```
+
+Gets a list of recipients from a recipient list object.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

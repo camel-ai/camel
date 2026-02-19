@@ -8,7 +8,7 @@ icon: wrench
 <Note>
   **Python Version Requirements**
 
-  CAMEL-AI requires `Python >=3.10 and <=3.12`. Here's how to check your version:
+  CAMEL-AI requires `Python >=3.10 and <=3.14`. Here's how to check your version:
   ```bash
   python3 --version
   ```
@@ -104,7 +104,7 @@ We recommend starting with a simple role-playing scenario to understand CAMEL's 
       ```bash
       pip install -r requirements.txt
       ```
-    
+
     - Set up your environment variables by loading the `.env` file:
       ```python
       from dotenv import load_dotenv
@@ -116,7 +116,7 @@ We recommend starting with a simple role-playing scenario to understand CAMEL's 
       python examples/role_playing.py
       ```
 
-      
+
 <Tip>
 Want to see multi-agent collaboration at scale?
 Try running the <a href="https://github.com/camel-ai/camel/tree/master/examples/workforce" target="_blank">workforce example</a>:
@@ -137,8 +137,16 @@ CAMEL-AI offers multiple installation approaches for different development needs
 
 ### From Source with UV
 - Development installation with full source access
-- Supports Python 3.10, 3.11, 3.12
+- Supports Python 3.10, 3.11, 3.12, 3.13, 3.14
 - Includes development tools and testing capabilities
+
+<Warning>
+**Python 3.13+ Compatibility Notes:**
+- `unstructured` and `pyobvector` packages are not available on Python 3.13+
+- These packages require NumPy < 2.0, which is incompatible with Python 3.13+
+- If you need these features, use Python 3.10-3.12
+- All other features work normally on Python 3.13+
+</Warning>
 
 ```bash
 # Clone the repository
@@ -227,10 +235,10 @@ python examples/ai_society/role_playing.py
 python examples/toolkits/code_execution_toolkit.py
 
 # Generating knowledge graphs with agents
-python examples/knowledge_graph/knowledge_graph_agent_example.py  
+python examples/knowledge_graph/knowledge_graph_agent_example.py
 
 # Multiple agents collaborating on complex tasks
-python examples/workforce/multiple_single_agents.py 
+python examples/workforce/multiple_single_agents.py
 
 # Creative image generation with agents
 python examples/vision/image_crafting.py

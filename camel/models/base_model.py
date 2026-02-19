@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,12 +10,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import abc
+import inspect
 import os
-import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 
 from openai import AsyncStream, Stream
 from openai.lib.streaming.chat import (
@@ -24,6 +33,7 @@ from openai.lib.streaming.chat import (
 )
 from pydantic import BaseModel
 
+from camel.logger import get_logger as camel_get_logger
 from camel.messages import OpenAIMessage
 from camel.types import (
     ChatCompletion,
@@ -32,19 +42,167 @@ from camel.types import (
     ParsedChatCompletion,
     UnifiedModelType,
 )
-from camel.utils import BaseTokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    Constants,
+    get_current_agent_session_id,
+    update_langfuse_trace,
+)
+
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+    try:
+        from traceroot import get_logger  # type: ignore[import]
+        from traceroot import trace as observe  # type: ignore[import]
+
+        logger = get_logger('base_model')
+    except ImportError:
+        from camel.utils import observe
+
+        logger = camel_get_logger('base_model')
+else:
+    from camel.utils import observe
+
+    logger = camel_get_logger('base_model')
+
+
+class _StreamLogger:
+    r"""Base for stream logging wrappers."""
+
+    def __init__(self, log_path: Optional[str], log_enabled: bool):
+        self._log_path = log_path
+        self._log_enabled = log_enabled
+        self._id = self._model = self._content = ""
+        self._finish_reason: Optional[str] = None
+        self._usage: Optional[Dict[str, Any]] = None
+        self._logged = False
+
+    def _collect(self, chunk: ChatCompletionChunk) -> None:
+        self._id = self._id or getattr(chunk, 'id', '')
+        self._model = self._model or getattr(chunk, 'model', '')
+        if chunk.usage:
+            u = chunk.usage
+            self._usage = (
+                u.model_dump() if hasattr(u, 'model_dump') else u.dict()
+            )
+        if chunk.choices:
+            choice = chunk.choices[0]
+            if choice.delta and choice.delta.content:
+                self._content += choice.delta.content
+            if choice.finish_reason:
+                self._finish_reason = choice.finish_reason
+
+    def _log(self) -> None:
+        if self._logged or not self._log_enabled or not self._log_path:
+            return
+        self._logged = True
+        import json
+        from datetime import datetime
+
+        try:
+            with open(self._log_path, "r+") as f:
+                data = json.load(f)
+                data["response_timestamp"] = datetime.now().isoformat()
+                data["response"] = {
+                    "id": self._id,
+                    "model": self._model,
+                    "content": self._content,
+                    "finish_reason": self._finish_reason,
+                    "usage": self._usage,
+                    "streaming": True,
+                }
+                f.seek(0)
+                json.dump(data, f, indent=4)
+                f.truncate()
+        except Exception:
+            pass
+
+
+class _SyncStreamWrapper(_StreamLogger):
+    r"""Sync stream wrapper with logging."""
+
+    def __init__(
+        self,
+        stream: Union[
+            Stream[ChatCompletionChunk],
+            Generator[ChatCompletionChunk, None, None],
+        ],
+        log_path: Optional[str],
+        log_enabled: bool,
+    ):
+        super().__init__(log_path, log_enabled)
+        self._stream = stream
+
+    def __iter__(self):
+        return self
+
+    def __next__(self) -> ChatCompletionChunk:
+        try:
+            chunk = next(self._stream)
+            self._collect(chunk)
+            return chunk
+        except StopIteration:
+            self._log()
+            raise
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+    def __del__(self):
+        self._log()
+
+
+class _AsyncStreamWrapper(_StreamLogger):
+    r"""Async stream wrapper with logging."""
+
+    def __init__(
+        self,
+        stream: Union[
+            AsyncStream[ChatCompletionChunk],
+            AsyncGenerator[ChatCompletionChunk, None],
+        ],
+        log_path: Optional[str],
+        log_enabled: bool,
+    ):
+        super().__init__(log_path, log_enabled)
+        self._stream = stream
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self) -> ChatCompletionChunk:
+        try:
+            chunk = await self._stream.__anext__()
+            self._collect(chunk)
+            return chunk
+        except StopAsyncIteration:
+            self._log()
+            raise
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_):
+        return False
+
+    def __del__(self):
+        self._log()
 
 
 class ModelBackendMeta(abc.ABCMeta):
-    r"""Metaclass that automatically preprocesses messages in run method.
+    r"""Metaclass that automatically pre/post-processes the run method.
 
-    Automatically wraps the run method of any class inheriting from
-    BaseModelBackend to preprocess messages (remove <think> tags) before they
-    are sent to the model.
+    Automatically wraps the run and arun methods of any class inheriting from
+    BaseModelBackend to:
+    - Preprocess messages (remove <think> tags) before sending to the model.
+    - Postprocess responses (extract <think> tags into reasoning_content)
+      after receiving from the model.
     """
 
     def __new__(mcs, name, bases, namespace):
-        r"""Wraps run method with preprocessing if it exists in the class."""
+        r"""Wraps run/arun methods with pre/post-processing."""
         if 'run' in namespace:
             original_run = namespace['run']
 
@@ -52,9 +210,25 @@ class ModelBackendMeta(abc.ABCMeta):
                 self, messages: List[OpenAIMessage], *args, **kwargs
             ):
                 messages = self.preprocess_messages(messages)
-                return original_run(self, messages, *args, **kwargs)
+                result = original_run(self, messages, *args, **kwargs)
+                result = self.postprocess_response(result)
+                return result
 
             namespace['run'] = wrapped_run
+
+        if 'arun' in namespace:
+            original_arun = namespace['arun']
+
+            async def wrapped_arun(
+                self, messages: List[OpenAIMessage], *args, **kwargs
+            ):
+                messages = self.preprocess_messages(messages)
+                result = await original_arun(self, messages, *args, **kwargs)
+                result = self.postprocess_response(result)
+                return result
+
+            namespace['arun'] = wrapped_arun
+
         return super().__new__(mcs, name, bases, namespace)
 
 
@@ -78,6 +252,13 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             API calls. (default: :obj:`None`)
         max_retries (int, optional): Maximum number of retries
             for API calls. (default: :obj:`3`)
+        extract_thinking_from_response (bool, optional): Whether to
+            extract ``<think>`` tags from model response content into
+            the ``reasoning_content`` field. When enabled, if a model
+            embeds reasoning in ``<think>`` tags within the response
+            content (and ``reasoning_content`` is not already set),
+            the tags will be extracted into ``reasoning_content`` and
+            removed from ``content``. (default: :obj:`True`)
     """
 
     def __init__(
@@ -87,8 +268,9 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         max_retries: int = 3,
+        extract_thinking_from_response: bool = True,
     ) -> None:
         self.model_type: UnifiedModelType = UnifiedModelType(model_type)
         if model_config_dict is None:
@@ -99,6 +281,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         self._token_counter = token_counter
         self._timeout = timeout
         self._max_retries = max_retries
+        self._extract_thinking_from_response = extract_thinking_from_response
         # Initialize logging configuration
         self._log_enabled = (
             os.environ.get("CAMEL_MODEL_LOG_ENABLED", "False").lower()
@@ -116,6 +299,36 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 tokenization style.
         """
         pass
+
+    def _prepare_request_config(
+        self,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        r"""Prepare the request configuration dictionary.
+
+        Creates a deep copy of the model config and handles tool-related
+        parameters. If no tools are specified, removes parallel_tool_calls
+        as OpenAI API only allows it when tools are present.
+
+        Args:
+            tools (Optional[List[Dict[str, Any]]]): The tools to include
+                in the request. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: The prepared request configuration.
+        """
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        if tools:
+            request_config["tools"] = tools
+        else:
+            # Remove parallel_tool_calls if no tools are specified
+            # as OpenAI API only allows it when tools are present
+            request_config.pop("parallel_tool_calls", None)
+
+        return request_config
 
     def preprocess_messages(
         self, messages: List[OpenAIMessage]
@@ -137,15 +350,18 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         tool_responses_buffer: Dict[str, OpenAIMessage] = {}
         has_tool_calls = False
 
+        from camel.models._utils import extract_thinking_from_content
+
         for msg in messages:
             # Remove thinking content if needed
             role = msg.get('role')
             content = msg.get('content')
-            if role in ['assistant', 'user'] and isinstance(content, str):
-                if '<think>' in content and '</think>' in content:
-                    content = re.sub(
-                        r'<think>.*?</think>', '', content, flags=re.DOTALL
-                    ).strip()
+            if (
+                self._extract_thinking_from_response
+                and role in ['assistant', 'user']
+                and isinstance(content, str)
+            ):
+                content, _ = extract_thinking_from_content(content)
                 processed_msg = dict(msg)
                 processed_msg['content'] = content
             else:
@@ -242,6 +458,59 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
         return formatted_messages
 
+    def postprocess_response(self, response: Any) -> Any:
+        r"""Postprocess model response to extract ``<think>`` tags.
+
+        For non-streaming responses, if the model embeds reasoning in
+        ``<think>`` tags within the response content (and
+        ``reasoning_content`` is not already set), extracts the content
+        of the tags into ``reasoning_content`` and removes them from
+        ``content``.
+
+        Streaming responses and other non-ChatCompletion types are
+        returned as-is.
+
+        Args:
+            response: The model response. May be a
+                :obj:`ChatCompletion`, a streaming object, or other
+                types.
+
+        Returns:
+            The response, potentially with ``reasoning_content``
+            populated and ``content`` cleaned.
+        """
+        # Skip streaming responses — they are handled downstream
+        if (
+            isinstance(response, (Stream, AsyncStream))
+            or inspect.isgenerator(response)
+            or inspect.isasyncgen(response)
+        ):
+            return response
+
+        if not self._extract_thinking_from_response:
+            return response
+
+        if not hasattr(response, 'choices') or not response.choices:
+            return response
+
+        from camel.models._utils import extract_thinking_from_content
+
+        for choice in response.choices:
+            message = getattr(choice, 'message', None)
+            if message is None:
+                continue
+            content = getattr(message, 'content', None)
+            if not isinstance(content, str):
+                continue
+            existing = getattr(message, 'reasoning_content', None)
+            message.content, reasoning = extract_thinking_from_content(
+                content, existing
+            )
+            if reasoning is not None:
+                message.reasoning_content = reasoning
+
+        return response
+
     def _log_request(self, messages: List[OpenAIMessage]) -> Optional[str]:
         r"""Log the request messages to a JSON file if logging is enabled.
 
@@ -258,14 +527,29 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         import json
         from datetime import datetime
 
-        os.makedirs(self._log_dir, exist_ok=True)
+        from camel.utils.agent_context import get_current_agent_id
+
+        agent_id = get_current_agent_id()
+
+        # Remove _context_summarizer suffix to keep all logs in one directory
+        log_agent_id = agent_id
+        if agent_id and agent_id.endswith("_context_summarizer"):
+            log_agent_id = agent_id[: -len("_context_summarizer")]
+
+        log_subdir = (
+            os.path.join(self._log_dir, log_agent_id)
+            if log_agent_id
+            else self._log_dir
+        )
+        os.makedirs(log_subdir, exist_ok=True)
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        log_file_path = os.path.join(self._log_dir, f"conv_{timestamp}.json")
+        log_file_path = os.path.join(log_subdir, f"conv_{timestamp}.json")
 
         log_entry = {
             "request_timestamp": datetime.now().isoformat(),
             "model": str(self.model_type),
+            "agent_id": agent_id,
             "request": {"messages": messages},
         }
 
@@ -303,6 +587,25 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             f.seek(0)
             json.dump(log_data, f, indent=4)
             f.truncate()
+
+    def _log_and_trace(self) -> None:
+        r"""Update Langfuse trace with session metadata.
+
+        This method updates the current Langfuse trace with agent session
+        information and model metadata. Called at the start of _run() and
+        _arun() methods before API execution.
+        """
+        agent_session_id = get_current_agent_session_id()
+        update_langfuse_trace(
+            session_id=agent_session_id,
+            metadata={
+                "source": "camel",
+                "agent_id": agent_session_id,
+                "agent_type": "camel_chat_agent",
+                "model_type": str(self.model_type),
+            },
+            tags=["CAMEL-AI", str(self.model_type)],
+        )
 
     @abstractmethod
     def _run(
@@ -364,6 +667,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         """
         pass
 
+    @observe()
     def run(
         self,
         messages: List[OpenAIMessage],
@@ -403,14 +707,24 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         elif not tools:
             tools = None
 
-        result = self._run(messages, response_format, tools)
+        logger.info("Running model: %s", self.model_type)
+        logger.info("Messages: %s", messages)
+        logger.info("Response format: %s", response_format)
+        logger.info("Tools: %s", tools)
 
-        # Log the response if logging is enabled
+        result = self._run(messages, response_format, tools)
+        logger.info("Result: %s", result)
+
+        # For streaming responses, wrap with logging; otherwise log immediately
+        if isinstance(result, Stream) or inspect.isgenerator(result):
+            return _SyncStreamWrapper(  # type: ignore[return-value]
+                result, log_path, self._log_enabled
+            )
         if log_path:
             self._log_response(log_path, result)
-
         return result
 
+    @observe()
     async def arun(
         self,
         messages: List[OpenAIMessage],
@@ -448,12 +762,21 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         elif not tools:
             tools = None
 
-        result = await self._arun(messages, response_format, tools)
+        logger.info("Running model: %s", self.model_type)
+        logger.info("Messages: %s", messages)
+        logger.info("Response format: %s", response_format)
+        logger.info("Tools: %s", tools)
 
-        # Log the response if logging is enabled
+        result = await self._arun(messages, response_format, tools)
+        logger.info("Result: %s", result)
+
+        # For streaming responses, wrap with logging; otherwise log immediately
+        if isinstance(result, AsyncStream) or inspect.isasyncgen(result):
+            return _AsyncStreamWrapper(  # type: ignore[return-value]
+                result, log_path, self._log_enabled
+            )
         if log_path:
             self._log_response(log_path, result)
-
         return result
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
@@ -506,10 +829,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         Returns:
             int: The maximum token limit for the given model.
         """
-        return (
-            self.model_config_dict.get("max_tokens")
-            or self.model_type.token_limit
-        )
+        return self.model_type.token_limit
 
     @property
     def stream(self) -> bool:

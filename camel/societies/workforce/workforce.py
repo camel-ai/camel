@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,18 +10,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 import asyncio
 import concurrent.futures
 import json
+import os
 import time
 import uuid
 from collections import deque
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
+    Callable,
     Coroutine,
     Deque,
     Dict,
@@ -31,31 +34,45 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
-from colorama import Fore
+from .workforce_callback import WorkforceCallback
+from .workforce_metrics import WorkforceMetrics
+
+if TYPE_CHECKING:
+    from camel.responses import ChatAgentResponse
+    from camel.utils.context_utils import ContextUtility, WorkflowSummary
+
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
-from camel.models import ModelFactory
+from camel.models import BaseModelBackend, ModelManager
 from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
-    FAILURE_ANALYSIS_PROMPT,
+    FAILURE_ANALYSIS_RESPONSE_FORMAT,
+    QUALITY_EVALUATION_RESPONSE_FORMAT,
+    STRATEGY_DESCRIPTIONS,
+    TASK_AGENT_SYSTEM_MESSAGE,
+    TASK_ANALYSIS_PROMPT,
     TASK_DECOMPOSE_PROMPT,
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
-from camel.societies.workforce.single_agent_worker import SingleAgentWorker
+from camel.societies.workforce.single_agent_worker import (
+    SingleAgentWorker,
+)
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
 )
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
-    FailureContext,
-    RecoveryDecision,
+    FailureHandlingConfig,
+    PipelineTaskBuilder,
     RecoveryStrategy,
+    TaskAnalysisResult,
     TaskAssignment,
     TaskAssignResult,
     WorkerConf,
@@ -70,16 +87,34 @@ from camel.tasks.task import (
 )
 from camel.toolkits import (
     CodeExecutionToolkit,
+    FunctionTool,
     SearchToolkit,
-    TaskPlanningToolkit,
     ThinkingToolkit,
 )
-from camel.types import ModelPlatformType, ModelType
-from camel.utils import dependencies_required
+from camel.utils import dependencies_required, safe_extract_parsed
 
-from .workforce_logger import WorkforceLogger
+from .events import (
+    AllTasksCompletedEvent,
+    LogEvent,
+    TaskAssignedEvent,
+    TaskCompletedEvent,
+    TaskCreatedEvent,
+    TaskDecomposedEvent,
+    TaskFailedEvent,
+    TaskStartedEvent,
+    TaskUpdatedEvent,
+    WorkerCreatedEvent,
+)
 
-logger = get_logger(__name__)
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+    try:
+        import traceroot  # type: ignore[import]
+
+        logger = traceroot.get_logger('camel')
+    except ImportError:
+        logger = get_logger(__name__)
+else:
+    logger = get_logger(__name__)
 
 # Constants for configuration values
 MAX_TASK_RETRIES = 3
@@ -95,6 +130,13 @@ class WorkforceState(Enum):
     RUNNING = "running"
     PAUSED = "paused"
     STOPPED = "stopped"
+
+
+class WorkforceMode(Enum):
+    r"""Workforce execution mode for different task processing strategies."""
+
+    AUTO_DECOMPOSE = "auto_decompose"  # Automatic task decomposition mode
+    PIPELINE = "pipeline"  # Predefined pipeline mode
 
 
 class WorkforceSnapshot:
@@ -151,14 +193,19 @@ class Workforce(BaseNode):
         task_agent (Optional[ChatAgent], optional): A custom task planning
             agent instance for task decomposition and composition. If
             provided, the workforce will create a new agent using this agent's
-            model configuration but with the required system message and tools
-            (TaskPlanningToolkit). If None, a default agent will be created
-            using DEFAULT model settings. (default: :obj:`None`)
+            model configuration but with the required system message. If None,
+            a default agent will be created using DEFAULT model settings.
+            (default: :obj:`None`)
         new_worker_agent (Optional[ChatAgent], optional): A template agent for
             workers created dynamically at runtime when existing workers cannot
             handle failed tasks. If None, workers will be created with default
             settings including SearchToolkit, CodeExecutionToolkit, and
             ThinkingToolkit. (default: :obj:`None`)
+        default_model (Optional[Union[BaseModelBackend, ModelManager]],
+            optional): Model backend or manager to use when creating default
+            coordinator, task, or dynamic worker agents. If None, agents
+            will be created using ModelPlatformType.DEFAULT and
+            ModelType.DEFAULT settings. (default: :obj:`None`)
         graceful_shutdown_timeout (float, optional): The timeout in seconds
             for graceful shutdown when a task fails 3 times. During this
             period, the workforce remains active for debugging.
@@ -185,6 +232,32 @@ class Workforce(BaseNode):
             support native structured output. When disabled, the workforce
             uses the native response_format parameter.
             (default: :obj:`True`)
+        callbacks (Optional[List[WorkforceCallback]], optional): A list of
+            callback handlers to observe and record workforce lifecycle events
+            and metrics (e.g., task creation/assignment/start/completion/
+            failure, worker creation/deletion, all-tasks-completed). All
+            items must be instances of :class:`WorkforceCallback`, otherwise
+            a :class:`ValueError` is raised. If none of the provided
+            callbacks implement :class:`WorkforceMetrics`, a built-in
+            :class:`WorkforceLogger` (implements both callback and metrics)
+            is added automatically. If at least one provided callback
+            implements :class:`WorkforceMetrics`, no default logger is added.
+            (default: :obj:`None`)
+        mode (WorkforceMode, optional): The execution mode for task
+            processing. AUTO_DECOMPOSE mode uses intelligent recovery
+            strategies (decompose, replan, etc.) when tasks fail.
+            PIPELINE mode uses simple retry logic and allows failed
+            tasks to continue the workflow, passing error information
+            to dependent tasks. (default: :obj:`WorkforceMode.AUTO_DECOMPOSE`)
+        failure_handling_config (Optional[Union[FailureHandlingConfig, Dict]]):
+            Configuration for customizing failure handling behavior. Can be
+            a FailureHandlingConfig instance or a dict with the same fields.
+            Allows fine-grained control over which recovery strategies are
+            enabled, maximum retry attempts, and whether to halt on max
+            retries. The `enabled_strategies` field accepts both enum values
+            and string lists like `["retry", "replan"]`. If None, uses
+            default configuration with all strategies enabled.
+            (default: :obj:`None`)
 
     Example:
         >>> import asyncio
@@ -207,6 +280,16 @@ class Workforce(BaseNode):
         ...     "Research Team",
         ...     coordinator_agent=coordinator_agent,
         ...     task_agent=task_agent,
+        ... )
+        >>>
+        >>> # Workforce with failure handling config as dict (simple)
+        >>> workforce = Workforce(
+        ...     "Research Team",
+        ...     failure_handling_config={
+        ...         "max_retries": 5,
+        ...         "enabled_strategies": ["retry", "replan"],
+        ...         "halt_on_max_retries": False,
+        ...     },
         ... )
         >>>
         >>> # Process a task
@@ -233,10 +316,16 @@ class Workforce(BaseNode):
         coordinator_agent: Optional[ChatAgent] = None,
         task_agent: Optional[ChatAgent] = None,
         new_worker_agent: Optional[ChatAgent] = None,
+        default_model: Optional[Union[BaseModelBackend, ModelManager]] = None,
         graceful_shutdown_timeout: float = 15.0,
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
         task_timeout_seconds: Optional[float] = None,
+        mode: WorkforceMode = WorkforceMode.AUTO_DECOMPOSE,
+        callbacks: Optional[List[WorkforceCallback]] = None,
+        failure_handling_config: Optional[
+            Union[FailureHandlingConfig, Dict[str, Any]]
+        ] = None,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[
@@ -244,20 +333,34 @@ class Workforce(BaseNode):
         ] = deque()
         self._children = children or []
         self.new_worker_agent = new_worker_agent
+        self.default_model = default_model
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
         self.share_memory = share_memory
         self.use_structured_output_handler = use_structured_output_handler
         self.task_timeout_seconds = (
             task_timeout_seconds or TASK_TIMEOUT_SECONDS
         )
+        self.mode = mode
+        self._initial_mode = mode  # Store initial mode for reset()
+        # Initialize failure handling configuration (supports dict input)
+        if failure_handling_config is None:
+            self.failure_handling_config = FailureHandlingConfig()
+        elif isinstance(failure_handling_config, dict):
+            self.failure_handling_config = FailureHandlingConfig(
+                **failure_handling_config
+            )
+        else:
+            self.failure_handling_config = failure_handling_config
         if self.use_structured_output_handler:
             self.structured_handler = StructuredOutputHandler()
-        self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
         self._task: Optional[Task] = None
         self._pending_tasks: Deque[Task] = deque()
         self._task_dependencies: Dict[str, List[str]] = {}
         self._assignees: Dict[str, str] = {}
         self._in_flight_tasks: int = 0
+
+        # Pipeline building state
+        self._pipeline_builder: Optional[PipelineTaskBuilder] = None
         # Dictionary to track task start times
         self._task_start_times: Dict[str, float] = {}
         # Human intervention support
@@ -265,6 +368,7 @@ class Workforce(BaseNode):
         self._pause_event = asyncio.Event()
         self._pause_event.set()  # Initially not paused
         self._stop_requested = False
+        self._skip_requested = False
         self._snapshots: List[WorkforceSnapshot] = []
         self._completed_tasks: List[Task] = []
         self._loop: Optional[asyncio.AbstractEventLoop] = None
@@ -274,15 +378,9 @@ class Workforce(BaseNode):
         self._last_snapshot_time: float = 0.0
         # Minimum seconds between automatic snapshots
         self.snapshot_interval: float = 30.0
-        if self.metrics_logger:
-            for child in self._children:
-                worker_type = type(child).__name__
-                role_or_desc = child.description
-                self.metrics_logger.log_worker_created(
-                    worker_id=child.node_id,
-                    worker_type=worker_type,
-                    role=role_or_desc,
-                )
+        # Shared memory UUID tracking to prevent re-sharing duplicates
+        self._shared_memory_uuids: Set[str] = set()
+        self._initialize_callbacks(callbacks)
 
         # Set up coordinator agent with default system message
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
@@ -300,7 +398,10 @@ class Workforce(BaseNode):
                 "ChatAgent settings (ModelPlatformType.DEFAULT, "
                 "ModelType.DEFAULT) with default system message."
             )
-            self.coordinator_agent = ChatAgent(coord_agent_sys_msg)
+            self.coordinator_agent = ChatAgent(
+                coord_agent_sys_msg,
+                model=self.default_model,
+            )
         else:
             logger.info(
                 "Custom coordinator_agent provided. Preserving user's "
@@ -311,8 +412,7 @@ class Workforce(BaseNode):
             if coordinator_agent.system_message is not None:
                 user_sys_msg_content = coordinator_agent.system_message.content
                 combined_content = (
-                    f"{user_sys_msg_content}\n\n"
-                    f"{coord_agent_sys_msg.content}"
+                    f"{user_sys_msg_content}\n\n{coord_agent_sys_msg.content}"
                 )
                 combined_sys_msg = BaseMessage.make_assistant_message(
                     role_name=coordinator_agent.system_message.role_name,
@@ -336,10 +436,7 @@ class Workforce(BaseNode):
                     None,
                 ),
                 output_language=coordinator_agent.output_language,
-                tools=[
-                    tool.func
-                    for tool in coordinator_agent._internal_tools.values()
-                ],
+                tools=list(coordinator_agent._internal_tools.values()),
                 external_tools=[
                     schema
                     for schema in coordinator_agent._external_tool_schemas.values()  # noqa: E501
@@ -349,23 +446,21 @@ class Workforce(BaseNode):
                 stop_event=coordinator_agent.stop_event,
             )
 
-        # Set up task agent with default system message and required tools
+        # Set up task agent with default system message
         task_sys_msg = BaseMessage.make_assistant_message(
             role_name="Task Planner",
-            content="You are going to handle tasks.",
+            content=TASK_AGENT_SYSTEM_MESSAGE,
         )
-        task_planning_tools = TaskPlanningToolkit().get_tools()
 
         if task_agent is None:
             logger.warning(
                 "No task_agent provided. Using default ChatAgent "
                 "settings (ModelPlatformType.DEFAULT, ModelType.DEFAULT) "
-                "with default system message and TaskPlanningToolkit."
+                "with default system message."
             )
-            task_tools = TaskPlanningToolkit().get_tools()
             self.task_agent = ChatAgent(
                 task_sys_msg,
-                tools=task_tools,  # type: ignore[arg-type]
+                model=self.default_model,
             )
         else:
             logger.info(
@@ -377,8 +472,7 @@ class Workforce(BaseNode):
             if task_agent.system_message is not None:
                 user_task_sys_msg_content = task_agent.system_message.content
                 combined_task_content = (
-                    f"{user_task_sys_msg_content}\n\n"
-                    f"{task_sys_msg.content}"
+                    f"{user_task_sys_msg_content}\n\n{task_sys_msg.content}"
                 )
                 combined_task_sys_msg = BaseMessage.make_assistant_message(
                     role_name=task_agent.system_message.role_name,
@@ -389,9 +483,10 @@ class Workforce(BaseNode):
 
             # Since ChatAgent constructor uses a dictionary with
             # function names as keys, we don't need to manually deduplicate.
-            combined_tools = [
-                tool.func for tool in task_agent._internal_tools.values()
-            ] + [tool.func for tool in task_planning_tools]
+            combined_tools: List[Union[FunctionTool, Callable]] = cast(
+                List[Union[FunctionTool, Callable]],
+                list(task_agent._internal_tools.values()),
+            )
 
             # Create a new agent with the provided agent's configuration
             # but with the combined system message and tools
@@ -438,9 +533,150 @@ class Workforce(BaseNode):
                 "better context continuity during task handoffs."
             )
 
+        # Shared context utility for workflow management (created lazily)
+        self._shared_context_utility: Optional["ContextUtility"] = None
+
         # ------------------------------------------------------------------
         # Helper for propagating pause control to externally supplied agents
         # ------------------------------------------------------------------
+
+    def _initialize_callbacks(
+        self, callbacks: Optional[List[WorkforceCallback]]
+    ) -> None:
+        r"""Validate, register, and prime workforce callbacks."""
+        self._callbacks: List[WorkforceCallback] = []
+
+        if callbacks:
+            for cb in callbacks:
+                if not isinstance(cb, WorkforceCallback):
+                    raise ValueError(
+                        "All callbacks must be instances of WorkforceCallback"
+                    )
+                self._callbacks.append(cb)
+        # Check if any metrics callback is provided
+        has_metrics_callback = any(
+            isinstance(cb, WorkforceMetrics) for cb in self._callbacks
+        )
+
+        if not has_metrics_callback:
+            # Add default WorkforceLogger if no metrics callback provided
+            try:
+                from camel.societies.workforce.workforce_logger import (
+                    WorkforceLogger,
+                )
+
+                self._callbacks.append(
+                    WorkforceLogger(workforce_id=self.node_id)
+                )
+            except ImportError:
+                # If WorkforceLogger is not available, continue without it
+                pass
+        else:
+            logger.info(
+                "WorkforceMetrics implementation detected. Skipping default "
+                "WorkforceLogger addition."
+            )
+
+        for child in self._children:
+            self._notify_worker_created(child)
+
+    def _notify_worker_created(
+        self,
+        worker_node: BaseNode,
+        *,
+        worker_type: Optional[str] = None,
+        role: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        r"""Emit a worker-created event to all registered callbacks."""
+        if metadata is None:
+            _metadata: Dict[str, Any] = {
+                'description': worker_node.description
+            }
+        else:
+            _metadata = metadata.copy()
+            _metadata.setdefault("description", worker_node.description)
+
+        event = WorkerCreatedEvent(
+            worker_id=worker_node.node_id,
+            worker_type=worker_type or type(worker_node).__name__,
+            role=role or worker_node.description,
+            metadata=_metadata,
+        )
+        for cb in self._callbacks:
+            cb.log_worker_created(event)
+
+    def _get_or_create_shared_context_utility(
+        self,
+        session_id: Optional[str] = None,
+    ) -> "ContextUtility":
+        r"""Get or create the shared context utility for workflow management.
+
+        This method creates the context utility only when needed, avoiding
+        unnecessary session folder creation during initialization.
+
+        Args:
+            session_id (Optional[str]): Custom session ID to use. If None,
+                auto-generates a timestamped session ID. (default: :obj:`None`)
+
+        Returns:
+            ContextUtility: The shared context utility instance.
+        """
+        if self._shared_context_utility is None:
+            from camel.utils.context_utils import ContextUtility
+
+            self._shared_context_utility = ContextUtility.get_workforce_shared(
+                session_id=session_id
+            )
+        return self._shared_context_utility
+
+    def _get_role_identifier(
+        self,
+        worker: ChatAgent,
+        description: str,
+        workflow_summary: Optional['WorkflowSummary'] = None,
+    ) -> str:
+        r"""Extract role identifier for organizing workflows.
+
+        Uses priority fallback: role_name → agent_title (from
+        WorkflowSummary) → sanitized description.
+
+        Args:
+            worker (ChatAgent): The worker agent to extract role from.
+            description (str): Worker description to use as fallback.
+            workflow_summary (Optional[WorkflowSummary]): Optional
+                WorkflowSummary object that may contain agent_title field.
+
+        Returns:
+            str: Role identifier for organizing workflows.
+        """
+        from camel.societies.workforce.utils import is_generic_role_name
+        from camel.utils.context_utils import ContextUtility
+
+        # try worker.role_name first (if not generic)
+        if hasattr(worker, 'role_name') and worker.role_name:
+            clean_name = ContextUtility.sanitize_workflow_filename(
+                worker.role_name
+            )
+            if clean_name and not is_generic_role_name(clean_name):
+                return clean_name
+
+        # try agent_title from WorkflowSummary (LLM-generated)
+        if workflow_summary and hasattr(workflow_summary, 'agent_title'):
+            agent_title = workflow_summary.agent_title
+            clean_title = ContextUtility.sanitize_workflow_filename(
+                agent_title
+            )
+            if clean_title and not is_generic_role_name(clean_title):
+                return clean_title
+
+        # fallback to sanitized truncated description
+        # truncate long descriptions
+        max_length = 30
+        if len(description) > max_length:
+            description = description[:max_length]
+        clean_desc = ContextUtility.sanitize_workflow_filename(description)
+        return clean_desc if clean_desc else "unknown_role"
 
     def _validate_agent_compatibility(
         self, agent: ChatAgent, agent_context: str = "agent"
@@ -478,6 +714,9 @@ class Workforce(BaseNode):
                 "the Workforce."
             )
 
+    # ------------------------------------------------------------------
+    # Helper for propagating pause control to externally supplied agents
+    # ------------------------------------------------------------------
     def _attach_pause_event_to_agent(self, agent: ChatAgent) -> None:
         r"""Ensure the given ChatAgent shares this workforce's pause_event.
 
@@ -511,8 +750,398 @@ class Workforce(BaseNode):
     def __repr__(self):
         return (
             f"Workforce {self.node_id} ({self.description}) - "
-            f"State: {self._state.value}"
+            f"State: {self._state.value} - Mode: {self.mode.value}"
         )
+
+    def set_mode(self, mode: WorkforceMode) -> Workforce:
+        """Set the execution mode of the workforce.
+
+        This allows switching between AUTO_DECOMPOSE and PIPELINE modes.
+        Useful when you want to reuse the same workforce instance for
+        different task processing strategies.
+
+        Args:
+            mode (WorkforceMode): The desired execution mode.
+                - AUTO_DECOMPOSE: Intelligent task decomposition with recovery
+                - PIPELINE: Predefined task pipeline with simple retry logic
+
+        Returns:
+            Workforce: Self for method chaining.
+
+        Example:
+            >>> # Run a pipeline
+            >>> workforce.set_mode(WorkforceMode.PIPELINE)
+            >>> workforce.pipeline_add("Step 1").pipeline_build()
+            >>> workforce.process_task(task)
+            >>>
+            >>> # Reset to original mode
+            >>> workforce.reset()  # Automatically resets to initial mode
+            >>> # Or manually switch mode
+            >>> workforce.set_mode(WorkforceMode.AUTO_DECOMPOSE)
+            >>> workforce.process_task(another_task)
+        """
+        self.mode = mode
+        logger.info(f"Workforce mode changed to {mode.value}")
+        return self
+
+    def _ensure_pipeline_builder(self) -> PipelineTaskBuilder:
+        """Ensure pipeline builder is initialized and switch to
+        pipeline mode.
+
+        Returns:
+            PipelineTaskBuilder: The initialized pipeline builder instance.
+        """
+        if self._pipeline_builder is None:
+            from camel.societies.workforce.utils import PipelineTaskBuilder
+
+            self._pipeline_builder = PipelineTaskBuilder()
+
+        # Auto-switch to pipeline mode
+        if self.mode != WorkforceMode.PIPELINE:
+            logger.info(
+                f"Auto-switching workforce mode from {self.mode.value} to "
+                f"PIPELINE. Use workforce.set_mode() to manually control mode."
+            )
+            self.mode = WorkforceMode.PIPELINE
+
+        return self._pipeline_builder
+
+    def pipeline_add(
+        self,
+        content: Union[str, Task],
+        task_id: Optional[str] = None,
+        dependencies: Optional[List[str]] = None,
+        additional_info: Optional[Dict[str, Any]] = None,
+        auto_depend: bool = True,
+    ) -> Workforce:
+        """Add a task to the pipeline with support for chaining.
+
+        Accepts either a string for simple tasks or a Task object for
+        advanced usage with metadata, images, or custom configurations.
+
+        Args:
+            content (Union[str, Task]): The task content string or a Task
+                object. If a Task object is provided, task_id and
+                additional_info parameters are ignored.
+            task_id (str, optional): Unique identifier for the task. If None,
+                a unique ID will be generated. Only used when content is a
+                string. (default: :obj:`None`)
+            dependencies (List[str], optional): List of task IDs that this
+                task depends on. If None and auto_depend=True, will depend on
+                the last added task. (default: :obj:`None`)
+            additional_info (Dict[str, Any], optional): Additional information
+                for the task. Only used when content is a string.
+                (default: :obj:`None`)
+            auto_depend (bool, optional): If True and dependencies is None,
+                automatically depend on the last added task.
+                (default: :obj:`True`)
+
+        Returns:
+            Workforce: Self for method chaining.
+
+        Example:
+            >>> # Simple usage with strings
+            >>> workforce.pipeline_add("Step 1").pipeline_add("Step 2")
+            >>>
+            >>> # Advanced usage with Task objects
+            >>> task = Task(
+            ...     content="Complex Task",
+            ...     additional_info={"priority": "high"},
+            ...     image_list=["path/to/image.png"]
+            ... )
+            >>> workforce.pipeline_add(task)
+        """
+        builder = self._ensure_pipeline_builder()
+
+        # Convert Task object to parameters if needed
+        if isinstance(content, Task):
+            task_content = content.content
+            task_id = content.id
+            task_additional_info = content.additional_info
+        else:
+            task_content = content
+            task_additional_info = additional_info
+
+        builder.add(
+            task_content,
+            task_id,
+            dependencies,
+            task_additional_info,
+            auto_depend,
+        )
+        return self
+
+    def add_parallel_pipeline_tasks(
+        self,
+        task_contents: Union[List[str], List[Task]],
+        dependencies: Optional[List[str]] = None,
+        task_id_prefix: str = "parallel",
+        auto_depend: bool = True,
+    ) -> Workforce:
+        """Add multiple parallel tasks to the pipeline.
+
+        Accepts either a list of strings for simple tasks or a list of Task
+        objects for advanced usage with metadata, images, or custom
+        configurations.
+
+        Args:
+            task_contents (Union[List[str], List[Task]]): List of task content
+                strings or Task objects. If Task objects are provided,
+                task_id_prefix is ignored.
+            dependencies (List[str], optional): Common dependencies for all
+                parallel tasks. (default: :obj:`None`)
+            task_id_prefix (str, optional): Prefix for generated task IDs.
+                Only used when task_contents contains strings.
+                (default: :obj:`"parallel"`)
+            auto_depend (bool, optional): If True and dependencies is None,
+                automatically depend on the last added task.
+                (default: :obj:`True`)
+
+        Returns:
+            Workforce: Self for method chaining.
+
+        Example:
+            >>> # Simple usage with strings
+            >>> workforce.add_parallel_pipeline_tasks([
+            ...     "Task A", "Task B", "Task C"
+            ... ])
+            >>>
+            >>> # Advanced usage with Task objects
+            >>> tasks = [
+            ...     Task(
+            ...         content="Analysis 1",
+            ...         additional_info={"type": "tech"},
+            ...     ),
+            ...     Task(
+            ...         content="Analysis 2",
+            ...         additional_info={"type": "biz"},
+            ...     ),
+            ... ]
+            >>> workforce.add_parallel_pipeline_tasks(tasks)
+        """
+        builder = self._ensure_pipeline_builder()
+
+        # Convert Task objects to content strings if needed
+        if task_contents and isinstance(task_contents[0], Task):
+            # Extract content from Task objects
+            task_list = cast(List[Task], task_contents)
+            content_list = [task.content for task in task_list]
+            builder.add_parallel_tasks(
+                content_list, dependencies, task_id_prefix, auto_depend
+            )
+        else:
+            # task_contents is List[str] in else branch
+            builder.add_parallel_tasks(
+                task_contents,  # type: ignore[arg-type]
+                dependencies,
+                task_id_prefix,
+                auto_depend,
+            )
+        return self
+
+    def add_sync_pipeline_task(
+        self,
+        content: Union[str, Task],
+        wait_for: Optional[List[str]] = None,
+        task_id: Optional[str] = None,
+    ) -> Workforce:
+        """Add a synchronization task that waits for multiple tasks.
+
+        Accepts either a string for simple tasks or a Task object for
+        advanced usage with metadata, images, or custom configurations.
+
+        Args:
+            content (Union[str, Task]): Content of the synchronization task
+                or a Task object. If a Task object is provided, task_id
+                parameter is ignored.
+            wait_for (List[str], optional): List of task IDs to wait for.
+                If None, will automatically wait for the last parallel tasks.
+                (default: :obj:`None`)
+            task_id (str, optional): ID for the sync task. Only used when
+                content is a string. (default: :obj:`None`)
+
+        Returns:
+            Workforce: Self for method chaining.
+
+        Example:
+            >>> # Simple usage
+            >>> workforce.add_sync_pipeline_task("Merge Results")
+            >>>
+            >>> # Advanced usage with Task object
+            >>> sync_task = Task(
+            ...     content="Combine outputs",
+            ...     additional_info={"type": "aggregation"}
+            ... )
+            >>> workforce.add_sync_pipeline_task(sync_task)
+        """
+        builder = self._ensure_pipeline_builder()
+
+        # Convert Task object to parameters if needed
+        if isinstance(content, Task):
+            task_content = content.content
+            task_id = content.id
+        else:
+            task_content = content
+
+        builder.add_sync_task(task_content, wait_for, task_id)
+        return self
+
+    def pipeline_fork(
+        self, task_contents: Union[List[str], List[Task]]
+    ) -> Workforce:
+        """Create parallel branches from the current task.
+
+        Accepts either a list of strings for simple tasks or a list of Task
+        objects for advanced usage with metadata, images, or custom
+        configurations.
+
+        Args:
+            task_contents (Union[List[str], List[Task]]): List of task content
+                strings or Task objects for parallel execution.
+
+        Returns:
+            Workforce: Self for method chaining.
+
+        Example:
+            >>> # Simple usage with strings
+            >>> workforce.pipeline_add("Collect Data").pipeline_fork(
+            ...     ["Technical Analysis", "Fundamental Analysis"]
+            ... ).pipeline_join("Generate Report")
+            >>>
+            >>> # Advanced usage with Task objects
+            >>> tasks = [
+            ...     Task(
+            ...         content="Parse JSON",
+            ...         additional_info={"format": "json"},
+            ...     ),
+            ...     Task(
+            ...         content="Parse XML",
+            ...         additional_info={"format": "xml"},
+            ...     ),
+            ... ]
+            >>> workforce.pipeline_add("Fetch Data").pipeline_fork(tasks)
+        """
+        builder = self._ensure_pipeline_builder()
+
+        # Convert Task objects to content strings if needed
+        if task_contents and isinstance(task_contents[0], Task):
+            # Extract content from Task objects
+            task_list = cast(List[Task], task_contents)
+            content_list = [task.content for task in task_list]
+            builder.fork(content_list)
+        else:
+            # task_contents is List[str] in else branch
+            builder.fork(task_contents)  # type: ignore[arg-type]
+        return self
+
+    def pipeline_join(
+        self, content: Union[str, Task], task_id: Optional[str] = None
+    ) -> Workforce:
+        """Join parallel branches with a synchronization task.
+
+        Accepts either a string for simple tasks or a Task object for
+        advanced usage with metadata, images, or custom configurations.
+
+        Args:
+            content (Union[str, Task]): Content of the join/sync task or a
+                Task object. If a Task object is provided, task_id parameter
+                is ignored.
+            task_id (str, optional): ID for the sync task. Only used when
+                content is a string. (default: :obj:`None`)
+
+        Returns:
+            Workforce: Self for method chaining.
+
+        Example:
+            >>> # Simple usage
+            >>> workforce.pipeline_fork(["Task A", "Task B"]).pipeline_join(
+            ...     "Merge Results"
+            ... )
+            >>>
+            >>> # Advanced usage with Task object
+            >>> join_task = Task(
+            ...     content="Aggregate analysis",
+            ...     additional_info={"aggregation_type": "mean"}
+            ... )
+            >>> workforce.pipeline_fork(["A", "B"]).pipeline_join(join_task)
+        """
+        builder = self._ensure_pipeline_builder()
+
+        # Convert Task object to parameters if needed
+        if isinstance(content, Task):
+            task_content = content.content
+            task_id = content.id
+        else:
+            task_content = content
+
+        builder.join(task_content, task_id)
+        return self
+
+    def pipeline_build(self) -> Workforce:
+        """Build the pipeline and set up the tasks for execution.
+
+        Returns:
+            Workforce: Self for method chaining.
+
+        Example:
+            >>> workforce.pipeline_add("Step 1").pipeline_fork(
+            ...     ["Task A", "Task B"]
+            ... ).pipeline_join("Merge").pipeline_build()
+        """
+        if self._pipeline_builder is None:
+            raise ValueError("No pipeline tasks defined")
+
+        tasks = self._pipeline_builder.build()
+        self.set_pipeline_tasks(tasks)
+
+        return self
+
+    def get_pipeline_builder(self) -> PipelineTaskBuilder:
+        """Get the underlying PipelineTaskBuilder for advanced usage.
+
+        Returns:
+            PipelineTaskBuilder: The pipeline builder instance.
+
+        Example:
+            >>> builder = workforce.get_pipeline_builder()
+            >>> builder.add("Complex Task").fork(["A", "B"]).join("Merge")
+            >>> tasks = builder.build()
+            >>> workforce.set_pipeline_tasks(tasks)
+        """
+        return self._ensure_pipeline_builder()
+
+    def set_pipeline_tasks(self, tasks: List[Task]) -> None:
+        """Set predefined pipeline tasks for PIPELINE mode.
+
+        Args:
+            tasks (List[Task]): List of tasks with dependencies already set.
+                The dependencies should be Task objects in the
+                Task.dependencies attribute.
+
+        Raises:
+            ValueError: If tasks are invalid.
+        """
+        if not tasks:
+            raise ValueError("Cannot set empty task list for pipeline")
+
+        # Auto-switch to pipeline mode if not already
+        if self.mode != WorkforceMode.PIPELINE:
+            self.mode = WorkforceMode.PIPELINE
+
+        # Clear existing tasks and dependencies
+        self._pending_tasks.clear()
+        self._task_dependencies.clear()
+        self._assignees.clear()
+
+        # Add tasks and set up dependencies
+        for task in tasks:
+            self._pending_tasks.append(task)
+            if task.dependencies:
+                self._task_dependencies[task.id] = [
+                    dep.id for dep in task.dependencies
+                ]
+            else:
+                self._task_dependencies[task.id] = []
 
     def _collect_shared_memory(self) -> Dict[str, List]:
         r"""Collect memory from all SingleAgentWorker instances for sharing.
@@ -603,14 +1232,29 @@ class Workforce(BaseNode):
                 )
                 return
 
-            # Share with coordinator agent
+            # Filter out already-shared records to prevent re-sharing
+            # This prevents exponential growth of duplicate records
+            new_records = []
             for record in memory_records:
+                record_uuid = str(record.uuid)
+                if record_uuid not in self._shared_memory_uuids:
+                    new_records.append(record)
+                    self._shared_memory_uuids.add(record_uuid)
+
+            if not new_records:
+                logger.debug(
+                    "No new records to share (all were already shared)"
+                )
+                return
+
+            # Share with coordinator agent
+            for record in new_records:
                 # Only add records from other agents to avoid duplication
                 if record.agent_id != self.coordinator_agent.agent_id:
                     self.coordinator_agent.memory.write_record(record)
 
             # Share with task agent
-            for record in memory_records:
+            for record in new_records:
                 if record.agent_id != self.task_agent.agent_id:
                     self.task_agent.memory.write_record(record)
 
@@ -622,12 +1266,12 @@ class Workforce(BaseNode):
             ]
 
             for worker in single_agent_workers:
-                for record in memory_records:
+                for record in new_records:
                     if record.agent_id != worker.worker.agent_id:
                         worker.worker.memory.write_record(record)
 
             logger.info(
-                f"Shared {len(memory_records)} memory records across "
+                f"Shared {len(new_records)} new memory records across "
                 f"{len(single_agent_workers) + 2} agents in workforce "
                 f"{self.node_id}"
             )
@@ -725,22 +1369,41 @@ class Workforce(BaseNode):
             del self._assignees[task_id]
 
     def _decompose_task(
-        self, task: Task
+        self,
+        task: Task,
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], None]
+        ] = None,
     ) -> Union[List[Task], Generator[List[Task], None, None]]:
         r"""Decompose the task into subtasks. This method will also set the
         relationship between the task and its subtasks.
 
+        Args:
+            task (Task): The task to decompose.
+            stream_callback (Callable[[ChatAgentResponse], None], optional): A
+                callback function that receives each chunk (ChatAgentResponse)
+                during streaming decomposition.
+
         Returns:
             Union[List[Task], Generator[List[Task], None, None]]:
-            The subtasks or generator of subtasks.
+            The subtasks or generator of subtasks. Returns empty list for
+            PIPELINE mode.
         """
-        decompose_prompt = TASK_DECOMPOSE_PROMPT.format(
-            content=task.content,
-            child_nodes_info=self._get_child_nodes_info(),
-            additional_info=task.additional_info,
+        # In PIPELINE mode, don't decompose - use predefined tasks
+        if self.mode == WorkforceMode.PIPELINE:
+            return []
+
+        decompose_prompt = str(
+            TASK_DECOMPOSE_PROMPT.format(
+                content=task.content,
+                child_nodes_info=self._get_child_nodes_info(),
+                additional_info=task.additional_info,
+            )
         )
         self.task_agent.reset()
-        result = task.decompose(self.task_agent, decompose_prompt)
+        result = task.decompose(
+            self.task_agent, decompose_prompt, stream_callback=stream_callback
+        )
 
         # Handle both streaming and non-streaming results
         if isinstance(result, Generator):
@@ -765,76 +1428,178 @@ class Workforce(BaseNode):
                 self._update_dependencies_for_decomposition(task, subtasks)
             return subtasks
 
-    def _analyze_failure(
-        self, task: Task, error_message: str
-    ) -> RecoveryDecision:
-        r"""Analyze a task failure and decide on the best recovery strategy.
+    def _get_available_strategies_text(self) -> str:
+        r"""Generate the available strategies text for the analysis prompt.
 
-        Args:
-            task (Task): The failed task
-            error_message (str): The error message from the failure
+        This method generates a dynamic list of enabled recovery strategies
+        based on the failure_handling_config.
 
         Returns:
-            RecoveryDecision: The decided recovery strategy with reasoning
+            str: Formatted text describing available strategies for the prompt.
         """
-        # First, do a quick smart analysis based on error patterns
-        error_msg_lower = error_message.lower()
-        if any(
-            keyword in error_msg_lower
-            for keyword in [
-                'connection',
-                'network',
-                'server disconnected',
-                'timeout',
-                'apiconnectionerror',
-            ]
-        ):
-            return RecoveryDecision(
-                strategy=RecoveryStrategy.RETRY,
-                reasoning="Network/connection error detected, retrying task",
-                modified_task_content=None,
+        all_strategies = list(RecoveryStrategy)
+
+        # Filter by enabled strategies in config
+        config_strategies = self.failure_handling_config.enabled_strategies
+        enabled_strategies = []
+        for strategy in all_strategies:
+            # None means all enabled, otherwise check if in list
+            if config_strategies is None or strategy in config_strategies:
+                enabled_strategies.append(strategy)
+
+        if not enabled_strategies:
+            raise ValueError(
+                "_get_available_strategies_text called with no enabled "
+                "strategies. Callers should check enabled_strategies != [] "
+                "before calling this method."
             )
 
-        # Create failure context
-        failure_context = FailureContext(
-            task_id=task.id,
-            task_content=task.content,
-            failure_count=task.failure_count,
-            error_message=error_message,
-            worker_id=task.assigned_worker_id,
-            task_depth=task.get_depth(),
-            additional_info=str(task.additional_info)
-            if task.additional_info
-            else None,
+        # Build the strategies text
+        strategies_text_parts = ["**Available Strategies (ENABLED):**\n"]
+        for i, strategy in enumerate(enabled_strategies, 1):
+            description = STRATEGY_DESCRIPTIONS.get(
+                strategy.value, f"**{strategy.value}**"
+            )
+            strategies_text_parts.append(f"{i}. {description}\n")
+
+        return "\n".join(strategies_text_parts)
+
+    def _analyze_task(
+        self,
+        task: Task,
+        *,
+        for_failure: bool,
+        error_message: Optional[str] = None,
+    ) -> TaskAnalysisResult:
+        r"""Unified task analysis for both failures and quality evaluation.
+
+        This method consolidates the logic for analyzing task failures and
+        evaluating task quality, using the unified TASK_ANALYSIS_PROMPT.
+
+        Args:
+            task (Task): The task to analyze
+            for_failure (bool): True for failure analysis, False for quality
+                evaluation
+            error_message (Optional[str]): Error message, required when
+                for_failure=True
+
+        Returns:
+            TaskAnalysisResult: Unified analysis result with recovery strategy
+                and optional quality metrics
+
+        Raises:
+            ValueError: If for_failure=True but error_message is None
+        """
+        # Validate required parameters
+        if for_failure and error_message is None:
+            raise ValueError("error_message is required when for_failure=True")
+
+        # Determine task result and issue-specific analysis based on context
+        if for_failure:
+            task_result = "N/A (task failed)"
+            issue_type = "Task Failure"
+            issue_analysis = f"**Error Message:** {error_message}"
+            response_format = FAILURE_ANALYSIS_RESPONSE_FORMAT
+            result_schema = TaskAnalysisResult
+            fallback_values: Dict[str, Any] = {
+                "reasoning": "Defaulting to retry due to parsing error",
+                "recovery_strategy": RecoveryStrategy.RETRY,
+                "modified_task_content": None,
+                "issues": [error_message] if error_message else [],
+            }
+            examples: List[Dict[str, Any]] = [
+                {
+                    "reasoning": "Temporary network error, worth retrying",
+                    "recovery_strategy": "retry",
+                    "modified_task_content": None,
+                    "issues": ["Network timeout"],
+                }
+            ]
+        else:
+            # Quality evaluation
+            task_result = task.result or "No result available"
+            issue_type = "Quality Evaluation"
+            issue_analysis = (
+                "Provide a quality score (0-100) and list any specific "
+                "issues found."
+            )
+            response_format = QUALITY_EVALUATION_RESPONSE_FORMAT
+            result_schema = TaskAnalysisResult
+            fallback_values = {
+                "reasoning": (
+                    "Defaulting to acceptable quality due to parsing error"
+                ),
+                "issues": [],
+                "recovery_strategy": None,
+                "modified_task_content": None,
+                "quality_score": 80,
+            }
+            examples = [
+                {
+                    "reasoning": (
+                        "Excellent implementation with comprehensive tests"
+                    ),
+                    "issues": [],
+                    "recovery_strategy": None,
+                    "modified_task_content": None,
+                    "quality_score": 98,
+                },
+                {
+                    "reasoning": (
+                        "Implementation incomplete with missing features"
+                    ),
+                    "issues": [
+                        "Incomplete implementation",
+                        "Missing error handling",
+                    ],
+                    "recovery_strategy": "replan",
+                    "modified_task_content": (
+                        "Previous attempt was incomplete. "
+                        "Please implement with: 1) Full feature "
+                        "coverage, 2) Proper error handling"
+                    ),
+                    "quality_score": 45,
+                },
+            ]
+
+        # Generate available strategies text based on config
+        available_strategies = self._get_available_strategies_text()
+
+        # Generate strategy options for response format (None means all
+        # enabled)
+        config_strategies = self.failure_handling_config.enabled_strategies
+        strategies = (
+            list(RecoveryStrategy)
+            if config_strategies is None
+            else config_strategies
+        )
+        response_format = response_format.format(
+            strategy_options="|".join(s.value for s in strategies)
         )
 
-        # Format the analysis prompt
-        analysis_prompt = FAILURE_ANALYSIS_PROMPT.format(
-            task_id=failure_context.task_id,
-            task_content=failure_context.task_content,
-            failure_count=failure_context.failure_count,
-            error_message=failure_context.error_message,
-            worker_id=failure_context.worker_id or "unknown",
-            task_depth=failure_context.task_depth,
-            additional_info=failure_context.additional_info or "None",
+        # Format the unified analysis prompt
+        analysis_prompt = str(
+            TASK_ANALYSIS_PROMPT.format(
+                task_id=task.id,
+                task_content=task.content,
+                task_result=task_result,
+                failure_count=task.failure_count,
+                task_depth=task.get_depth(),
+                assigned_worker=task.assigned_worker_id or "unknown",
+                issue_type=issue_type,
+                issue_specific_analysis=issue_analysis,
+                response_format=response_format,
+                available_strategies=available_strategies,
+            )
         )
 
         try:
-            # Check if we should use structured handler
             if self.use_structured_output_handler:
-                # Use structured handler
                 enhanced_prompt = (
                     self.structured_handler.generate_structured_prompt(
                         base_prompt=analysis_prompt,
-                        schema=RecoveryDecision,
-                        examples=[
-                            {
-                                "strategy": "RETRY",
-                                "reasoning": "Temporary network error, "
-                                "worth retrying",
-                                "modified_task_content": None,
-                            }
-                        ],
+                        schema=result_schema,
+                        examples=examples,
                     )
                 )
 
@@ -843,43 +1608,240 @@ class Workforce(BaseNode):
 
                 result = self.structured_handler.parse_structured_response(
                     response.msg.content if response.msg else "",
-                    schema=RecoveryDecision,
-                    fallback_values={
-                        "strategy": RecoveryStrategy.RETRY,
-                        "reasoning": "Defaulting to retry due to parsing "
-                        "issues",
-                        "modified_task_content": None,
-                    },
+                    schema=result_schema,
+                    fallback_values=fallback_values,
                 )
-                # Ensure we return a RecoveryDecision instance
-                if isinstance(result, RecoveryDecision):
+
+                if isinstance(result, TaskAnalysisResult):
                     return result
                 elif isinstance(result, dict):
-                    return RecoveryDecision(**result)
+                    return result_schema(**result)
                 else:
-                    return RecoveryDecision(
-                        strategy=RecoveryStrategy.RETRY,
-                        reasoning="Failed to parse recovery decision",
-                        modified_task_content=None,
-                    )
+                    # Fallback based on context
+                    return TaskAnalysisResult(**fallback_values)
             else:
-                # Use existing native structured output code
                 self.task_agent.reset()
                 response = self.task_agent.step(
-                    analysis_prompt, response_format=RecoveryDecision
+                    analysis_prompt, response_format=result_schema
                 )
-                return response.msg.parsed
+                parsed = safe_extract_parsed(response, result_schema)
+                if parsed is not None:
+                    return parsed
+                logger.warning(
+                    "Failed to get structured response from model, "
+                    "using fallback values"
+                )
+                return TaskAnalysisResult(**fallback_values)
 
         except Exception as e:
             logger.warning(
-                f"Error during failure analysis: {e}, defaulting to RETRY"
+                f"Error during task analysis "
+                f"({'failure' if for_failure else 'quality'}): {e}, "
+                f"using fallback"
             )
-            return RecoveryDecision(
-                strategy=RecoveryStrategy.RETRY,
-                reasoning=f"Analysis failed due to error: {e!s}, "
-                f"defaulting to retry",
-                modified_task_content=None,
+            return TaskAnalysisResult(**fallback_values)
+
+    async def _apply_recovery_strategy(
+        self,
+        task: Task,
+        recovery_decision: TaskAnalysisResult,
+        original_assignee: str,
+    ) -> bool:
+        r"""Apply the recovery strategy from a task analysis result.
+
+        This method centralizes the recovery logic for both execution failures
+        and quality-based failures.
+
+        Args:
+            task (Task): The task that needs recovery
+            recovery_decision (TaskAnalysisResult): The analysis result with
+                recovery strategy
+            original_assignee (str): The original worker ID that was assigned
+                to this task before cleanup.
+
+        Returns:
+            bool: True if workforce should halt (e.g., decompose needs
+                different handling), False otherwise
+        """
+        strategy = (
+            recovery_decision.recovery_strategy or RecoveryStrategy.RETRY
+        )
+        action_taken = ""
+
+        try:
+            if strategy == RecoveryStrategy.RETRY:
+                # Simply retry the task by reposting it to the same worker
+                await self._post_task(task, original_assignee)
+                action_taken = f"retried with same worker {original_assignee}"
+                logger.info(
+                    f"Task {task.id} retrying with same worker "
+                    f"{original_assignee}"
+                )
+
+            elif strategy == RecoveryStrategy.REPLAN:
+                # Modify the task content and retry
+                if recovery_decision.modified_task_content:
+                    old_content = task.content
+                    new_content = recovery_decision.modified_task_content
+
+                    task.content = new_content
+                    logger.info(
+                        f"Task {task.id} content modified for replan, "
+                        f"new_content: {new_content}"
+                    )
+
+                    task_updated_event = TaskUpdatedEvent(
+                        task_id=task.id,
+                        parent_task_id=task.parent.id if task.parent else None,
+                        worker_id=task.assigned_worker_id,
+                        update_type="replan",
+                        old_value=old_content,
+                        new_value=new_content,
+                        metadata={
+                            "quality_score": recovery_decision.quality_score,
+                            "reasoning": recovery_decision.reasoning,
+                            "issues": recovery_decision.issues,
+                        },
+                    )
+                    for cb in self._callbacks:
+                        cb.log_task_updated(task_updated_event)
+
+                # Repost the modified task to the same worker
+                await self._post_task(task, original_assignee)
+                action_taken = (
+                    f"replanned and retried with worker {original_assignee}"
+                )
+
+            elif strategy == RecoveryStrategy.REASSIGN:
+                # Reassign to a different worker
+                old_worker = original_assignee
+                logger.info(
+                    f"Task {task.id} will be reassigned from worker "
+                    f"{old_worker}"
+                )
+
+                # Find a different worker
+                batch_result = await self._find_assignee([task])
+                assignment = batch_result.assignments[0]
+                new_worker = assignment.assignee_id
+
+                # If same worker, force find another
+                if new_worker == old_worker and len(self._children) > 1:
+                    logger.info("Same worker selected, finding alternative")
+                    # Try to find different worker by adding note to
+                    # task content
+                    task.content = (
+                        f"{task.content}\n\n"
+                        f"Note: Previous worker {old_worker} had quality "
+                        f"issues. Needs different approach."
+                    )
+                    batch_result = await self._find_assignee([task])
+                    assignment = batch_result.assignments[0]
+                    new_worker = assignment.assignee_id
+
+                self._assignees[task.id] = new_worker
+                await self._post_task(task, new_worker)
+                action_taken = f"reassigned from {old_worker} to {new_worker}"
+                logger.info(
+                    f"Task {task.id} reassigned from {old_worker} to "
+                    f"{new_worker}"
+                )
+
+                task_updated_event = TaskUpdatedEvent(
+                    task_id=task.id,
+                    parent_task_id=task.parent.id if task.parent else None,
+                    worker_id=task.assigned_worker_id,
+                    update_type="reassign",
+                    old_value=old_worker,
+                    new_value=new_worker,
+                    metadata={
+                        "quality_score": recovery_decision.quality_score,
+                        "reasoning": recovery_decision.reasoning,
+                        "issues": recovery_decision.issues,
+                    },
+                )
+                for cb in self._callbacks:
+                    cb.log_task_updated(task_updated_event)
+
+            elif strategy == RecoveryStrategy.DECOMPOSE:
+                # Decompose the task into subtasks
+                reason = (
+                    "failure"
+                    if not recovery_decision.is_quality_evaluation
+                    else "quality issues"
+                )
+                logger.info(
+                    f"Task {task.id} will be decomposed due to {reason}"
+                )
+                subtasks_result = self._decompose_task(task)
+
+                # Handle both streaming and non-streaming results
+                if isinstance(subtasks_result, Generator):
+                    subtasks = []
+                    for new_tasks in subtasks_result:
+                        subtasks.extend(new_tasks)
+                else:
+                    subtasks = subtasks_result
+
+                if subtasks:
+                    task_decomposed_event = TaskDecomposedEvent(
+                        parent_task_id=task.id,
+                        subtask_ids=[st.id for st in subtasks],
+                    )
+                    for cb in self._callbacks:
+                        cb.log_task_decomposed(task_decomposed_event)
+                    for subtask in subtasks:
+                        task_created_event = TaskCreatedEvent(
+                            task_id=subtask.id,
+                            description=subtask.content,
+                            parent_task_id=task.id,
+                            task_type=subtask.type,
+                            metadata=subtask.additional_info,
+                        )
+                        for cb in self._callbacks:
+                            cb.log_task_created(task_created_event)
+
+                # Insert subtasks at the head of the queue
+                self._pending_tasks.extendleft(reversed(subtasks))
+                await self._post_ready_tasks()
+                action_taken = f"decomposed into {len(subtasks)} subtasks"
+
+                logger.info(
+                    f"Task {task.id} decomposed into {len(subtasks)} subtasks"
+                )
+
+                # Sync shared memory after task decomposition
+                if self.share_memory:
+                    logger.info(
+                        f"Syncing shared memory after task {task.id} "
+                        f"decomposition"
+                    )
+                    self._sync_shared_memory()
+
+                # For decompose, we return early with special handling
+                return True
+
+            elif strategy == RecoveryStrategy.CREATE_WORKER:
+                assignee = await self._create_worker_node_for_task(task)
+                await self._post_task(task, assignee.node_id)
+                action_taken = (
+                    f"created new worker {assignee.node_id} and assigned "
+                    f"task {task.id} to it"
+                )
+
+        except Exception as e:
+            logger.error(
+                f"Recovery strategy {strategy} failed for task {task.id}: {e}",
+                exc_info=True,
             )
+            raise
+
+        logger.debug(
+            f"Task {task.id} recovery: {action_taken}. "
+            f"Strategy: {strategy.value}"
+        )
+
+        return False
 
     # Human intervention methods
     async def _async_pause(self) -> None:
@@ -970,6 +1932,128 @@ class Workforce(BaseNode):
                 f"(event-loop not yet started)."
             )
 
+    async def _async_stop_immediately(self) -> None:
+        r"""Force-stop the workforce without waiting for in-flight tasks.
+
+        Note: This method does not wait for child nodes to fully stop.
+        Child nodes will receive stop signals but may still be cleaning up
+        when this method returns.
+        """
+        # Guard against redundant calls
+        if not self._running and self._state == WorkforceState.STOPPED:
+            logger.debug(
+                f"Workforce {self.node_id} already stopped, skipping."
+            )
+            return
+
+        self._stop_requested = True
+        self._pause_event.set()
+        logger.info(f"Workforce {self.node_id} force stop requested.")
+
+        # Remove pending tasks and clear channel postings to avoid new work
+        self._pending_tasks.clear()
+
+        # Try to clear in-flight tasks from channel
+        if self._channel:
+            try:
+                in_flight = await self._channel.get_in_flight_tasks(
+                    self.node_id
+                )
+                for task in in_flight:
+                    await self._channel.remove_task(task.id)
+                # Only reset counter if channel cleanup succeeded
+                self._in_flight_tasks = 0
+            except Exception as e:
+                logger.error(
+                    f"Failed to clear in-flight tasks during force stop: {e}",
+                    exc_info=True,
+                )
+                # Still reset counter for consistency
+                self._in_flight_tasks = 0
+
+        # Stop child nodes and cancel their listening tasks immediately
+        for child in self._children:
+            if child._running:
+                child.stop()
+        for listening_task in self._child_listening_tasks:
+            if not listening_task.done():
+                listening_task.cancel()
+
+        self._running = False
+        self._state = WorkforceState.STOPPED
+
+    def stop_immediately(self) -> None:
+        r"""Force-stop without waiting for current tasks to finish.
+
+        Note: This method does not wait for child nodes to fully stop.
+        Child nodes will receive stop signals but may still be cleaning up
+        when this method returns.
+        """
+        # Guard against redundant calls
+        if not self._running and self._state == WorkforceState.STOPPED:
+            logger.debug(
+                f"Workforce {self.node_id} already stopped, skipping."
+            )
+            return
+
+        if self._loop and not self._loop.is_closed():
+            self._submit_coro_to_loop(self._async_stop_immediately())
+        else:
+            # No running loop; best-effort synchronous cleanup
+            self._stop_requested = True
+            self._pause_event.set()
+            self._pending_tasks.clear()
+            self._in_flight_tasks = 0
+
+            # Stop children
+            for child in self._children:
+                if child._running:
+                    child.stop()
+            # Cancel listening tasks
+            for task in self._child_listening_tasks:
+                if not task.done():
+                    task.cancel()
+
+            self._running = False
+            self._state = WorkforceState.STOPPED
+            logger.info(
+                f"Workforce {self.node_id} force stopped "
+                f"(event-loop not yet started)."
+            )
+
+    async def _async_skip_gracefully(self) -> None:
+        r"""Async implementation of skip_gracefully to run on the event
+        loop.
+        """
+        self._skip_requested = True
+        if self._pause_event.is_set() is False:
+            self._pause_event.set()  # Resume if paused to process skip
+        logger.info(f"Workforce {self.node_id} skip requested.")
+
+    def skip_gracefully(self) -> None:
+        r"""Request workforce to skip current pending tasks and move to next
+        main task from the queue. If no main tasks exist, acts like
+        stop_gracefully.
+
+        This method clears the current pending subtasks and moves to the next
+        main task in the queue if available. Works both when the internal
+        event-loop is alive and when it has not yet been started.
+        """
+
+        if self._loop and not self._loop.is_closed():
+            self._submit_coro_to_loop(self._async_skip_gracefully())
+        else:
+            # Loop not yet created, set the flag synchronously so later
+            # startup will respect it.
+            self._skip_requested = True
+            # Ensure any pending pause is released so that when the loop does
+            # start it can see the skip request and exit.
+            self._pause_event.set()
+            logger.info(
+                f"Workforce {self.node_id} skip requested "
+                f"(event-loop not yet started)."
+            )
+
     def save_snapshot(self, description: str = "") -> None:
         r"""Save current state as a snapshot."""
         snapshot = WorkforceSnapshot(
@@ -1018,47 +2102,186 @@ class Workforce(BaseNode):
 
         for task in self._pending_tasks:
             if task.id == task_id:
+                old_content = task.content
                 task.content = new_content
                 logger.info(f"Task {task_id} content modified.")
+
+                task_updated_event = TaskUpdatedEvent(
+                    task_id=task.id,
+                    parent_task_id=task.parent.id if task.parent else None,
+                    worker_id=task.assigned_worker_id,
+                    update_type="manual",
+                    old_value=old_content,
+                    new_value=new_content,
+                )
+                for cb in self._callbacks:
+                    cb.log_task_updated(task_updated_event)
+
                 return True
         logger.warning(f"Task {task_id} not found in pending tasks.")
         return False
+
+    def get_main_task_queue(self) -> List[Task]:
+        r"""Get current main task queue for human review.
+        Returns:
+            List[Task]: List of main tasks waiting to be decomposed
+                and executed.
+        """
+        # Return tasks from pending queue that need decomposition
+        return [
+            t
+            for t in self._pending_tasks
+            if t.additional_info
+            and t.additional_info.get('_needs_decomposition')
+        ]
 
     def add_task(
         self,
         content: str,
         task_id: Optional[str] = None,
         additional_info: Optional[Dict[str, Any]] = None,
+        as_subtask: bool = False,
         insert_position: int = -1,
     ) -> Task:
-        r"""Add a new task to the pending queue."""
-        new_task = Task(
-            content=content,
-            id=task_id or f"human_added_{len(self._pending_tasks)}",
-            additional_info=additional_info,
-        )
-        if insert_position == -1:
-            self._pending_tasks.append(new_task)
-        else:
-            # Convert deque to list, insert, then back to deque
-            tasks_list = list(self._pending_tasks)
-            tasks_list.insert(insert_position, new_task)
-            self._pending_tasks = deque(tasks_list)
+        r"""Add a new task to the workforce.
 
-        logger.info(f"New task added: {new_task.id}")
-        return new_task
+        By default, this method adds a main task that will be decomposed into
+        subtasks. Set `as_subtask=True` to add a task directly to the pending
+        subtask queue without decomposition.
+
+        Args:
+            content (str): The content of the task.
+            task_id (Optional[str], optional): Optional ID for the task.
+                If not provided, a unique ID will be generated.
+            additional_info (Optional[Dict[str, Any]], optional): Optional
+                additional metadata for the task.
+            as_subtask (bool, optional): If True, adds the task directly to
+                the pending subtask queue. If False, adds as a main task that
+                will be decomposed. Defaults to False.
+            insert_position (int, optional): Position to insert the task in
+                the pending queue. Only applies when as_subtask=True.
+                Defaults to -1 (append to end).
+
+        Returns:
+            Task: The created task object.
+        """
+        if as_subtask:
+            new_task = Task(
+                content=content,
+                id=task_id or f"human_added_{len(self._pending_tasks)}",
+                additional_info=additional_info,
+            )
+
+            # Add directly to current pending subtasks
+            if insert_position == -1:
+                self._pending_tasks.append(new_task)
+            else:
+                # Convert deque to list, insert, then back to deque
+                tasks_list = list(self._pending_tasks)
+                tasks_list.insert(insert_position, new_task)
+                self._pending_tasks = deque(tasks_list)
+
+            logger.info(f"New subtask added to pending queue: {new_task.id}")
+            return new_task
+        else:
+            # Add as main task that needs decomposition
+            # Use additional_info to mark this task needs decomposition
+            # Make a copy to avoid modifying user's dict
+            info = additional_info.copy() if additional_info else {}
+            info['_needs_decomposition'] = True
+
+            task_count = sum(
+                1
+                for t in self._pending_tasks
+                if t.additional_info
+                and t.additional_info.get('_needs_decomposition')
+            )
+
+            new_task = Task(
+                content=content,
+                id=task_id or f"main_task_{task_count}",
+                additional_info=info,
+            )
+
+            self._pending_tasks.append(new_task)
+            logger.info(f"New main task added to pending queue: {new_task.id}")
+            return new_task
+
+    def add_main_task(
+        self,
+        content: str,
+        task_id: Optional[str] = None,
+        additional_info: Optional[Dict[str, Any]] = None,
+    ) -> Task:
+        r"""Add a new main task that will be decomposed into subtasks.
+
+        This is an alias for :meth:`add_task` with `as_subtask=False`.
+
+        Args:
+            content (str): The content of the main task.
+            task_id (Optional[str], optional): Optional ID for the task.
+            additional_info (Optional[Dict[str, Any]], optional): Optional
+                additional metadata.
+
+        Returns:
+            Task: The created main task object.
+        """
+        return self.add_task(
+            content=content,
+            task_id=task_id,
+            additional_info=additional_info,
+            as_subtask=False,
+        )
+
+    def add_subtask(
+        self,
+        content: str,
+        task_id: Optional[str] = None,
+        additional_info: Optional[Dict[str, Any]] = None,
+        insert_position: int = -1,
+    ) -> Task:
+        r"""Add a new subtask to the current pending queue.
+
+        This is an alias for :meth:`add_task` with `as_subtask=True`.
+
+        Args:
+            content (str): The content of the subtask.
+            task_id (Optional[str], optional): Optional ID for the task.
+            additional_info (Optional[Dict[str, Any]], optional): Optional
+                additional metadata.
+            insert_position (int, optional): Position to insert the task.
+                Defaults to -1 (append to end).
+
+        Returns:
+            Task: The created subtask object.
+        """
+        return self.add_task(
+            content=content,
+            task_id=task_id,
+            additional_info=additional_info,
+            as_subtask=True,
+            insert_position=insert_position,
+        )
 
     def remove_task(self, task_id: str) -> bool:
-        r"""Remove a task from the pending queue."""
-        # Convert to list to find and remove
-        tasks_list = list(self._pending_tasks)
-        for i, task in enumerate(tasks_list):
+        r"""Remove a task from the pending queue or main task queue.
+
+        Args:
+            task_id (str): The ID of the task to remove.
+
+        Returns:
+            bool: True if task was found and removed, False otherwise.
+        """
+        # Check main task queue first
+        pending_tasks_list = list(self._pending_tasks)
+        for i, task in enumerate(pending_tasks_list):
             if task.id == task_id:
-                tasks_list.pop(i)
-                self._pending_tasks = deque(tasks_list)
-                logger.info(f"Task {task_id} removed.")
+                pending_tasks_list.pop(i)
+                self._pending_tasks = deque(pending_tasks_list)
+                logger.info(f"Task {task_id} removed from pending queue.")
                 return True
-        logger.warning(f"Task {task_id} not found in pending tasks.")
+
+        logger.warning(f"Task {task_id} not found in any task queue.")
         return False
 
     def reorder_tasks(self, task_ids: List[str]) -> bool:
@@ -1173,6 +2396,89 @@ class Workforce(BaseNode):
             "main_task_id": self._task.id if self._task else None,
         }
 
+    async def handle_decompose_append_task(
+        self, task: Task, reset: bool = True
+    ) -> List[Task]:
+        r"""Handle task decomposition and validation with
+        workforce environment functions. Then append to
+        pending tasks if decomposition happened.
+
+        Args:
+            task (Task): The task to be processed.
+            reset (Bool): Should trigger workforce reset (Workforce must not
+                be running). Default: True
+
+        Returns:
+            List[Task]: The decomposed subtasks or the original task.
+        """
+        if not validate_task_content(task.content, task.id):
+            task.state = TaskState.FAILED
+            task.result = "Task failed: Invalid or empty content provided"
+            logger.warning(
+                f"Task {task.id} rejected: Invalid or empty content. "
+                f"Content preview: '{task.content}'"
+            )
+            return [task]
+
+        if reset and self._state != WorkforceState.RUNNING:
+            self.reset()
+            logger.info("Workforce reset before handling task.")
+
+        # Focus on the new task
+        self._task = task
+        task.state = TaskState.FAILED
+
+        task_created_event = TaskCreatedEvent(
+            task_id=task.id,
+            description=task.content,
+            task_type=task.type,
+            metadata=task.additional_info,
+        )
+        for cb in self._callbacks:
+            cb.log_task_created(task_created_event)
+
+        # The agent tend to be overconfident on the whole task, so we
+        # decompose the task into subtasks first
+        subtasks_result = self._decompose_task(task)
+
+        # Handle both streaming and non-streaming results
+        if isinstance(subtasks_result, Generator):
+            # This is a generator (streaming mode)
+            subtasks = []
+            for new_tasks in subtasks_result:
+                subtasks.extend(new_tasks)
+        else:
+            # This is a regular list (non-streaming mode)
+            subtasks = subtasks_result
+        if subtasks:
+            task_decomposed_event = TaskDecomposedEvent(
+                parent_task_id=task.id,
+                subtask_ids=[st.id for st in subtasks],
+            )
+            for cb in self._callbacks:
+                cb.log_task_decomposed(task_decomposed_event)
+            for subtask in subtasks:
+                task_created_event = TaskCreatedEvent(
+                    task_id=subtask.id,
+                    description=subtask.content,
+                    parent_task_id=task.id,
+                    task_type=subtask.type,
+                    metadata=subtask.additional_info,
+                )
+                for cb in self._callbacks:
+                    cb.log_task_created(task_created_event)
+
+        if subtasks:
+            # _pending_tasks will contain both undecomposed
+            # and decomposed tasks, so we use additional_info
+            # to mark the tasks that need decomposition instead
+            self._pending_tasks.extendleft(reversed(subtasks))
+        else:
+            # If no decomposition, execute the original task.
+            self._pending_tasks.append(task)
+
+        return subtasks
+
     @check_if_running(False)
     async def process_task_async(
         self, task: Task, interactive: bool = False
@@ -1193,76 +2499,139 @@ class Workforce(BaseNode):
         if interactive:
             return await self._process_task_with_snapshot(task)
 
-        if not validate_task_content(task.content, task.id):
-            task.state = TaskState.FAILED
-            task.result = "Task failed: Invalid or empty content provided"
-            logger.warning(
-                f"Task {task.id} rejected: Invalid or empty content. "
-                f"Content preview: '{task.content}'"
-            )
+        # Handle different execution modes
+        if self.mode == WorkforceMode.PIPELINE:
+            return await self._process_task_with_pipeline(task)
+        else:
+            # AUTO_DECOMPOSE mode (default)
+            subtasks = await self.handle_decompose_append_task(task)
+
+            self.set_channel(TaskChannel())
+
+            await self.start()
+
+            if subtasks:
+                task.result = "\n\n".join(
+                    f"--- Subtask {sub.id} Result ---\n{sub.result}"
+                    for sub in task.subtasks
+                    if sub.result
+                )
+                if task.subtasks and all(
+                    sub.state == TaskState.DONE for sub in task.subtasks
+                ):
+                    task.state = TaskState.DONE
+                else:
+                    task.state = TaskState.FAILED
+
             return task
 
-        self.reset()
+    async def _process_task_with_pipeline(self, task: Task) -> Task:
+        """Process task using predefined pipeline tasks."""
+        if not self._pending_tasks:
+            raise ValueError(
+                "No pipeline tasks defined. Use set_pipeline_tasks() first."
+            )
+
+        # Don't reset here - keep the predefined tasks
         self._task = task
-        if self.metrics_logger:
-            self.metrics_logger.log_task_created(
-                task_id=task.id,
-                description=task.content,
-                task_type=task.type,
-                metadata=task.additional_info,
-            )
+
+        # Log main task creation event through callbacks
+        # (following source code pattern)
+        task_created_event = TaskCreatedEvent(
+            task_id=task.id,
+            description=task.content,
+            parent_task_id=None,
+            task_type=task.type,
+            metadata=task.additional_info,
+        )
+        for cb in self._callbacks:
+            cb.log_task_created(task_created_event)
+
         task.state = TaskState.FAILED
-        # The agent tend to be overconfident on the whole task, so we
-        # decompose the task into subtasks first
-        subtasks_result = self._decompose_task(task)
-
-        # Handle both streaming and non-streaming results
-        if isinstance(subtasks_result, Generator):
-            # This is a generator (streaming mode)
-            subtasks = []
-            for new_tasks in subtasks_result:
-                subtasks.extend(new_tasks)
-        else:
-            # This is a regular list (non-streaming mode)
-            subtasks = subtasks_result
-        if self.metrics_logger and subtasks:
-            self.metrics_logger.log_task_decomposed(
-                parent_task_id=task.id, subtask_ids=[st.id for st in subtasks]
-            )
-            for subtask in subtasks:
-                self.metrics_logger.log_task_created(
-                    task_id=subtask.id,
-                    description=subtask.content,
-                    parent_task_id=task.id,
-                    task_type=subtask.type,
-                    metadata=subtask.additional_info,
-                )
-        if subtasks:
-            # If decomposition happened, the original task becomes a container.
-            # We only execute its subtasks.
-            self._pending_tasks.extendleft(reversed(subtasks))
-        else:
-            # If no decomposition, execute the original task.
-            self._pending_tasks.append(task)
-
         self.set_channel(TaskChannel())
-
         await self.start()
 
-        if subtasks:
-            task.result = "\n\n".join(
-                f"--- Subtask {sub.id} Result ---\n{sub.result}"
-                for sub in task.subtasks
-                if sub.result
-            )
-            if task.subtasks and all(
-                sub.state == TaskState.DONE for sub in task.subtasks
-            ):
-                task.state = TaskState.DONE
-            else:
-                task.state = TaskState.FAILED
+        # Collect results from all pipeline tasks
+        task.result = self._collect_pipeline_results()
+        task.state = (
+            TaskState.DONE
+            if self._all_pipeline_tasks_successful()
+            else TaskState.FAILED
+        )
+
+        # Auto-reset mode to initial value after pipeline completion
+        previous_mode = self.mode
+        self.mode = self._initial_mode
+        logger.info(
+            f"Pipeline execution completed. Mode automatically reset from "
+            f"{previous_mode.value} to {self._initial_mode.value}."
+        )
 
         return task
+
+    def _collect_pipeline_results(self) -> str:
+        """Collect results from all completed pipeline tasks."""
+        results = []
+        for task in self._completed_tasks:
+            if task.result:
+                results.append(f"--- Task {task.id} Result ---\n{task.result}")
+        return "\n\n".join(results) if results else "Pipeline completed"
+
+    def _all_pipeline_tasks_successful(self) -> bool:
+        """Check if all pipeline tasks completed successfully.
+
+        INTENT: This method determines the FINAL STATE of the entire
+        pipeline but does NOT affect task execution flow. It's called
+        AFTER all tasks have finished to decide whether the overall
+        pipeline succeeded or failed.
+
+        WHY THIS DESIGN:
+        - In PIPELINE mode, we want failed tasks to pass their error info
+          to downstream tasks (for recovery in join tasks)
+        - We still need to report the overall pipeline status correctly
+        - This separation allows execution to continue and keeps a correct
+          final status
+
+        EXECUTION FLOW (handled in _post_ready_tasks()):
+        - Failed tasks still pass their results (including errors) to
+          dependent tasks, allowing join tasks to execute even when
+          upstream tasks fail.
+
+        FINAL STATUS (this method):
+        - Runs AFTER all tasks have been processed to decide whether the
+          overall pipeline should be marked as DONE or FAILED.
+
+        Returns:
+            bool: True if all tasks completed successfully (DONE state),
+                False if any tasks failed or are still pending.
+
+        Example:
+            Fork-Join pattern with one failed branch:
+            - Task A (search) → DONE
+            - Task B (parallel summary 1) → DONE
+            - Task C (parallel summary 2) → FAILED
+            - Task D (join/synthesis) → DONE (receives B's result + C's error)
+
+            Result: _all_pipeline_tasks_successful() returns False,
+            main pipeline task marked as FAILED, but Task D still executed
+            and received all information.
+        """
+        # Check 1: Pipeline incomplete if tasks still pending
+        # Intent: Don't evaluate success until all execution finished
+        if self._pending_tasks:
+            return False
+
+        # Check 2: No completed tasks = empty pipeline = failure
+        # Intent: Catch edge case of malformed or empty pipeline
+        if not self._completed_tasks:
+            return False
+
+        # Check 3: All tasks must be DONE for pipeline to be successful
+        # Intent: Even one failed task means the pipeline didn't fully succeed,
+        # though downstream tasks still ran (for error handling/recovery)
+        return all(
+            task.state == TaskState.DONE for task in self._completed_tasks
+        )
 
     def process_task(self, task: Task) -> Task:
         r"""Synchronous wrapper for process_task that handles async operations
@@ -1326,39 +2695,8 @@ class Workforce(BaseNode):
             Task: The updated task.
         """
 
-        if not validate_task_content(task.content, task.id):
-            task.state = TaskState.FAILED
-            task.result = "Task failed: Invalid or empty content provided"
-            logger.warning(
-                f"Task {task.id} rejected: Invalid or empty content. "
-                f"Content preview: '{task.content}'"
-            )
-            return task
+        await self.handle_decompose_append_task(task)
 
-        self.reset()
-        self._task = task
-        self._state = WorkforceState.RUNNING
-        task.state = TaskState.FAILED  # TODO: Add logic for OPEN
-
-        # Decompose the task into subtasks first
-        subtasks_result = self._decompose_task(task)
-
-        # Handle both streaming and non-streaming results
-        if isinstance(subtasks_result, Generator):
-            # This is a generator (streaming mode)
-            subtasks = []
-            for new_tasks in subtasks_result:
-                subtasks.extend(new_tasks)
-        else:
-            # This is a regular list (non-streaming mode)
-            subtasks = subtasks_result
-        if subtasks:
-            # If decomposition happened, the original task becomes a container.
-            # We only execute its subtasks.
-            self._pending_tasks.extendleft(reversed(subtasks))
-        else:
-            # If no decomposition, execute the original task.
-            self._pending_tasks.append(task)
         self.set_channel(TaskChannel())
 
         # Save initial snapshot
@@ -1509,6 +2847,7 @@ class Workforce(BaseNode):
         description: str,
         worker: ChatAgent,
         pool_max_size: int = DEFAULT_WORKER_POOL_SIZE,
+        enable_workflow_memory: bool = False,
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses a single agent.
         Can be called when workforce is paused to dynamically add workers.
@@ -1518,6 +2857,9 @@ class Workforce(BaseNode):
             worker (ChatAgent): The agent to be added.
             pool_max_size (int): Maximum size of the agent pool.
                 (default: :obj:`10`)
+            enable_workflow_memory (bool): Whether to enable workflow memory
+                accumulation. Set to True if you plan to call
+                save_workflow_memories(). (default: :obj:`False`)
 
         Returns:
             Workforce: The workforce node itself.
@@ -1544,6 +2886,8 @@ class Workforce(BaseNode):
             worker=worker,
             pool_max_size=pool_max_size,
             use_structured_output_handler=self.use_structured_output_handler,
+            context_utility=None,  # Will be set during save/load operations
+            enable_workflow_memory=enable_workflow_memory,
         )
         self._children.append(worker_node)
 
@@ -1554,12 +2898,10 @@ class Workforce(BaseNode):
         # If workforce is paused, start the worker's listening task
         self._start_child_node_when_paused(worker_node.start())
 
-        if self.metrics_logger:
-            self.metrics_logger.log_worker_created(
-                worker_id=worker_node.node_id,
-                worker_type='SingleAgentWorker',
-                role=worker_node.description,
-            )
+        self._notify_worker_created(
+            worker_node,
+            worker_type='SingleAgentWorker',
+        )
         return self
 
     def add_role_playing_worker(
@@ -1633,12 +2975,10 @@ class Workforce(BaseNode):
         # If workforce is paused, start the worker's listening task
         self._start_child_node_when_paused(worker_node.start())
 
-        if self.metrics_logger:
-            self.metrics_logger.log_worker_created(
-                worker_id=worker_node.node_id,
-                worker_type='RolePlayingWorker',
-                role=worker_node.description,
-            )
+        self._notify_worker_created(
+            worker_node,
+            worker_type='RolePlayingWorker',
+        )
         return self
 
     def add_workforce(self, workforce: Workforce) -> Workforce:
@@ -1693,12 +3033,21 @@ class Workforce(BaseNode):
         self.coordinator_agent.reset()
         self.task_agent.reset()
         self._task_start_times.clear()
+
+        # Reset pipeline building state
+        self._pipeline_builder = None
+
+        # Reset mode to initial value
+        self.mode = self._initial_mode
+        logger.debug(f"Workforce mode reset to {self._initial_mode.value}")
+
         for child in self._children:
             child.reset()
 
         # Reset intervention state
         self._state = WorkforceState.IDLE
         self._stop_requested = False
+        self._skip_requested = False
         # Handle asyncio.Event in a thread-safe way
         if self._loop and not self._loop.is_closed():
             # If we have a loop, use it to set the event safely
@@ -1714,10 +3063,421 @@ class Workforce(BaseNode):
             # No active loop, directly set the event
             self._pause_event.set()
 
-        if hasattr(self, 'metrics_logger') and self.metrics_logger is not None:
-            self.metrics_logger.reset_task_data()
-        else:
-            self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
+        for cb in self._callbacks:
+            if isinstance(cb, WorkforceMetrics):
+                cb.reset_task_data()
+
+    def save_workflow_memories(
+        self,
+    ) -> Dict[str, str]:
+        r"""Save workflow memories for all SingleAgentWorker instances in the
+        workforce.
+
+        .. deprecated:: 0.2.80
+            This synchronous method processes workers sequentially, which can
+            be slow for multiple agents. Use
+            :meth:`save_workflow_memories_async`
+            instead for parallel processing and significantly better
+            performance.
+
+        This method iterates through all child workers and triggers workflow
+        saving for SingleAgentWorker instances using their
+        save_workflow_memories()
+        method.
+        Other worker types are skipped.
+
+        Workflows are organized by agent role in role-based folders:
+        workforce_workflows/{role_name}/*.md
+
+        Returns:
+            Dict[str, str]: Dictionary mapping worker node IDs to save results.
+                Values are either file paths (success) or error messages
+                (failure).
+
+        Example:
+            >>> workforce = Workforce("My Team")
+            >>> # ... add workers and process tasks ...
+            >>> results = workforce.save_workflow_memories()
+            >>> print(results)
+            {'worker_123': 'workforce_workflows/developer/task_workflow.md',
+             'worker_456': 'error: No conversation context available'}
+            >>> # preferred: use async version
+            >>> results = await workforce.save_workflow_memories_async()
+
+        Note:
+            For better performance with multiple workers, use the async
+            version::
+
+                results = await workforce.save_workflow_memories_async()
+
+        See Also:
+            :meth:`save_workflow_memories_async`: Async version with parallel
+                processing for significantly better performance.
+        """
+        import asyncio
+        import warnings
+
+        warnings.warn(
+            "save_workflow_memories() is deprecated and slow for multiple "
+            "workers. Use save_workflow_memories_async() instead for parallel "
+            "processing and significantly better performance.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        # delegate to async version using asyncio
+        return asyncio.run(self.save_workflow_memories_async())
+
+    async def save_workflow_memories_async(
+        self,
+    ) -> Dict[str, str]:
+        r"""Asynchronously save workflow memories for all SingleAgentWorker
+        instances in the workforce.
+
+        This is the async version of save_workflow_memories() that parallelizes
+        LLM summarization calls across all workers using asyncio.gather(),
+        significantly reducing total save time.
+
+        This method iterates through all child workers and triggers workflow
+        saving for SingleAgentWorker instances using their
+        save_workflow_memories_async() method in parallel.
+        Other worker types are skipped.
+
+        Workflows are organized by agent role in role-based folders:
+        workforce_workflows/{role_name}/*.md
+
+        Returns:
+            Dict[str, str]: Dictionary mapping worker node IDs to save results.
+                Values are either file paths (success) or error messages
+                (failure).
+
+        Example:
+            >>> workforce = Workforce("My Team")
+            >>> # ... add workers and process tasks ...
+            >>> # save with parallel summarization (faster)
+            >>> results = await workforce.save_workflow_memories_async()
+            >>> print(results)
+            {'worker_123': 'workforce_workflows/developer/task_workflow.md',
+             'worker_456': 'workforce_workflows/analyst/report_workflow.md',
+             'worker_789': 'workforce_workflows/writer/doc_workflow.md'}
+        """
+        import asyncio
+
+        results = {}
+
+        # Prepare tasks for parallel execution
+        async def save_single_worker(
+            child: BaseNode,
+        ) -> tuple[str, str]:
+            """Save workflow for a single worker, then return (node_id,
+            result)."""
+            if isinstance(child, SingleAgentWorker):
+                try:
+                    from camel.utils.context_utils import ContextUtility
+
+                    # TWO-PASS APPROACH FOR ROLE-BASED SAVING:
+                    # Use WorkflowMemoryManager which has access to
+                    # _loaded_workflow_paths for operation_mode support
+                    workflow_manager = child._get_workflow_manager()
+
+                    # Pass 1: Generate summary using manager (has loaded paths)
+                    gen_result = (
+                        await workflow_manager.generate_workflow_summary_async(
+                            conversation_accumulator=(
+                                child._conversation_accumulator
+                            ),
+                        )
+                    )
+
+                    if gen_result.get("status") != "success":
+                        error_msg = gen_result.get(
+                            "status", "Failed to generate summary"
+                        )
+                        return (child.node_id, f"error: {error_msg}")
+
+                    workflow_summary = gen_result.get("structured_summary")
+                    if not workflow_summary:
+                        return (
+                            child.node_id,
+                            "error: No workflow summary generated",
+                        )
+
+                    # Pass 2: Extract agent_title and determine role folder
+                    role_id = self._get_role_identifier(
+                        child.worker,
+                        child.description,
+                        workflow_summary=workflow_summary,
+                    )
+
+                    # create role-based context utility
+                    role_context = ContextUtility.get_workforce_shared_by_role(
+                        role_id
+                    )
+
+                    # save with correct context and accumulator
+                    # save_workflow_content_async handles operation_mode
+                    # branching
+                    result = (
+                        await workflow_manager.save_workflow_content_async(
+                            workflow_summary=workflow_summary,
+                            context_utility=role_context,
+                            conversation_accumulator=(
+                                child._conversation_accumulator
+                            ),
+                        )
+                    )
+
+                    # clean up accumulator after successful save
+                    if (
+                        result.get("status") == "success"
+                        and child._conversation_accumulator is not None
+                    ):
+                        logger.info(
+                            "Cleaning up conversation accumulator after "
+                            "workflow summarization"
+                        )
+                        child._conversation_accumulator = None
+
+                    if result.get("status") == "success":
+                        return (
+                            child.node_id,
+                            result.get("file_path", "unknown_path"),
+                        )
+                    else:
+                        # Error: check if there's a separate message field,
+                        # otherwise use the status itself
+                        error_msg = result.get(
+                            "message", result.get("status", "Unknown error")
+                        )
+                        return (child.node_id, f"error: {error_msg}")
+
+                except Exception as e:
+                    return (child.node_id, f"error: {e!s}")
+            else:
+                # Skip non-SingleAgentWorker types
+                return (
+                    child.node_id,
+                    f"skipped: {type(child).__name__} not supported",
+                )
+
+        # Create tasks for all workers
+        tasks = [save_single_worker(child) for child in self._children]
+
+        # Execute all tasks in parallel using asyncio.gather()
+        parallel_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Process results
+        for result in parallel_results:
+            if isinstance(result, Exception):
+                # Handle any unexpected exceptions
+                logger.error(
+                    f"Unexpected error during workflow save: {result}"
+                )
+                results["unknown"] = f"error: {result!s}"
+            elif isinstance(result, tuple) and len(result) == 2:
+                # Successfully got (node_id, save_result) tuple
+                node_id, save_result = result
+                results[node_id] = save_result
+            else:
+                # Unexpected result format
+                logger.error(f"Unexpected result format: {result}")
+                results["unknown"] = "error: unexpected result format"
+
+        logger.info(
+            f"Workflow save completed for {len(results)} workers "
+            f"(parallelized)"
+        )
+        return results
+
+    def load_workflow_memories(
+        self,
+        session_id: Optional[str] = None,
+        worker_max_workflows: int = 3,
+        coordinator_max_workflows: int = 5,
+        task_agent_max_workflows: int = 3,
+    ) -> Dict[str, bool]:
+        r"""Load workflow memories for all SingleAgentWorker instances in the
+        workforce.
+
+        This method iterates through all child workers and loads relevant
+        workflow files for SingleAgentWorker instances using their
+        load_workflow_memories()
+        method. Workers match files based on their description names.
+
+        Args:
+            session_id (Optional[str]): Specific workforce session ID to load
+                from. If None, searches across all sessions.
+                (default: :obj:`None`)
+            worker_max_workflows (int): Maximum number of workflow files to
+                load per worker agent. (default: :obj:`3`)
+            coordinator_max_workflows (int): Maximum number of workflow files
+                to load for the coordinator agent. (default: :obj:`5`)
+            task_agent_max_workflows (int): Maximum number of workflow files
+                to load for the task planning agent. (default: :obj:`3`)
+
+        Returns:
+            Dict[str, bool]: Dictionary mapping worker node IDs to load
+                success status.
+                True indicates successful loading, False indicates failure.
+
+        Example:
+            >>> workforce = Workforce("My Team")
+            >>> workforce.add_single_agent_worker(
+            ...     "data_analyst", analyst_agent
+            ... )
+            >>> success_status = workforce.load_workflow_memories(
+            ...     worker_max_workflows=5,
+            ...     coordinator_max_workflows=10,
+            ...     task_agent_max_workflows=5
+            ... )
+            >>> print(success_status)
+            {'worker_123': True}  # Successfully loaded workflows for
+            # data_analyst
+        """
+        results = {}
+
+        # For loading, we don't create a new session - instead we search
+        # existing ones
+        # Each worker will search independently across all existing sessions
+
+        # First, load workflows for SingleAgentWorker instances
+        for child in self._children:
+            if isinstance(child, SingleAgentWorker):
+                try:
+                    # For loading, don't set shared context utility
+                    # Let each worker search across existing sessions
+                    success = child.load_workflow_memories(
+                        max_workflows=worker_max_workflows,
+                        session_id=session_id,
+                    )
+                    results[child.node_id] = success
+
+                except Exception as e:
+                    logger.error(
+                        f"Failed to load workflow for {child.node_id}: {e!s}"
+                    )
+                    results[child.node_id] = False
+            else:
+                # Skip non-SingleAgentWorker types
+                results[child.node_id] = False
+
+        # Load aggregated workflow summaries for coordinator and task agents
+        self._load_management_agent_workflows(
+            coordinator_max_workflows, task_agent_max_workflows, session_id
+        )
+
+        logger.info(f"Workflow load completed for {len(results)} workers")
+        return results
+
+    def _load_management_agent_workflows(
+        self,
+        coordinator_max_workflows: int,
+        task_agent_max_workflows: int,
+        session_id: Optional[str] = None,
+    ) -> None:
+        r"""Load workflow summaries for coordinator and task planning agents.
+
+        This method loads aggregated workflow summaries to help:
+        - Coordinator agent: understand task assignment patterns and worker
+          capabilities
+        - Task agent: understand task decomposition patterns and
+          successful strategies
+
+        Args:
+            coordinator_max_workflows (int): Maximum number of workflow files
+                to load for the coordinator agent.
+            task_agent_max_workflows (int): Maximum number of workflow files
+                to load for the task planning agent.
+            session_id (Optional[str]): Specific session ID to load from.
+                If None, searches across all sessions.
+        """
+        try:
+            import glob
+            import os
+            from pathlib import Path
+
+            from camel.utils.context_utils import ContextUtility
+
+            # For loading management workflows, search across all sessions
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                base_dir = os.path.join(camel_workdir, "workforce_workflows")
+            else:
+                base_dir = "workforce_workflows"
+
+            # Search for workflow files in specified or all session directories
+            if session_id:
+                search_path = str(
+                    Path(base_dir) / session_id / "*_workflow*.md"
+                )
+            else:
+                search_path = str(Path(base_dir) / "*" / "*_workflow*.md")
+            workflow_files = glob.glob(search_path)
+
+            if not workflow_files:
+                logger.info(
+                    "No workflow files found for management agent context"
+                )
+                return
+
+            # Sort by modification time (most recent first)
+            workflow_files.sort(
+                key=lambda x: os.path.getmtime(x), reverse=True
+            )
+
+            # Load workflows for coordinator agent
+            coordinator_loaded = 0
+            for file_path in workflow_files[:coordinator_max_workflows]:
+                try:
+                    filename = os.path.basename(file_path).replace('.md', '')
+                    session_dir = os.path.dirname(file_path)
+                    session_id = os.path.basename(session_dir)
+
+                    # Use shared context utility with specific session
+                    temp_utility = ContextUtility.get_workforce_shared(
+                        session_id
+                    )
+
+                    status = temp_utility.load_markdown_context_to_memory(
+                        self.coordinator_agent, filename
+                    )
+                    if "Context appended" in status:
+                        coordinator_loaded += 1
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load coordinator workflow {file_path}: {e}"
+                    )
+
+            # Load workflows for task agent
+            task_agent_loaded = 0
+            for file_path in workflow_files[:task_agent_max_workflows]:
+                try:
+                    filename = os.path.basename(file_path).replace('.md', '')
+                    session_dir = os.path.dirname(file_path)
+                    session_id = os.path.basename(session_dir)
+
+                    # Use shared context utility with specific session
+                    temp_utility = ContextUtility.get_workforce_shared(
+                        session_id
+                    )
+
+                    status = temp_utility.load_markdown_context_to_memory(
+                        self.task_agent, filename
+                    )
+                    if "Context appended" in status:
+                        task_agent_loaded += 1
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load task agent workflow {file_path}: {e}"
+                    )
+
+            logger.info(
+                f"Loaded {coordinator_loaded} workflows for coordinator, "
+                f"{task_agent_loaded} workflows for task agent"
+            )
+
+        except Exception as e:
+            logger.error(f"Error loading management agent workflows: {e}")
 
     @check_if_running(False)
     def set_channel(self, channel: TaskChannel) -> None:
@@ -1749,16 +3509,47 @@ class Workforce(BaseNode):
     ) -> str:
         r"""Get formatted information for a SingleAgentWorker node."""
         toolkit_tools = self._group_tools_by_toolkit(worker.worker.tool_dict)
-
-        if not toolkit_tools:
-            return ""
-
+        skill_names = self._get_single_agent_skill_names(worker)
         toolkit_info = []
         for toolkit_name, tools in sorted(toolkit_tools.items()):
             tools_str = ', '.join(sorted(tools))
             toolkit_info.append(f"{toolkit_name}({tools_str})")
-
+            # Append skill names right after SkillToolkit for clarity
+            if toolkit_name == "SkillToolkit" and skill_names:
+                toolkit_info.append(f"skills({', '.join(skill_names)})")
         return ", ".join(toolkit_info)
+
+    def _get_single_agent_skill_names(
+        self, worker: 'SingleAgentWorker'
+    ) -> List[str]:
+        r"""Extract available skill names from SkillToolkit instances."""
+        for tool in worker.worker.tool_dict.values():
+            toolkit_instance = getattr(tool.func, "__self__", None)
+            if toolkit_instance is None:
+                continue
+            if toolkit_instance.__class__.__name__ != "SkillToolkit":
+                continue
+
+            list_skills_fn = getattr(toolkit_instance, "list_skills", None)
+            if not callable(list_skills_fn):
+                continue
+
+            try:
+                skills = list_skills_fn()
+                return sorted(
+                    skill["name"].strip()
+                    for skill in skills
+                    if skill.get("name")
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Failed to list skills for worker %s: %s",
+                    worker.node_id,
+                    exc,
+                )
+                return []
+
+        return []
 
     def _group_tools_by_toolkit(self, tool_dict: dict) -> dict[str, list[str]]:
         r"""Group tools by their parent toolkit class names."""
@@ -2066,8 +3857,40 @@ class Workforce(BaseNode):
             TaskAssignResult: Assignment result containing task assignments
                 with their dependencies.
         """
+        # Wait for workers to be ready before assignment with exponential
+        # backoff
+        worker_readiness_timeout = 2.0  # Maximum wait time in seconds
+        worker_readiness_check_interval = 0.05  # Initial check interval
+        start_time = time.time()
+        check_interval = worker_readiness_check_interval
+        backoff_multiplier = 1.5  # Exponential backoff factor
+        max_interval = 0.5  # Cap the maximum interval
+
+        while (time.time() - start_time) < worker_readiness_timeout:
+            valid_worker_ids = self._get_valid_worker_ids()
+            if len(valid_worker_ids) > 0:
+                elapsed = time.time() - start_time
+                logger.debug(
+                    f"Workers ready after {elapsed:.3f}s: "
+                    f"{len(valid_worker_ids)} workers available"
+                )
+                break
+
+            await asyncio.sleep(check_interval)
+            # Exponential backoff with cap
+            check_interval = min(
+                check_interval * backoff_multiplier, max_interval
+            )
+        else:
+            # Timeout reached, log warning but continue
+            logger.warning(
+                f"Worker readiness timeout after "
+                f"{worker_readiness_timeout}s, "
+                f"proceeding with {len(self._children)} children"
+            )
+            valid_worker_ids = self._get_valid_worker_ids()
+
         self.coordinator_agent.reset()
-        valid_worker_ids = self._get_valid_worker_ids()
 
         logger.debug(
             f"Sending batch assignment request to coordinator "
@@ -2101,7 +3924,24 @@ class Workforce(BaseNode):
                 invalid_assignments, tasks, valid_worker_ids
             )
         )
-        all_assignments = valid_assignments + retry_and_fallback_assignments
+
+        # Combine assignments with deduplication, prioritizing retry results
+        assignment_map = {a.task_id: a for a in valid_assignments}
+        assignment_map.update(
+            {a.task_id: a for a in retry_and_fallback_assignments}
+        )
+        all_assignments = list(assignment_map.values())
+
+        # Log any overwrites for debugging
+        valid_task_ids = {a.task_id for a in valid_assignments}
+        retry_task_ids = {a.task_id for a in retry_and_fallback_assignments}
+        overlap_task_ids = valid_task_ids & retry_task_ids
+
+        if overlap_task_ids:
+            logger.warning(
+                f"Retry assignments overrode {len(overlap_task_ids)} "
+                f"valid assignments for tasks: {sorted(overlap_task_ids)}"
+            )
 
         # Update Task.dependencies for all final assignments
         self._update_task_dependencies_from_assignments(all_assignments, tasks)
@@ -2112,12 +3952,15 @@ class Workforce(BaseNode):
         # Record the start time when a task is posted
         self._task_start_times[task.id] = time.time()
 
+        # Ensure assignee mapping exists for retries and follow-up handling.
+        self._assignees[task.id] = assignee_id
         task.assigned_worker_id = assignee_id
 
-        if self.metrics_logger:
-            self.metrics_logger.log_task_started(
-                task_id=task.id, worker_id=assignee_id
-            )
+        task_started_event = TaskStartedEvent(
+            task_id=task.id, worker_id=assignee_id
+        )
+        for cb in self._callbacks:
+            cb.log_task_started(task_started_event)
 
         try:
             await self._channel.post_task(task, self.node_id, assignee_id)
@@ -2130,10 +3973,17 @@ class Workforce(BaseNode):
             logger.error(
                 f"Failed to post task {task.id} to {assignee_id}: {e}"
             )
-            print(
-                f"{Fore.RED}Failed to post task {task.id} to {assignee_id}: "
-                f"{e}{Fore.RESET}"
-            )
+            for cb in self._callbacks:
+                cb.log_message(
+                    LogEvent(
+                        message=(
+                            f"Failed to post task {task.id} to {assignee_id}: "
+                            f"{e}"
+                        ),
+                        level="error",
+                        color="red",
+                    )
+                )
 
     async def _post_dependency(self, dependency: Task) -> None:
         await self._channel.post_dependency(dependency, self.node_id)
@@ -2149,10 +3999,12 @@ class Workforce(BaseNode):
         Returns:
             Worker: The created worker node.
         """
-        prompt = CREATE_NODE_PROMPT.format(
-            content=task.content,
-            child_nodes_info=self._get_child_nodes_info(),
-            additional_info=task.additional_info,
+        prompt = str(
+            CREATE_NODE_PROMPT.format(
+                content=task.content,
+                child_nodes_info=self._get_child_nodes_info(),
+                additional_info=task.additional_info,
+            )
         )
         # Check if we should use structured handler
         if self.use_structured_output_handler:
@@ -2179,8 +4031,7 @@ class Workforce(BaseNode):
                     "worker creation"
                 )
                 new_node_conf = WorkerConf(
-                    description=f"Fallback worker for task: "
-                    f"{task.content}",
+                    description=f"Fallback worker for task: {task.content}",
                     role="General Assistant",
                     sys_msg="You are a general assistant that can help "
                     "with various tasks.",
@@ -2190,7 +4041,7 @@ class Workforce(BaseNode):
                     response.msg.content,
                     schema=WorkerConf,
                     fallback_values={
-                        "description": f"Worker for task: " f"{task.content}",
+                        "description": f"Worker for task: {task.content}",
                         "role": "Task Specialist",
                         "sys_msg": f"You are a specialist for: {task.content}",
                     },
@@ -2218,8 +4069,7 @@ class Workforce(BaseNode):
                 )
                 # Create a fallback worker configuration
                 new_node_conf = WorkerConf(
-                    description=f"Fallback worker for "
-                    f"task: {task.content}",
+                    description=f"Fallback worker for task: {task.content}",
                     role="General Assistant",
                     sys_msg="You are a general assistant that can help "
                     "with various tasks.",
@@ -2260,16 +4110,20 @@ class Workforce(BaseNode):
         )
         new_node.set_channel(self._channel)
 
-        print(f"{Fore.CYAN}{new_node} created.{Fore.RESET}")
+        for cb in self._callbacks:
+            cb.log_message(
+                LogEvent(
+                    message=f"{new_node} created.", level="info", color="cyan"
+                )
+            )
 
         self._children.append(new_node)
-        if self.metrics_logger:
-            self.metrics_logger.log_worker_created(
-                worker_id=new_node.node_id,
-                worker_type='SingleAgentWorker',
-                role=new_node_conf.role,
-                metadata={'description': new_node_conf.description},
-            )
+
+        self._notify_worker_created(
+            new_node,
+            worker_type='SingleAgentWorker',
+            role=new_node_conf.role,
+        )
         self._child_listening_tasks.append(
             asyncio.create_task(new_node.start())
         )
@@ -2296,15 +4150,9 @@ class Workforce(BaseNode):
                 *ThinkingToolkit().get_tools(),
             ]
 
-            model = ModelFactory.create(
-                model_platform=ModelPlatformType.DEFAULT,
-                model_type=ModelType.DEFAULT,
-                model_config_dict={"temperature": 0},
-            )
-
             return ChatAgent(
                 system_message=worker_sys_msg,
-                model=model,
+                model=self.default_model,
                 tools=function_list,  # type: ignore[arg-type]
                 pause_event=self._pause_event,
             )
@@ -2349,11 +4197,30 @@ class Workforce(BaseNode):
         tasks whose dependencies have been met."""
 
         # Step 1: Identify and assign any new tasks in the pending queue
-        tasks_to_assign = [
-            task
-            for task in self._pending_tasks
-            if task.id not in self._task_dependencies
-        ]
+        # In PIPELINE mode, tasks already have dependencies set but need
+        # worker assignment.
+        # In other modes, tasks without a dependencies entry are new and
+        # need both assignments and dependencies.
+        if self.mode == WorkforceMode.PIPELINE:
+            tasks_to_assign = [
+                task
+                for task in self._pending_tasks
+                if task.id not in self._assignees
+            ]
+        else:
+            tasks_to_assign = [
+                task
+                for task in self._pending_tasks
+                if (
+                    task.id not in self._task_dependencies
+                    and (
+                        task.additional_info is None
+                        or not task.additional_info.get(
+                            "_needs_decomposition", False
+                        )
+                    )
+                )
+            ]
         if tasks_to_assign:
             logger.debug(
                 f"Found {len(tasks_to_assign)} new tasks. "
@@ -2362,22 +4229,28 @@ class Workforce(BaseNode):
             batch_result = await self._find_assignee(tasks_to_assign)
             logger.debug(
                 f"Coordinator returned assignments:\n"
-                f"{json.dumps(batch_result.dict(), indent=2)}"
+                f"{json.dumps(batch_result.model_dump(), indent=2)}"
             )
             for assignment in batch_result.assignments:
-                self._task_dependencies[assignment.task_id] = (
-                    assignment.dependencies
-                )
+                # For pipeline mode, dependencies are already set, only
+                # update assignees.
+                # For other modes, update both dependencies and assignees.
+                if self.mode != WorkforceMode.PIPELINE:
+                    self._task_dependencies[assignment.task_id] = (
+                        assignment.dependencies
+                    )
                 self._assignees[assignment.task_id] = assignment.assignee_id
-                if self.metrics_logger:
+
+                task_assigned_event = TaskAssignedEvent(
+                    task_id=assignment.task_id,
+                    worker_id=assignment.assignee_id,
+                    dependencies=assignment.dependencies,
+                    queue_time_seconds=None,
+                )
+                for cb in self._callbacks:
                     # queue_time_seconds can be derived by logger if task
                     # creation time is logged
-                    self.metrics_logger.log_task_assigned(
-                        task_id=assignment.task_id,
-                        worker_id=assignment.assignee_id,
-                        dependencies=assignment.dependencies,
-                        queue_time_seconds=None,
-                    )
+                    cb.log_task_assigned(task_assigned_event)
 
         # Step 2: Iterate through all pending tasks and post those that are
         # ready
@@ -2388,21 +4261,172 @@ class Workforce(BaseNode):
         for task in self._pending_tasks:
             # A task must be assigned to be considered for posting
             if task.id in self._task_dependencies:
-                dependencies = self._task_dependencies[task.id]
-                # Check if all dependencies for this task are in the completed
-                # set and their state is DONE
-                if all(
-                    dep_id in completed_tasks_info
-                    and completed_tasks_info[dep_id] == TaskState.DONE
-                    for dep_id in dependencies
-                ):
-                    assignee_id = self._assignees[task.id]
-                    logger.debug(
-                        f"Posting task {task.id} to assignee {assignee_id}. "
-                        f"Dependencies met."
+                # Skip if task has already been posted to prevent duplicates
+                try:
+                    task_from_channel = await self._channel.get_task_by_id(
+                        task.id
                     )
-                    await self._post_task(task, assignee_id)
-                    posted_tasks.append(task)
+                    # Check if task is already assigned to a worker
+                    if (
+                        task_from_channel
+                        and task_from_channel.assigned_worker_id
+                    ):
+                        logger.debug(
+                            f"Task {task.id} already assigned to "
+                            f"{task_from_channel.assigned_worker_id}, "
+                            f"skipping to prevent duplicate"
+                        )
+                        continue
+                except Exception as e:
+                    logger.info(
+                        f"Task {task.id} non existent in channel. "
+                        f"Assigning task: {e}"
+                    )
+                dependencies = self._task_dependencies[task.id]
+
+                # Check if all dependencies are in the completed state
+                # (regardless of success or failure).
+                all_deps_completed = all(
+                    dep_id in completed_tasks_info for dep_id in dependencies
+                )
+
+                # Only proceed with dependency checks if all deps are completed
+                if all_deps_completed:
+                    # Intent: decide whether this task should run based on
+                    # dependency state.
+                    # Pipeline mode allows error propagation so joins can
+                    # handle upstream failures.
+                    # Auto-decompose mode requires successful inputs to avoid
+                    # cascading errors.
+                    should_post_task = False
+
+                    if self.mode == WorkforceMode.PIPELINE:
+                        # PIPELINE mode: post if dependencies are complete
+                        # (success OR failure).
+                        # Intent: allow downstream tasks to handle and report
+                        # upstream failures.
+                        # Benefit: join tasks can aggregate partial results
+                        # plus error context.
+                        should_post_task = True
+                        logger.debug(
+                            f"Task {task.id} ready in PIPELINE mode. "
+                            f"All dependencies completed (success or failure)."
+                        )
+                    else:
+                        # AUTO_DECOMPOSE mode: post ONLY if all dependencies
+                        # succeeded.
+                        # Intent: prevent executing tasks with invalid or
+                        # incomplete inputs.
+                        # Benefit: stops cascading failures and keeps the error
+                        # source clear.
+                        all_deps_done = all(
+                            completed_tasks_info[dep_id] == TaskState.DONE
+                            for dep_id in dependencies
+                        )
+                        should_post_task = all_deps_done
+
+                    if should_post_task:
+                        # Post the task
+                        assignee_id = self._assignees[task.id]
+                        logger.debug(
+                            f"Posting task {task.id} to "
+                            f"assignee {assignee_id}. "
+                            f"Dependencies met."
+                        )
+                        await self._post_task(task, assignee_id)
+                        posted_tasks.append(task)
+                    elif self.mode == WorkforceMode.AUTO_DECOMPOSE:
+                        # AUTO_DECOMPOSE mode: handle dependency failures.
+                        any_dep_failed = any(
+                            completed_tasks_info[dep_id] == TaskState.FAILED
+                            for dep_id in dependencies
+                        )
+                        if any_dep_failed:
+                            # Check if any failed dependencies can still be
+                            # retried.
+                            failed_deps = [
+                                dep_id
+                                for dep_id in dependencies
+                                if completed_tasks_info[dep_id]
+                                == TaskState.FAILED
+                            ]
+
+                        # Check if any failed dependency is still retryable
+                        failed_tasks_with_retry_potential = []
+                        permanently_failed_deps = []
+
+                        for dep_id in failed_deps:
+                            # Find the failed dependency task
+                            failed_task = next(
+                                (
+                                    t
+                                    for t in self._completed_tasks
+                                    if t.id == dep_id
+                                ),
+                                None,
+                            )
+                            if (
+                                failed_task
+                                and failed_task.failure_count
+                                < self.failure_handling_config.max_retries
+                            ):
+                                failed_tasks_with_retry_potential.append(
+                                    dep_id
+                                )
+                            else:
+                                permanently_failed_deps.append(dep_id)
+
+                        # Only fail the task if ALL dependencies are
+                        # permanently failed
+                        if (
+                            permanently_failed_deps
+                            and not failed_tasks_with_retry_potential
+                        ):
+                            logger.error(
+                                f"Task {task.id} cannot proceed: dependencies "
+                                f"{permanently_failed_deps} have "
+                                f"permanently failed. "
+                                f"Marking task as failed."
+                            )
+                            task.state = TaskState.FAILED
+                            task.result = (
+                                f"Task failed due to permanently "
+                                f"failed dependencies: "
+                                f"{permanently_failed_deps}"
+                            )
+
+                            # Log the failure to metrics
+                            task_failed_event = TaskFailedEvent(
+                                task_id=task.id,
+                                worker_id=task.assigned_worker_id or "unknown",
+                                parent_task_id=task.parent.id
+                                if task.parent
+                                else None,
+                                error_message=task.result,
+                                metadata={
+                                    'failure_reason': 'dependency_failure',
+                                    'failed_dependencies': (
+                                        permanently_failed_deps
+                                    ),
+                                },
+                            )
+                            for cb in self._callbacks:
+                                cb.log_task_failed(task_failed_event)
+
+                            self._completed_tasks.append(task)
+                            self._cleanup_task_tracking(task.id)
+                            posted_tasks.append(task)  # Remove from pending
+                        else:
+                            # Some dependencies may still be retried, keep
+                            # task pending
+                            logger.debug(
+                                f"Task {task.id} waiting: dependencies "
+                                f"{failed_tasks_with_retry_potential} "
+                                f"failed but may be retried "
+                                f"(attempt < "
+                                f"{self.failure_handling_config.max_retries})"
+                            )
+                # else: Not all dependencies completed yet, skip this task
 
         # Step 3: Remove the posted tasks from the pending list
         for task in posted_tasks:
@@ -2414,260 +4438,360 @@ class Workforce(BaseNode):
                 pass
 
     async def _handle_failed_task(self, task: Task) -> bool:
+        r"""Handle a task that failed during execution.
+
+        Args:
+            task (Task): The failed task
+
+        Returns:
+            bool: True if workforce should halt, False otherwise
+        """
         task.failure_count += 1
 
+        # Use configurable max retries from failure_handling_config
+        max_retries = self.failure_handling_config.max_retries
+
         # Determine detailed failure information
-        # Use the actual error/result stored in task.result
         failure_reason = task.result or "Unknown error"
-
-        # Add context about the worker and task
         worker_id = task.assigned_worker_id or "unknown"
-        worker_info = f" (assigned to worker: {worker_id})"
-
-        detailed_error = f"{failure_reason}{worker_info}"
+        detailed_error = f"{failure_reason} (assigned to worker: {worker_id})"
 
         logger.error(
             f"Task {task.id} failed (attempt "
-            f"{task.failure_count}/3): {detailed_error}"
+            f"{task.failure_count}/{max_retries}): {detailed_error}"
         )
 
-        if self.metrics_logger:
-            self.metrics_logger.log_task_failed(
-                task_id=task.id,
-                worker_id=worker_id,
-                error_message=detailed_error,
-                metadata={
-                    'failure_count': task.failure_count,
-                    'task_content': task.content,
-                    'result_length': len(task.result) if task.result else 0,
-                },
+        for cb in self._callbacks:
+            cb.log_message(
+                LogEvent(
+                    message=(
+                        f"❌ Task {task.id} failed "
+                        f"(attempt {task.failure_count}/{max_retries}): "
+                        f"{failure_reason}"
+                    ),
+                    level="error",
+                    color="red",
+                )
             )
 
-        # Check for immediate halt conditions - return immediately if we
-        # should halt
-        if task.failure_count >= MAX_TASK_RETRIES:
+        task_failed_event = TaskFailedEvent(
+            task_id=task.id,
+            worker_id=worker_id,
+            parent_task_id=task.parent.id if task.parent else None,
+            error_message=detailed_error,
+            metadata={
+                'failure_count': task.failure_count,
+                'task_content': task.content,
+                'result_length': len(task.result) if task.result else 0,
+            },
+        )
+        for cb in self._callbacks:
+            cb.log_task_failed(task_failed_event)
+
+        # Check for immediate halt conditions after max retries.
+        if task.failure_count >= max_retries:
+            # Intent: handle max retry failures differently per mode and
+            # config.
+            # Pipeline mode continues to allow downstream recovery.
+            # halt_on_max_retries=False also allows workflow to continue.
+            # Auto-decompose mode with halt_on_max_retries=True halts.
+
+            if self.mode == WorkforceMode.PIPELINE:
+                # PIPELINE: Mark as failed but continue workflow
+                # Intent: Failed tasks pass error info to downstream tasks
+                logger.warning(
+                    f"Task {task.id} failed after {max_retries} retries "
+                    f"in PIPELINE mode. Marking as failed and allowing the "
+                    f"workflow to continue. Error: {failure_reason}"
+                )
+                await self._mark_task_permanently_failed(task)
+
+                # Resume workflow: Check if downstream tasks can now proceed
+                # (they'll receive this failed task's error message)
+                await self._post_ready_tasks()
+                return False  # Don't halt workforce
+
+            # Check if halt_on_max_retries is disabled in config
+            if not self.failure_handling_config.halt_on_max_retries:
+                # Similar to PIPELINE mode: mark as failed but continue
+                logger.warning(
+                    f"Task {task.id} failed after {max_retries} retries. "
+                    f"halt_on_max_retries=False, allowing workflow to "
+                    f"continue. Error: {failure_reason}"
+                )
+                await self._mark_task_permanently_failed(task)
+                await self._post_ready_tasks()
+                return False  # Don't halt workforce
+
+            # AUTO_DECOMPOSE with halt_on_max_retries=True: Halt immediately
+            # Intent: Stop execution to prevent cascading failures
             logger.error(
                 f"Task {task.id} has exceeded maximum retry attempts "
-                f"({MAX_TASK_RETRIES}). Final failure "
-                f"reason: {detailed_error}. "
+                f"({max_retries}). Final failure reason: "
+                f"{detailed_error}. "
                 f"Task content: '{task.content}'"
             )
-            self._cleanup_task_tracking(task.id)
-            # Mark task as completed for dependency tracking before halting
-            self._completed_tasks.append(task)
-            if task.id in self._assignees:
-                await self._channel.archive_task(task.id)
-            return True
+            await self._mark_task_permanently_failed(task)
+            return True  # Halt workforce
 
-        # If too many tasks are failing rapidly, also halt to prevent infinite
-        # loops
         if len(self._pending_tasks) > MAX_PENDING_TASKS_LIMIT:
             logger.error(
                 f"Too many pending tasks ({len(self._pending_tasks)} > "
                 f"{MAX_PENDING_TASKS_LIMIT}). Halting to prevent task "
                 f"explosion. Last failed task: {task.id}"
             )
-            self._cleanup_task_tracking(task.id)
-            # Mark task as completed for dependency tracking before halting
-            self._completed_tasks.append(task)
-            if task.id in self._assignees:
-                await self._channel.archive_task(task.id)
+            await self._mark_task_permanently_failed(task)
             return True
 
-        # Use intelligent failure analysis to decide recovery strategy
-        recovery_decision = self._analyze_failure(task, detailed_error)
+        # Recovery strategies differ by mode and configuration.
+        # Pipeline mode retries quickly without additional analysis.
 
-        logger.info(
-            f"Task {task.id} failure "
-            f"analysis: {recovery_decision.strategy.value} - "
-            f"{recovery_decision.reasoning}"
-        )
+        if self.mode == WorkforceMode.PIPELINE:
+            # PIPELINE: Simple retry logic (no LLM analysis needed)
+            # Intent: Fast recovery for predefined workflows
+            logger.info(
+                f"Task {task.id} failed in PIPELINE mode. Will retry "
+                f"(attempt {task.failure_count}/{max_retries})"
+            )
+            # Reset task to pending and retry with same configuration
+            task.state = TaskState.OPEN
+            self._pending_tasks.append(task)
+            await self._post_ready_tasks()
+            return False
 
-        # Clean up tracking before attempting recovery
-        if task.id in self._assignees:
-            await self._channel.archive_task(task.id)
-        self._cleanup_task_tracking(task.id)
+        # Check if no recovery strategies are enabled (empty list)
+        if self.failure_handling_config.enabled_strategies == []:
+            logger.info(
+                f"Task {task.id} failed. enabled_strategies=[], no recovery "
+                f"will be attempted. Marking as failed."
+            )
+            await self._mark_task_permanently_failed(task)
+            await self._post_ready_tasks()
+            return False
 
-        try:
-            if recovery_decision.strategy == RecoveryStrategy.RETRY:
-                # Simply retry the task by reposting it
-                if task.id in self._assignees:
-                    assignee_id = self._assignees[task.id]
-                    await self._post_task(task, assignee_id)
-                    action_taken = f"retried with same worker {assignee_id}"
-                else:
-                    # Find a new assignee and retry
-                    batch_result = await self._find_assignee([task])
-                    assignment = batch_result.assignments[0]
-                    self._assignees[task.id] = assignment.assignee_id
-                    await self._post_task(task, assignment.assignee_id)
-                    action_taken = (
-                        f"retried with new worker {assignment.assignee_id}"
-                    )
+        # Check if only one strategy is enabled (skip LLM analysis)
+        enabled = self.failure_handling_config.enabled_strategies
+        if enabled is not None and len(enabled) == 1:
+            single_strategy = enabled[0]
 
-            elif recovery_decision.strategy == RecoveryStrategy.REPLAN:
-                # Modify the task content and retry
-                if recovery_decision.modified_task_content:
-                    task.content = recovery_decision.modified_task_content
-                    logger.info(f"Task {task.id} content modified for replan")
+            logger.info(
+                f"Task {task.id} failed. Only {single_strategy.value} "
+                f"enabled, using it directly without LLM analysis "
+                f"(attempt {task.failure_count}/{max_retries})"
+            )
 
-                # Repost the modified task
-                if task.id in self._assignees:
-                    assignee_id = self._assignees[task.id]
-                    await self._post_task(task, assignee_id)
-                    action_taken = (
-                        f"replanned and retried with worker {assignee_id}"
-                    )
-                else:
-                    # Find a new assignee for the replanned task
-                    batch_result = await self._find_assignee([task])
-                    assignment = batch_result.assignments[0]
-                    self._assignees[task.id] = assignment.assignee_id
-                    await self._post_task(task, assignment.assignee_id)
-                    action_taken = (
-                        f"replanned and assigned to "
-                        f"worker {assignment.assignee_id}"
-                    )
+            # Create a minimal TaskAnalysisResult for the single strategy
+            recovery_decision = TaskAnalysisResult(
+                reasoning=f"Single strategy {single_strategy.value} enabled, "
+                f"applying directly without LLM analysis",
+                recovery_strategy=single_strategy,
+            )
 
-            elif recovery_decision.strategy == RecoveryStrategy.DECOMPOSE:
-                # Decompose the task into subtasks
-                subtasks_result = self._decompose_task(task)
-
-                # Handle both streaming and non-streaming results
-                if isinstance(subtasks_result, Generator):
-                    # This is a generator (streaming mode)
-                    subtasks = []
-                    for new_tasks in subtasks_result:
-                        subtasks.extend(new_tasks)
-                else:
-                    # This is a regular list (non-streaming mode)
-                    subtasks = subtasks_result
-                if self.metrics_logger and subtasks:
-                    self.metrics_logger.log_task_decomposed(
-                        parent_task_id=task.id,
-                        subtask_ids=[st.id for st in subtasks],
-                    )
-                    for subtask in subtasks:
-                        self.metrics_logger.log_task_created(
-                            task_id=subtask.id,
-                            description=subtask.content,
-                            parent_task_id=task.id,
-                            task_type=subtask.type,
-                            metadata=subtask.additional_info,
-                        )
-                # Insert packets at the head of the queue
-                self._pending_tasks.extendleft(reversed(subtasks))
-
-                await self._post_ready_tasks()
-                action_taken = f"decomposed into {len(subtasks)} subtasks"
-
-                logger.debug(
-                    f"Task {task.id} failed and was {action_taken}. "
-                    f"Dependencies updated for subtasks."
+            # Preserve assignee before cleanup
+            original_assignee = self._assignees.get(task.id)
+            if original_assignee is None:
+                logger.error(
+                    f"Task {task.id}: No assignee found in _assignees. "
+                    f"This indicates a bug in the task assignment chain."
                 )
+                task.state = TaskState.FAILED
+                self._completed_tasks.append(task)
+                return self.failure_handling_config.halt_on_max_retries
 
-                # Sync shared memory after task decomposition
-                if self.share_memory:
-                    logger.info(
-                        f"Syncing shared memory after "
-                        f"task {task.id} decomposition"
-                    )
-                    self._sync_shared_memory()
+            # Clean up tracking before recovery
+            # Note: task.id is guaranteed to be in _assignees since we
+            # already checked original_assignee is not None above
+            await self._channel.archive_task(task.id)
+            self._cleanup_task_tracking(task.id)
 
-                # Check if any pending tasks are now ready to execute
+            # Apply the single strategy with preserved assignee
+            try:
+                is_decompose = await self._apply_recovery_strategy(
+                    task, recovery_decision, original_assignee
+                )
+                if is_decompose:
+                    self._completed_tasks.append(task)
+                await self._post_ready_tasks()
+                return False
+            except Exception as e:
+                logger.error(
+                    f"Single strategy {single_strategy.value} failed for "
+                    f"task {task.id}: {e}",
+                    exc_info=True,
+                )
+                # If strategy fails, mark task as failed
+                task.state = TaskState.FAILED
+                self._completed_tasks.append(task)
+                if self.failure_handling_config.halt_on_max_retries:
+                    return True
                 await self._post_ready_tasks()
                 return False
 
-            elif recovery_decision.strategy == RecoveryStrategy.CREATE_WORKER:
-                assignee = await self._create_worker_node_for_task(task)
-                await self._post_task(task, assignee.node_id)
-                action_taken = (
-                    f"created new worker {assignee.node_id} and assigned "
-                    f"task {task.id} to it"
+        # AUTO_DECOMPOSE with multiple enabled strategies: Intelligent failure
+        # analysis and recovery
+        # Intent: Use LLM analysis to choose an optimal recovery strategy.
+        recovery_decision = self._analyze_task(
+            task, for_failure=True, error_message=detailed_error
+        )
+
+        # Validate and fallback recovery strategy based on enabled_strategies
+        config_strategies = self.failure_handling_config.enabled_strategies
+        if recovery_decision.recovery_strategy is None:
+            # No strategy recommended - use fallback
+            # config_strategies is None means all enabled, use RETRY as default
+            # otherwise use the first enabled strategy from user's config
+            if config_strategies is None:
+                recovery_decision.recovery_strategy = RecoveryStrategy.RETRY
+            else:
+                recovery_decision.recovery_strategy = config_strategies[0]
+        elif config_strategies is not None:
+            # Strategy recommended - validate it's in enabled list
+            if recovery_decision.recovery_strategy not in config_strategies:
+                # LLM recommended a disabled strategy, use first enabled
+                recommended = recovery_decision.recovery_strategy.value
+                enabled_list = [s.value for s in config_strategies]
+                fallback = config_strategies[0].value
+                logger.warning(
+                    f"Task {task.id}: LLM recommended '{recommended}' "
+                    f"but it's not in enabled_strategies {enabled_list}. "
+                    f"Using '{fallback}' instead."
                 )
+                recovery_decision.recovery_strategy = config_strategies[0]
+
+        strategy_str = recovery_decision.recovery_strategy.value
+        logger.info(
+            f"Task {task.id} failure "
+            f"analysis: {strategy_str} - "
+            f"{recovery_decision.reasoning}"
+        )
+
+        # Preserve assignee before cleanup
+        original_assignee = self._assignees.get(task.id)
+        if original_assignee is None:
+            logger.error(
+                f"Task {task.id}: No assignee found in _assignees. "
+                f"This indicates a bug in the task assignment chain."
+            )
+            task.state = TaskState.FAILED
+            self._completed_tasks.append(task)
+            return self.failure_handling_config.halt_on_max_retries
+
+        # Clean up tracking before attempting recovery
+        await self._channel.archive_task(task.id)
+        self._cleanup_task_tracking(task.id)
+
+        # Apply recovery strategy with preserved assignee
+        try:
+            is_decompose = await self._apply_recovery_strategy(
+                task, recovery_decision, original_assignee
+            )
+
+            # For decompose, we handle it specially
+            if is_decompose:
+                # Task was decomposed, add to completed tasks
+                self._completed_tasks.append(task)
+                return False
+
         except Exception as e:
-            logger.error(f"Recovery strategy failed for task {task.id}: {e}")
+            logger.error(
+                f"Recovery strategy failed for task {task.id}: {e}",
+                exc_info=True,
+            )
             # If max retries reached, halt the workforce
-            if task.failure_count >= MAX_TASK_RETRIES:
+            if task.failure_count >= max_retries:
                 self._completed_tasks.append(task)
                 return True
             self._completed_tasks.append(task)
             return False
 
+        # Task is being retried - don't add to completed tasks
+        # It will be added when it actually completes or permanently fails
         logger.debug(
-            f"Task {task.id} failed and was {action_taken}. "
-            f"Updating dependency state."
+            f"Task {task.id} is being retried (strategy: "
+            f"{recovery_decision.recovery_strategy}). "
+            f"Not adding to completed tasks until final outcome."
         )
-        # Mark task as completed for dependency tracking
-        self._completed_tasks.append(task)
 
-        # Sync shared memory after task completion to share knowledge
+        # Sync shared memory after task recovery
         if self.share_memory:
-            logger.info(
-                f"Syncing shared memory after task {task.id} completion"
-            )
+            logger.info(f"Syncing shared memory after task {task.id} recovery")
             self._sync_shared_memory()
 
         # Check if any pending tasks are now ready to execute
         await self._post_ready_tasks()
         return False
 
+    async def _mark_task_permanently_failed(self, task: Task) -> None:
+        r"""Mark a task as permanently failed and clean up tracking.
+
+        This is a helper method to avoid code duplication when marking tasks
+        as failed in various failure handling scenarios.
+
+        Args:
+            task (Task): The task to mark as permanently failed.
+        """
+        task.state = TaskState.FAILED
+        self._cleanup_task_tracking(task.id)
+        self._completed_tasks.append(task)
+        if task.id in self._assignees:
+            await self._channel.archive_task(task.id)
+
     async def _handle_completed_task(self, task: Task) -> None:
-        if self.metrics_logger:
-            worker_id = task.assigned_worker_id or "unknown"
-            processing_time_seconds = None
-            token_usage = None
+        worker_id = task.assigned_worker_id or "unknown"
+        processing_time_seconds = None
+        token_usage = None
 
-            # Get processing time from task start time or additional info
-            if task.id in self._task_start_times:
-                processing_time_seconds = (
-                    time.time() - self._task_start_times[task.id]
-                )
-                self._cleanup_task_tracking(task.id)
-            elif (
-                task.additional_info is not None
-                and 'processing_time_seconds' in task.additional_info
-            ):
-                processing_time_seconds = task.additional_info[
-                    'processing_time_seconds'
-                ]
-
-            # Get token usage from task additional info (preferred - actual
-            # usage)
-            if (
-                task.additional_info is not None
-                and 'token_usage' in task.additional_info
-            ):
-                token_usage = task.additional_info['token_usage']
-            else:
-                # Fallback: Try to get token usage from SingleAgentWorker
-                # memory
-                assignee_node = next(
-                    (
-                        child
-                        for child in self._children
-                        if child.node_id == worker_id
-                    ),
-                    None,
-                )
-                if isinstance(assignee_node, SingleAgentWorker):
-                    try:
-                        _, total_tokens = (
-                            assignee_node.worker.memory.get_context()
-                        )
-                        token_usage = {'total_tokens': total_tokens}
-                    except Exception:
-                        token_usage = None
-
-            # Log the completed task
-            self.metrics_logger.log_task_completed(
-                task_id=task.id,
-                worker_id=worker_id,
-                result_summary=task.result if task.result else "Completed",
-                processing_time_seconds=processing_time_seconds,
-                token_usage=token_usage,
-                metadata={'current_state': task.state.value},
+        # Get processing time from task start time or additional info
+        if task.id in self._task_start_times:
+            processing_time_seconds = (
+                time.time() - self._task_start_times[task.id]
             )
+            self._cleanup_task_tracking(task.id)
+        elif (
+            task.additional_info is not None
+            and 'processing_time_seconds' in task.additional_info
+        ):
+            processing_time_seconds = task.additional_info[
+                'processing_time_seconds'
+            ]
+
+        # Get token usage from task additional info (preferred - actual
+        # usage)
+        if (
+            task.additional_info is not None
+            and 'token_usage' in task.additional_info
+        ):
+            token_usage = task.additional_info['token_usage']
+        else:
+            # Fallback: Try to get token usage from SingleAgentWorker
+            # memory
+            assignee_node = next(
+                (
+                    child
+                    for child in self._children
+                    if child.node_id == worker_id
+                ),
+                None,
+            )
+            if isinstance(assignee_node, SingleAgentWorker):
+                try:
+                    _, total_tokens = assignee_node.worker.memory.get_context()
+                    token_usage = {'total_tokens': total_tokens}
+                except Exception:
+                    token_usage = None
+
+        # Log the completed task
+        task_completed_event = TaskCompletedEvent(
+            task_id=task.id,
+            worker_id=worker_id,
+            parent_task_id=task.parent.id if task.parent else None,
+            result_summary=task.result if task.result else "Completed",
+            processing_time_seconds=processing_time_seconds,
+            token_usage=token_usage,
+            metadata={'current_state': task.state.value},
+        )
+        for cb in self._callbacks:
+            cb.log_task_completed(task_completed_event)
 
         # Find and remove the completed task from pending tasks
         tasks_list = list(self._pending_tasks)
@@ -2679,10 +4803,17 @@ class Workforce(BaseNode):
                 tasks_list.pop(i)
                 self._pending_tasks = deque(tasks_list)
                 found_and_removed = True
-                print(
-                    f"{Fore.GREEN}✅ Task {task.id} completed and removed "
-                    f"from queue.{Fore.RESET}"
-                )
+                for cb in self._callbacks:
+                    cb.log_message(
+                        LogEvent(
+                            message=(
+                                f"✅ Task {task.id} completed and removed "
+                                f"from queue."
+                            ),
+                            level="info",
+                            color="green",
+                        )
+                    )
                 break
 
         if not found_and_removed:
@@ -2787,15 +4918,23 @@ class Workforce(BaseNode):
         r"""Returns an ASCII tree representation of the task hierarchy and
         worker status.
         """
-        if not self.metrics_logger:
-            return "Logger not initialized."
-        return self.metrics_logger.get_ascii_tree_representation()
+        metrics_cb: List[WorkforceMetrics] = [
+            cb for cb in self._callbacks if isinstance(cb, WorkforceMetrics)
+        ]
+        if len(metrics_cb) == 0:
+            return "Metrics Callback not initialized."
+        else:
+            return metrics_cb[0].get_ascii_tree_representation()
 
     def get_workforce_kpis(self) -> Dict[str, Any]:
         r"""Returns a dictionary of key performance indicators."""
-        if not self.metrics_logger:
-            return {"error": "Logger not initialized."}
-        return self.metrics_logger.get_kpis()
+        metrics_cb: List[WorkforceMetrics] = [
+            cb for cb in self._callbacks if isinstance(cb, WorkforceMetrics)
+        ]
+        if len(metrics_cb) == 0:
+            return {"error": "Metrics Callback not initialized."}
+        else:
+            return metrics_cb[0].get_kpis()
 
     def dump_workforce_logs(self, file_path: str) -> None:
         r"""Dumps all collected logs to a JSON file.
@@ -2803,12 +4942,139 @@ class Workforce(BaseNode):
         Args:
             file_path (str): The path to the JSON file.
         """
-        if not self.metrics_logger:
-            print("Logger not initialized. Cannot dump logs.")
+        metrics_cb: List[WorkforceMetrics] = [
+            cb for cb in self._callbacks if isinstance(cb, WorkforceMetrics)
+        ]
+        if len(metrics_cb) == 0:
+            for cb in self._callbacks:
+                cb.log_message(
+                    LogEvent(
+                        message="Logger not initialized. Cannot dump logs.",
+                        level="warning",
+                        color="yellow",
+                    )
+                )
             return
-        self.metrics_logger.dump_to_json(file_path)
+        metrics_cb[0].dump_to_json(file_path)
         # Use logger.info or print, consistent with existing style
         logger.info(f"Workforce logs dumped to {file_path}")
+
+    async def _handle_skip_task(self) -> bool:
+        r"""Handle skip request by marking pending and in-flight tasks
+        as completed.
+
+        Returns:
+            bool: True if workforce should stop (no independent tasks),
+            False to continue.
+        """
+        logger.info("Skip requested, processing skip logic.")
+
+        # Mark all pending tasks as completed instead of just clearing
+        pending_tasks_to_complete = list(self._pending_tasks)
+        if pending_tasks_to_complete:
+            logger.info(
+                f"Marking {len(pending_tasks_to_complete)} pending tasks "
+                f"as completed."
+            )
+            for task in pending_tasks_to_complete:
+                # Don't remove tasks that need decomposition
+                if task.additional_info and task.additional_info.get(
+                    '_needs_decomposition', False
+                ):
+                    continue
+                # Set task state to DONE and add a completion message
+                task.state = TaskState.DONE
+                task.result = "Task marked as completed due to skip request"
+
+                # Use the existing handle completed task function
+                await self._handle_completed_task(task)
+
+        # Handle in-flight tasks if they exist
+        if self._in_flight_tasks > 0:
+            logger.info(
+                f"Found {self._in_flight_tasks} in-flight tasks. "
+                f"Retrieving and completing them."
+            )
+            try:
+                # Get all in-flight tasks for this publisher from the channel
+                in_flight_tasks = await self._channel.get_in_flight_tasks(
+                    self.node_id
+                )
+                logger.info(
+                    f"Retrieved {len(in_flight_tasks)} in-flight "
+                    f"tasks from channel."
+                )
+
+                for task in in_flight_tasks:
+                    # Set task state to DONE and add a completion message
+                    task.state = TaskState.DONE
+                    task.result = (
+                        "Task marked as completed due to skip request"
+                    )
+
+                    # Remove the task from the channel to avoid hanging
+                    await self._channel.remove_task(task.id)
+
+                    # Decrement in-flight counter
+                    self._decrement_in_flight_tasks(
+                        task.id, "skip request - removed from channel"
+                    )
+
+                    # Handle as completed task to update dependencies
+                    await self._handle_completed_task(task)
+
+                    logger.info(
+                        f"Completed in-flight task {task.id} due "
+                        f"to skip request."
+                    )
+
+            except Exception as e:
+                logger.error(
+                    f"Error handling in-flight tasks during skip: {e}",
+                    exc_info=True,
+                )
+                # Reset in-flight counter to prevent hanging
+                self._in_flight_tasks = 0
+
+        # Check if there are any main pending tasks after filtering
+        if self._pending_tasks:
+            # Check if the first pending task needs decomposition
+            next_task = self._pending_tasks[0]
+            if next_task.additional_info and next_task.additional_info.get(
+                '_needs_decomposition'
+            ):
+                logger.info(
+                    f"Decomposing main task {next_task.id} after skip request."
+                )
+                try:
+                    # Remove the decomposition flag to avoid re-decomposition
+                    next_task.additional_info['_needs_decomposition'] = False
+
+                    # Decompose the task and append subtasks to _pending_tasks
+                    await self.handle_decompose_append_task(
+                        next_task, reset=False
+                    )
+
+                    # Mark the main task as completed and remove from pending
+                    await self._handle_completed_task(next_task)
+                    logger.info(
+                        f"Main task {next_task.id} decomposed after "
+                        f"skip request"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Error decomposing main task {next_task.id} "
+                        f"after skip: {e}",
+                        exc_info=True,
+                    )
+
+            logger.info("Pending tasks available after skip, continuing.")
+            await self._post_ready_tasks()
+            return False  # Continue processing
+        else:
+            # No pending tasks available, act like stop
+            logger.info("No pending tasks available, acting like stop.")
+            return True  # Stop processing
 
     @check_if_running(False)
     async def _listen_to_channel(self) -> None:
@@ -2837,6 +5103,75 @@ class Workforce(BaseNode):
                 if self._stop_requested:
                     logger.info("Stop requested, breaking execution loop.")
                     break
+
+                # Check for skip request after potential pause
+                if self._skip_requested:
+                    should_stop = await self._handle_skip_task()
+                    if should_stop:
+                        self._stop_requested = True
+                        break
+
+                    # Reset skip flag
+                    self._skip_requested = False
+                    continue
+
+                # Check if we should decompose a main task
+                # Only decompose when no tasks are in flight and pending queue
+                # is empty
+                if not self._pending_tasks and self._in_flight_tasks == 0:
+                    # All tasks completed, will exit loop
+                    break
+
+                # Check if the first pending task needs decomposition
+                # This happens when add_task(as_subtask=False) was called
+                if self._pending_tasks and self._in_flight_tasks == 0:
+                    next_task = self._pending_tasks[0]
+                    if (
+                        next_task.additional_info
+                        and next_task.additional_info.get(
+                            '_needs_decomposition'
+                        )
+                    ):
+                        logger.info(f"Decomposing main task: {next_task.id}")
+                        try:
+                            # Remove the decomposition flag to avoid
+                            # re-decomposition
+                            next_task.additional_info[
+                                '_needs_decomposition'
+                            ] = False
+
+                            # Decompose the task and append subtasks to
+                            # _pending_tasks
+                            await self.handle_decompose_append_task(
+                                next_task, reset=False
+                            )
+
+                            # Mark the main task as completed (decomposition
+                            # successful) and Remove it from pending tasks
+                            await self._handle_completed_task(next_task)
+                            logger.info(
+                                f"Main task {next_task.id} decomposed and "
+                                f"ready for processing"
+                            )
+                        except Exception as e:
+                            logger.error(
+                                f"Error decomposing main task {next_task.id}: "
+                                f"{e}",
+                                exc_info=True,
+                            )
+                            # Revert back to the queue for retry later if
+                            # decomposition failed
+                            if not self._pending_tasks:
+                                self._pending_tasks.appendleft(next_task)
+                            else:
+                                logger.warning(
+                                    "Pending tasks exist after decomposition "
+                                    "error."
+                                )
+
+                        # Immediately assign and post the transferred tasks
+                        await self._post_ready_tasks()
+                        continue
 
                 # Save snapshot before processing next task
                 if self._pending_tasks:
@@ -2910,14 +5245,45 @@ class Workforce(BaseNode):
                             )
                             if not halt:
                                 continue
-                            print(
-                                f"{Fore.RED}Task {returned_task.id} has "
-                                f"failed for {MAX_TASK_RETRIES} times after "
-                                f"insufficient results, halting the "
-                                f"workforce. Final error: "
-                                f"{returned_task.result or 'Unknown error'}"
-                                f"{Fore.RESET}"
-                            )
+
+                            # Do not halt if we have main tasks in queue
+                            if len(self.get_main_task_queue()) > 0:
+                                cfg = self.failure_handling_config
+                                max_r = cfg.max_retries
+                                err = returned_task.result or 'Unknown err'
+                                for cb in self._callbacks:
+                                    cb.log_message(
+                                        LogEvent(
+                                            message=(
+                                                f"Task {returned_task.id} has "
+                                                f"failed for {max_r} times "
+                                                f"after insufficient results, "
+                                                f"skipping that task. "
+                                                f"Final error: {err}"
+                                            ),
+                                            level="error",
+                                            color="red",
+                                        )
+                                    )
+                                self._skip_requested = True
+                                continue
+
+                            max_r = self.failure_handling_config.max_retries
+                            err = returned_task.result or 'Unknown error'
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        message=(
+                                            f"Task {returned_task.id} has "
+                                            f"failed for {max_r} times "
+                                            f"after insufficient results, "
+                                            f"halting the workforce. "
+                                            f"Final error: {err}"
+                                        ),
+                                        level="error",
+                                        color="red",
+                                    )
+                                )
                             await self._graceful_shutdown(returned_task)
                             break
                         except Exception as e:
@@ -2928,23 +5294,259 @@ class Workforce(BaseNode):
                             )
                             continue
                     else:
-                        print(
-                            f"{Fore.CYAN}🎯 Task {returned_task.id} completed "
-                            f"successfully.{Fore.RESET}"
+                        # Skip quality evaluation if no recovery
+                        # strategies enabled
+                        # (no point analyzing if we can't do anything about it)
+                        if (
+                            self.failure_handling_config.enabled_strategies
+                            == []
+                        ):
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        message=(
+                                            f"Task {returned_task.id} "
+                                            f"completed (quality check "
+                                            f"skipped - no recovery "
+                                            f"strategies)."
+                                        ),
+                                        level="info",
+                                        color="cyan",
+                                    )
+                                )
+                            await self._handle_completed_task(returned_task)
+                            continue
+
+                        quality_eval = self._analyze_task(
+                            returned_task, for_failure=False
                         )
-                        await self._handle_completed_task(returned_task)
+
+                        if not quality_eval.quality_sufficient:
+                            logger.info(
+                                f"Task {returned_task.id} quality check: "
+                                f"score={quality_eval.quality_score}, "
+                                f"issues={quality_eval.issues}, "
+                                f"strategy={quality_eval.recovery_strategy}"
+                            )
+
+                            # Check retry limit before attempting recovery
+                            # Use max_retries - 1 to allow at least one retry
+                            quality_retry_limit = max(
+                                1, self.failure_handling_config.max_retries - 1
+                            )
+                            if (
+                                returned_task.failure_count
+                                >= quality_retry_limit
+                            ):
+                                score = quality_eval.quality_score
+                                for cb in self._callbacks:
+                                    cb.log_message(
+                                        LogEvent(
+                                            message=(
+                                                f"Task {returned_task.id} "
+                                                f"completed with low quality "
+                                                f"score: {score} "
+                                                f"(retry limit reached)"
+                                            ),
+                                            level="warning",
+                                            color="yellow",
+                                        )
+                                    )
+                                await self._handle_completed_task(
+                                    returned_task
+                                )
+                                continue
+
+                            # Log visual feedback for quality-failed tasks
+                            # with recovery strategy
+                            recovery_action = (
+                                quality_eval.recovery_strategy.value
+                                if quality_eval.recovery_strategy
+                                else ""
+                            )
+                            score = quality_eval.quality_score
+                            issues = ', '.join(quality_eval.issues)
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        message=(
+                                            f"⚠️ Task {returned_task.id} "
+                                            f"failed quality check "
+                                            f"(score: {score}). "
+                                            f"Issues: {issues}. "
+                                            f"Recovery: {recovery_action}"
+                                        ),
+                                        level="warning",
+                                        color="yellow",
+                                    )
+                                )
+
+                            # Mark as failed for recovery
+                            returned_task.failure_count += 1
+
+                            task_failed_event = TaskFailedEvent(
+                                task_id=returned_task.id,
+                                worker_id=returned_task.assigned_worker_id,
+                                parent_task_id=returned_task.parent.id
+                                if returned_task.parent
+                                else None,
+                                error_message=(
+                                    f"⚠️ Task {returned_task.id} "
+                                    f"failed quality check "
+                                    f"(score: {score}). "
+                                    f"Issues: {issues}. "
+                                    f"Recovery: {recovery_action}"
+                                ),
+                                metadata={
+                                    'failure_count': returned_task.failure_count,  # noqa: E501
+                                    'task_content': returned_task.content,
+                                    'result_length': len(returned_task.result)
+                                    if returned_task.result
+                                    else 0,
+                                },
+                            )
+                            for cb in self._callbacks:
+                                cb.log_task_failed(task_failed_event)
+                            returned_task.state = TaskState.FAILED
+                            returned_task.result = (
+                                f"Quality insufficient (score: "
+                                f"{quality_eval.quality_score}). "
+                                f"Issues: {', '.join(quality_eval.issues)}"
+                            )
+
+                            # Validate and fallback recovery strategy based on
+                            # enabled_strategies
+                            config = self.failure_handling_config
+                            config_strategies = config.enabled_strategies
+                            if quality_eval.recovery_strategy is None:
+                                # No strategy recommended - use fallback
+                                if config_strategies is None:
+                                    quality_eval.recovery_strategy = (
+                                        RecoveryStrategy.RETRY
+                                    )
+                                else:
+                                    quality_eval.recovery_strategy = (
+                                        config_strategies[0]
+                                    )
+                            elif config_strategies is not None:
+                                # Strategy recommended - validate it's enabled
+                                if (
+                                    quality_eval.recovery_strategy
+                                    not in config_strategies
+                                ):
+                                    # LLM recommended a disabled strategy
+                                    rec = quality_eval.recovery_strategy.value
+                                    enabled = [
+                                        s.value for s in config_strategies
+                                    ]
+                                    fallback = config_strategies[0].value
+                                    logger.warning(
+                                        f"Task {returned_task.id}: LLM "
+                                        f"recommended '{rec}' but it's not in "
+                                        f"enabled_strategies {enabled}. "
+                                        f"Using '{fallback}' instead."
+                                    )
+                                    quality_eval.recovery_strategy = (
+                                        config_strategies[0]
+                                    )
+
+                            # Preserve assignee before cleanup - in normal
+                            # flow, a task must be assigned before it can fail
+                            original_assignee = self._assignees.get(
+                                returned_task.id
+                            )
+                            if original_assignee is None:
+                                logger.error(
+                                    f"Task {returned_task.id}: No assignee "
+                                    f"found in _assignees. This indicates a "
+                                    f"bug in the task assignment chain."
+                                )
+                                returned_task.state = TaskState.FAILED
+                                self._completed_tasks.append(returned_task)
+                                continue
+
+                            # Clean up tracking before attempting recovery
+                            await self._channel.archive_task(returned_task.id)
+                            self._cleanup_task_tracking(returned_task.id)
+
+                            # Apply LLM-recommended recovery strategy with
+                            # preserved assignee
+                            try:
+                                is_decompose = (
+                                    await self._apply_recovery_strategy(
+                                        returned_task,
+                                        quality_eval,
+                                        original_assignee,
+                                    )
+                                )
+
+                                # For decompose, cleanup happens in the method
+                                if is_decompose:
+                                    continue
+
+                            except Exception as e:
+                                logger.error(
+                                    f"Error handling quality-failed task "
+                                    f"{returned_task.id}: {e}",
+                                    exc_info=True,
+                                )
+                                continue
+                        else:
+                            score = quality_eval.quality_score
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        message=(
+                                            f"Task {returned_task.id} "
+                                            f"completed successfully "
+                                            f"(quality score: {score})."
+                                        ),
+                                        level="info",
+                                        color="cyan",
+                                    )
+                                )
+                            await self._handle_completed_task(returned_task)
                 elif returned_task.state == TaskState.FAILED:
                     try:
                         halt = await self._handle_failed_task(returned_task)
                         if not halt:
                             continue
-                        print(
-                            f"{Fore.RED}Task {returned_task.id} has failed "
-                            f"for {MAX_TASK_RETRIES} times, halting "
-                            f"the workforce. Final error: "
-                            f"{returned_task.result or 'Unknown error'}"
-                            f"{Fore.RESET}"
-                        )
+
+                        # Do not halt if we have main tasks in queue
+                        if len(self.get_main_task_queue()) > 0:
+                            max_r = self.failure_handling_config.max_retries
+                            err = returned_task.result or 'Unknown error'
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        message=(
+                                            f"Task {returned_task.id} has "
+                                            f"failed for {max_r} times, "
+                                            f"skipping that task. "
+                                            f"Final error: {err}"
+                                        ),
+                                        level="error",
+                                        color="red",
+                                    )
+                                )
+                            self._skip_requested = True
+                            continue
+
+                        max_r = self.failure_handling_config.max_retries
+                        err = returned_task.result or 'Unknown error'
+                        for cb in self._callbacks:
+                            cb.log_message(
+                                LogEvent(
+                                    message=(
+                                        f"Task {returned_task.id} has "
+                                        f"failed for {max_r} times, "
+                                        f"halting the workforce. "
+                                        f"Final error: {err}"
+                                    ),
+                                    level="error",
+                                    color="red",
+                                )
+                            )
                         # Graceful shutdown instead of immediate break
                         await self._graceful_shutdown(returned_task)
                         break
@@ -2990,6 +5592,9 @@ class Workforce(BaseNode):
         elif not self._pending_tasks and self._in_flight_tasks == 0:
             self._state = WorkforceState.IDLE
             logger.info("All tasks completed.")
+            all_tasks_completed_event = AllTasksCompletedEvent()
+            for cb in self._callbacks:
+                cb.log_all_tasks_completed(all_tasks_completed_event)
 
         # shut down the whole workforce tree
         self.stop()
@@ -3028,54 +5633,34 @@ class Workforce(BaseNode):
 
     @check_if_running(True)
     def stop(self) -> None:
-        r"""Stop all the child nodes under it. The node itself will be stopped
-        by its parent node.
+        r"""Forcefully stop the workforce and its children immediately.
+
+        This is now an immediate stop (was previously a graceful lifecycle
+        cleanup). It cancels child listeners, clears pending/in-flight tasks,
+        and sets state to STOPPED without waiting for active work to finish.
         """
-        # Stop all child nodes first
-        for child in self._children:
-            if child._running:
-                child.stop()
-
-        # Cancel child listening tasks
-        if self._child_listening_tasks:
-            try:
-                loop = asyncio.get_running_loop()
-                if loop and not loop.is_closed():
-                    # Create graceful cleanup task
-                    async def cleanup():
-                        await asyncio.sleep(0.1)  # Brief grace period
-                        for task in self._child_listening_tasks:
-                            if not task.done():
-                                task.cancel()
-
-                        # Handle both asyncio.Task and concurrent.futures.
-                        # Future
-                        awaitables = []
-                        for task in self._child_listening_tasks:
-                            if isinstance(task, concurrent.futures.Future):
-                                # Convert Future to awaitable
-                                awaitables.append(asyncio.wrap_future(task))
-                            else:
-                                # Already an asyncio.Task
-                                awaitables.append(task)
-
-                        await asyncio.gather(
-                            *awaitables,
-                            return_exceptions=True,
-                        )
-
-                    self._cleanup_task = loop.create_task(cleanup())
-                else:
-                    # No active loop, cancel immediately
-                    for task in self._child_listening_tasks:
-                        task.cancel()
-            except (RuntimeError, Exception) as e:
-                # Fallback: cancel immediately
-                logger.debug(f"Exception during task cleanup: {e}")
-                for task in self._child_listening_tasks:
-                    task.cancel()
-
-        self._running = False
+        if self._loop and not self._loop.is_closed():
+            self._submit_coro_to_loop(self._async_stop_immediately())
+        else:
+            # No running loop; perform synchronous best-effort force stop
+            self._stop_requested = True
+            self._pause_event.set()
+            self._pending_tasks.clear()
+            self._in_flight_tasks = 0
+            # Stop children
+            for child in self._children:
+                if child._running:
+                    child.stop()
+            # Cancel listening tasks
+            for listening_task in self._child_listening_tasks:
+                if not listening_task.done():
+                    listening_task.cancel()
+            self._running = False
+            self._state = WorkforceState.STOPPED
+            logger.info(
+                f"Workforce {self.node_id} force stopped "
+                f"(event-loop not yet started)."
+            )
 
     def clone(self, with_memory: bool = False) -> 'Workforce':
         r"""Creates a new instance of Workforce with the same configuration.
@@ -3099,10 +5684,13 @@ class Workforce(BaseNode):
             new_worker_agent=self.new_worker_agent.clone(with_memory)
             if self.new_worker_agent
             else None,
+            default_model=self.default_model,
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
             use_structured_output_handler=self.use_structured_output_handler,
             task_timeout_seconds=self.task_timeout_seconds,
+            mode=self.mode,
+            failure_handling_config=self.failure_handling_config,
         )
 
         for child in self._children:

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,16 +10,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import Any, ClassVar, Dict, List, Optional, Set
 
-from camel.toolkits import BaseToolkit, FunctionTool
+from camel.toolkits import FunctionTool
 
 from .mcp_toolkit import MCPToolkit
 
 
-class NotionMCPToolkit(BaseToolkit):
+class NotionMCPToolkit(MCPToolkit):
     r"""NotionMCPToolkit provides an interface for interacting with Notion
     through the Model Context Protocol (MCP).
 
@@ -75,31 +75,21 @@ class NotionMCPToolkit(BaseToolkit):
             timeout (Optional[float]): Connection timeout in seconds.
                 (default: :obj:`None`)
         """
-        super().__init__(timeout=timeout)
-
-        self._mcp_toolkit = MCPToolkit(
-            config_dict={
-                "mcpServers": {
-                    "notionMCP": {
-                        "command": "npx",
-                        "args": [
-                            "-y",
-                            "mcp-remote",
-                            "https://mcp.notion.com/mcp",
-                        ],
-                    }
+        config_dict = {
+            "mcpServers": {
+                "notionMCP": {
+                    "command": "npx",
+                    "args": [
+                        "-y",
+                        "mcp-remote",
+                        "https://mcp.notion.com/mcp",
+                    ],
                 }
-            },
-            timeout=timeout,
-        )
+            }
+        }
 
-    async def connect(self):
-        r"""Explicitly connect to the Notion MCP server."""
-        await self._mcp_toolkit.connect()
-
-    async def disconnect(self):
-        r"""Explicitly disconnect from the Notion MCP server."""
-        await self._mcp_toolkit.disconnect()
+        # Initialize parent MCPToolkit with Notion configuration
+        super().__init__(config_dict=config_dict, timeout=timeout)
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of tools provided by the NotionMCPToolkit.
@@ -108,7 +98,7 @@ class NotionMCPToolkit(BaseToolkit):
             List[FunctionTool]: List of available tools.
         """
         all_tools = []
-        for client in self._mcp_toolkit.clients:
+        for client in self.clients:
             try:
                 original_build_schema = client._build_tool_schema
 

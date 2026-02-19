@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
 import datetime
@@ -28,7 +28,7 @@ from camel.toolkits import (
     AgentCommunicationToolkit,
     AudioAnalysisToolkit,
     ExcelToolkit,
-    FileWriteToolkit,
+    FileToolkit,
     # GoogleDriveMCPToolkit,
     HumanToolkit,
     HybridBrowserToolkit,
@@ -42,6 +42,7 @@ from camel.toolkits import (
     RedditToolkit,
     ScreenshotToolkit,
     SearchToolkit,
+    SkillToolkit,
     SlackToolkit,
     TerminalToolkit,
     ToolkitMessageIntegration,
@@ -127,8 +128,10 @@ def developer_agent_factory(
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
     web_deploy_toolkit = WebDeployToolkit()
+    skill_toolkit = SkillToolkit(working_directory=WORKING_DIRECTORY)
 
     # Add messaging to toolkits
+    skill_toolkit = message_integration.register_toolkits(skill_toolkit)
     terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
     note_toolkit = message_integration.register_toolkits(note_toolkit)
     web_deploy_toolkit = message_integration.register_toolkits(
@@ -145,32 +148,33 @@ def developer_agent_factory(
         *note_toolkit.get_tools(),
         *web_deploy_toolkit.get_tools(),
         *screenshot_toolkit.get_tools(),
+        *skill_toolkit.get_tools(),
     ]
 
     system_message = f"""
 <role>
-You are a Lead Software Engineer, a master-level coding assistant with a 
-powerful and unrestricted terminal. Your primary role is to solve any 
-technical task by writing and executing code, installing necessary libraries, 
-interacting with the operating system, and deploying applications. You are the 
+You are a Lead Software Engineer, a master-level coding assistant with a
+powerful and unrestricted terminal. Your primary role is to solve any
+technical task by writing and executing code, installing necessary libraries,
+interacting with the operating system, and deploying applications. You are the
 team's go-to expert for all technical implementation.
 </role>
 
 <team_structure>
 You collaborate with the following agents who can work in parallel:
-- **Senior Research Analyst**: Gathers information from the web to support 
+- **Senior Research Analyst**: Gathers information from the web to support
 your development tasks.
-- **Documentation Specialist**: Creates and manages technical and user-facing 
+- **Documentation Specialist**: Creates and manages technical and user-facing
 documents.
-- **Creative Content Specialist**: Handles image, audio, and video processing 
+- **Creative Content Specialist**: Handles image, audio, and video processing
 and generation.
 </team_structure>
 
 <operating_environment>
 - **System**: {platform.system()} ({platform.machine()})
-- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must 
-occur here, but you can access files from any place in the file system. For 
-all file system operations, you MUST use absolute paths to ensure precision 
+- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must
+occur here, but you can access files from any place in the file system. For
+all file system operations, you MUST use absolute paths to ensure precision
 and avoid ambiguity.
 - **Current Date**: {datetime.date.today()}.
 </operating_environment>
@@ -186,6 +190,20 @@ plain text formatting instead.
 
 <capabilities>
 Your capabilities are extensive and powerful:
+- **Skills System (Highest Priority Workflow)**: Skills are your primary
+  execution source for specialized tasks.
+  - Trigger: If a task explicitly references a skill with double curly braces
+    (e.g., {{pdf}} or {{data-analyzer}}), or clearly matches a skill domain,
+    you MUST use the skill workflow first.
+  - Required order:
+    1. Call `list_skills` to confirm exact available skill names.
+    2. Call `load_skill` for the best matching skill before domain work.
+    3. Follow the loaded skill as the primary plan, including its process,
+       constraints, and output format.
+  - Do not rely on memory for skill details; always use loaded content.
+  - If multiple skills apply, prioritize the most specific one and load others
+    only when needed.
+
 - **Unrestricted Code Execution**: You can write and execute code in any
   language to solve a task. You MUST first save your code to a file (e.g.,
   `script.py`) and then run it from the terminal (e.g.,
@@ -324,7 +342,6 @@ def search_agent_factory(
         "browser_get_som_screenshot",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
-        mode="python",
         headless=False,
         enabled_tools=custom_tools,
         browser_log_to_file=True,
@@ -336,12 +353,14 @@ def search_agent_factory(
     )
 
     # Initialize toolkits
+    skill_toolkit = SkillToolkit(working_directory=WORKING_DIRECTORY)
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
     search_toolkit = SearchToolkit().search_google
     terminal_toolkit_basic = TerminalToolkit()
 
     # Add messaging to toolkits
+    skill_toolkit = message_integration.register_toolkits(skill_toolkit)
     web_toolkit_custom = message_integration.register_toolkits(
         web_toolkit_custom
     )
@@ -359,23 +378,24 @@ def search_agent_factory(
         *note_toolkit.get_tools(),
         *search_toolkit,
         *terminal_toolkit.get_tools(),
+        *skill_toolkit.get_tools(),
     ]
 
     system_message = f"""
 <role>
-You are a Senior Research Analyst, a key member of a multi-agent team. Your 
-primary responsibility is to conduct expert-level web research to gather, 
-analyze, and document information required to solve the user's task. You 
+You are a Senior Research Analyst, a key member of a multi-agent team. Your
+primary responsibility is to conduct expert-level web research to gather,
+analyze, and document information required to solve the user's task. You
 operate with precision, efficiency, and a commitment to data quality.
 </role>
 
 <team_structure>
 You collaborate with the following agents who can work in parallel:
-- **Developer Agent**: Writes and executes code, handles technical 
+- **Developer Agent**: Writes and executes code, handles technical
 implementation.
 - **Document Agent**: Creates and manages documents and presentations.
 - **Multi-Modal Agent**: Processes and generates images and audio.
-Your research is the foundation of the team's work. Provide them with 
+Your research is the foundation of the team's work. Provide them with
 comprehensive and well-documented information.
 </team_structure>
 
@@ -423,6 +443,20 @@ comprehensive and well-documented information.
 
 <capabilities>
 Your capabilities include:
+- **Skills System (Highest Priority Workflow)**: Skills are your primary
+  execution source for specialized tasks.
+  - Trigger: If a task explicitly references a skill with double curly braces
+    (e.g., {{pdf}} or {{data-analyzer}}), or clearly matches a skill domain,
+    you MUST use the skill workflow first.
+  - Required order:
+    1. Call `list_skills` to confirm exact available skill names.
+    2. Call `load_skill` for the best matching skill before domain work.
+    3. Follow the loaded skill as the primary plan, including its process,
+       constraints, and output format.
+  - Do not rely on memory for skill details; always use loaded content.
+  - If multiple skills apply, prioritize the most specific one and load others
+    only when needed.
+
 - Search and get information from the web using the search tools.
 - Use the rich browser related toolset to investigate websites.
 - Use the terminal tools to perform local operations. You can leverage
@@ -434,19 +468,19 @@ Your capabilities include:
 
 <web_search_workflow>
 - Initial Search: You MUST start with a search engine like `search_google` or
-    `search_bing` to get a list of relevant URLs for your research, the URLs 
+    `search_bing` to get a list of relevant URLs for your research, the URLs
     here will be used for `browser_visit_page`.
 - Browser-Based Exploration: Use the rich browser related toolset to
     investigate websites.
     - **Navigation and Exploration**: Use `browser_visit_page` to open a URL.
-        `browser_visit_page` provides a snapshot of currently visible 
-        interactive elements, not the full page text. To see more content on 
-        long pages,  Navigate with `browser_click`, `browser_back`, and 
+        `browser_visit_page` provides a snapshot of currently visible
+        interactive elements, not the full page text. To see more content on
+        long pages,  Navigate with `browser_click`, `browser_back`, and
         `browser_forward`. Manage multiple pages with `browser_switch_tab`.
-    - **Analysis**: Use `browser_get_som_screenshot` to understand the page 
-        layout and identify interactive elements. Since this is a heavy 
+    - **Analysis**: Use `browser_get_som_screenshot` to understand the page
+        layout and identify interactive elements. Since this is a heavy
         operation, only use it when visual analysis is necessary.
-    - **Interaction**: Use `browser_type` to fill out forms and 
+    - **Interaction**: Use `browser_type` to fill out forms and
         `browser_enter` to submit or confirm search.
 - Alternative Search: If you are unable to get sufficient
     information through browser-based exploration and scraping, use
@@ -486,7 +520,8 @@ def document_agent_factory(
     )
 
     # Initialize toolkits
-    file_write_toolkit = FileWriteToolkit(working_directory=WORKING_DIRECTORY)
+    skill_toolkit = SkillToolkit(working_directory=WORKING_DIRECTORY)
+    file_write_toolkit = FileToolkit(working_directory=WORKING_DIRECTORY)
     pptx_toolkit = PPTXToolkit(working_directory=WORKING_DIRECTORY)
     mark_it_down_toolkit = MarkItDownToolkit()
     excel_toolkit = ExcelToolkit(working_directory=WORKING_DIRECTORY)
@@ -495,6 +530,7 @@ def document_agent_factory(
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
 
     # Add messaging to toolkits
+    skill_toolkit = message_integration.register_toolkits(skill_toolkit)
     file_write_toolkit = message_integration.register_toolkits(
         file_write_toolkit
     )
@@ -516,24 +552,25 @@ def document_agent_factory(
         *note_toolkit.get_tools(),
         *search_toolkit,
         *terminal_toolkit.get_tools(),
+        *skill_toolkit.get_tools(),
     ]
 
     system_message = f"""
 <role>
-You are a Documentation Specialist, responsible for creating, modifying, and 
-managing a wide range of documents. Your expertise lies in producing 
-high-quality, well-structured content in various formats, including text 
-files, office documents, presentations, and spreadsheets. You are the team's 
+You are a Documentation Specialist, responsible for creating, modifying, and
+managing a wide range of documents. Your expertise lies in producing
+high-quality, well-structured content in various formats, including text
+files, office documents, presentations, and spreadsheets. You are the team's
 authority on all things related to documentation.
 </role>
 
 <team_structure>
 You collaborate with the following agents who can work in parallel:
-- **Lead Software Engineer**: Provides technical details and code examples for 
+- **Lead Software Engineer**: Provides technical details and code examples for
 documentation.
-- **Senior Research Analyst**: Supplies the raw data and research findings to 
+- **Senior Research Analyst**: Supplies the raw data and research findings to
 be included in your documents.
-- **Creative Content Specialist**: Creates images, diagrams, and other media 
+- **Creative Content Specialist**: Creates images, diagrams, and other media
 to be embedded in your work.
 </team_structure>
 
@@ -554,7 +591,7 @@ to be embedded in your work.
     `write_to_file`, `create_presentation`). Your primary output should be
     a file, not just content within your response.
 
-- If there's no specified format for the document/report/paper, you should use 
+- If there's no specified format for the document/report/paper, you should use
     the `write_to_file` tool to create a HTML file.
 
 - If the document has many data, you MUST use the terminal tool to
@@ -568,6 +605,21 @@ to be embedded in your work.
 
 <capabilities>
 Your capabilities include:
+- **Skills System (Highest Priority Workflow)**: Skills are your primary
+  execution source for specialized tasks.
+  - Trigger: If a task explicitly references a skill with double curly braces
+    (e.g., {{pdf}} or {{data-analyzer}}), or clearly matches a skill domain,
+    you MUST use the skill workflow first.
+  - Required order:
+    1. Call `list_skills` to confirm exact available skill names.
+    2. Call `load_skill` for the best matching skill before domain work.
+    3. Follow the loaded skill as the primary plan, including its process,
+       constraints, and output format.
+  - Do not rely on memory for skill details; always use loaded content.
+  - If multiple skills apply, prioritize the most specific one and load others
+    only when needed.
+
+
 - Document Reading:
     - Read and understand the content of various file formats including
         - PDF (.pdf)
@@ -669,6 +721,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     )
 
     # Initialize toolkits
+    skill_toolkit = SkillToolkit(working_directory=WORKING_DIRECTORY)
     video_downloader_toolkit = VideoDownloaderToolkit(
         working_directory=WORKING_DIRECTORY
     )
@@ -686,6 +739,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
 
     # Add messaging to toolkits
+    skill_toolkit = message_integration.register_toolkits(skill_toolkit)
     video_downloader_toolkit = message_integration.register_toolkits(
         video_downloader_toolkit
     )
@@ -711,23 +765,24 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *search_toolkit,
         *terminal_toolkit.get_tools(),
         *note_toolkit.get_tools(),
+        *skill_toolkit.get_tools(),
     ]
 
     system_message = f"""
 <role>
-You are a Creative Content Specialist, specializing in analyzing and 
-generating various types of media content. Your expertise includes processing 
-video and audio, understanding image content, and creating new images from 
+You are a Creative Content Specialist, specializing in analyzing and
+generating various types of media content. Your expertise includes processing
+video and audio, understanding image content, and creating new images from
 text prompts. You are the team's expert for all multi-modal tasks.
 </role>
 
 <team_structure>
 You collaborate with the following agents who can work in parallel:
-- **Lead Software Engineer**: Integrates your generated media into 
+- **Lead Software Engineer**: Integrates your generated media into
 applications and websites.
-- **Senior Research Analyst**: Provides the source material and context for 
+- **Senior Research Analyst**: Provides the source material and context for
 your analysis and generation tasks.
-- **Documentation Specialist**: Embeds your visual content into reports, 
+- **Documentation Specialist**: Embeds your visual content into reports,
 presentations, and other documents.
 </team_structure>
 
@@ -752,6 +807,20 @@ presentations, and other documents.
 
 <capabilities>
 Your capabilities include:
+- **Skills System (Highest Priority Workflow)**: Skills are your primary
+  execution source for specialized tasks.
+  - Trigger: If a task explicitly references a skill with double curly braces
+    (e.g., {{pdf}} or {{data-analyzer}}), or clearly matches a skill domain,
+    you MUST use the skill workflow first.
+  - Required order:
+    1. Call `list_skills` to confirm exact available skill names.
+    2. Call `load_skill` for the best matching skill before domain work.
+    3. Follow the loaded skill as the primary plan, including its process,
+       constraints, and output format.
+  - Do not rely on memory for skill details; always use loaded content.
+  - If multiple skills apply, prioritize the most specific one and load others
+    only when needed.
+
 - Video & Audio Analysis:
     - Download videos from URLs for analysis.
     - Transcribe speech from audio files to text with high accuracy
@@ -823,6 +892,7 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
     search_toolkit = SearchToolkit().search_exa
     terminal_toolkit = TerminalToolkit()
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
+    skill_toolkit = SkillToolkit(working_directory=WORKING_DIRECTORY)
 
     # Add messaging to toolkits
     whatsapp_toolkit = message_integration.register_toolkits(whatsapp_toolkit)
@@ -834,18 +904,33 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
     search_toolkit = message_integration.register_functions([search_toolkit])
     terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
     note_toolkit = message_integration.register_toolkits(note_toolkit)
+    skill_toolkit = message_integration.register_toolkits(skill_toolkit)
 
     return ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Social Medium Agent",
             content=f"""
 <role>
-You are a Social Media Manager, responsible for managing communications and 
-content across a variety of social platforms. Your expertise lies in content 
+You are a Social Media Manager, responsible for managing communications and
+content across a variety of social platforms. Your expertise lies in content
 creation, community engagement, and brand messaging.
 </role>
 
 <capabilities>
+- **Skills System (Highest Priority Workflow)**: Skills are your primary
+  execution source for specialized tasks.
+  - Trigger: If a task explicitly references a skill with double curly braces
+    (e.g., {{pdf}} or {{data-analyzer}}), or clearly matches a skill domain,
+    you MUST use the skill workflow first.
+  - Required order:
+    1. Call `list_skills` to confirm exact available skill names.
+    2. Call `load_skill` for the best matching skill before domain work.
+    3. Follow the loaded skill as the primary plan, including its process,
+       constraints, and output format.
+  - Do not rely on memory for skill details; always use loaded content.
+  - If multiple skills apply, prioritize the most specific one and load others
+    only when needed.
+
 - **Platform Management**:
   - **WhatsApp**: Send text and template messages.
   - **Twitter**: Create and delete tweets.
@@ -853,25 +938,25 @@ creation, community engagement, and brand messaging.
   - **Reddit**: Collect posts/comments and perform sentiment analysis.
   - **Notion**: Manage pages and users.
   - **Slack**: Manage channels and messages.
-- **Content Distribution**: Share content and updates provided by the team on 
+- **Content Distribution**: Share content and updates provided by the team on
 relevant social channels.
-- **Community Engagement**: Monitor discussions, analyze sentiment, and 
+- **Community Engagement**: Monitor discussions, analyze sentiment, and
 interact with users.
-- **Cross-Team Communication**: Use messaging tools to coordinate with other 
+- **Cross-Team Communication**: Use messaging tools to coordinate with other
 agents for content and information.
-- **File System & Terminal**: Access local files for posting and use CLI tools 
+- **File System & Terminal**: Access local files for posting and use CLI tools
 (`curl`, `grep`) for interacting with APIs or local data.
 </capabilities>
 
 <team_structure>
 You collaborate with the following agents who can work in parallel:
-- **Lead Software Engineer**: Provides technical updates and product 
+- **Lead Software Engineer**: Provides technical updates and product
 announcements to be shared.
-- **Senior Research Analyst**: Supplies data and insights for creating 
+- **Senior Research Analyst**: Supplies data and insights for creating
 informative posts.
-- **Documentation Specialist**: Delivers articles, blog posts, and other 
+- **Documentation Specialist**: Delivers articles, blog posts, and other
 long-form content for promotion.
-- **Creative Content Specialist**: Provides images, videos, and other media 
+- **Creative Content Specialist**: Provides images, videos, and other media
 for your social campaigns.
 </team_structure>
 
@@ -880,10 +965,10 @@ for your social campaigns.
 </operating_environment>
 
 <mandatory_instructions>
-- You MUST use the `send_message_to_user` tool to inform the user of every 
-decision and action you take. Your message must include a short title and a 
+- You MUST use the `send_message_to_user` tool to inform the user of every
+decision and action you take. Your message must include a short title and a
 one-sentence description.
-- When you complete your task, your final response must be a comprehensive 
+- When you complete your task, your final response must be a comprehensive
 summary of your actions.
 - Before acting, check for necessary API credentials.
 - Handle rate limits and API restrictions carefully.
@@ -901,6 +986,7 @@ summary of your actions.
             *search_toolkit,
             *terminal_toolkit.get_tools(),
             *note_toolkit.get_tools(),
+            *skill_toolkit.get_tools(),
         ],
     )
 
@@ -952,12 +1038,12 @@ You are a helpful coordinator.
 file operations must occur here, but you can access files from any place in
 the file system. For all file system operations, you MUST use absolute paths
 to ensure precision and avoid ambiguity.
-The current date is {datetime.date.today()}. For any date-related tasks, you 
+The current date is {datetime.date.today()}. For any date-related tasks, you
 MUST use this as the current date.
 
-- If a task assigned to another agent fails, you should re-assign it to the 
-`Developer_Agent`. The `Developer_Agent` is a powerful agent with terminal 
-access and can resolve a wide range of issues. 
+- If a task assigned to another agent fails, you should re-assign it to the
+`Developer_Agent`. The `Developer_Agent` is a powerful agent with terminal
+access and can resolve a wide range of issues.
             """
         ),
         model=model_backend_reason,
@@ -976,7 +1062,7 @@ You are a helpful task planner.
 file operations must occur here, but you can access files from any place in
 the file system. For all file system operations, you MUST use absolute paths
 to ensure precision and avoid ambiguity.
-The current date is {datetime.date.today()}. For any date-related tasks, you 
+The current date is {datetime.date.today()}. For any date-related tasks, you
 MUST use this as the current date.
         """,
         model=model_backend_reason,
@@ -1098,7 +1184,7 @@ MUST use this as the current date.
     human_task = Task(
         content=(
             """
-search 10 different papers related to llm agent and write a html report about 
+search 10 different papers related to llm agent and write a html report about
 them.
             """
         ),

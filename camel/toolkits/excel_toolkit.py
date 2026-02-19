@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 # Enables postponed evaluation of annotations (for string-based type hints)
 import os
@@ -233,10 +233,10 @@ class ExcelToolkit(BaseToolkit):
             Sheet Name: {sheet_info['sheet_name']}
             Cell information list:
             {sheet_info['cell_info_list']}
-            
+
             Markdown View of the content:
             {sheet_info['markdown_content']}
-            
+
             {'-'*40}
             """
 
@@ -872,7 +872,7 @@ class ExcelToolkit(BaseToolkit):
             import csv
 
             with open(
-                resolved_csv_path, 'w', newline='', encoding='utf-8'
+                resolved_csv_path, 'w', newline='', encoding='utf-8-sig'
             ) as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerows(data)

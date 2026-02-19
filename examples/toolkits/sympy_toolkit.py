@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
@@ -18,7 +18,7 @@ from camel.toolkits import SymPyToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
-sys_msg = """You are a helpful math assistant that can perform symbolic 
+sys_msg = """You are a helpful math assistant that can perform symbolic
 computations"""
 
 # Set model config
@@ -46,9 +46,9 @@ response = camel_agent.step(usr_msg)
 print(response.info['tool_calls'])
 '''
 ===============================================================================
-[ToolCallingRecord(tool_name='simplify_expression', args={'expression': '(x**4 
+[ToolCallingRecord(tool_name='simplify_expression', args={'expression': '(x**4
 - 16)/(x**2 - 4) + sin(x)**2 + cos(x)**2 + (x**3 + 6*x**2 + 12*x + 8)/(x + 2)
-'}, result='{"status": "success", "result": "2*x**2 + 4*x + 9"}', 
+'}, result='{"status": "success", "result": "2*x**2 + 4*x + 9"}',
 tool_call_id='call_CdoZsLWeagT0yBM13RYuz09W')]
 ===============================================================================
 '''

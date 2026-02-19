@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
 import contextlib
@@ -20,6 +20,7 @@ import os
 import subprocess
 import time
 import uuid
+from contextvars import ContextVar
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
@@ -34,34 +35,76 @@ else:
 from camel.logger import get_logger
 from camel.utils.tool_result import ToolResult
 
+from .installer import check_and_install_dependencies
+
 logger = get_logger(__name__)
+
+# Context variable to track if we're inside a high-level action
+_in_high_level_action: ContextVar[bool] = ContextVar(
+    '_in_high_level_action', default=False
+)
+
+
+def _create_memory_aware_error(base_msg: str) -> str:
+    import psutil
+
+    mem = psutil.virtual_memory()
+    if mem.available < 1024**3:
+        return (
+            f"{base_msg} "
+            f"(likely due to insufficient memory). "
+            f"Available memory: {mem.available / 1024**3:.2f}GB "
+            f"({mem.percent}% used)"
+        )
+    return base_msg
+
+
+async def _cleanup_process_and_tasks(process, log_reader_task, ts_log_file):
+    if process:
+        with contextlib.suppress(ProcessLookupError, Exception):
+            process.kill()
+        with contextlib.suppress(Exception):
+            process.wait(timeout=2)
+
+    if log_reader_task and not log_reader_task.done():
+        log_reader_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await log_reader_task
+
+    if ts_log_file:
+        with contextlib.suppress(Exception):
+            ts_log_file.close()
 
 
 def action_logger(func):
-    """Decorator to add logging to action methods."""
+    """Decorator to add logging to action methods.
+
+    Skips logging if already inside a high-level action to avoid
+    logging internal calls.
+    """
 
     @wraps(func)
     async def wrapper(self, *args, **kwargs):
+        # Skip logging if we're already inside a high-level action
+        if _in_high_level_action.get():
+            return await func(self, *args, **kwargs)
+
         action_name = func.__name__
         start_time = time.time()
 
-        # Log inputs (skip self)
         inputs = {
             "args": args,
             "kwargs": kwargs,
         }
 
         try:
-            # Execute the original function
             result = await func(self, *args, **kwargs)
             execution_time = time.time() - start_time
 
-            # Extract page load time if available
             page_load_time = None
             if isinstance(result, dict) and 'page_load_time_ms' in result:
                 page_load_time = result['page_load_time_ms'] / 1000.0
 
-            # Log success
             await self._log_action(
                 action_name=action_name,
                 inputs=inputs,
@@ -76,7 +119,6 @@ def action_logger(func):
             execution_time = time.time() - start_time
             error_msg = f"{type(e).__name__}: {e!s}"
 
-            # Log error
             await self._log_action(
                 action_name=action_name,
                 inputs=inputs,
@@ -86,6 +128,67 @@ def action_logger(func):
             )
 
             raise
+
+    return wrapper
+
+
+def high_level_action(func):
+    """Decorator for high-level actions that should suppress low-level logging.
+
+    When a function is decorated with this, all low-level action_logger
+    decorated functions called within it will skip logging. This decorator
+    itself will log the high-level action.
+    """
+
+    @wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        action_name = func.__name__
+        start_time = time.time()
+
+        inputs = {
+            "args": args,
+            "kwargs": kwargs,
+        }
+
+        # Set the context variable to indicate we're in a high-level action
+        token = _in_high_level_action.set(True)
+        try:
+            result = await func(self, *args, **kwargs)
+            execution_time = time.time() - start_time
+
+            # Log the high-level action
+            if hasattr(self, '_get_ws_wrapper'):
+                # This is a HybridBrowserToolkit instance
+                ws_wrapper = await self._get_ws_wrapper()
+                await ws_wrapper._log_action(
+                    action_name=action_name,
+                    inputs=inputs,
+                    outputs=result,
+                    execution_time=execution_time,
+                    page_load_time=None,
+                )
+
+            return result
+
+        except Exception as e:
+            execution_time = time.time() - start_time
+            error_msg = f"{type(e).__name__}: {e!s}"
+
+            # Log the error
+            if hasattr(self, '_get_ws_wrapper'):
+                ws_wrapper = await self._get_ws_wrapper()
+                await ws_wrapper._log_action(
+                    action_name=action_name,
+                    inputs=inputs,
+                    outputs=None,
+                    execution_time=execution_time,
+                    error=error_msg,
+                )
+
+            raise
+        finally:
+            # Reset the context variable
+            _in_high_level_action.reset(token)
 
     return wrapper
 
@@ -111,34 +214,34 @@ class WebSocketBrowserWrapper:
         self.process: Optional[subprocess.Popen] = None
         self.websocket = None
         self.server_port = None
-        self._send_lock = asyncio.Lock()  # Lock for sending messages
-        self._receive_task = None  # Background task for receiving messages
-        self._pending_responses: Dict[
-            str, asyncio.Future[Dict[str, Any]]
-        ] = {}  # Message ID -> Future
-        self._server_ready_future = None  # Future to track server ready state
+        self._send_lock = asyncio.Lock()
+        self._request_timeout = self.config.get(
+            'requestTimeout', 60
+        )  # seconds
+        self._receive_task = None
+        self._pending_responses: Dict[str, asyncio.Future[Dict[str, Any]]] = {}
+        self._browser_opened = False
+        self._server_ready_future = None
 
-        # Logging configuration
         self.browser_log_to_file = (config or {}).get(
             'browser_log_to_file', False
         )
+        self.log_dir = (config or {}).get('log_dir', 'browser_log')
         self.session_id = (config or {}).get('session_id', 'default')
         self.log_file_path: Optional[str] = None
         self.log_buffer: List[Dict[str, Any]] = []
         self.ts_log_file_path: Optional[str] = None
-        self.ts_log_file = None  # File handle for TypeScript logs
-        self._log_reader_task = None  # Task for reading and logging stdout
+        self.ts_log_file = None
+        self._log_reader_task = None
 
-        # Set up log files if needed
         if self.browser_log_to_file:
-            log_dir = "browser_log"
+            log_dir = self.log_dir if self.log_dir else "browser_log"
             os.makedirs(log_dir, exist_ok=True)
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             self.log_file_path = os.path.join(
                 log_dir,
                 f"hybrid_browser_toolkit_ws_{timestamp}_{self.session_id}.log",
             )
-            # Add TypeScript console log file
             self.ts_log_file_path = os.path.join(
                 log_dir,
                 f"typescript_console_{timestamp}_{self.session_id}.log",
@@ -153,79 +256,72 @@ class WebSocketBrowserWrapper:
         """Async context manager exit."""
         await self.stop()
 
+    async def _cleanup_existing_processes(self):
+        """Clean up any existing Node.js WebSocket server processes."""
+        import psutil
+
+        cleaned_count = 0
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                if (
+                    proc.info['name']
+                    and 'node' in proc.info['name'].lower()
+                    and proc.info['cmdline']
+                    and any(
+                        'websocket-server.js' in arg
+                        for arg in proc.info['cmdline']
+                    )
+                ):
+                    if any(self.ts_dir in arg for arg in proc.info['cmdline']):
+                        logger.warning(
+                            f"Found existing WebSocket server process "
+                            f"(PID: {proc.info['pid']}). "
+                            f"Terminating it to prevent conflicts."
+                        )
+                        proc.terminate()
+                        try:
+                            proc.wait(timeout=3)
+                        except psutil.TimeoutExpired:
+                            proc.kill()
+                        cleaned_count += 1
+            except (
+                psutil.NoSuchProcess,
+                psutil.AccessDenied,
+                psutil.ZombieProcess,
+            ):
+                pass
+
+        if cleaned_count > 0:
+            logger.warning(
+                f"Cleaned up {cleaned_count} existing WebSocket server "
+                f"process(es). This may have been caused by improper "
+                f"shutdown in previous sessions."
+            )
+            await asyncio.sleep(0.5)
+
     async def start(self):
         """Start the WebSocket server and connect to it."""
-        # Check if npm is installed
-        npm_check = subprocess.run(
-            ['npm', '--version'],
-            capture_output=True,
-            text=True,
-        )
-        if npm_check.returncode != 0:
-            raise RuntimeError(
-                "npm is not installed or not in PATH. "
-                "Please install Node.js and npm from https://nodejs.org/ "
-                "to use the hybrid browser toolkit."
-            )
+        await self._cleanup_existing_processes()
 
-        # Check if node is installed
-        node_check = subprocess.run(
-            ['node', '--version'],
-            capture_output=True,
-            text=True,
-        )
-        if node_check.returncode != 0:
-            raise RuntimeError(
-                "node is not installed or not in PATH. "
-                "Please install Node.js from https://nodejs.org/ "
-                "to use the hybrid browser toolkit."
-            )
+        npm_cmd, node_cmd = await check_and_install_dependencies(self.ts_dir)
 
-        # Check if node_modules exists (dependencies installed)
-        node_modules_path = os.path.join(self.ts_dir, 'node_modules')
-        if not os.path.exists(node_modules_path):
-            logger.warning("Node modules not found. Running npm install...")
-            install_result = subprocess.run(
-                ['npm', 'install'],
-                cwd=self.ts_dir,
-                capture_output=True,
-                text=True,
-            )
-            if install_result.returncode != 0:
-                logger.error(f"npm install failed: {install_result.stderr}")
-                raise RuntimeError(
-                    f"Failed to install npm dependencies: {install_result.stderr}\n"  # noqa:E501
-                    f"Please run 'npm install' in {self.ts_dir} manually."
-                )
-            logger.info("npm dependencies installed successfully")
+        import platform
 
-        # Ensure the TypeScript code is built
-        build_result = subprocess.run(
-            ['npm', 'run', 'build'],
-            cwd=self.ts_dir,
-            capture_output=True,
-            text=True,
-        )
-        if build_result.returncode != 0:
-            logger.error(f"TypeScript build failed: {build_result.stderr}")
-            raise RuntimeError(
-                f"TypeScript build failed: {build_result.stderr}"
-            )
+        use_shell = platform.system() == 'Windows'
 
-        # Start the WebSocket server
         self.process = subprocess.Popen(
-            ['node', 'websocket-server.js'],
+            [node_cmd, 'websocket-server.js'],
             cwd=self.ts_dir,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,  # Redirect stderr to stdout
+            stderr=subprocess.STDOUT,
             text=True,
-            bufsize=1,  # Line buffered
+            encoding='utf-8',
+            bufsize=1,
+            shell=use_shell,
         )
 
-        # Create a future to wait for server ready (before starting log reader)
         self._server_ready_future = asyncio.get_running_loop().create_future()
 
-        # Start log reader task immediately after process starts
         self._log_reader_task = asyncio.create_task(
             self._read_and_log_output()
         )
@@ -236,11 +332,9 @@ class WebSocketBrowserWrapper:
                 f"{self.ts_log_file_path}"
             )
 
-        # Wait for server to output the port
         server_ready = False
-        timeout = 10  # 10 seconds timeout
+        timeout = 10
 
-        # Wait for the server to be ready
         try:
             await asyncio.wait_for(self._server_ready_future, timeout=timeout)
             server_ready = True
@@ -248,99 +342,106 @@ class WebSocketBrowserWrapper:
             server_ready = False
 
         if not server_ready:
-            with contextlib.suppress(ProcessLookupError, Exception):
-                self.process.kill()
-            with contextlib.suppress(Exception):
-                # Ensure the process fully exits
-                self.process.wait(timeout=2)
-            # Cancel and await the log reader task
-            if self._log_reader_task and not self._log_reader_task.done():
-                self._log_reader_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await self._log_reader_task
-            # Close TS log file if open
-            if getattr(self, 'ts_log_file', None):
-                with contextlib.suppress(Exception):
-                    self.ts_log_file.close()
-                self.ts_log_file = None
+            await _cleanup_process_and_tasks(
+                self.process,
+                self._log_reader_task,
+                getattr(self, 'ts_log_file', None),
+            )
+            self.ts_log_file = None
             self.process = None
 
-            error_msg = "WebSocket server failed to start within timeout"
-            import psutil
-
-            mem = psutil.virtual_memory()
-            if mem.available < 1024**3:  # Less than 1GB available
-                error_msg = (
-                    f"WebSocket server failed to start"
-                    f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB "
-                    f"({mem.percent}% used)"
-                )
-
+            error_msg = _create_memory_aware_error(
+                "WebSocket server failed to start within timeout"
+            )
             raise RuntimeError(error_msg)
 
-        # Connect to the WebSocket server
-        try:
-            self.websocket = await websockets.connect(
-                f"ws://localhost:{self.server_port}",
-                ping_interval=30,
-                ping_timeout=10,
-                max_size=50 * 1024 * 1024,  # 50MB limit to match server
-            )
-            logger.info("Connected to WebSocket server")
-        except Exception as e:
-            with contextlib.suppress(ProcessLookupError, Exception):
-                self.process.kill()
-            with contextlib.suppress(Exception):
-                self.process.wait(timeout=2)
-            if self._log_reader_task and not self._log_reader_task.done():
-                self._log_reader_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await self._log_reader_task
-            if getattr(self, 'ts_log_file', None):
-                with contextlib.suppress(Exception):
-                    self.ts_log_file.close()
-                self.ts_log_file = None
-            self.process = None
+        max_retries = 3
+        retry_delays = [1, 2, 4]
 
-            error_msg = f"Failed to connect to WebSocket server: {e}"
-            import psutil
+        for attempt in range(max_retries):
+            try:
+                connect_timeout = 10.0 + (attempt * 5.0)
 
-            mem = psutil.virtual_memory()
-            if mem.available < 1024**3:  # Less than 1GB available
-                error_msg = (
-                    f"Failed to connect to WebSocket server"
-                    f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB"
-                    f"({mem.percent}% used). "
-                    f"Original error: {e}"
+                logger.info(
+                    f"Attempting to connect to WebSocket server "
+                    f"(attempt {attempt + 1}/{max_retries}, "
+                    f"timeout: {connect_timeout}s)"
                 )
 
-            raise RuntimeError(error_msg) from e
+                self.websocket = await asyncio.wait_for(
+                    websockets.connect(
+                        f"ws://localhost:{self.server_port}",
+                        ping_interval=30,
+                        ping_timeout=10,
+                        max_size=50 * 1024 * 1024,
+                    ),
+                    timeout=connect_timeout,
+                )
+                logger.info("Connected to WebSocket server")
+                break
 
-        # Start the background receiver task
+            except asyncio.TimeoutError:
+                if attempt < max_retries - 1:
+                    delay = retry_delays[attempt]
+                    logger.warning(
+                        f"WebSocket handshake timeout "
+                        f"(attempt {attempt + 1}/{max_retries}). "
+                        f"Retrying in {delay} seconds..."
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    raise RuntimeError(
+                        f"Failed to connect to WebSocket server after "
+                        f"{max_retries} attempts: Handshake timeout"
+                    )
+
+            except Exception as e:
+                if attempt < max_retries - 1 and "timed out" in str(e).lower():
+                    delay = retry_delays[attempt]
+                    logger.warning(
+                        f"WebSocket connection failed "
+                        f"(attempt {attempt + 1}/{max_retries}): {e}. "
+                        f"Retrying in {delay} seconds..."
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    break
+
+        if not self.websocket:
+            await _cleanup_process_and_tasks(
+                self.process,
+                self._log_reader_task,
+                getattr(self, 'ts_log_file', None),
+            )
+            self.ts_log_file = None
+            self.process = None
+
+            error_msg = _create_memory_aware_error(
+                "Failed to connect to WebSocket server after multiple attempts"
+            )
+            raise RuntimeError(error_msg)
+
         self._receive_task = asyncio.create_task(self._receive_loop())
 
-        # Initialize the browser toolkit
         await self._send_command('init', self.config)
+
+        if self.config.get('cdpUrl'):
+            self._browser_opened = True
 
     async def stop(self):
         """Stop the WebSocket connection and server."""
-        # First, send shutdown command while receive task is still running
         if self.websocket:
             with contextlib.suppress(asyncio.TimeoutError, Exception):
-                # Send shutdown command with a short timeout
                 await asyncio.wait_for(
                     self._send_command('shutdown', {}),
-                    timeout=2.0,  # 2 second timeout for shutdown
+                    timeout=2.0,
                 )
-                # Note: TimeoutError is expected as server may close
-                # before responding
 
-            # Close websocket connection
             with contextlib.suppress(Exception):
                 await self.websocket.close()
             self.websocket = None
+
+        self._browser_opened = False
 
         # Gracefully stop the Node process before cancelling the log reader
         if self.process:
@@ -379,6 +480,54 @@ class WebSocketBrowserWrapper:
 
         # Ensure process handle cleared
         self.process = None
+
+    async def disconnect_only(self):
+        """Disconnect WebSocket and stop server without closing the browser.
+
+        This is useful for CDP mode where the browser should remain open.
+        """
+        if self.websocket:
+            with contextlib.suppress(Exception):
+                await self.websocket.close()
+            self.websocket = None
+
+        self._browser_opened = False
+
+        # Stop the Node process
+        if self.process:
+            try:
+                # Send SIGTERM to gracefully shutdown
+                self.process.terminate()
+                self.process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                # Force kill if needed
+                with contextlib.suppress(ProcessLookupError, Exception):
+                    self.process.kill()
+                    self.process.wait()
+            except Exception as e:
+                logger.warning(f"Error terminating process: {e}")
+
+        # Cancel background tasks
+        tasks_to_cancel = [
+            ('_receive_task', self._receive_task),
+            ('_log_reader_task', self._log_reader_task),
+        ]
+        for _, task in tasks_to_cancel:
+            if task and not task.done():
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+
+        # Close TS log file if open
+        if getattr(self, 'ts_log_file', None):
+            with contextlib.suppress(Exception):
+                self.ts_log_file.close()
+            self.ts_log_file = None
+
+        # Ensure process handle cleared
+        self.process = None
+
+        logger.info("WebSocket disconnected without closing browser")
 
     async def _log_action(
         self,
@@ -453,7 +602,16 @@ class WebSocketBrowserWrapper:
                 except asyncio.CancelledError:
                     break
                 except Exception as e:
-                    logger.error(f"Error in receive loop: {e}")
+                    # Check if it's a normal WebSocket close
+                    if isinstance(e, websockets.exceptions.ConnectionClosed):
+                        if e.code == 1000:  # Normal closure
+                            logger.debug(f"WebSocket closed normally: {e}")
+                        else:
+                            logger.warning(
+                                f"WebSocket closed with code {e.code}: {e}"
+                            )
+                    else:
+                        logger.error(f"Error in receive loop: {e}")
                     # Notify all pending futures of the error
                     for future in self._pending_responses.values():
                         if not future.done():
@@ -466,18 +624,7 @@ class WebSocketBrowserWrapper:
     async def _ensure_connection(self) -> None:
         """Ensure WebSocket connection is alive."""
         if not self.websocket:
-            error_msg = "WebSocket not connected"
-            import psutil
-
-            mem = psutil.virtual_memory()
-            if mem.available < 1024**3:  # Less than 1GB available
-                error_msg = (
-                    f"WebSocket not connected "
-                    f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB "
-                    f"({mem.percent}% used)"
-                )
-
+            error_msg = _create_memory_aware_error("WebSocket not connected")
             raise RuntimeError(error_msg)
 
         # Check if connection is still alive
@@ -489,18 +636,7 @@ class WebSocketBrowserWrapper:
             logger.warning(f"WebSocket ping failed: {e}")
             self.websocket = None
 
-            error_msg = "WebSocket connection lost"
-            import psutil
-
-            mem = psutil.virtual_memory()
-            if mem.available < 1024**3:  # Less than 1GB available
-                error_msg = (
-                    f"WebSocket connection lost "
-                    f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB "
-                    f"({mem.percent}% used)"
-                )
-
+            error_msg = _create_memory_aware_error("WebSocket connection lost")
             raise RuntimeError(error_msg)
 
     async def _send_command(
@@ -530,7 +666,9 @@ class WebSocketBrowserWrapper:
             # Wait for response (no lock needed, handled by background
             # receiver)
             try:
-                response = await asyncio.wait_for(future, timeout=60.0)
+                response = await asyncio.wait_for(
+                    future, timeout=self._request_timeout
+                )
 
                 if not response.get('success'):
                     raise RuntimeError(
@@ -541,6 +679,16 @@ class WebSocketBrowserWrapper:
             except asyncio.TimeoutError:
                 # Remove from pending if timeout
                 self._pending_responses.pop(message_id, None)
+                # Special handling for shutdown command
+                if command == 'shutdown':
+                    logger.debug(
+                        "Shutdown command timeout is expected - "
+                        "server may have closed before responding"
+                    )
+                    # Return a success response for shutdown
+                    return {
+                        'message': 'Browser shutdown (no response received)'
+                    }
                 raise RuntimeError(
                     f"Timeout waiting for response to command: {command}"
                 )
@@ -554,6 +702,12 @@ class WebSocketBrowserWrapper:
                 "close frame" in str(e)
                 or "connection closed" in str(e).lower()
             ):
+                # Special handling for shutdown command
+                if command == 'shutdown':
+                    logger.debug(
+                        f"Connection closed during shutdown (expected): {e}"
+                    )
+                    return {'message': 'Browser shutdown (connection closed)'}
                 logger.error(f"WebSocket connection closed unexpectedly: {e}")
                 # Mark connection as closed
                 self.websocket = None
@@ -574,17 +728,31 @@ class WebSocketBrowserWrapper:
         response = await self._send_command(
             'open_browser', {'startUrl': start_url}
         )
+        self._browser_opened = True
         return response
 
     @action_logger
     async def close_browser(self) -> str:
         """Close browser."""
         response = await self._send_command('close_browser', {})
+        self._browser_opened = False
         return response['message']
 
     @action_logger
     async def visit_page(self, url: str) -> Dict[str, Any]:
-        """Visit a page."""
+        """Visit a page.
+
+        In non-CDP mode, automatically opens browser if not already open.
+        """
+        if not self._browser_opened:
+            is_cdp_mode = bool(self.config.get('cdpUrl'))
+
+            if not is_cdp_mode:
+                logger.info(
+                    "Browser not open, automatically opening browser..."
+                )
+                await self.open_browser()
+
         response = await self._send_command('visit_page', {'url': url})
         return response
 
@@ -609,14 +777,31 @@ class WebSocketBrowserWrapper:
 
     @action_logger
     async def get_som_screenshot(self) -> ToolResult:
-        """Get screenshot."""
-        logger.info("Requesting screenshot via WebSocket...")
+        """Get screenshot with SOM markers."""
+        logger.info("Requesting SOM screenshot via WebSocket...")
         start_time = time.time()
 
         response = await self._send_command('get_som_screenshot', {})
 
         end_time = time.time()
-        logger.info(f"Screenshot completed in {end_time - start_time:.2f}s")
+        logger.info(
+            f"SOM screenshot completed in {end_time - start_time:.2f}s"
+        )
+
+        return ToolResult(text=response['text'], images=response['images'])
+
+    @action_logger
+    async def get_screenshot(self) -> ToolResult:
+        """Get plain screenshot without SOM markers."""
+        logger.info("Requesting plain screenshot via WebSocket...")
+        start_time = time.time()
+
+        response = await self._send_command('get_screenshot', {})
+
+        end_time = time.time()
+        logger.info(
+            f"Plain screenshot completed in {end_time - start_time:.2f}s"
+        )
 
         return ToolResult(text=response['text'], images=response['images'])
 
@@ -679,6 +864,8 @@ class WebSocketBrowserWrapper:
     async def type(self, ref: str, text: str) -> Dict[str, Any]:
         """Type text into an element."""
         response = await self._send_command('type', {'ref': ref, 'text': text})
+        # Log the response for debugging
+        logger.debug(f"Type response for ref {ref}: {response}")
         return response
 
     @action_logger
@@ -722,18 +909,103 @@ class WebSocketBrowserWrapper:
         return response
 
     @action_logger
-    async def mouse_drag(self, from_ref: str, to_ref: str) -> Dict[str, Any]:
-        """Control the mouse to drag and drop in the browser using ref IDs."""
-        response = await self._send_command(
-            'mouse_drag',
-            {'from_ref': from_ref, 'to_ref': to_ref},
-        )
-        return response
+    async def mouse_drag(
+        self,
+        from_ref: Optional[str] = None,
+        to_ref: Optional[str] = None,
+        from_x: Optional[float] = None,
+        from_y: Optional[float] = None,
+        to_x: Optional[float] = None,
+        to_y: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Drag and drop using ref IDs or pixel coordinates.
+
+        NOTE: This method accepts both ref and pixel parameters, but mixing
+        them is prevented at a higher level. The toolkit's _create_mode_wrapper
+        generates mode-specific wrappers with exclusive signatures:
+        - full_visual_mode: only (from_x, from_y, to_x, to_y) exposed
+        - normal mode: only (from_ref, to_ref) exposed
+        So users cannot mix ref and coordinate modes through the toolkit API.
+        """
+        params: Dict[str, Any] = {}
+        if from_ref is not None and to_ref is not None:
+            params = {'from_ref': from_ref, 'to_ref': to_ref}
+        elif all(v is not None for v in [from_x, from_y, to_x, to_y]):
+            params = {
+                'from_x': from_x,
+                'from_y': from_y,
+                'to_x': to_x,
+                'to_y': to_y,
+            }
+        else:
+            raise ValueError(
+                "Provide (from_ref, to_ref) or (from_x, from_y, to_x, to_y)"
+            )
+        return await self._send_command('mouse_drag', params)
 
     @action_logger
     async def press_key(self, keys: List[str]) -> Dict[str, Any]:
         """Press key and key combinations."""
         response = await self._send_command('press_key', {'keys': keys})
+        return response
+
+    @action_logger
+    async def upload_file(
+        self,
+        file_path: str,
+        ref: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Upload a file by clicking the element or coordinates and
+        intercepting the file chooser.
+
+        Supports both ref mode and pixel mode.
+        """
+        params: Dict[str, Any] = {'filePath': file_path}
+        if ref is not None:
+            params['ref'] = ref
+        if x is not None and y is not None:
+            params['x'] = x
+            params['y'] = y
+        response = await self._send_command('upload_file', params)
+        return response
+
+    @action_logger
+    async def download_file(
+        self,
+        ref: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Download a file by clicking the element or coordinates that
+        triggers a download.
+
+        Supports both ref mode and pixel mode.
+        """
+        params: Dict[str, Any] = {}
+        if ref is not None:
+            params['ref'] = ref
+        if x is not None and y is not None:
+            params['x'] = x
+            params['y'] = y
+        response = await self._send_command('download_file', params)
+        return response
+
+    @action_logger
+    async def batch_keyboard_input(
+        self,
+        operations: List[Dict[str, Any]],
+        skip_stability_wait: bool = True,
+    ) -> Dict[str, Any]:
+        """Execute batch keyboard operations."""
+        response = await self._send_command(
+            'batch_keyboard_input',
+            {
+                'operations': operations,
+                'skipStabilityWait': skip_stability_wait,
+            },
+        )
         return response
 
     @action_logger

@@ -14,33 +14,26 @@ export interface SnapshotNode {
 export function parseSnapshotHierarchy(snapshotText: string): Map<string, SnapshotNode> {
   const nodes = new Map<string, SnapshotNode>();
   const lines = snapshotText.split('\n');
-  
+
   // Stack to track parent elements at each indentation level
   const parentStack: { ref: string; indent: number }[] = [];
-  
+
   for (const line of lines) {
     if (!line.trim()) continue;
-    
-    // Calculate indentation
+
     const indent = line.length - line.trimStart().length;
-    
-    // Extract element info using regex
-    // Support both lines with : (have children) and without : (leaf nodes)
-    // Also support quoted lines like - 'button "text" [ref=...]'
-    // Also support escaped quotes in text
-    // Also support attributes before [ref=...]
-    // Extract type and optional label (before any [..] blocks)
+
+    // Extract type and optional label
     const headerMatch = line.match(/^\s*(?:-\s*)?'?([a-z0-9_-]+)(?:\s+"((?:[^"\\]|\\.)*)")?/i);
     if (!headerMatch) continue;
     const [, typeRaw, label] = headerMatch;
     const type = (typeRaw || 'unknown');
 
-    // Extract mandatory ref
     const refMatch = line.match(/\[ref=([^\]]+)\]/i);
     if (!refMatch) continue;
     const ref = refMatch[1];
 
-    // Parse all bracketed attributes except the [ref=...] block
+    // Parse bracketed attributes
     const attrs: Record<string, string> = {};
     for (const block of line.matchAll(/\[([^\]]+)\]/g)) {
       const content = block[1];
@@ -52,13 +45,11 @@ export function parseSnapshotHierarchy(snapshotText: string): Map<string, Snapsh
         attrs[key] = val;
       }
     }
-    
-    // Update parent stack based on indentation
+
     while (parentStack.length > 0 && parentStack[parentStack.length - 1].indent >= indent) {
       parentStack.pop();
     }
-    
-    // Create node
+
     const node: SnapshotNode = {
       ref,
       type: type.toLowerCase(),
@@ -67,19 +58,16 @@ export function parseSnapshotHierarchy(snapshotText: string): Map<string, Snapsh
       children: [],
       parent: parentStack.length > 0 ? parentStack[parentStack.length - 1].ref : undefined
     };
-    
-    // Add to parent's children if has parent
+
     if (node.parent && nodes.has(node.parent)) {
       nodes.get(node.parent)!.children.push(ref);
     }
-    
-    // Add to nodes map
+
     nodes.set(ref, node);
-    
-    // Add to parent stack
+
     parentStack.push({ ref, indent });
   }
-  
+
   return nodes;
 }
 
@@ -93,7 +81,7 @@ export function filterClickableByHierarchy(
   const hierarchy = parseSnapshotHierarchy(snapshotText);
   const filtered = new Set<string>(clickableElements);
   const debugInfo: any[] = [];
-  
+
   // Debug clickable elements when enabled
   const DEBUG_SNAPSHOT_PARSER = process.env.DEBUG_SNAPSHOT_PARSER === 'true';
   if (DEBUG_SNAPSHOT_PARSER) {
@@ -106,14 +94,14 @@ export function filterClickableByHierarchy(
       }
     });
   }
-  
+
   // First pass: identify parent-child relationships where both are clickable
   const parentChildPairs: Array<{parent: string, child: string, parentType: string, childType: string}> = [];
-  
+
   for (const childRef of clickableElements) {
     const childNode = hierarchy.get(childRef);
     if (!childNode || !childNode.parent) continue;
-    
+
     const parentRef = childNode.parent;
     if (clickableElements.has(parentRef)) {
       const parentNode = hierarchy.get(parentRef);
@@ -124,7 +112,7 @@ export function filterClickableByHierarchy(
           parentType: parentNode.type.toLowerCase(),
           childType: childNode.type.toLowerCase()
         });
-        
+
         // Debug specific pairs
         if ((parentRef === 'e296' && childRef === 'e297') ||
             (parentRef === 'e361' && childRef === 'e363') ||
@@ -136,19 +124,19 @@ export function filterClickableByHierarchy(
       }
     }
   }
-  
+
   // Decide which elements to filter based on parent-child relationships
   for (const pair of parentChildPairs) {
     const { parent, child, parentType, childType } = pair;
-    
+
     // Rules for what to filter:
     // 1. link > img: filter img (keep link)
-    // 2. button > generic: filter generic (keep button)  
+    // 2. button > generic: filter generic (keep button)
     // 3. generic > button: filter generic (keep button)
     // 4. link > generic: filter generic (keep link)
     // 5. generic > generic: filter child (keep parent)
     // 6. generic > unknown: filter child (keep parent)
-    
+
     if ((parentType === 'link' && childType === 'img') ||
         (parentType === 'button' && childType === 'generic') ||
         (parentType === 'link' && childType === 'generic') ||
@@ -163,14 +151,14 @@ export function filterClickableByHierarchy(
       console.log(`[Hierarchy Filter] Filtered ${parent} (${parentType}) - keeping child ${child} (${childType})`);
     }
   }
-  
+
   // Original logic for nested hierarchies (keep for deep nesting)
   for (const childRef of clickableElements) {
     if (!filtered.has(childRef)) continue; // Already filtered
-    
+
     const childNode = hierarchy.get(childRef);
     if (!childNode || !childNode.parent) continue;
-    
+
     // Check if any ancestor is a propagating element
     let currentParent: string | undefined = childNode.parent;
     while (currentParent) {
@@ -181,21 +169,21 @@ export function filterClickableByHierarchy(
           const parentType = parentNode.type.toLowerCase();
           const isPropagating = ['button', 'link', 'a'].includes(parentType) ||
             (parentType === 'generic' && parentNode.attributes.cursor === 'pointer' && !parentNode.text);
-          
+
           if (isPropagating) {
             // Filter child elements that should be contained within propagating parents
             const childType = childNode.type.toLowerCase();
-            
+
             // Filter these types of children:
             // 1. Generic elements with cursor=pointer
             // 2. Images within links/buttons
             // 3. Text elements (span, generic without specific role)
-            const shouldFilter = 
+            const shouldFilter =
               (childType === 'generic' && childNode.attributes.cursor === 'pointer') ||
               childType === 'img' ||
               childType === 'span' ||
               (childType === 'generic' && !childNode.attributes.role);
-              
+
             if (shouldFilter) {
               filtered.delete(childRef);
               console.log(`[Hierarchy Filter] Filtered ${childRef} (${childType}) contained in ${currentParent} (${parentType})`);
@@ -209,23 +197,23 @@ export function filterClickableByHierarchy(
       currentParent = nextParent?.parent;
     }
   }
-  
+
   // Additional pass: if a generic parent contains only one button child, filter the parent
   for (const ref of Array.from(filtered)) {
     const node = hierarchy.get(ref);
     if (!node || node.type.toLowerCase() !== 'generic') continue;
-    
+
     // Check if this generic has exactly one clickable child that's a button
-    const clickableChildren = node.children.filter(childRef => 
+    const clickableChildren = node.children.filter(childRef =>
       filtered.has(childRef) && hierarchy.get(childRef)?.type.toLowerCase() === 'button'
     );
-    
+
     if (clickableChildren.length === 1) {
       // This generic wraps a single button - filter it out
       filtered.delete(ref);
       console.log(`[Hierarchy Filter] Filtered ${ref} (generic wrapper around button ${clickableChildren[0]})`);
     }
   }
-  
+
   return filtered;
 }

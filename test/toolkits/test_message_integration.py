@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import unittest
 from typing import List
@@ -90,16 +90,16 @@ class TestToolkitMessageIntegration(unittest.TestCase):
             self.assertIn('message_attachment', params)
 
     def test_register_specific_tools(self):
-        r"""Test adding messaging to specific tools only."""
-        enhanced_toolkit = self.message_integration.register_toolkits(
-            self.toolkit, tool_names=['search_web']
+        r"""Test adding messaging to specific tools only using
+        register_functions."""
+        # Use register_functions to enhance only one method
+        enhanced_tools = self.message_integration.register_functions(
+            [self.toolkit.search_web]
         )
 
-        tools = enhanced_toolkit.get_tools()
-        search_tool = next(t for t in tools if t.func.__name__ == 'search_web')
-        analyze_tool = next(
-            t for t in tools if t.func.__name__ == 'analyze_data'
-        )
+        # Should get one enhanced tool
+        self.assertEqual(len(enhanced_tools), 1)
+        search_tool = enhanced_tools[0]
 
         # Check search_web has message parameters
         search_schema = search_tool.get_openai_tool_schema()
@@ -108,7 +108,12 @@ class TestToolkitMessageIntegration(unittest.TestCase):
             search_schema['function']['parameters']['properties'],
         )
 
-        # Check analyze_data doesn't have message parameters
+        # Check the original toolkit's analyze_data doesn't have message
+        # parameters
+        original_tools = self.toolkit.get_tools()
+        analyze_tool = next(
+            t for t in original_tools if t.func.__name__ == 'analyze_data'
+        )
         analyze_schema = analyze_tool.get_openai_tool_schema()
         self.assertNotIn(
             'message_title',
@@ -220,7 +225,7 @@ class TestToolkitMessageIntegration(unittest.TestCase):
         mock_handler = Mock(return_value="Custom message sent")
         mock_handler.__name__ = 'custom_notify'
         mock_handler.__doc__ = """Send custom notification.
-        
+
         Args:
             level: Notification level
             action: Action being performed

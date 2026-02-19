@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,9 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import time
 from typing import List
+from unittest.mock import patch
 
 import pytest
 
@@ -102,7 +103,11 @@ async def test_graceful_shutdown_one_second_timeout():
 
 
 @pytest.mark.asyncio
-async def test_get_dep_tasks_info():
+@patch('camel.tasks.task.Task.decompose')
+@patch(
+    'camel.societies.workforce.single_agent_worker.SingleAgentWorker._process_task'
+)
+async def test_get_dep_tasks_info(mock_process_task, mock_decompose):
     """Original test for backwards compatibility."""
     sys_msg = BaseMessage.make_assistant_message(
         role_name="programmer",
@@ -115,7 +120,18 @@ async def test_get_dep_tasks_info():
         id='0',
     )
 
-    subtasks = human_task.decompose(agent)  # TODO: use MagicMock
-    await test_worker._process_task(
-        human_task, subtasks
-    )  # TODO: use MagicMock
+    # Configure the mocks
+    mock_subtasks = [
+        Task(content="Task 1", id="1"),
+        Task(content="Task 2", id="2"),
+    ]
+    mock_decompose.return_value = mock_subtasks
+    mock_process_task.return_value = TaskState.DONE
+
+    # Execute the test
+    subtasks = human_task.decompose(agent)
+    await test_worker._process_task(human_task, subtasks)
+
+    # Verify the mocks were called
+    mock_decompose.assert_called_once_with(agent)
+    mock_process_task.assert_called_once_with(human_task, mock_subtasks)

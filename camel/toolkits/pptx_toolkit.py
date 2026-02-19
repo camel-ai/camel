@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
 import os
@@ -680,8 +680,8 @@ class PPTXToolkit(BaseToolkit):
             slide_width_inch (float): The width of the slide in inches.
             slide_height_inch (float): The height of the slide in inches.
         """
-        import pptx
         from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE
+        from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
         from pptx.util import Inches, Pt
 
         steps = slide_json['bullet_points']
@@ -710,8 +710,8 @@ class PPTXToolkit(BaseToolkit):
                 text_frame = shape.text_frame
                 text_frame.clear()
                 paragraph = text_frame.paragraphs[0]
-                paragraph.alignment = pptx.enum.text.PP_ALIGN.CENTER
-                text_frame.vertical_anchor = pptx.enum.text.MSO_ANCHOR.MIDDLE
+                paragraph.alignment = PP_ALIGN.CENTER
+                text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
                 self._format_text(
                     paragraph, step.removeprefix(STEP_BY_STEP_PROCESS_MARKER)
                 )
@@ -732,8 +732,8 @@ class PPTXToolkit(BaseToolkit):
                 text_frame = shape.text_frame
                 text_frame.clear()
                 paragraph = text_frame.paragraphs[0]
-                paragraph.alignment = pptx.enum.text.PP_ALIGN.CENTER
-                text_frame.vertical_anchor = pptx.enum.text.MSO_ANCHOR.MIDDLE
+                paragraph.alignment = PP_ALIGN.CENTER
+                text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
                 self._format_text(
                     paragraph, step.removeprefix(STEP_BY_STEP_PROCESS_MARKER)
                 )

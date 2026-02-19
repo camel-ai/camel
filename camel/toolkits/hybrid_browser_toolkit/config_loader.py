@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
@@ -36,6 +36,9 @@ class BrowserConfig:
     screenshot_timeout: int = 15000
     page_stability_timeout: int = 1500
     dom_content_loaded_timeout: int = 5000
+    download_timeout: int = 30000
+    dom_stability_threshold: int = 200
+    dom_stability_timeout: int = 5000
 
     # Viewport configuration
     viewport_limit: bool = False
@@ -43,6 +46,7 @@ class BrowserConfig:
     # CDP connection configuration
     connect_over_cdp: bool = False
     cdp_url: Optional[str] = None
+    cdp_keep_current_page: bool = False
 
     # Full visual mode configuration
     full_visual_mode: bool = False
@@ -53,7 +57,9 @@ class ToolkitConfig:
     """Toolkit-specific configuration."""
 
     cache_dir: str = "tmp/"
+    download_dir: Optional[str] = None
     browser_log_to_file: bool = False
+    log_dir: Optional[str] = None
     session_id: Optional[str] = None
     enabled_tools: Optional[list] = None
 
@@ -101,6 +107,10 @@ class ConfigLoader:
                 browser_kwargs["screenshot_timeout"] = value
             elif key == "pageStabilityTimeout":
                 browser_kwargs["page_stability_timeout"] = value
+            elif key == "domStabilityThreshold":
+                browser_kwargs["dom_stability_threshold"] = value
+            elif key == "domStabilityTimeout":
+                browser_kwargs["dom_stability_timeout"] = value
             elif key == "domContentLoadedTimeout":
                 browser_kwargs["dom_content_loaded_timeout"] = value
             elif key == "viewportLimit":
@@ -109,6 +119,8 @@ class ConfigLoader:
                 browser_kwargs["connect_over_cdp"] = value
             elif key == "cdpUrl":
                 browser_kwargs["cdp_url"] = value
+            elif key == "cdpKeepCurrentPage":
+                browser_kwargs["cdp_keep_current_page"] = value
             elif key == "consoleLogLimit":
                 browser_kwargs["console_log_limit"] = value
             elif key == "cacheDir":
@@ -146,12 +158,20 @@ class ConfigLoader:
             "networkIdleTimeout": self.browser_config.network_idle_timeout,
             "screenshotTimeout": self.browser_config.screenshot_timeout,
             "pageStabilityTimeout": self.browser_config.page_stability_timeout,
-            "browser_log_to_file": self.toolkit_config.browser_log_to_file,
-            "session_id": self.toolkit_config.session_id,
+            "domStabilityThreshold": (
+                self.browser_config.dom_stability_threshold
+            ),
+            "domStabilityTimeout": self.browser_config.dom_stability_timeout,
             "viewport_limit": self.browser_config.viewport_limit,
             "connectOverCdp": self.browser_config.connect_over_cdp,
             "cdpUrl": self.browser_config.cdp_url,
+            "cdpKeepCurrentPage": self.browser_config.cdp_keep_current_page,
             "fullVisualMode": self.browser_config.full_visual_mode,
+            "downloadDir": self.toolkit_config.download_dir,
+            "downloadTimeout": self.browser_config.download_timeout,
+            "browser_log_to_file": self.toolkit_config.browser_log_to_file,
+            "log_dir": self.toolkit_config.log_dir,
+            "session_id": self.toolkit_config.session_id,
         }
 
     def get_timeout_config(self) -> Dict[str, Optional[int]]:

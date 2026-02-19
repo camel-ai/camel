@@ -45,7 +45,7 @@ The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving
     - High scalability, real-time search
 
     **TiDBStorage**
-    - For [TiDB](https://ai.pingcap.com/) (hybrid vector/relational database)
+    - For [TiDB](https://pingcap.com/ai) (hybrid vector/relational database)
     - Handles embeddings, knowledge graphs, ops data
 
     **QdrantStorage**
@@ -61,8 +61,12 @@ The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving
     - Schema-based, semantic search, hybrid queries
 
     **ChromaStorage**
-    - For [ChromaDB](https://www.trychroma.com/) (AI-native open-source embedding database)  
+    - For [ChromaDB](https://www.trychroma.com/) (AI-native open-source embedding database)
     - Simple API, scales from notebook to production
+
+    **SurrealStorage**
+    - For [SurrealDB](https://surrealdb.com/) (scalable, distributed database with WebSocket support)
+    - Efficient vector storage and similarity search with real-time updates
 
     **PgVectorStorage**
     - For [PostgreSQL with pgvector](https://github.com/pgvector/pgvector) (open-source vector engine)
@@ -72,8 +76,8 @@ The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving
   <Accordion title="Graph Storages" icon="chart-waterfall">
     **BaseGraphStorage**
     - Abstract base for graph database integrations
-    - **Supports:**  
-      - Schema queries and refresh  
+    - **Supports:**
+      - Schema queries and refresh
       - Adding/deleting/querying triplets
 
     **NebulaGraph**
@@ -95,7 +99,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="In-Memory Key-Value Storage" icon="key">
-  <b>Use for:</b> Fast, temporary storage. Data is lost when your program exits.  
+  <b>Use for:</b> Fast, temporary storage. Data is lost when your program exits.
   <b>Perfect for:</b> Prototyping, testing, in-memory caching.
 
   <Tabs>
@@ -121,7 +125,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="JSON File Storage" icon="files">
-  <b>Use for:</b> Persistent, human-readable storage on disk.  
+  <b>Use for:</b> Persistent, human-readable storage on disk.
   <b>Perfect for:</b> Logs, local settings, configs, or sharing small data sets.
 
   <Tabs>
@@ -148,7 +152,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="Milvus Vector Storage" icon="database">
-  <b>Use for:</b> Scalable, high-performance vector search (RAG, embeddings).  
+  <b>Use for:</b> Scalable, high-performance vector search (RAG, embeddings).
   <b>Perfect for:</b> Semantic search and production AI retrieval.
 
   <Tabs>
@@ -183,7 +187,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="TiDB Vector Storage" icon="vector-square">
-  <b>Use for:</b> Hybrid cloud-native storage, vectors + SQL in one.  
+  <b>Use for:</b> Hybrid cloud-native storage, vectors + SQL in one.
   <b>Perfect for:</b> Combining AI retrieval with your business database.
 
   <Tabs>
@@ -219,7 +223,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 
 
 <Card title="Qdrant Vector Storage" icon="square-q">
-  <b>Use for:</b> Fast, scalable open-source vector search.  
+  <b>Use for:</b> Fast, scalable open-source vector search.
   <b>Perfect for:</b> RAG, document search, and high-scale retrieval tasks.
 
   <Tabs>
@@ -256,7 +260,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="ChromaDB Vector Storage" icon="database">
-  <b>Use for:</b> Fastest way to build LLM apps with memory and embeddings.  
+  <b>Use for:</b> Fastest way to build LLM apps with memory and embeddings.
   <b>Perfect for:</b> From prototyping in notebooks to production clusters with the same simple API.
 
   <Tabs>
@@ -298,8 +302,58 @@ Here are practical usage patterns for each storage type—pick the ones you need
 
 ---
 
+<Card title="SurrealDB Vector Storage" icon="database">
+  <b>Use for:</b> Scalable, distributed vector storage with WebSocket support.
+  <b>Perfect for:</b> Real-time vector search with distributed deployments and SQL-like querying.
+
+  <Tabs>
+    <Tab title="Python Example">
+      ```python
+      import os
+      from camel.storages import SurrealStorage, VectorDBQuery, VectorRecord
+
+      # Set environment variables for SurrealDB connection
+      os.environ["SURREAL_URL"] = "ws://localhost:8000/rpc"
+      os.environ["SURREAL_PASSWORD"] = "your_password"
+
+      # Create SurrealStorage instance with WebSocket connection
+      surreal_storage = SurrealStorage(
+          url=os.getenv("SURREAL_URL"),
+          table="camel_vectors",
+          namespace="ns",
+          database="db",
+          user="root",
+          password=os.getenv("SURREAL_PASSWORD"),
+          vector_dim=4,
+      )
+
+      # Add vector records
+      surreal_storage.add([
+          VectorRecord(vector=[-0.1, 0.1, -0.1, 0.1], payload={'key1': 'value1'}),
+          VectorRecord(vector=[-0.1, 0.1, 0.1, 0.1], payload={'key2': 'value2'}),
+      ])
+
+      # Query similar vectors
+      query_results = surreal_storage.query(VectorDBQuery(query_vector=[0.1, 0.2, 0.1, 0.1], top_k=1))
+      for result in query_results:
+          print(result.record.payload, result.similarity)
+
+      # Clear all vectors
+      surreal_storage.clear()
+      ```
+    </Tab>
+    <Tab title="Output">
+      ```markdown
+      >>> {'key2': 'value2'} 0.5669467095138407
+      ```
+    </Tab>
+  </Tabs>
+</Card>
+
+---
+
 <Card title="OceanBase Vector Storage" icon="earth-oceania">
-  <b>Use for:</b> Massive vector storage with advanced analytics.  
+  <b>Use for:</b> Massive vector storage with advanced analytics.
   <b>Perfect for:</b> Batch operations, cloud or on-prem setups, and high-throughput search.
 
   <Tabs>
@@ -395,7 +449,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="Weaviate Vector Storage" icon="file-vector">
-  <b>Use for:</b> Vector search with hybrid (vector + keyword) capabilities.  
+  <b>Use for:</b> Vector search with hybrid (vector + keyword) capabilities.
   <b>Perfect for:</b> Document retrieval and multimodal AI apps.
 
   <Tabs>
@@ -437,7 +491,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="NebulaGraph Storage" icon="hard-drive">
-  <b>Use for:</b> Open-source, distributed graph storage and querying.  
+  <b>Use for:</b> Open-source, distributed graph storage and querying.
   <b>Perfect for:</b> Knowledge graphs, relationships, and fast distributed queries.
 
  <CodeGroup>
@@ -456,7 +510,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="Neo4j Graph Storage" icon="square-this-way-up">
-  <b>Use for:</b> Industry-standard graph database for large-scale relationships.  
+  <b>Use for:</b> Industry-standard graph database for large-scale relationships.
   <b>Perfect for:</b> Enterprise graph workloads, Cypher queries, analytics.
 <CodeGroup>
       ```python

@@ -42,6 +42,43 @@ Writes a record to the memory, appending it to existing ones.
 
 - **record** (MemoryRecord): Record to be added to the memory.
 
+<a id="camel.memories.base.MemoryBlock.pop_records"></a>
+
+### pop_records
+
+```python
+def pop_records(self, count: int):
+```
+
+Removes records from the memory and returns the removed records.
+
+**Parameters:**
+
+- **count** (int): Number of records to remove.
+
+**Returns:**
+
+  List[MemoryRecord]: The records that were removed from the memory
+in their original order.
+
+<a id="camel.memories.base.MemoryBlock.remove_records_by_indices"></a>
+
+### remove_records_by_indices
+
+```python
+def remove_records_by_indices(self, indices: List[int]):
+```
+
+Removes records at specified indices from the memory.
+
+**Parameters:**
+
+- **indices** (List[int]): List of indices to remove. Indices should be valid positions in the current record list.
+
+**Returns:**
+
+  List[MemoryRecord]: The removed records in their original order.
+
 <a id="camel.memories.base.MemoryBlock.clear"></a>
 
 ### clear

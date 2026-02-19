@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import shutil
 
@@ -66,19 +66,19 @@ def test_run_vector_retriever(auto_retriever):
 def test_run_vector_retriever_with_element_input(auto_retriever):
     uio = UnstructuredIO()
     test_element = uio.create_element_from_text(
-        text="""Introducing 🦀 CRAB: Cross-environment Agent Benchmark for 
+        text="""Introducing 🦀 CRAB: Cross-environment Agent Benchmark for
         Multimodal Language Model Agents
 
-    🦀 CRAB provides an end-to-end and easy-to-use framework to build 
-    multimodal agents, operate environments, and create benchmarks to evaluate 
+    🦀 CRAB provides an end-to-end and easy-to-use framework to build
+    multimodal agents, operate environments, and create benchmarks to evaluate
     them, featuring three key components:
 
-    - 🔀 Cross-environment support - agents can operate tasks in 📱 Android 
+    - 🔀 Cross-environment support - agents can operate tasks in 📱 Android
     and 💻 Ubuntu.
     - 🕸️ Graph evaluator - provides a fine-grain evaluation metric for agents.
     - 🤖 Task generation - composes subtasks to automatically generate tasks.
 
-    By connecting all devices to agents, 🦀CRAB unlocks greater capabilities 
+    By connecting all devices to agents, 🦀CRAB unlocks greater capabilities
     for human-like tasks than ever before.
 
     Use 🦀 CRAB to benchmark your multimodal agents! """,

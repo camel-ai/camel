@@ -5,7 +5,7 @@
 ## VolcanoModel
 
 ```python
-class VolcanoModel(OpenAICompatibleModel):
+class VolcanoModel(InterleavedThinkingMixin, OpenAICompatibleModel):
 ```
 
 Volcano Engine API in a unified OpenAICompatibleModel interface.
@@ -37,3 +37,16 @@ def __init__(
     **kwargs: Any
 ):
 ```
+
+<a id="camel.models.volcano_model.VolcanoModel._prepare_request_config"></a>
+
+### _prepare_request_config
+
+```python
+def _prepare_request_config(self, tools: Optional[List[Dict[str, Any]]] = None):
+```
+
+Prepare the request configuration dictionary.
+
+Overrides the base method to remove interleaved_thinking parameter
+which is only used internally.

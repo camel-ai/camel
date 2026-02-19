@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
 import logging
@@ -36,8 +36,8 @@ def _configure_library_logging():
             f"CAMEL library logging has been configured "
             f"(level: {_logger.getEffectiveLevel()}). "
             f"To change level, use set_log_level() or "
-            "set CAMEL_LOGGING_LEVEL env var. To disable logging, "
-            "set CAMEL_LOGGING_DISABLED=true or use disable_logging()"
+            f"set CAMEL_LOGGING_LEVEL env var. To disable logging, "
+            f"set CAMEL_LOGGING_DISABLED=true or use disable_logging()"
         )
     else:
         _logger.debug("Existing logger configuration found, using that.")

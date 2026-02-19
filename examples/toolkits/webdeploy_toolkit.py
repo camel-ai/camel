@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
@@ -41,7 +41,7 @@ camel_agent = ChatAgent(
 )
 
 # Example 1: deploy a simple web server,which can play snake game.
-query = """use toolkit writing html to deploy a 
+query = """use toolkit writing html to deploy a
 simple web server,which can play snake game.deploy it in port 8005"""
 
 camel_agent.reset()
@@ -52,8 +52,8 @@ print("\n")
 
 """
 ==========================================================================
-I have deployed a simple web server that hosts a Snake game. You can play 
-the game by opening the following URL in your web browser: 
+I have deployed a simple web server that hosts a Snake game. You can play
+the game by opening the following URL in your web browser:
 http://localhost:8000
 
 Use the arrow keys to control the snake. Enjoy the game!

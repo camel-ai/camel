@@ -82,7 +82,7 @@ _A conversation where the user asks about the repo structure and README file._
 
 ```bash
 streamlit run app.py
-```  
+```
 Set the repo in the sidebar, then start chatting!
 
 ---
@@ -109,5 +109,5 @@ Gitingest/
 └── .env                # Env vars
 
 
-*Happy repo chatting!*  
+*Happy repo chatting!*
 ````

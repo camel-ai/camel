@@ -218,19 +218,25 @@
           {
             "group": "Configs",
             "pages": [
+              "reference/camel.configs.aihubmix_config",
               "reference/camel.configs.aiml_config",
               "reference/camel.configs.amd_config",
               "reference/camel.configs.anthropic_config",
+              "reference/camel.configs.atlascloud_config",
               "reference/camel.configs.base_config",
               "reference/camel.configs.bedrock_config",
+              "reference/camel.configs.cerebras_config",
               "reference/camel.configs.cohere_config",
+              "reference/camel.configs.cometapi_config",
               "reference/camel.configs.crynux_config",
               "reference/camel.configs.deepseek_config",
+              "reference/camel.configs.function_gemma_config",
               "reference/camel.configs.gemini_config",
               "reference/camel.configs.groq_config",
               "reference/camel.configs.internlm_config",
               "reference/camel.configs.litellm_config",
               "reference/camel.configs.lmstudio_config",
+              "reference/camel.configs.minimax_config",
               "reference/camel.configs.mistral_config",
               "reference/camel.configs.modelscope_config",
               "reference/camel.configs.moonshot_config",
@@ -250,6 +256,7 @@
               "reference/camel.configs.siliconflow_config",
               "reference/camel.configs.togetherai_config",
               "reference/camel.configs.vllm_config",
+              "reference/camel.configs.volcano_config",
               "reference/camel.configs.watsonx_config",
               "reference/camel.configs.yi_config",
               "reference/camel.configs.zhipuai_config"
@@ -297,23 +304,30 @@
           {
             "group": "Models",
             "pages": [
+              "reference/camel.models._interleaved_thinking_mixin",
               "reference/camel.models._utils",
+              "reference/camel.models.aihubmix_model",
               "reference/camel.models.aiml_model",
               "reference/camel.models.amd_model",
               "reference/camel.models.anthropic_model",
+              "reference/camel.models.atlascloud_model",
               "reference/camel.models.aws_bedrock_model",
               "reference/camel.models.azure_openai_model",
               "reference/camel.models.base_audio_model",
               "reference/camel.models.base_model",
+              "reference/camel.models.cerebras_model",
               "reference/camel.models.cohere_model",
+              "reference/camel.models.cometapi_model",
               "reference/camel.models.crynux_model",
               "reference/camel.models.deepseek_model",
               "reference/camel.models.fish_audio_model",
+              "reference/camel.models.function_gemma_model",
               "reference/camel.models.gemini_model",
               "reference/camel.models.groq_model",
               "reference/camel.models.internlm_model",
               "reference/camel.models.litellm_model",
               "reference/camel.models.lmstudio_model",
+              "reference/camel.models.minimax_model",
               "reference/camel.models.mistral_model",
               "reference/camel.models.model_factory",
               "reference/camel.models.model_manager",
@@ -414,6 +428,7 @@
               "reference/camel.retrievers.bm25_retriever",
               "reference/camel.retrievers.cohere_rerank_retriever",
               "reference/camel.retrievers.hybrid_retrival",
+              "reference/camel.retrievers.jina_rerank_retriever",
               "reference/camel.retrievers.vector_retriever"
             ]
           },
@@ -429,8 +444,11 @@
               "reference/camel.societies.workforce.task_channel",
               "reference/camel.societies.workforce.utils",
               "reference/camel.societies.workforce.worker",
+              "reference/camel.societies.workforce.workflow_memory_manager",
               "reference/camel.societies.workforce.workforce",
-              "reference/camel.societies.workforce.workforce_logger"
+              "reference/camel.societies.workforce.workforce_callback",
+              "reference/camel.societies.workforce.workforce_logger",
+              "reference/camel.societies.workforce.workforce_metrics"
             ]
           },
           {
@@ -479,6 +497,7 @@
             "group": "Toolkits",
             "pages": [
               "reference/camel.toolkits.aci_toolkit",
+              "reference/camel.toolkits.artifact_toolkit",
               "reference/camel.toolkits.arxiv_toolkit",
               "reference/camel.toolkits.ask_news_toolkit",
               "reference/camel.toolkits.async_browser_toolkit",
@@ -488,15 +507,20 @@
               "reference/camel.toolkits.browser_toolkit",
               "reference/camel.toolkits.browser_toolkit_commons",
               "reference/camel.toolkits.code_execution",
+              "reference/camel.toolkits.context_summarizer_toolkit",
               "reference/camel.toolkits.craw4ai_toolkit",
               "reference/camel.toolkits.dalle_toolkit",
               "reference/camel.toolkits.dappier_toolkit",
               "reference/camel.toolkits.data_commons_toolkit",
+              "reference/camel.toolkits.dingtalk",
+              "reference/camel.toolkits.earth_science_toolkit",
               "reference/camel.toolkits.edgeone_pages_mcp_toolkit",
               "reference/camel.toolkits.excel_toolkit",
+              "reference/camel.toolkits.file_toolkit",
               "reference/camel.toolkits.file_write_toolkit",
               "reference/camel.toolkits.function_tool",
               "reference/camel.toolkits.github_toolkit",
+              "reference/camel.toolkits.gmail_toolkit",
               "reference/camel.toolkits.google_calendar_toolkit",
               "reference/camel.toolkits.google_drive_mcp_toolkit",
               "reference/camel.toolkits.google_maps_toolkit",
@@ -504,8 +528,10 @@
               "reference/camel.toolkits.human_toolkit",
               "reference/camel.toolkits.image_analysis_toolkit",
               "reference/camel.toolkits.image_generation_toolkit",
+              "reference/camel.toolkits.imap_mail_toolkit",
               "reference/camel.toolkits.jina_reranker_toolkit",
               "reference/camel.toolkits.klavis_toolkit",
+              "reference/camel.toolkits.lark_toolkit",
               "reference/camel.toolkits.linkedin_toolkit",
               "reference/camel.toolkits.markitdown_toolkit",
               "reference/camel.toolkits.math_toolkit",
@@ -514,6 +540,7 @@
               "reference/camel.toolkits.meshy_toolkit",
               "reference/camel.toolkits.message_agent_toolkit",
               "reference/camel.toolkits.message_integration",
+              "reference/camel.toolkits.microsoft_outlook_mail_toolkit",
               "reference/camel.toolkits.mineru_toolkit",
               "reference/camel.toolkits.minimax_mcp_toolkit",
               "reference/camel.toolkits.networkx_toolkit",
@@ -530,22 +557,27 @@
               "reference/camel.toolkits.pulse_mcp_search_toolkit",
               "reference/camel.toolkits.pyautogui_toolkit",
               "reference/camel.toolkits.reddit_toolkit",
+              "reference/camel.toolkits.resend_toolkit",
               "reference/camel.toolkits.retrieval_toolkit",
               "reference/camel.toolkits.screenshot_toolkit",
               "reference/camel.toolkits.search_toolkit",
               "reference/camel.toolkits.searxng_toolkit",
               "reference/camel.toolkits.semantic_scholar_toolkit",
+              "reference/camel.toolkits.skill_toolkit",
               "reference/camel.toolkits.slack_toolkit",
+              "reference/camel.toolkits.sql_toolkit",
               "reference/camel.toolkits.stripe_toolkit",
               "reference/camel.toolkits.sympy_toolkit",
               "reference/camel.toolkits.task_planning_toolkit",
               "reference/camel.toolkits.terminal_toolkit",
               "reference/camel.toolkits.thinking_toolkit",
               "reference/camel.toolkits.twitter_toolkit",
+              "reference/camel.toolkits.vertex_ai_veo_toolkit",
               "reference/camel.toolkits.video_analysis_toolkit",
               "reference/camel.toolkits.video_download_toolkit",
               "reference/camel.toolkits.weather_toolkit",
               "reference/camel.toolkits.web_deploy_toolkit",
+              "reference/camel.toolkits.wechat_official_toolkit",
               "reference/camel.toolkits.whatsapp_toolkit",
               "reference/camel.toolkits.wolfram_alpha_toolkit",
               "reference/camel.toolkits.zapier_toolkit",
@@ -555,6 +587,7 @@
               "reference/camel.toolkits.hybrid_browser_toolkit.config_loader",
               "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit",
               "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts",
+              "reference/camel.toolkits.hybrid_browser_toolkit.installer",
               "reference/camel.toolkits.hybrid_browser_toolkit.snapshot",
               "reference/camel.toolkits.hybrid_browser_toolkit.stealth_config",
               "reference/camel.toolkits.hybrid_browser_toolkit.ws_wrapper",
@@ -568,7 +601,9 @@
               "reference/camel.toolkits.non_visual_browser_toolkit.agent",
               "reference/camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit",
               "reference/camel.toolkits.non_visual_browser_toolkit.nv_browser_session",
-              "reference/camel.toolkits.non_visual_browser_toolkit.snapshot"
+              "reference/camel.toolkits.non_visual_browser_toolkit.snapshot",
+              "reference/camel.toolkits.terminal_toolkit.terminal_toolkit",
+              "reference/camel.toolkits.terminal_toolkit.utils"
             ]
           },
           {
@@ -604,8 +639,10 @@
           {
             "group": "Utilities",
             "pages": [
+              "reference/camel.utils.agent_context",
               "reference/camel.utils.async_func",
               "reference/camel.utils.commons",
+              "reference/camel.utils.context_utils",
               "reference/camel.utils.deduplication",
               "reference/camel.utils.filename",
               "reference/camel.utils.langfuse",
@@ -692,6 +729,12 @@
             ]
           },
           {
+            "group": "Parsers",
+            "pages": [
+              "reference/camel.parsers.mcp_tool_call_parser"
+            ]
+          },
+          {
             "group": "Runtimes",
             "pages": [
               "reference/camel.runtimes.base",
@@ -730,6 +773,59 @@
     "socials": {
       "github": "https://github.com/camel-ai/camel ",
       "twitter": "https://x.com/CamelAIOrg "
+    }
+  },
+  "integrations": {
+    "ga4": {
+      "measurementId": "G-XV5VXFS2RG"
+    }
+  },
+  "seo": {
+    "metatags": {
+      "charset": "utf-8",
+      "viewport": "width=device-width, initial-scale=1.0",
+      "description": "CAMEL: The first and the best multi-agent framework. Finding the Scaling Law of Agents.",
+      "keywords": "CAMEL, AI agents, multi-agent systems, LLM agents, agent communication, agentic workflows, AI toolkits, agent memory, RAG, agent society, MCP, Model Context Protocol, open source AI, workforce",
+      "author": "CAMEL-AI Team",
+      "robots": "index, follow",
+      "googlebot": "index, follow",
+      "google": "notranslate",
+      "theme-color": "#5603fc",
+      "color-scheme": "light dark",
+      "format-detection": "telephone=no",
+      "referrer": "origin",
+      "language": "en",
+      "copyright": "Copyright 2025 CAMEL-AI",
+      "distribution": "global",
+      "coverage": "Worldwide",
+      "category": "Technology",
+      "target": "developers, researchers, AI engineers",
+      "HandheldFriendly": "True",
+      "MobileOptimized": "320",
+      "apple-mobile-web-app-capable": "yes",
+      "apple-mobile-web-app-status-bar-style": "black-translucent",
+      "apple-mobile-web-app-title": "CAMEL-AI",
+      "application-name": "CAMEL-AI",
+      "msapplication-TileColor": "#5603fc",
+      "og:title": "CAMEL - Build Multi-Agent AI Systems",
+      "og:type": "website",
+      "og:url": "https://docs.camel-ai.org",
+      "og:image": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
+      "og:description": "CAMEL: The first and the best multi-agent framework. Finding the Scaling Law of Agents.",
+      "og:site_name": "CAMEL-AI",
+      "og:locale": "en_US",
+      "twitter:card": "summary_large_image",
+      "twitter:site": "@CamelAIOrg",
+      "twitter:creator": "@CamelAIOrg",
+      "twitter:title": "CAMEL - Build Multi-Agent AI Systems",
+      "twitter:description": "CAMEL: The first and the best multi-agent framework. Finding the Scaling Law of Agents.",
+      "twitter:image": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
+      "twitter:image:alt": "CAMEL-AI logo - multi-agent system framework",
+      "article:published_time": "2023-03-01T00:00:00+00:00",
+      "article:modified_time": "2025-12-14T00:00:00+00:00",
+      "article:author": "CAMEL-AI Team",
+      "article:section": "Technology",
+      "article:tag": "CAMEL, AI agents, multi-agent systems, LLM, open source, developers, MCP"
     }
   }
 }

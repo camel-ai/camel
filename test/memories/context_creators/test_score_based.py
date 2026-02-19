@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from datetime import datetime
 
 from camel.memories import (
@@ -70,10 +70,8 @@ def test_score_based_context_creator():
     ]
 
     expected_output = [
-        r.memory_record.to_openai_message()
-        for r in [
-            context_records[1]  # Only expect the highest scoring message
-        ]
+        record.memory_record.to_openai_message()
+        for record in sorted(context_records, key=lambda r: r.timestamp)
     ]
     output, _ = context_creator.create_context(records=context_records)
     assert expected_output == output
@@ -137,9 +135,16 @@ def test_score_based_context_creator_with_system_message():
             score=0.9,
         ),
     ]
+    sorted_records = sorted(
+        (record for record in context_records[1:]),
+        key=lambda r: r.timestamp,
+    )
     expected_output = [
-        r.memory_record.to_openai_message()
-        for r in [context_records[0], context_records[2], context_records[3]]
+        context_records[0].memory_record.to_openai_message(),
+        *(
+            record.memory_record.to_openai_message()
+            for record in sorted_records
+        ),
     ]
     output, _ = context_creator.create_context(records=context_records)
     assert expected_output == output

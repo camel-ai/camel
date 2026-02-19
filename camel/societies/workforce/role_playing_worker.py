@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 from typing import Dict, List, Optional
@@ -119,11 +119,13 @@ class RolePlayingWorker(Worker):
                 `TaskState.FAILED`.
         """
         dependency_tasks_info = self._get_dep_tasks_info(dependencies)
-        prompt = ROLEPLAY_PROCESS_TASK_PROMPT.format(
-            content=task.content,
-            parent_task_content=task.parent.content if task.parent else "",
-            dependency_tasks_info=dependency_tasks_info,
-            additional_info=task.additional_info,
+        prompt = str(
+            ROLEPLAY_PROCESS_TASK_PROMPT.format(
+                content=task.content,
+                parent_task_content=task.parent.content if task.parent else "",
+                dependency_tasks_info=dependency_tasks_info,
+                additional_info=task.additional_info,
+            )
         )
         role_play_session = RolePlaying(
             assistant_role_name=self.assistant_role_name,
@@ -183,12 +185,14 @@ class RolePlayingWorker(Worker):
             input_msg = assistant_response.msg
 
         chat_history_str = "\n".join(chat_history)
-        prompt = ROLEPLAY_SUMMARIZE_PROMPT.format(
-            user_role=self.user_role_name,
-            assistant_role=self.assistant_role_name,
-            content=task.content,
-            chat_history=chat_history_str,
-            additional_info=task.additional_info,
+        prompt = str(
+            ROLEPLAY_SUMMARIZE_PROMPT.format(
+                user_role=self.user_role_name,
+                assistant_role=self.assistant_role_name,
+                content=task.content,
+                chat_history=chat_history_str,
+                additional_info=task.additional_info,
+            )
         )
         if self.use_structured_output_handler and self.structured_handler:
             # Use structured output handler for prompt-based extraction

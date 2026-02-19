@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 import asyncio
@@ -45,6 +45,7 @@ class Worker(BaseNode, ABC):
     ) -> None:
         super().__init__(description, node_id=node_id)
         self._active_task_ids: Set[str] = set()
+        self._running_tasks: Set[asyncio.Task] = set()
 
     def __repr__(self):
         return f"Worker node {self.node_id} ({self.description})"
@@ -113,15 +114,12 @@ class Worker(BaseNode, ABC):
         self._running = True
         logger.info(f"{self} started.")
 
-        # Keep track of running task coroutines
-        running_tasks: Set[asyncio.Task] = set()
-
         while self._running:
             try:
                 # Clean up completed tasks
-                completed_tasks = [t for t in running_tasks if t.done()]
+                completed_tasks = [t for t in self._running_tasks if t.done()]
                 for completed_task in completed_tasks:
-                    running_tasks.remove(completed_task)
+                    self._running_tasks.discard(completed_task)
                     # Check for exceptions in completed tasks
                     try:
                         await completed_task
@@ -138,11 +136,11 @@ class Worker(BaseNode, ABC):
                     task_coroutine = asyncio.create_task(
                         self._process_single_task(task)
                     )
-                    running_tasks.add(task_coroutine)
+                    self._running_tasks.add(task_coroutine)
 
                 except asyncio.TimeoutError:
                     # No tasks available, continue loop
-                    if not running_tasks:
+                    if not self._running_tasks:
                         # No tasks running and none available, short sleep
                         await asyncio.sleep(0.1)
                     continue
@@ -155,12 +153,12 @@ class Worker(BaseNode, ABC):
                 continue
 
         # Wait for all remaining tasks to complete when stopping
-        if running_tasks:
+        if self._running_tasks:
             logger.info(
-                f"{self} stopping, waiting for {len(running_tasks)} "
+                f"{self} stopping, waiting for {len(self._running_tasks)} "
                 f"tasks to complete..."
             )
-            await asyncio.gather(*running_tasks, return_exceptions=True)
+            await asyncio.gather(*self._running_tasks, return_exceptions=True)
 
         logger.info(f"{self} stopped.")
 
@@ -171,6 +169,20 @@ class Worker(BaseNode, ABC):
 
     @check_if_running(True)
     def stop(self):
-        r"""Stop the worker."""
+        r"""Forcefully stop the worker.
+
+        Cancels all running tasks immediately and sets the stop flag.
+        The worker will exit after completing cancellation.
+        """
+        # First cancel all running tasks to interrupt ongoing work
+        tasks_to_cancel = list(self._running_tasks)
+        for task in tasks_to_cancel:
+            if not task.done():
+                task.cancel()
+
+        # Clear the running tasks set since they're all cancelled
+        self._running_tasks.clear()
+
+        # Set stop flag to exit the listen loop
         self._running = False
         return

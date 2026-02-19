@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 import sys
@@ -249,7 +249,7 @@ def test_get_tools(mock_aci):
     result = toolkit.get_tools()
 
     # Verify results
-    assert len(result) == 14
+    assert len(result) == 16
     mock_client.app_configurations.list.assert_called_once()
     mock_client.functions.search.assert_called_once()
     mock_client.functions.get_definition.assert_called_once_with(
@@ -278,4 +278,32 @@ def test_execute_function(mock_aci):
     assert result == {"result": "success"}
     mock_client.handle_function_call.assert_called_once_with(
         "test_function", {"arg1": "value1"}, "test_owner", True
+    )
+
+
+@patch("aci.ACI")
+@pytest.mark.asyncio
+async def test_aexecute_function(mock_aci):
+    r"""Test aexecute_function async method."""
+    # Setup mock
+    mock_client = MagicMock()
+    mock_aci.return_value = mock_client
+    mock_client.handle_function_call.return_value = {"result": "async_success"}
+
+    # Initialize toolkit and call async method
+    toolkit = ACIToolkit(api_key="test_key")
+    result = await toolkit.aexecute_function(
+        function_name="test_async_function",
+        function_arguments={"arg1": "async_value1"},
+        linked_account_owner_id="test_async_owner",
+        allowed_apps_only=False,
+    )
+
+    # Verify results
+    assert result == {"result": "async_success"}
+    mock_client.handle_function_call.assert_called_once_with(
+        "test_async_function",
+        {"arg1": "async_value1"},
+        "test_async_owner",
+        False,
     )

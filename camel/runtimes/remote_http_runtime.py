@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import atexit
 import json
 import logging
@@ -65,12 +65,11 @@ class RemoteHttpRuntime(BaseRuntime):
                 *list(self.entrypoint.values()),
             ]
         )
-        atexit.register(self._cleanup)
+        atexit.register(self.cleanup)
         return self
 
-    def _cleanup(self):
-        r"""Clean up the API server when exiting."""
-
+    def cleanup(self) -> None:
+        r"""Stop and release the API server process."""
         if self.process and self.process.poll() is None:
             self.process.terminate()
             self.process.wait()
@@ -124,14 +123,14 @@ class RemoteHttpRuntime(BaseRuntime):
                 )
                 if resp.status_code != 200:
                     logger.error(
-                        f"""ailed to execute function: 
-                        {func.get_function_name()}, 
-                        status code: {resp.status_code}, 
+                        f"""ailed to execute function:
+                        {func.get_function_name()},
+                        status code: {resp.status_code},
                         response: {resp.text}"""
                     )
                     return {
                         "error": f"""Failed to execute function:
-                        {func.get_function_name()}, 
+                        {func.get_function_name()},
                         response: {resp.text}"""
                     }
                 data = resp.json()
@@ -175,7 +174,7 @@ class RemoteHttpRuntime(BaseRuntime):
 
     def __del__(self):
         r"""Clean up the API server when the object is deleted."""
-        self._cleanup()
+        self.cleanup()
 
     def stop(self) -> "RemoteHttpRuntime":
         r"""Stop the API server.
@@ -183,7 +182,7 @@ class RemoteHttpRuntime(BaseRuntime):
         Returns:
             RemoteHttpRuntime: The current runtime.
         """
-        self._cleanup()
+        self.cleanup()
         return self
 
     def reset(self) -> "RemoteHttpRuntime":

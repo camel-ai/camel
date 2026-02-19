@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import warnings
 from typing import Any, Dict, List, Optional, Type, Union
@@ -35,9 +35,7 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
-    get_current_agent_session_id,
     is_langfuse_available,
-    update_langfuse_trace,
 )
 
 logger = get_logger(__name__)
@@ -90,9 +88,21 @@ class OpenAIModel(BaseModelBackend):
             (default: :obj:`None`)
         max_retries (int, optional): Maximum number of retries for API calls.
             (default: :obj:`3`)
+        client (Optional[Any], optional): A custom synchronous OpenAI client
+            instance. If provided, this client will be used instead of
+            creating a new one. Useful for RL frameworks like AReaL or rLLM
+            that provide OpenAI-compatible clients. The client should
+            implement the OpenAI client interface with
+            `.chat.completions.create()` and `.beta.chat.completions.parse()`
+            methods. (default: :obj:`None`)
+        async_client (Optional[Any], optional): A custom asynchronous OpenAI
+            client instance. If provided, this client will be used instead of
+            creating a new one. The client should implement the AsyncOpenAI
+            client interface. (default: :obj:`None`)
         **kwargs (Any): Additional arguments to pass to the
             OpenAI client initialization. These can include parameters like
             'organization', 'default_headers', 'http_client', etc.
+            Ignored if custom clients are provided.
     """
 
     @api_keys_required(
@@ -109,6 +119,8 @@ class OpenAIModel(BaseModelBackend):
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
+        client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
@@ -124,42 +136,54 @@ class OpenAIModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
 
-        if is_langfuse_available():
-            from langfuse.openai import AsyncOpenAI as LangfuseAsyncOpenAI
-            from langfuse.openai import OpenAI as LangfuseOpenAI
-
-            # Create Langfuse client with base parameters and additional
-            # arguments
-            self._client = LangfuseOpenAI(
-                timeout=self._timeout,
-                max_retries=self._max_retries,
-                base_url=self._url,
-                api_key=self._api_key,
-                **kwargs,
-            )
-            self._async_client = LangfuseAsyncOpenAI(
-                timeout=self._timeout,
-                max_retries=self._max_retries,
-                base_url=self._url,
-                api_key=self._api_key,
-                **kwargs,
-            )
+        # Use custom clients if provided, otherwise create new ones
+        if client is not None:
+            # Use the provided custom sync client
+            self._client = client
         else:
-            # Create client with base parameters and additional arguments
-            self._client = OpenAI(
-                timeout=self._timeout,
-                max_retries=self._max_retries,
-                base_url=self._url,
-                api_key=self._api_key,
-                **kwargs,
-            )
-            self._async_client = AsyncOpenAI(
-                timeout=self._timeout,
-                max_retries=self._max_retries,
-                base_url=self._url,
-                api_key=self._api_key,
-                **kwargs,
-            )
+            # Create default sync client
+            if is_langfuse_available():
+                from langfuse.openai import OpenAI as LangfuseOpenAI
+
+                self._client = LangfuseOpenAI(
+                    timeout=self._timeout,
+                    max_retries=self._max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
+            else:
+                self._client = OpenAI(
+                    timeout=self._timeout,
+                    max_retries=self._max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
+
+        if async_client is not None:
+            # Use the provided custom async client
+            self._async_client = async_client
+        else:
+            # Create default async client
+            if is_langfuse_available():
+                from langfuse.openai import AsyncOpenAI as LangfuseAsyncOpenAI
+
+                self._async_client = LangfuseAsyncOpenAI(
+                    timeout=self._timeout,
+                    max_retries=self._max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
+            else:
+                self._async_client = AsyncOpenAI(
+                    timeout=self._timeout,
+                    max_retries=self._max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
 
     def _sanitize_config(self, config_dict: Dict[str, Any]) -> Dict[str, Any]:
         r"""Sanitize the model configuration for O1 models."""
@@ -273,26 +297,7 @@ class OpenAIModel(BaseModelBackend):
                 or `ChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        model_type_str = str(self.model_type)
-        if not agent_session_id:
-            agent_session_id = "no-session-id"
-        metadata = {
-            "source": "camel",
-            "agent_id": agent_session_id,
-            "agent_type": "camel_chat_agent",
-            "model_type": model_type_str,
-        }
-        metadata = {k: str(v) for k, v in metadata.items()}
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata=metadata,
-                tags=["CAMEL-AI", model_type_str],
-            )
-        logger.info(f"metadata: {metadata}")
+        self._log_and_trace()
 
         messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(
@@ -345,25 +350,7 @@ class OpenAIModel(BaseModelBackend):
                 `AsyncChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        model_type_str = str(self.model_type)
-        if not agent_session_id:
-            agent_session_id = "no-session-id"
-            metadata = {
-                "source": "camel",
-                "agent_id": agent_session_id,
-                "agent_type": "camel_chat_agent",
-                "model_type": model_type_str,
-            }
-            metadata = {k: str(v) for k, v in metadata.items()}
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata=metadata,
-                tags=["CAMEL-AI", model_type_str],
-            )
-        logger.info(f"metadata: {metadata}")
+        self._log_and_trace()
 
         messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(
@@ -394,13 +381,7 @@ class OpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
-        if tools:
-            request_config["tools"] = tools
-
+        request_config = self._prepare_request_config(tools)
         request_config = self._sanitize_config(request_config)
 
         return self._client.chat.completions.create(
@@ -414,13 +395,7 @@ class OpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
-        if tools:
-            request_config["tools"] = tools
-
+        request_config = self._prepare_request_config(tools)
         request_config = self._sanitize_config(request_config)
 
         return await self._async_client.chat.completions.create(
@@ -435,17 +410,11 @@ class OpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         request_config["response_format"] = response_format
         # Remove stream from request config since OpenAI does not support it
         # with structured response
         request_config.pop("stream", None)
-        if tools is not None:
-            request_config["tools"] = tools
-
         request_config = self._sanitize_config(request_config)
 
         return self._client.beta.chat.completions.parse(
@@ -460,17 +429,11 @@ class OpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         request_config["response_format"] = response_format
         # Remove stream from request config since OpenAI does not support it
         # with structured response
         request_config.pop("stream", None)
-        if tools is not None:
-            request_config["tools"] = tools
-
         request_config = self._sanitize_config(request_config)
 
         return await self._async_client.beta.chat.completions.parse(
@@ -489,16 +452,9 @@ class OpenAIModel(BaseModelBackend):
 
         Note: This uses OpenAI's beta streaming API for structured outputs.
         """
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
-
-        if tools is not None:
-            request_config["tools"] = tools
-
         request_config = self._sanitize_config(request_config)
 
         # Use the beta streaming API for structured outputs
@@ -519,15 +475,9 @@ class OpenAIModel(BaseModelBackend):
 
         Note: This uses OpenAI's beta streaming API for structured outputs.
         """
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
-
-        if tools is not None:
-            request_config["tools"] = tools
 
         request_config = self._sanitize_config(request_config)
 

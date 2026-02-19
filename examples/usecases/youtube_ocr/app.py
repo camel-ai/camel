@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import ffmpeg, cv2, whisper, pytesseract, streamlit as st
 from camel.toolkits.video_download_toolkit import VideoDownloaderToolkit
@@ -58,7 +58,7 @@ def process_video(url, question):
     ocr_content = "\n".join(ocr_texts)
     # Prepare context and query agent
     knowledge = f"Transcript:\n{transcript}\n\nOn-screen Text:\n{ocr_content}"
-    user_msg = BaseMessage.make_user_message(role_name="User", 
+    user_msg = BaseMessage.make_user_message(role_name="User",
                 content=f"{knowledge}\n\nQuestion: {question}")
     response = agent.step(user_msg)
     return response.msgs[0].content

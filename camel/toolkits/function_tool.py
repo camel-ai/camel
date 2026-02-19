@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,12 +10,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
+import asyncio
+import functools
 import inspect
 import logging
 import textwrap
+import threading
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from inspect import Parameter, getsource, signature
 from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Type
 
@@ -30,6 +34,13 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils import get_pydantic_object_schema, to_pascal
 
 logger = logging.getLogger(__name__)
+
+# Shared thread pool for running sync tools without blocking the event loop
+_SYNC_TOOL_EXECUTOR = ThreadPoolExecutor(max_workers=64)
+
+# Persistent event loop to avoid httpx connection pool issues
+_PERSISTENT_LOOP: Optional[asyncio.AbstractEventLoop] = None
+_PERSISTENT_LOOP_LOCK = threading.Lock()
 
 
 def _remove_a_key(d: Dict, remove_key: Any) -> None:
@@ -476,26 +487,102 @@ class FunctionTool:
         if self.synthesize_output:
             result = self.synthesize_execution_output(args, kwargs)
             return result
-        else:
-            # Pass the extracted arguments to the indicated function
+
+        # Call the function first
+        try:
+            result = self.func(*args, **kwargs)
+        except Exception as e:
+            parts = []
+            if args:
+                parts.append(f"args={args}")
+            if kwargs:
+                parts.append(f"kwargs={kwargs}")
+            args_str = ", ".join(parts) if parts else "no arguments"
+            raise ValueError(
+                f"Execution of function {self.func.__name__} failed with "
+                f"{args_str}. Error: {e}"
+            )
+
+        # Handle coroutine result (from async function or sync wrapper
+        # returning coroutine)
+        if inspect.iscoroutine(result):
+            # Check if there's already a running event loop
             try:
-                result = self.func(*args, **kwargs)
-                return result
-            except Exception as e:
-                raise ValueError(
-                    f"Execution of function {self.func.__name__} failed with "
-                    f"arguments {args} and {kwargs}. "
-                    f"Error: {e}"
+                asyncio.get_running_loop()
+                has_running_loop = True
+            except RuntimeError:
+                has_running_loop = False
+
+            if has_running_loop:
+                # Already in an async context
+                warnings.warn(
+                    f"Async tool '{self.func.__name__}' is being called "
+                    f"synchronously within an async context. Consider using "
+                    f"'await tool.async_call()' or 'await agent.astep()' for "
+                    f"better performance.",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
+                # Must run in separate thread to avoid blocking current loop
+                future = _SYNC_TOOL_EXECUTOR.submit(
+                    self._run_async_in_persistent_loop, result
+                )
+                return future.result()
+            else:
+                warnings.warn(
+                    f"Async tool '{self.func.__name__}' is being called "
+                    f"synchronously. Consider using 'await tool.async_call()' "
+                    f"or 'await agent.astep()' for better performance.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                return self._run_async_in_persistent_loop(result)
+
+        return result
+
+    @staticmethod
+    def _run_async_in_persistent_loop(coro):
+        r"""Run coroutine in persistent loop to preserve httpx connections."""
+        global _PERSISTENT_LOOP
+        with _PERSISTENT_LOOP_LOCK:
+            need_new_loop = (
+                _PERSISTENT_LOOP is None
+                or _PERSISTENT_LOOP.is_closed()
+                or not _PERSISTENT_LOOP.is_running()
+            )
+            if need_new_loop:
+                _PERSISTENT_LOOP = asyncio.new_event_loop()
+                t = threading.Thread(
+                    target=_PERSISTENT_LOOP.run_forever, daemon=True
+                )
+                t.start()
+                while not _PERSISTENT_LOOP.is_running():
+                    pass  # Wait for loop to start
+        future = asyncio.run_coroutine_threadsafe(coro, _PERSISTENT_LOOP)
+        return future.result()
 
     async def async_call(self, *args: Any, **kwargs: Any) -> Any:
         if self.synthesize_output:
             result = self.synthesize_execution_output(args, kwargs)
             return result
-        if self.is_async:
+
+        # Check if the function itself (not unwrapped) is a coroutine function
+        if inspect.iscoroutinefunction(self.func):
             return await self.func(*args, **kwargs)
-        else:
-            return self.func(*args, **kwargs)
+
+        # For sync functions (including sync wrappers around async functions),
+        # run in executor to avoid blocking
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            _SYNC_TOOL_EXECUTOR,
+            functools.partial(self.func, *args, **kwargs),
+        )
+
+        # If the sync wrapper returned a coroutine, await it
+        if inspect.iscoroutine(result):
+            return await result
+
+        return result
 
     @property
     def is_async(self) -> bool:
@@ -527,8 +614,8 @@ class FunctionTool:
 
         # Check the function description, if no description then raise warming
         if not openai_tool_schema["function"].get("description"):
-            warnings.warn(f"""Function description is missing for 
-                          {openai_tool_schema['function']['name']}. This may 
+            warnings.warn(f"""Function description is missing for
+                          {openai_tool_schema['function']['name']}. This may
                           affect the quality of tool calling.""")
 
         # Validate whether parameters
@@ -875,3 +962,89 @@ class FunctionTool:
         except SchemaError as e:
             raise e
         self.openai_tool_schema["function"]["parameters"]["properties"] = value
+
+
+def tool(
+    func: Optional[Callable] = None,
+    *,
+    openai_tool_schema: Optional[Dict[str, Any]] = None,
+    synthesize_schema: bool = False,
+    synthesize_schema_model: Optional[BaseModelBackend] = None,
+    synthesize_schema_max_retries: int = 2,
+    synthesize_output: bool = False,
+    synthesize_output_model: Optional[BaseModelBackend] = None,
+    synthesize_output_format: Optional[Type[BaseModel]] = None,
+):
+    r"""A decorator that converts a Python function into a FunctionTool
+    instance.
+
+    This decorator can be used with or without parentheses:
+        - @tool - without parentheses, uses default settings
+        - @tool() - with parentheses, uses default settings
+        - @tool(synthesize_output=True) - with custom settings
+
+    Args:
+        func (Optional[Callable], optional): The function to be decorated.
+            This is automatically passed when using @tool without parentheses.
+            (default: :obj:`None`)
+        openai_tool_schema (Optional[Dict[str, Any]], optional): A
+            user-defined OpenAI tool schema to override the default result.
+            (default: :obj:`None`)
+        synthesize_schema (bool, optional): Whether to enable schema synthesis.
+            (default: :obj:`False`)
+        synthesize_schema_model (Optional[BaseModelBackend], optional):
+            Model to use for schema synthesis. (default: :obj:`None`)
+        synthesize_schema_max_retries (int, optional): Maximum number of
+            retries for schema synthesis. (default: :obj:`2`)
+        synthesize_output (bool, optional): Whether to enable output synthesis.
+            (default: :obj:`False`)
+        synthesize_output_model (Optional[BaseModelBackend], optional):
+            Model to use for output synthesis. (default: :obj:`None`)
+        synthesize_output_format (Optional[Type[BaseModel]], optional):
+            Format for synthesized output. (default: :obj:`None`)
+
+    Returns:
+        Callable[[Callable], FunctionTool]: A decorator function that converts
+            the decorated function into a FunctionTool instance.
+
+    Example:
+        Using @tool without parentheses::
+
+            @tool
+            def add(a: int, b: int = 0) -> int:
+                '''Add two numbers.'''
+                return a + b
+
+        Using @tool() with parentheses::
+
+            @tool()
+            def multiply(a: int, b: int) -> int:
+                '''Multiply two numbers.'''
+                return a * b
+    """
+
+    def decorator(f: Callable) -> FunctionTool:
+        r"""The actual decorator function.
+
+        Args:
+            f (Callable): The function to be converted into a FunctionTool.
+
+        Returns:
+            FunctionTool: The function wrapped as a FunctionTool instance.
+        """
+        return FunctionTool(
+            func=f,
+            openai_tool_schema=openai_tool_schema,
+            synthesize_schema=synthesize_schema,
+            synthesize_schema_model=synthesize_schema_model,
+            synthesize_schema_max_retries=synthesize_schema_max_retries,
+            synthesize_output=synthesize_output,
+            synthesize_output_model=synthesize_output_model,
+            synthesize_output_format=synthesize_output_format,
+        )
+
+    # Support both @tool and @tool() usage patterns
+    if func is not None:
+        return decorator(func)
+    else:
+        return decorator

@@ -33,6 +33,7 @@ export interface DetailedTiming {
   stability_wait_time_ms?: number;
   dom_content_loaded_time_ms?: number;
   network_idle_time_ms?: number;
+  dom_stability_time_ms?: number;
   snapshot_time_ms?: number;
   element_search_time_ms?: number;
   action_execution_time_ms?: number;
@@ -49,6 +50,16 @@ export interface ActionResult {
   details?: Record<string, any>;
   timing?: DetailedTiming;
   newTabId?: string;  // ID of newly opened tab if click opened a new tab
+  note?: string;
+}
+
+// Result of page stability check after actions
+export interface PageStabilityResult {
+  domContentLoadedTime: number;
+  networkIdleTime: number;
+  domStabilityTime: number;
+  hasLoadingElements: boolean;
+  note: string;
 }
 
 export interface TabInfo {
@@ -69,9 +80,12 @@ export interface BrowserToolkitConfig {
   networkIdleTimeout?: number;
   screenshotTimeout?: number;
   pageStabilityTimeout?: number;
+  domStabilityThreshold?: number;
+  domStabilityTimeout?: number;
   useNativePlaywrightMapping?: boolean; // New option to control mapping implementation
   connectOverCdp?: boolean; // Whether to connect to existing browser via CDP
   cdpUrl?: string; // WebSocket endpoint URL for CDP connection
+  cdpKeepCurrentPage?: boolean; // When true, CDP mode will keep the current page instead of creating new one
 }
 
 export interface ClickAction {
@@ -105,14 +119,20 @@ export interface EnterAction {
 export interface MouseAction {
   type: 'mouse_control';
   control: 'click' | 'right_click' | 'dblclick';
-  x: number; 
-  y: number; 
+  x: number;
+  y: number;
 }
 
 export interface MouseDragAction {
   type: 'mouse_drag';
-  from_ref: string;
-  to_ref: string;
+  // Ref mode
+  from_ref?: string;
+  to_ref?: string;
+  // Pixel mode
+  from_x?: number;
+  from_y?: number;
+  to_x?: number;
+  to_y?: number;
 }
 
 export interface PressKeyAction {
@@ -120,10 +140,50 @@ export interface PressKeyAction {
   keys: string[];
 }
 
-export type BrowserAction = ClickAction | TypeAction | SelectAction | ScrollAction | EnterAction | MouseAction | MouseDragAction | PressKeyAction;
+export interface UploadFileAction {
+  type: 'upload_file';
+  filePath: string;
+  // Ref mode
+  ref?: string;
+  // Pixel mode
+  x?: number;
+  y?: number;
+}
+
+export interface DownloadFileAction {
+  type: 'download_file';
+  // Ref mode
+  ref?: string;
+  // Pixel mode
+  x?: number;
+  y?: number;
+}
+
+export type BrowserAction = ClickAction | TypeAction | SelectAction | ScrollAction | EnterAction | MouseAction | MouseDragAction | PressKeyAction | UploadFileAction | DownloadFileAction;
 
 export interface VisualMarkResult {
   text: string;
   images: string[];
 }
 
+/**
+ * Interactive element roles for click detection and visual marking
+ * Used by both browser-session.ts and hybrid-browser-toolkit.ts
+ */
+export const INTERACTIVE_ROLES = new Set([
+  'button', 'link', 'textbox', 'checkbox', 'radio', 'combobox', 'listbox',
+  'slider', 'spinbutton', 'switch', 'searchbox', 'menuitem',
+  'menuitemcheckbox', 'menuitemradio', 'option', 'tab'
+]);
+
+/**
+ * Nearest element info for ineffective click detection
+ */
+export interface NearestElementInfo {
+  ref: string;
+  role: string;
+  name: string;
+  distance: number;
+  clickableCoord: { x: number; y: number };
+  boundingBox: { x: number; y: number; width: number; height: number };
+}

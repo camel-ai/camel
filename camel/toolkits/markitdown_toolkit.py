@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import Dict, List, Optional
 
@@ -25,12 +25,38 @@ logger = get_logger(__name__)
 
 @MCPServer()
 class MarkItDownToolkit(BaseToolkit):
-    r"""A class representing a toolkit for MarkItDown."""
+    r"""A class representing a toolkit for MarkItDown.
+
+    .. deprecated::
+        MarkItDownToolkit is deprecated. Use FileToolkit instead, which now
+        includes the same functionality through its read_file method that
+        supports both single files and multiple files.
+
+        Example migration:
+            # Old way
+            from camel.toolkits import MarkItDownToolkit
+            toolkit = MarkItDownToolkit()
+            content = toolkit.read_files(['file1.pdf', 'file2.docx'])
+
+            # New way
+            from camel.toolkits import FileToolkit
+            toolkit = FileToolkit()
+            content = toolkit.read_file(['file1.pdf', 'file2.docx'])
+    """
 
     def __init__(
         self,
         timeout: Optional[float] = None,
     ):
+        import warnings
+
+        warnings.warn(
+            "MarkItDownToolkit is deprecated and will be removed in a future "
+            "version. Please use FileToolkit instead, which now includes "
+            "read_file method that supports both single and multiple files.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(timeout=timeout)
 
     def read_files(self, file_paths: List[str]) -> Dict[str, str]:

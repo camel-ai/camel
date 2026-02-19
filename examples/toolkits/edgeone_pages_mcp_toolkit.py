@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 
 from camel.agents import ChatAgent
@@ -38,6 +38,8 @@ async def main():
     response = await chat_agent.astep(
         "write a hello world page",
     )
+
+    print("=== Model Response ===")
     print(response.msg.content)
 
     # disconnect from edgeone pages mcp
@@ -50,7 +52,15 @@ if __name__ == "__main__":
 
 """
 ==============================================================================
-I have created a "Hello, World!" web page for you. You can view it here: 
-https://mcp.edgeone.site/share/7D8SNj2ftY9SRtPrWZ5rW
+I've created a Hello World page for you! The page has been deployed and is now
+live at:
+
+**https://mcp.edgeone.site/share/M-MXzJzHJ3mGc013OQNIM**
+
+The page features:
+- A modern, gradient background
+- Centered "Hello World!" heading
+- Clean, responsive design
+- A welcome message below the main heading
 ==============================================================================
 """

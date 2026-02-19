@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents.chat_agent import ChatAgent
 from camel.benchmarks.browsecomp import BrowseCompBenchmark
@@ -40,8 +40,8 @@ if __name__ == '__main__':
     # Create specialized agents for the workforce
     web_researcher_sys_msg = BaseMessage.make_assistant_message(
         role_name="Web Researcher",
-        content="""You are an expert at researching information on the web. 
-You can search for and analyze web content to extract accurate information. 
+        content="""You are an expert at researching information on the web.
+You can search for and analyze web content to extract accurate information.
 You excel at understanding complex queries and finding precise answers.""",
     )
 
