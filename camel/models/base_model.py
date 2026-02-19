@@ -14,7 +14,6 @@
 import abc
 import inspect
 import os
-import re
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -193,15 +192,17 @@ class _AsyncStreamWrapper(_StreamLogger):
 
 
 class ModelBackendMeta(abc.ABCMeta):
-    r"""Metaclass that automatically preprocesses messages in run method.
+    r"""Metaclass that automatically pre/post-processes the run method.
 
-    Automatically wraps the run method of any class inheriting from
-    BaseModelBackend to preprocess messages (remove <think> tags) before they
-    are sent to the model.
+    Automatically wraps the run and arun methods of any class inheriting from
+    BaseModelBackend to:
+    - Preprocess messages (remove <think> tags) before sending to the model.
+    - Postprocess responses (extract <think> tags into reasoning_content)
+      after receiving from the model.
     """
 
     def __new__(mcs, name, bases, namespace):
-        r"""Wraps run method with preprocessing if it exists in the class."""
+        r"""Wraps run/arun methods with pre/post-processing."""
         if 'run' in namespace:
             original_run = namespace['run']
 
@@ -209,9 +210,25 @@ class ModelBackendMeta(abc.ABCMeta):
                 self, messages: List[OpenAIMessage], *args, **kwargs
             ):
                 messages = self.preprocess_messages(messages)
-                return original_run(self, messages, *args, **kwargs)
+                result = original_run(self, messages, *args, **kwargs)
+                result = self.postprocess_response(result)
+                return result
 
             namespace['run'] = wrapped_run
+
+        if 'arun' in namespace:
+            original_arun = namespace['arun']
+
+            async def wrapped_arun(
+                self, messages: List[OpenAIMessage], *args, **kwargs
+            ):
+                messages = self.preprocess_messages(messages)
+                result = await original_arun(self, messages, *args, **kwargs)
+                result = self.postprocess_response(result)
+                return result
+
+            namespace['arun'] = wrapped_arun
+
         return super().__new__(mcs, name, bases, namespace)
 
 
@@ -235,6 +252,13 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             API calls. (default: :obj:`None`)
         max_retries (int, optional): Maximum number of retries
             for API calls. (default: :obj:`3`)
+        extract_thinking_from_response (bool, optional): Whether to
+            extract ``<think>`` tags from model response content into
+            the ``reasoning_content`` field. When enabled, if a model
+            embeds reasoning in ``<think>`` tags within the response
+            content (and ``reasoning_content`` is not already set),
+            the tags will be extracted into ``reasoning_content`` and
+            removed from ``content``. (default: :obj:`True`)
     """
 
     def __init__(
@@ -246,6 +270,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         max_retries: int = 3,
+        extract_thinking_from_response: bool = True,
     ) -> None:
         self.model_type: UnifiedModelType = UnifiedModelType(model_type)
         if model_config_dict is None:
@@ -256,6 +281,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         self._token_counter = token_counter
         self._timeout = timeout
         self._max_retries = max_retries
+        self._extract_thinking_from_response = extract_thinking_from_response
         # Initialize logging configuration
         self._log_enabled = (
             os.environ.get("CAMEL_MODEL_LOG_ENABLED", "False").lower()
@@ -324,15 +350,18 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         tool_responses_buffer: Dict[str, OpenAIMessage] = {}
         has_tool_calls = False
 
+        from camel.models._utils import extract_thinking_from_content
+
         for msg in messages:
             # Remove thinking content if needed
             role = msg.get('role')
             content = msg.get('content')
-            if role in ['assistant', 'user'] and isinstance(content, str):
-                if '<think>' in content and '</think>' in content:
-                    content = re.sub(
-                        r'<think>.*?</think>', '', content, flags=re.DOTALL
-                    ).strip()
+            if (
+                self._extract_thinking_from_response
+                and role in ['assistant', 'user']
+                and isinstance(content, str)
+            ):
+                content, _ = extract_thinking_from_content(content)
                 processed_msg = dict(msg)
                 processed_msg['content'] = content
             else:
@@ -428,6 +457,59 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             formatted_messages.append(response)
 
         return formatted_messages
+
+    def postprocess_response(self, response: Any) -> Any:
+        r"""Postprocess model response to extract ``<think>`` tags.
+
+        For non-streaming responses, if the model embeds reasoning in
+        ``<think>`` tags within the response content (and
+        ``reasoning_content`` is not already set), extracts the content
+        of the tags into ``reasoning_content`` and removes them from
+        ``content``.
+
+        Streaming responses and other non-ChatCompletion types are
+        returned as-is.
+
+        Args:
+            response: The model response. May be a
+                :obj:`ChatCompletion`, a streaming object, or other
+                types.
+
+        Returns:
+            The response, potentially with ``reasoning_content``
+            populated and ``content`` cleaned.
+        """
+        # Skip streaming responses — they are handled downstream
+        if (
+            isinstance(response, (Stream, AsyncStream))
+            or inspect.isgenerator(response)
+            or inspect.isasyncgen(response)
+        ):
+            return response
+
+        if not self._extract_thinking_from_response:
+            return response
+
+        if not hasattr(response, 'choices') or not response.choices:
+            return response
+
+        from camel.models._utils import extract_thinking_from_content
+
+        for choice in response.choices:
+            message = getattr(choice, 'message', None)
+            if message is None:
+                continue
+            content = getattr(message, 'content', None)
+            if not isinstance(content, str):
+                continue
+            existing = getattr(message, 'reasoning_content', None)
+            message.content, reasoning = extract_thinking_from_content(
+                content, existing
+            )
+            if reasoning is not None:
+                message.reasoning_content = reasoning
+
+        return response
 
     def _log_request(self, messages: List[OpenAIMessage]) -> Optional[str]:
         r"""Log the request messages to a JSON file if logging is enabled.

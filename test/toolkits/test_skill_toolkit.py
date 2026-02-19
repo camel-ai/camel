@@ -39,6 +39,8 @@ description: A test skill for unit testing.
 This is a test skill body content.
 """
         )
+        (skill_dir / "references").mkdir()
+        (skill_dir / "helper.md").write_text("# helper\n")
 
         # Create second skill for multi-skill testing
         skill_dir2 = Path(temp_dir) / ".camel" / "skills" / "another-skill"
@@ -69,6 +71,7 @@ def test_initialization():
     toolkit = SkillToolkit()
     assert toolkit.working_directory == Path.cwd().resolve()
     assert toolkit._skills_cache is None
+    assert toolkit._allowed_skills is None
 
 
 def test_list_skills(skill_toolkit):
@@ -113,6 +116,10 @@ def test_get_tools(skill_toolkit):
     tool_names = [t.func.__name__ for t in tools]
     assert "list_skills" in tool_names
     assert "load_skill" in tool_names
+    load_tool = next(t for t in tools if t.func.__name__ == "load_skill")
+    description = load_tool.get_openai_tool_schema()["function"]["description"]
+    assert "extra files: helper.md, references/" in description
+    assert "<files>helper.md, references/</files>" in description
 
 
 def test_caching(skill_toolkit):
@@ -138,3 +145,16 @@ def test_clear_cache(skill_toolkit):
     # Cache should be repopulated on next access
     skill_toolkit.list_skills()
     assert skill_toolkit._skills_cache is not None
+
+
+def test_allowed_skills_filter_on_init(temp_skill_dir):
+    r"""Test filtering skills by allowed list at initialization."""
+    toolkit = SkillToolkit(
+        working_directory=temp_skill_dir,
+        allowed_skills={"test-skill", "  "},
+    )
+    skills = toolkit.list_skills()
+    assert len(skills) == 1
+    assert skills[0]["name"] == "test-skill"
+    assert "## Skill: test-skill" in toolkit.load_skill("test-skill")
+    assert "Error:" in toolkit.load_skill("another-skill")
