@@ -66,23 +66,12 @@ else:
     logger = camel_get_logger('base_model')
 
 
-_CLIENT_REQUEST_LOG_CALL_PATHS = {
-    "_client.chat.completions.create",
-    "_client.beta.chat.completions.parse",
-    "_client.beta.chat.completions.stream",
-    "_async_client.chat.completions.create",
-    "_async_client.beta.chat.completions.parse",
-    "_async_client.beta.chat.completions.stream",
-}
-
-
 class _ClientLoggingProxy:
     r"""Proxy that syncs request logs with final client call payloads."""
 
-    def __init__(self, target: Any, backend: "BaseModelBackend", path: str):
+    def __init__(self, target: Any, backend: "BaseModelBackend"):
         self._target = target
         self._backend = backend
-        self._path = path
 
     @staticmethod
     def _is_passthrough_value(value: Any) -> bool:
@@ -106,11 +95,16 @@ class _ClientLoggingProxy:
         attr = getattr(self._target, name)
         if name.startswith("__") or self._is_passthrough_value(attr):
             return attr
-        return _ClientLoggingProxy(attr, self._backend, f"{self._path}.{name}")
+        return _ClientLoggingProxy(attr, self._backend)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        if self._backend._should_sync_request_log(self._path, kwargs):
-            self._backend._sync_request_log_with_client_kwargs(kwargs)
+        normalized_kwargs = self._backend._normalize_client_call_kwargs(
+            self._target, args, kwargs
+        )
+        if self._backend._should_sync_request_log(normalized_kwargs):
+            self._backend._sync_request_log_with_client_kwargs(
+                normalized_kwargs
+            )
         return self._target(*args, **kwargs)
 
     def __repr__(self) -> str:
@@ -319,7 +313,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             and value is not None
             and not isinstance(value, _ClientLoggingProxy)
         ):
-            value = _ClientLoggingProxy(value, self, name)
+            value = _ClientLoggingProxy(value, self)
         super().__setattr__(name, value)
 
     def __init__(
@@ -426,15 +420,28 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             request_log_model_config_dict.pop("parallel_tool_calls", None)
         return request_log_model_config_dict
 
-    def _should_sync_request_log(
-        self, call_path: str, kwargs: Dict[str, Any]
-    ) -> bool:
+    def _normalize_client_call_kwargs(
+        self,
+        call: Any,
+        args: Any,
+        kwargs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        r"""Normalize client call arguments into a keyword dictionary."""
+        if not args:
+            return kwargs
+        try:
+            signature = inspect.signature(call)
+            bound = signature.bind_partial(*args, **kwargs)
+            normalized_kwargs = dict(bound.arguments)
+            normalized_kwargs.pop("self", None)
+            return normalized_kwargs
+        except Exception:
+            return kwargs
+
+    def _should_sync_request_log(self, kwargs: Dict[str, Any]) -> bool:
         r"""Check whether a client call should sync request logs."""
-        if "messages" not in kwargs:
-            return False
-        if call_path in _CLIENT_REQUEST_LOG_CALL_PATHS:
-            return True
-        return "model" in kwargs
+        messages = kwargs.get("messages")
+        return isinstance(messages, list) and len(kwargs) > 1
 
     def _extract_model_config_from_client_kwargs(
         self, kwargs: Dict[str, Any]

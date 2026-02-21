@@ -342,6 +342,77 @@ class TestBaseModelBackend:
         )
         assert log_data["request"]["model_config_dict"]["temperature"] == 0.6
 
+    def test_run_logs_payload_from_positional_client_args(
+        self, monkeypatch, tmp_path
+    ):
+        r"""Test positional client args are normalized into request logs."""
+
+        class FakeCompletions:
+            def create(
+                self,
+                messages,
+                model,
+                tools=None,
+                temperature=None,
+            ):
+                return {"status": "ok", "model": str(model)}
+
+        class FakeChat:
+            def __init__(self):
+                self.completions = FakeCompletions()
+
+        class FakeClient:
+            def __init__(self):
+                self.chat = FakeChat()
+
+        class DummyModel(BaseModelBackend):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._client = FakeClient()
+
+            @property
+            def token_counter(self):
+                pass
+
+            def _run(self, messages, response_format=None, tools=None):
+                return self._client.chat.completions.create(
+                    messages,
+                    self.model_type,
+                    tools,
+                    0.7,
+                )
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                return {"status": "unused"}
+
+        monkeypatch.setenv("CAMEL_MODEL_LOG_ENABLED", "true")
+        monkeypatch.setenv("CAMEL_LOG_DIR", str(tmp_path))
+        monkeypatch.setenv("CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED", "true")
+
+        model = DummyModel(ModelType.GPT_4O_MINI, model_config_dict={})
+        runtime_tools = [
+            {
+                "type": "function",
+                "function": {"name": "positional_tool"},
+            }
+        ]
+
+        model.run(
+            messages=[{"role": "user", "content": "positional call"}],
+            tools=runtime_tools,
+        )
+
+        log_files = list(tmp_path.rglob("conv_*.json"))
+        assert len(log_files) == 1
+
+        with open(log_files[0], "r", encoding="utf-8") as f:
+            log_data = json.load(f)
+
+        assert (
+            log_data["request"]["model_config_dict"]["tools"] == runtime_tools
+        )
+        assert log_data["request"]["model_config_dict"]["temperature"] == 0.7
+
     def test_preprocess_messages(self):
         r"""Test message preprocessing removes thinking content correctly."""
 
