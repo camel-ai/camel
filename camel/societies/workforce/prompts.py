@@ -229,7 +229,7 @@ TASK_DECOMPOSE_PROMPT = r"""You need to either decompose a complex task or enhan
     * Treat the task as a single enhanced task.
     * Preserve the original task intent and requirements. Clarify wording if needed, but do NOT add new deliverables or change the scope.
     * Assume the executing worker will load and use the required skill via the SkillToolkit.
-    * Only decompose the task when no single skill can complete it end-to-end, and the task genuinely requires multiple agents using different skills to c*
+    * Only decompose the task when no single skill can complete it end-to-end, and the task genuinely requires multiple agents using different skills to complete it*
 
 These principles aim to reduce overall completion time by maximizing concurrent work and effectively utilizing all available worker capabilities.
 
