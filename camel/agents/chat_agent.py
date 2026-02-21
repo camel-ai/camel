@@ -1222,49 +1222,37 @@ class ChatAgent(BaseAgent):
         except (TypeError, ValueError):
             return str(result)
 
-    def _truncate_tool_result(
-        self, func_name: str, result: Any
-    ) -> Tuple[Any, bool]:
-        r"""Truncate tool result if it exceeds the maximum token limit.
-
-        Args:
-            func_name (str): The name of the tool function called.
-            result (Any): The result returned by the tool execution.
-
-        Returns:
-            Tuple[Any, bool]: A tuple containing:
-                - The (possibly truncated) result
-                - A boolean indicating whether truncation occurred
-        """
-        serialized = self._serialize_tool_result(result)
-        # Use summarize_threshold if set, otherwise default to 90%
-        threshold_ratio = (
-            min(0.9, self.summarize_threshold / 100)
-            if self.summarize_threshold is not None
-            else 0.9
-        )
-        max_tokens = int(self.token_limit * threshold_ratio)
-        result_tokens = self._get_token_count(serialized)
-
-        if result_tokens <= max_tokens:
-            return result, False
-
-        # Reserve ~100 tokens for notice, use char-based truncation directly
-        target_tokens = max(max_tokens - 100, 100)
-        truncated = serialized[: target_tokens * 3]
-
+    def _truncate_tool_result(self, result: str, tool_name: str, max_tokens: int) -> str:
+    # 1. Check if truncation is needed (use camel's native token counting here)
+        token_count = self.count_tokens_from_messages([result]) # Example method
+    
+        if token_count > max_tokens:
+        # 2. Setup log directory
+           log_dir = os.path.join(os.getcwd(), "tool_output_logs")
+           os.makedirs(log_dir, exist_ok=True)
+        
+        # 3. Create unique filename
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        log_filepath = os.path.join(log_dir, f"{tool_name}_full_{timestamp}.log")
+        
+        # 4. Save the full result
+        try:
+            with open(log_filepath, "w", encoding="utf-8") as f:
+                f.write(result)
+        except IOError as e:
+            logging.error(f"Failed to save tool output to {log_filepath}: {e}")
+            
+        # 5. Truncate and append warning
+        truncated_result = result[:max_tokens * 4] # Rough character estimation if no string truncator exists
+        
         notice = (
-            f"\n\n[TRUNCATED] Tool '{func_name}' output truncated "
-            f"({result_tokens} > {max_tokens} tokens). "
-            f"Tool executed successfully."
+            f"\n\n[TRUNCATED] Tool '{tool_name}' output truncated "
+            f"({token_count} > {max_tokens} tokens). "
+            f"Full output saved to: {log_filepath}"
         )
-
-        logger.warning(
-            f"Tool '{func_name}' result truncated: "
-            f"{result_tokens} -> ~{target_tokens} tokens"
-        )
-
-        return notice + truncated, True
+        return truncated_result + notice
+        
+        return result
 
     def _clean_snapshot_line(self, line: str) -> str:
         r"""Clean a single snapshot line by removing prefixes and references.
