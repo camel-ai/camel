@@ -283,7 +283,8 @@ class MistralModel(BaseModelBackend):
         )
         mistral_messages = self._to_mistral_chatmessage(messages)
 
-        response = self._client.chat.complete(
+        response = self._call_client(
+            self._client.chat.complete,
             messages=mistral_messages,
             model=self.model_type,
             **request_config,
@@ -346,7 +347,8 @@ class MistralModel(BaseModelBackend):
         )
         mistral_messages = self._to_mistral_chatmessage(messages)
 
-        response = self._client.chat.complete(
+        response = self._call_client(
+            self._client.chat.complete,
             messages=mistral_messages,
             model=self.model_type,
             **request_config,

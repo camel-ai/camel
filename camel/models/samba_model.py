@@ -270,7 +270,8 @@ class SambaModel(BaseModelBackend):
         # Handle SambaNova's Cloud API
         if self._url == "https://api.sambanova.ai/v1":
             request_config = self._prepare_request_config(tools)
-            response = self._client.chat.completions.create(
+            response = self._call_client(
+                self._client.chat.completions.create,
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -322,7 +323,8 @@ class SambaModel(BaseModelBackend):
         # Handle SambaNova's Cloud API
         if self._url == "https://api.sambanova.ai/v1":
             request_config = self._prepare_request_config(tools)
-            response = self._client.chat.completions.create(
+            response = self._call_client(
+                self._client.chat.completions.create,
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -402,7 +404,8 @@ class SambaModel(BaseModelBackend):
             try:
                 # Send the request and handle the response
                 with httpx.Client() as client:
-                    response = client.post(
+                    response = self._call_client(
+                        client.post,
                         self._url,  # type: ignore[arg-type]
                         headers=headers,
                         json=data,
@@ -504,7 +507,8 @@ class SambaModel(BaseModelBackend):
         # Handle SambaNova's Cloud API
         if self._url == "https://api.sambanova.ai/v1":
             request_config = self._prepare_request_config(tools)
-            response = await self._async_client.chat.completions.create(
+            response = await self._acall_client(
+                self._async_client.chat.completions.create,
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -556,7 +560,8 @@ class SambaModel(BaseModelBackend):
         # Handle SambaNova's Cloud API
         if self._url == "https://api.sambanova.ai/v1":
             request_config = self._prepare_request_config(tools)
-            response = await self._async_client.chat.completions.create(
+            response = await self._acall_client(
+                self._async_client.chat.completions.create,
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -636,7 +641,8 @@ class SambaModel(BaseModelBackend):
             try:
                 # Send the request and handle the response
                 with httpx.Client() as client:
-                    response = client.post(
+                    response = self._call_client(
+                        client.post,
                         self._url,  # type: ignore[arg-type]
                         headers=headers,
                         json=data,

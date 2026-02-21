@@ -245,6 +245,22 @@ pip install camel-ai
   # [https://github.com/camel-ai/camel](https://github.com/camel-ai/camel).
   ```
 
+4. **（可选）开启模型请求/响应日志：**
+
+  ```bash
+  export CAMEL_MODEL_LOG_ENABLED=true
+  export CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED=true
+  export CAMEL_LOG_DIR=camel_logs
+  ```
+
+  - `CAMEL_MODEL_LOG_ENABLED`：开启请求/响应 JSON 日志。
+  - `CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED`：控制是否记录
+    `request.model_config_dict`。未设置时，默认跟
+    `CAMEL_MODEL_LOG_ENABLED` 保持一致。
+  - `CAMEL_LOG_DIR`：日志输出目录（默认：`camel_logs`）。
+  - 日志以 UTF-8 JSON 写入，中文、日文、阿拉伯语等多语言内容可读，
+    不会出现大量 Unicode 转义字符。
+
 有关更详细的说明和其他配置选项，请参阅[安装部分](https://github.com/camel-ai/camel/blob/master/docs/get_started/installation.md)。
 
 运行之后，您可以访问 [docs.camel-ai.org](https://docs.camel-ai.org) 探索我们的 CAMEL 技术栈和操作手册，构建强大的多智能体系统。

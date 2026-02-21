@@ -728,7 +728,7 @@ class FunctionGemmaModel(BaseModelBackend):
             ]
 
         try:
-            response = self._client.post(url, json=data)
+            response = self._call_client(self._client.post, url, json=data)
             response.raise_for_status()
             result = response.json()
             return result.get("response", "")
@@ -784,7 +784,9 @@ class FunctionGemmaModel(BaseModelBackend):
             ]
 
         try:
-            response = await self._async_client.post(url, json=data)
+            response = await self._acall_client(
+                self._async_client.post, url, json=data
+            )
             response.raise_for_status()
             result = response.json()
             return result.get("response", "")
