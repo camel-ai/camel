@@ -60,7 +60,7 @@ class TestBaseModelBackend:
             ModelType.GPT_4O_MINI, model_config_dict=model_config_dict
         )
 
-        log_path = model._log_request(messages)
+        log_path = model._log_request(messages, model_config_dict)
         assert log_path is not None
 
         with open(log_path, "r", encoding="utf-8") as f:
@@ -101,7 +101,8 @@ class TestBaseModelBackend:
             model_config_dict={"temperature": 0.1, "lang": "中文"},
         )
         log_path = model._log_request(
-            [{"role": "user", "content": "test message"}]
+            [{"role": "user", "content": "test message"}],
+            model.model_config_dict,
         )
         assert log_path is not None
 
@@ -139,7 +140,8 @@ class TestBaseModelBackend:
             ModelType.GPT_4O_MINI, model_config_dict={"temperature": 0.3}
         )
         log_path = model._log_request(
-            [{"role": "user", "content": "test message"}]
+            [{"role": "user", "content": "test message"}],
+            model.model_config_dict,
         )
         assert log_path is not None
 
@@ -412,6 +414,102 @@ class TestBaseModelBackend:
             log_data["request"]["model_config_dict"]["tools"] == runtime_tools
         )
         assert log_data["request"]["model_config_dict"]["temperature"] == 0.7
+
+    def test_run_logs_json_payload_when_client_call_has_no_messages(
+        self, monkeypatch, tmp_path
+    ):
+        r"""Test non-chat client payloads are still captured in logs."""
+
+        class FakeClient:
+            def post(self, url, json=None):
+                return {"status": "ok", "url": url, "json": json}
+
+        class DummyModel(BaseModelBackend):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._client = FakeClient()
+
+            @property
+            def token_counter(self):
+                pass
+
+            def _run(self, messages, response_format=None, tools=None):
+                return self._client.post(
+                    "https://example.org/infer",
+                    json={
+                        "model": str(self.model_type),
+                        "prompt": "hello",
+                        "temperature": 0.4,
+                    },
+                )
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                return {"status": "unused"}
+
+        monkeypatch.setenv("CAMEL_MODEL_LOG_ENABLED", "true")
+        monkeypatch.setenv("CAMEL_LOG_DIR", str(tmp_path))
+        monkeypatch.setenv("CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED", "true")
+
+        model = DummyModel(ModelType.GPT_4O_MINI, model_config_dict={})
+        model.run(messages=[{"role": "user", "content": "ping"}])
+
+        log_files = list(tmp_path.rglob("conv_*.json"))
+        assert len(log_files) == 1
+
+        with open(log_files[0], "r", encoding="utf-8") as f:
+            log_data = json.load(f)
+
+        assert log_data["request"]["messages"][0]["content"] == "ping"
+        assert (
+            log_data["request"]["model_config_dict"]["url"]
+            == "https://example.org/infer"
+        )
+        assert (
+            log_data["request"]["model_config_dict"]["json"]["temperature"]
+            == 0.4
+        )
+
+    def test_run_warns_when_client_call_payload_is_empty(
+        self, monkeypatch, tmp_path, caplog
+    ):
+        r"""Test empty client payloads do not silently fallback."""
+
+        class FakeClient:
+            def ping(self):
+                return {"status": "ok"}
+
+        class DummyModel(BaseModelBackend):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._client = FakeClient()
+
+            @property
+            def token_counter(self):
+                pass
+
+            def _run(self, messages, response_format=None, tools=None):
+                return self._client.ping()
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                return {"status": "unused"}
+
+        monkeypatch.setenv("CAMEL_MODEL_LOG_ENABLED", "true")
+        monkeypatch.setenv("CAMEL_LOG_DIR", str(tmp_path))
+        monkeypatch.setenv("CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED", "true")
+
+        model = DummyModel(ModelType.GPT_4O_MINI, model_config_dict={})
+        with caplog.at_level("WARNING"):
+            model.run(messages=[{"role": "user", "content": "ping"}])
+
+        assert "request payload was not captured in logs" in caplog.text
+
+        log_files = list(tmp_path.rglob("conv_*.json"))
+        assert len(log_files) == 1
+
+        with open(log_files[0], "r", encoding="utf-8") as f:
+            log_data = json.load(f)
+
+        assert "model_config_dict" not in log_data["request"]
 
     def test_preprocess_messages(self):
         r"""Test message preprocessing removes thinking content correctly."""

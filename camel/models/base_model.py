@@ -98,6 +98,7 @@ class _ClientLoggingProxy:
         return _ClientLoggingProxy(attr, self._backend)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        self._backend._mark_request_log_client_call_seen()
         normalized_kwargs = self._backend._normalize_client_call_kwargs(
             self._target, args, kwargs
         )
@@ -351,6 +352,14 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             f"camel_model_log_path_{id(self)}",
             default=None,
         )
+        self._log_client_call_seen_context: ContextVar[bool] = ContextVar(
+            f"camel_model_log_client_call_seen_{id(self)}",
+            default=False,
+        )
+        self._log_request_synced_context: ContextVar[bool] = ContextVar(
+            f"camel_model_log_request_synced_{id(self)}",
+            default=False,
+        )
 
     @property
     @abstractmethod
@@ -405,21 +414,6 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             return None
         return tools
 
-    def _build_request_log_model_config_dict(
-        self,
-        tools: Optional[List[Dict[str, Any]]],
-    ) -> Dict[str, Any]:
-        r"""Build model_config_dict snapshot for request logging."""
-        import copy
-
-        request_log_model_config_dict = copy.deepcopy(self.model_config_dict)
-        if tools is not None:
-            request_log_model_config_dict["tools"] = tools
-        else:
-            request_log_model_config_dict.pop("tools", None)
-            request_log_model_config_dict.pop("parallel_tool_calls", None)
-        return request_log_model_config_dict
-
     def _normalize_client_call_kwargs(
         self,
         call: Any,
@@ -427,6 +421,10 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         kwargs: Dict[str, Any],
     ) -> Dict[str, Any]:
         r"""Normalize client call arguments into a keyword dictionary."""
+        raw_payload = dict(kwargs)
+        if args:
+            raw_payload["__camel_client_args__"] = list(args)
+
         if not args:
             return kwargs
         try:
@@ -436,12 +434,19 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             normalized_kwargs.pop("self", None)
             return normalized_kwargs
         except Exception:
-            return kwargs
+            return raw_payload
+
+    def _mark_request_log_client_call_seen(self) -> None:
+        r"""Mark that a model client call happened during this run."""
+        if not self._log_enabled:
+            return
+        if self._log_path_context.get() is None:
+            return
+        self._log_client_call_seen_context.set(True)
 
     def _should_sync_request_log(self, kwargs: Dict[str, Any]) -> bool:
         r"""Check whether a client call should sync request logs."""
-        messages = kwargs.get("messages")
-        return isinstance(messages, list) and len(kwargs) > 1
+        return bool(kwargs)
 
     def _extract_model_config_from_client_kwargs(
         self, kwargs: Dict[str, Any]
@@ -470,27 +475,24 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         if not log_path:
             return
 
-        messages = kwargs.get("messages")
-        if not isinstance(messages, list):
-            return
-
         import copy
         import json
 
         try:
-            logged_messages = copy.deepcopy(messages)
-        except Exception:
-            logged_messages = messages
-
-        request_entry: Dict[str, Any] = {"messages": logged_messages}
-        if self._log_model_config_dict_enabled:
-            request_entry["model_config_dict"] = (
-                self._extract_model_config_from_client_kwargs(kwargs)
-            )
-
-        try:
             with open(log_path, "r+", encoding="utf-8") as f:
                 log_data = json.load(f)
+                request_entry: Dict[str, Any] = log_data.get("request", {})
+                messages = kwargs.get("messages")
+                if isinstance(messages, list):
+                    try:
+                        logged_messages = copy.deepcopy(messages)
+                    except Exception:
+                        logged_messages = messages
+                    request_entry["messages"] = logged_messages
+                if self._log_model_config_dict_enabled:
+                    request_entry["model_config_dict"] = (
+                        self._extract_model_config_from_client_kwargs(kwargs)
+                    )
                 log_data["request"] = request_entry
                 f.seek(0)
                 json.dump(
@@ -501,8 +503,11 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                     default=str,
                 )
                 f.truncate()
-        except Exception:
-            pass
+            self._log_request_synced_context.set(True)
+        except Exception as exc:
+            logger.warning(
+                "Failed to sync request log with client payload: %s", exc
+            )
 
     def preprocess_messages(
         self, messages: List[OpenAIMessage]
@@ -727,12 +732,11 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         log_file_path = os.path.join(log_subdir, f"conv_{timestamp}.json")
 
         request_entry: Dict[str, Any] = {"messages": messages}
-        if self._log_model_config_dict_enabled:
-            request_entry["model_config_dict"] = (
-                model_config_dict
-                if model_config_dict is not None
-                else self.model_config_dict
-            )
+        if (
+            self._log_model_config_dict_enabled
+            and model_config_dict is not None
+        ):
+            request_entry["model_config_dict"] = model_config_dict
 
         log_entry: Dict[str, Any] = {
             "request_timestamp": datetime.now().isoformat(),
@@ -886,28 +890,39 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 stream mode.
         """
         tools = self._resolve_tools(tools)
-        request_log_model_config_dict = (
-            self._build_request_log_model_config_dict(tools)
-            if self._log_model_config_dict_enabled
-            else None
-        )
         # Log the request if logging is enabled
-        log_path = self._log_request(messages, request_log_model_config_dict)
+        log_path = self._log_request(messages)
 
         logger.info("Running model: %s", self.model_type)
         logger.info("Messages: %s", messages)
-        if self._log_model_config_dict_enabled:
-            logger.info("Model config dict: %s", request_log_model_config_dict)
         logger.info("Response format: %s", response_format)
         logger.info("Tools: %s", tools)
 
         final_log_path = log_path
         log_path_token = self._log_path_context.set(log_path)
+        log_client_call_seen_token = self._log_client_call_seen_context.set(
+            False
+        )
+        log_request_synced_token = self._log_request_synced_context.set(False)
         try:
             result = self._run(messages, response_format, tools)
             final_log_path = self._log_path_context.get() or final_log_path
         finally:
+            if (
+                self._log_enabled
+                and self._log_model_config_dict_enabled
+                and self._log_client_call_seen_context.get()
+                and not self._log_request_synced_context.get()
+            ):
+                logger.warning(
+                    "Model client call detected, but request payload was not "
+                    "captured in logs."
+                )
             self._log_path_context.reset(log_path_token)
+            self._log_client_call_seen_context.reset(
+                log_client_call_seen_token
+            )
+            self._log_request_synced_context.reset(log_request_synced_token)
         logger.info("Result: %s", result)
 
         # For streaming responses, wrap with logging; otherwise log immediately
@@ -950,28 +965,39 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 stream mode.
         """
         tools = self._resolve_tools(tools)
-        request_log_model_config_dict = (
-            self._build_request_log_model_config_dict(tools)
-            if self._log_model_config_dict_enabled
-            else None
-        )
         # Log the request if logging is enabled
-        log_path = self._log_request(messages, request_log_model_config_dict)
+        log_path = self._log_request(messages)
 
         logger.info("Running model: %s", self.model_type)
         logger.info("Messages: %s", messages)
-        if self._log_model_config_dict_enabled:
-            logger.info("Model config dict: %s", request_log_model_config_dict)
         logger.info("Response format: %s", response_format)
         logger.info("Tools: %s", tools)
 
         final_log_path = log_path
         log_path_token = self._log_path_context.set(log_path)
+        log_client_call_seen_token = self._log_client_call_seen_context.set(
+            False
+        )
+        log_request_synced_token = self._log_request_synced_context.set(False)
         try:
             result = await self._arun(messages, response_format, tools)
             final_log_path = self._log_path_context.get() or final_log_path
         finally:
+            if (
+                self._log_enabled
+                and self._log_model_config_dict_enabled
+                and self._log_client_call_seen_context.get()
+                and not self._log_request_synced_context.get()
+            ):
+                logger.warning(
+                    "Model client call detected, but request payload was not "
+                    "captured in logs."
+                )
             self._log_path_context.reset(log_path_token)
+            self._log_client_call_seen_context.reset(
+                log_client_call_seen_token
+            )
+            self._log_request_synced_context.reset(log_request_synced_token)
         logger.info("Result: %s", result)
 
         # For streaming responses, wrap with logging; otherwise log immediately
