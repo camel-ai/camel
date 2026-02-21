@@ -33,6 +33,7 @@ def mock_downloader():
     with (
         patch("builtins.open", mock_open(read_data=b"test")),
         patch("yt_dlp.YoutubeDL") as mock_youtube_dl,
+        patch("shutil.which", return_value="/usr/bin/ffmpeg"),
         patch('tempfile.mkdtemp') as mock_mkdtemp,
         patch('pathlib.Path.mkdir'),
         patch('ffmpeg.input') as mock_ffmpeg_input,
