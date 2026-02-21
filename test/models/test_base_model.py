@@ -223,7 +223,8 @@ class TestBaseModelBackend:
                 pass
 
             def _run(self, messages, response_format=None, tools=None):
-                return self._client.chat.completions.create(
+                return self._call_client(
+                    self._client.chat.completions.create,
                     messages=messages,
                     model=self.model_type,
                     tools=tools,
@@ -306,7 +307,8 @@ class TestBaseModelBackend:
                 return {"status": "unused"}
 
             async def _arun(self, messages, response_format=None, tools=None):
-                return await self._async_client.chat.completions.create(
+                return await self._acall_client(
+                    self._async_client.chat.completions.create,
                     messages=messages,
                     model=self.model_type,
                     tools=tools,
@@ -377,7 +379,8 @@ class TestBaseModelBackend:
                 pass
 
             def _run(self, messages, response_format=None, tools=None):
-                return self._client.chat.completions.create(
+                return self._call_client(
+                    self._client.chat.completions.create,
                     messages,
                     self.model_type,
                     tools,
@@ -434,7 +437,8 @@ class TestBaseModelBackend:
                 pass
 
             def _run(self, messages, response_format=None, tools=None):
-                return self._client.post(
+                return self._call_client(
+                    self._client.post,
                     "https://example.org/infer",
                     json={
                         "model": str(self.model_type),
@@ -488,7 +492,7 @@ class TestBaseModelBackend:
                 pass
 
             def _run(self, messages, response_format=None, tools=None):
-                return self._client.ping()
+                return self._call_client(self._client.ping)
 
             async def _arun(self, messages, response_format=None, tools=None):
                 return {"status": "unused"}

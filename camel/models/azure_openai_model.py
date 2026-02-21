@@ -346,7 +346,8 @@ class AzureOpenAIModel(BaseModelBackend):
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         request_config = self._prepare_request_config(tools)
 
-        return self._client.chat.completions.create(
+        return self._call_client(
+            self._client.chat.completions.create,
             messages=messages,
             model=str(self.model_type),
             **request_config,
@@ -359,7 +360,8 @@ class AzureOpenAIModel(BaseModelBackend):
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         request_config = self._prepare_request_config(tools)
 
-        return await self._async_client.chat.completions.create(
+        return await self._acall_client(
+            self._async_client.chat.completions.create,
             messages=messages,
             model=str(self.model_type),
             **request_config,
@@ -377,7 +379,8 @@ class AzureOpenAIModel(BaseModelBackend):
         # with structured response
         request_config.pop("stream", None)
 
-        return self._client.beta.chat.completions.parse(
+        return self._call_client(
+            self._client.beta.chat.completions.parse,
             messages=messages,
             model=str(self.model_type),
             **request_config,
@@ -395,7 +398,8 @@ class AzureOpenAIModel(BaseModelBackend):
         # with structured response
         request_config.pop("stream", None)
 
-        return await self._async_client.beta.chat.completions.parse(
+        return await self._acall_client(
+            self._async_client.beta.chat.completions.parse,
             messages=messages,
             model=str(self.model_type),
             **request_config,
@@ -416,7 +420,8 @@ class AzureOpenAIModel(BaseModelBackend):
         request_config.pop("stream", None)
 
         # Use the beta streaming API for structured outputs
-        return self._client.beta.chat.completions.stream(
+        return self._call_client(
+            self._client.beta.chat.completions.stream,
             messages=messages,
             model=str(self.model_type),
             response_format=response_format,
@@ -438,7 +443,8 @@ class AzureOpenAIModel(BaseModelBackend):
         request_config.pop("stream", None)
 
         # Use the beta streaming API for structured outputs
-        return self._async_client.beta.chat.completions.stream(
+        return self._call_client(
+            self._async_client.beta.chat.completions.stream,
             messages=messages,
             model=str(self.model_type),
             response_format=response_format,

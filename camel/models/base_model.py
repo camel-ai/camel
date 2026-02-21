@@ -66,52 +66,6 @@ else:
     logger = camel_get_logger('base_model')
 
 
-class _ClientLoggingProxy:
-    r"""Proxy that syncs request logs with final client call payloads."""
-
-    def __init__(self, target: Any, backend: "BaseModelBackend"):
-        self._target = target
-        self._backend = backend
-
-    @staticmethod
-    def _is_passthrough_value(value: Any) -> bool:
-        return isinstance(
-            value,
-            (
-                str,
-                bytes,
-                int,
-                float,
-                bool,
-                type(None),
-                dict,
-                list,
-                tuple,
-                set,
-            ),
-        )
-
-    def __getattr__(self, name: str) -> Any:
-        attr = getattr(self._target, name)
-        if name.startswith("__") or self._is_passthrough_value(attr):
-            return attr
-        return _ClientLoggingProxy(attr, self._backend)
-
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        self._backend._mark_request_log_client_call_seen()
-        normalized_kwargs = self._backend._normalize_client_call_kwargs(
-            self._target, args, kwargs
-        )
-        if self._backend._should_sync_request_log(normalized_kwargs):
-            self._backend._sync_request_log_with_client_kwargs(
-                normalized_kwargs
-            )
-        return self._target(*args, **kwargs)
-
-    def __repr__(self) -> str:
-        return repr(self._target)
-
-
 class _StreamLogger:
     r"""Base for stream logging wrappers."""
 
@@ -308,15 +262,6 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             removed from ``content``. (default: :obj:`True`)
     """
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        if (
-            name in {"_client", "_async_client"}
-            and value is not None
-            and not isinstance(value, _ClientLoggingProxy)
-        ):
-            value = _ClientLoggingProxy(value, self)
-        super().__setattr__(name, value)
-
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -443,6 +388,26 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         if self._log_path_context.get() is None:
             return
         self._log_client_call_seen_context.set(True)
+
+    def _call_client(self, call: Any, *args: Any, **kwargs: Any) -> Any:
+        r"""Invoke a sync client call and sync request logs with payload."""
+        self._mark_request_log_client_call_seen()
+        normalized_kwargs = self._normalize_client_call_kwargs(
+            call, args, kwargs
+        )
+        if self._should_sync_request_log(normalized_kwargs):
+            self._sync_request_log_with_client_kwargs(normalized_kwargs)
+        return call(*args, **kwargs)
+
+    async def _acall_client(self, call: Any, *args: Any, **kwargs: Any) -> Any:
+        r"""Invoke an async client call and sync request logs with payload."""
+        self._mark_request_log_client_call_seen()
+        normalized_kwargs = self._normalize_client_call_kwargs(
+            call, args, kwargs
+        )
+        if self._should_sync_request_log(normalized_kwargs):
+            self._sync_request_log_with_client_kwargs(normalized_kwargs)
+        return await call(*args, **kwargs)
 
     def _should_sync_request_log(self, kwargs: Dict[str, Any]) -> bool:
         r"""Check whether a client call should sync request logs."""

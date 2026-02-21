@@ -324,7 +324,8 @@ class CohereModel(BaseModelBackend):
         cohere_messages = self._to_cohere_chatmessage(messages)
 
         try:
-            response = self._client.chat(
+            response = self._call_client(
+                self._client.chat,
                 messages=cohere_messages,
                 model=self.model_type,
                 **request_config,
@@ -393,7 +394,8 @@ class CohereModel(BaseModelBackend):
         cohere_messages = self._to_cohere_chatmessage(messages)
 
         try:
-            response = await self._async_client.chat(
+            response = await self._acall_client(
+                self._async_client.chat,
                 messages=cohere_messages,
                 model=self.model_type,
                 **request_config,
