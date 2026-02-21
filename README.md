@@ -290,6 +290,24 @@ This example demonstrates how to create a `ChatAgent` using the CAMEL framework 
   # [https://github.com/camel-ai/camel](https://github.com/camel-ai/camel).
   ```
 
+4. **(Optional) Enable model request/response logs:**
+
+  ```bash
+  export CAMEL_MODEL_LOG_ENABLED=true
+  export CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED=true
+  export CAMEL_LOG_DIR=camel_logs
+  ```
+
+  - `CAMEL_MODEL_LOG_ENABLED`: Enables request/response JSON logs.
+  - `CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED`: Controls whether
+    `model_config_dict` is logged under `request.model_config_dict`.
+    When unset, it defaults to the same value as
+    `CAMEL_MODEL_LOG_ENABLED`.
+  - `CAMEL_LOG_DIR`: Directory for generated log files
+    (default: `camel_logs`).
+  - Logs are written as UTF-8 JSON with multilingual text preserved
+    (for example Chinese, Japanese, Arabic) without Unicode escape noise.
+
 
 For more detailed instructions and additional configuration options, check out the [installation section](https://github.com/camel-ai/camel/blob/master/docs/get_started/installation.md).
 

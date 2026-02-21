@@ -290,6 +290,24 @@ pip install camel-ai
   # [https://github.com/camel-ai/camel](https://github.com/camel-ai/camel)です。
   ```
 
+4. **（任意）モデルのリクエスト/レスポンスログを有効化：**
+
+  ```bash
+  export CAMEL_MODEL_LOG_ENABLED=true
+  export CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED=true
+  export CAMEL_LOG_DIR=camel_logs
+  ```
+
+  - `CAMEL_MODEL_LOG_ENABLED`: リクエスト/レスポンスの
+    JSONログを有効化します。
+  - `CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED`: `request.model_config_dict`
+    を記録するかを制御します。未設定の場合は
+    `CAMEL_MODEL_LOG_ENABLED` と同じ値が使われます。
+  - `CAMEL_LOG_DIR`: ログの出力先ディレクトリ
+    （デフォルト: `camel_logs`）。
+  - ログはUTF-8 JSONで保存されるため、中国語・日本語・アラビア語
+    などの多言語テキストも可読なまま保持されます。
+
 
 より詳細な手順と追加の設定オプションについては、[インストールセクション](https://github.com/camel-ai/camel/blob/master/docs/get_started/installation.md)をご確認ください。
 

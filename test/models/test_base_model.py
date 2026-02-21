@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
+import json
 import uuid
 
 import pytest
@@ -25,6 +26,321 @@ from camel.types import ModelType
 
 class TestBaseModelBackend:
     r"""Unit tests for the BaseModelBackend class."""
+
+    def test_log_request_records_model_config_with_env_flag(
+        self, monkeypatch, tmp_path
+    ):
+        r"""Test logging model_config_dict is controlled by env vars."""
+
+        class DummyModel(BaseModelBackend):
+            @property
+            def token_counter(self):
+                pass
+
+            def run(self, messages):
+                pass
+
+            def _run(self, messages, response_format=None, tools=None):
+                pass
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                pass
+
+        monkeypatch.setenv("CAMEL_MODEL_LOG_ENABLED", "true")
+        monkeypatch.setenv("CAMEL_LOG_DIR", str(tmp_path))
+        monkeypatch.setenv("CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED", "true")
+
+        model_config_dict = {
+            "temperature": 0.2,
+            "system_prompt": "你好,世界",
+            "greeting": "こんにちは",
+        }
+        messages = [{"role": "user", "content": "请帮我写一首诗"}]
+        model = DummyModel(
+            ModelType.GPT_4O_MINI, model_config_dict=model_config_dict
+        )
+
+        log_path = model._log_request(messages)
+        assert log_path is not None
+
+        with open(log_path, "r", encoding="utf-8") as f:
+            log_text = f.read()
+
+        log_data = json.loads(log_text)
+        assert log_data["request"]["messages"] == messages
+        assert log_data["request"]["model_config_dict"] == model_config_dict
+        assert "你好,世界" in log_text
+        assert "请帮我写一首诗" in log_text
+        assert r"\u4f60\u597d" not in log_text
+
+    def test_log_request_skips_model_config_when_disabled(
+        self, monkeypatch, tmp_path
+    ):
+        r"""Test model_config_dict is omitted when env flag is disabled."""
+
+        class DummyModel(BaseModelBackend):
+            @property
+            def token_counter(self):
+                pass
+
+            def run(self, messages):
+                pass
+
+            def _run(self, messages, response_format=None, tools=None):
+                pass
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                pass
+
+        monkeypatch.setenv("CAMEL_MODEL_LOG_ENABLED", "true")
+        monkeypatch.setenv("CAMEL_LOG_DIR", str(tmp_path))
+        monkeypatch.setenv("CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED", "false")
+
+        model = DummyModel(
+            ModelType.GPT_4O_MINI,
+            model_config_dict={"temperature": 0.1, "lang": "中文"},
+        )
+        log_path = model._log_request(
+            [{"role": "user", "content": "test message"}]
+        )
+        assert log_path is not None
+
+        with open(log_path, "r", encoding="utf-8") as f:
+            log_data = json.load(f)
+
+        assert "model_config_dict" not in log_data["request"]
+
+    def test_log_request_model_config_enabled_by_default_when_log_on(
+        self, monkeypatch, tmp_path
+    ):
+        r"""Test model_config logging defaults to enabled with log enabled."""
+
+        class DummyModel(BaseModelBackend):
+            @property
+            def token_counter(self):
+                pass
+
+            def run(self, messages):
+                pass
+
+            def _run(self, messages, response_format=None, tools=None):
+                pass
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                pass
+
+        monkeypatch.setenv("CAMEL_MODEL_LOG_ENABLED", "true")
+        monkeypatch.setenv("CAMEL_LOG_DIR", str(tmp_path))
+        monkeypatch.delenv(
+            "CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED", raising=False
+        )
+
+        model = DummyModel(
+            ModelType.GPT_4O_MINI, model_config_dict={"temperature": 0.3}
+        )
+        log_path = model._log_request(
+            [{"role": "user", "content": "test message"}]
+        )
+        assert log_path is not None
+
+        with open(log_path, "r", encoding="utf-8") as f:
+            log_data = json.load(f)
+
+        assert log_data["request"]["model_config_dict"] == {"temperature": 0.3}
+
+    def test_log_response_preserves_multilingual_text(
+        self, monkeypatch, tmp_path
+    ):
+        r"""Test response logging keeps multilingual text readable."""
+
+        class DummyModel(BaseModelBackend):
+            @property
+            def token_counter(self):
+                pass
+
+            def run(self, messages):
+                pass
+
+            def _run(self, messages, response_format=None, tools=None):
+                pass
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                pass
+
+        monkeypatch.setenv("CAMEL_MODEL_LOG_ENABLED", "true")
+        monkeypatch.setenv("CAMEL_LOG_DIR", str(tmp_path))
+        monkeypatch.setenv("CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED", "true")
+
+        model = DummyModel(
+            ModelType.GPT_4O_MINI, model_config_dict={"lang": "多语言"}
+        )
+        log_path = model._log_request(
+            [{"role": "user", "content": "你好,مرحبا,こんにちは"}]
+        )
+        assert log_path is not None
+
+        model._log_response(
+            log_path,
+            {
+                "content": "回复:你好,مرحبا,こんにちは",
+                "extra": "Русский текст",
+            },
+        )
+
+        with open(log_path, "r", encoding="utf-8") as f:
+            log_text = f.read()
+
+        assert "回复:你好,مرحبا,こんにちは" in log_text
+        assert "Русский текст" in log_text
+        assert r"\u56de\u590d" not in log_text
+
+    def test_run_logs_final_client_payload_model_config_dict(
+        self, monkeypatch, tmp_path
+    ):
+        r"""Test run logs the final payload passed to the model client."""
+
+        class FakeCompletions:
+            def create(self, **kwargs):
+                return {"status": "ok", "request_keys": sorted(kwargs)}
+
+        class FakeChat:
+            def __init__(self):
+                self.completions = FakeCompletions()
+
+        class FakeClient:
+            def __init__(self):
+                self.chat = FakeChat()
+
+        class DummyModel(BaseModelBackend):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._client = FakeClient()
+
+            @property
+            def token_counter(self):
+                pass
+
+            def _run(self, messages, response_format=None, tools=None):
+                return self._client.chat.completions.create(
+                    messages=messages,
+                    model=self.model_type,
+                    tools=tools,
+                    temperature=0.9,
+                )
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                return {"status": "ok", "tool_count": len(tools or [])}
+
+        monkeypatch.setenv("CAMEL_MODEL_LOG_ENABLED", "true")
+        monkeypatch.setenv("CAMEL_LOG_DIR", str(tmp_path))
+        monkeypatch.setenv("CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED", "true")
+
+        model = DummyModel(
+            ModelType.GPT_4O_MINI,
+            model_config_dict={
+                "temperature": 0.1,
+                "tools": [
+                    {
+                        "type": "function",
+                        "function": {"name": "default_tool"},
+                    }
+                ],
+            },
+        )
+        runtime_tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "weather_lookup",
+                    "description": "查询天气信息",
+                },
+            }
+        ]
+
+        model.run(
+            messages=[{"role": "user", "content": "帮我查北京天气"}],
+            tools=runtime_tools,
+        )
+
+        log_files = list(tmp_path.rglob("conv_*.json"))
+        assert len(log_files) == 1
+
+        with open(log_files[0], "r", encoding="utf-8") as f:
+            log_data = json.load(f)
+
+        assert (
+            log_data["request"]["model_config_dict"]["tools"] == runtime_tools
+        )
+        assert log_data["request"]["model_config_dict"]["temperature"] == 0.9
+
+    @pytest.mark.asyncio
+    async def test_arun_logs_final_client_payload_model_config_dict(
+        self, monkeypatch, tmp_path
+    ):
+        r"""Test arun logs final payload passed to the async client."""
+
+        class FakeAsyncCompletions:
+            async def create(self, **kwargs):
+                return {"status": "ok", "request_keys": sorted(kwargs)}
+
+        class FakeAsyncChat:
+            def __init__(self):
+                self.completions = FakeAsyncCompletions()
+
+        class FakeAsyncClient:
+            def __init__(self):
+                self.chat = FakeAsyncChat()
+
+        class DummyModel(BaseModelBackend):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._async_client = FakeAsyncClient()
+
+            @property
+            def token_counter(self):
+                pass
+
+            def _run(self, messages, response_format=None, tools=None):
+                return {"status": "unused"}
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                return await self._async_client.chat.completions.create(
+                    messages=messages,
+                    model=self.model_type,
+                    tools=tools,
+                    temperature=0.6,
+                )
+
+        monkeypatch.setenv("CAMEL_MODEL_LOG_ENABLED", "true")
+        monkeypatch.setenv("CAMEL_LOG_DIR", str(tmp_path))
+        monkeypatch.setenv("CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED", "true")
+
+        model = DummyModel(
+            ModelType.GPT_4O_MINI,
+            model_config_dict={"temperature": 0.1},
+        )
+        runtime_tools = [
+            {
+                "type": "function",
+                "function": {"name": "search"},
+            }
+        ]
+
+        await model.arun(
+            messages=[{"role": "user", "content": "test async"}],
+            tools=runtime_tools,
+        )
+
+        log_files = list(tmp_path.rglob("conv_*.json"))
+        assert len(log_files) == 1
+
+        with open(log_files[0], "r", encoding="utf-8") as f:
+            log_data = json.load(f)
+
+        assert (
+            log_data["request"]["model_config_dict"]["tools"] == runtime_tools
+        )
+        assert log_data["request"]["model_config_dict"]["temperature"] == 0.6
 
     def test_preprocess_messages(self):
         r"""Test message preprocessing removes thinking content correctly."""
