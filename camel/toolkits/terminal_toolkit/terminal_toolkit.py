@@ -27,6 +27,13 @@ from camel.logger import get_logger
 from camel.toolkits import manual_timeout
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.toolkits.terminal_toolkit.go_runtime import (
+    ensure_go_available,
+)
+from camel.toolkits.terminal_toolkit.java_runtime import (
+    ensure_java_available,
+)
+from camel.toolkits.terminal_toolkit.runtime_utils import Runtime
 from camel.toolkits.terminal_toolkit.utils import (
     check_nodejs_availability,
     clone_current_environment,
@@ -88,6 +95,11 @@ class TerminalToolkit(BaseToolkit):
             environment for local execution. Defaults to False.
         install_dependencies (List): A list of user specified libraries
             to install.
+        enable_other_runtimes (list[Runtime]): List of additional
+            language runtimes to auto-install. Supported values are
+            ``Runtime.GO`` and ``Runtime.JAVA``. If empty (the default),
+            only the Python runtime is configured. Example:
+            ``enable_other_runtimes=[Runtime.GO, Runtime.JAVA]``.
     """
 
     def __init__(
@@ -101,6 +113,7 @@ class TerminalToolkit(BaseToolkit):
         allowed_commands: Optional[List[str]] = None,
         clone_current_env: bool = False,
         install_dependencies: Optional[List[str]] = None,
+        enable_other_runtimes: list[Runtime] | None = None,
     ):
         # auto-detect if running inside a CAMEL runtime container
         # when inside a runtime, use local execution (already sandboxed)
@@ -165,6 +178,9 @@ class TerminalToolkit(BaseToolkit):
         self.initial_env_path: Optional[str] = None
         self.python_executable = sys.executable
         self.install_dependencies = install_dependencies or []
+        self.enable_other_runtimes: set[Runtime] = set(
+            enable_other_runtimes or []
+        )
 
         self.log_dir = os.path.abspath(
             session_logs_dir or os.path.join(self.working_dir, "terminal_logs")
@@ -390,6 +406,32 @@ class TerminalToolkit(BaseToolkit):
 
             # Check Node.js availability
             check_nodejs_availability(update_callback)
+
+            # Check Go availability if enabled
+            if Runtime.GO in self.enable_other_runtimes:
+                go_path = ensure_go_available(update_callback)
+                if go_path:
+                    os.environ["PATH"] = (
+                        go_path
+                        + os.pathsep
+                        + os.environ.get("PATH", "")
+                    )
+
+            # Check Java availability if enabled
+            if Runtime.JAVA in self.enable_other_runtimes:
+                java_home = ensure_java_available(
+                    update_callback
+                )
+                if java_home:
+                    os.environ["JAVA_HOME"] = java_home
+                    java_bin = os.path.join(
+                        java_home, "bin"
+                    )
+                    os.environ["PATH"] = (
+                        java_bin
+                        + os.pathsep
+                        + os.environ.get("PATH", "")
+                    )
         else:
             logger.info(
                 "[ENV INIT] Failed to create initial environment, "
