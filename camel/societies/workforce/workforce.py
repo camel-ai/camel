@@ -1206,7 +1206,7 @@ class Workforce(BaseNode):
         elapsed = now - self._stream_start_ts
         if elapsed > 0:
             speed = self._stream_chars / elapsed  # chars per second
-            print(
+            logger.info(
                 f"Stream Speed: {speed:.1f} chars/s (elapsed {elapsed:.2f}s)"
             )
 
