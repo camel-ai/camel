@@ -5537,7 +5537,7 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
-                                "mode": "accumulate"
+                                "stream_accumulate_mode": "accumulate"
                                 if self.stream_accumulate
                                 else "delta",
                             },
