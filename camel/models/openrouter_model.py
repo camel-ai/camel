@@ -14,6 +14,7 @@
 import os
 from typing import Any, Dict, Optional, Union
 
+from camel import logger
 from camel.configs import OpenRouterConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
@@ -70,6 +71,14 @@ class OpenRouterModel(OpenAICompatibleModel):
         url = url or os.environ.get(
             "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
         )
+
+        if "default_headers" not in kwargs:
+            kwargs["default_headers"] = {}
+        
+        kwargs["default_headers"].update({
+            "HTTP-Referer": "https://github.com/camel-ai/camel",
+            "X-Title": "CAMEL",
+        })
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
             model_type=model_type,
