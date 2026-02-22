@@ -1195,8 +1195,10 @@ class Workforce(BaseNode):
         return shared_memory
 
     def _on_stream_callback(self, chunk: ChatAgentResponse) -> None:
-        # TODO Integrate with WorkforceCallback so streaming metrics/events
-        #  flow through the central callback pipeline
+        # TODO (transitional): This is a local, best-effort stream speed
+        #  logger used only until streaming telemetry is moved into
+        #  WorkforceCallback. In a follow-up PR, replace this direct logging
+        #  with callback-driven events/metrics and remove this helper path.
         now = time.monotonic()
         if not hasattr(self, "_stream_start_ts"):
             self._stream_start_ts = now
