@@ -78,16 +78,16 @@ def _collect_sync_stream(
 
     for chunk in response:
         final_response = chunk
+        if stream_callback:
+            try:
+                stream_callback(chunk)
+            except Exception:
+                logger.warning(
+                    "stream_callback failed while processing a stream chunk",
+                    exc_info=True,
+                )
         if getattr(chunk, "msg", None) and chunk.msg.content is not None:
             contents.append(chunk.msg.content)
-            if stream_callback:
-                try:
-                    stream_callback(chunk)
-                except Exception:
-                    logger.warning(
-                        "stream_callback failed during decomposition",
-                        exc_info=True,
-                    )
 
     return final_response, contents
 
@@ -108,18 +108,18 @@ async def _collect_async_stream(
     async def _handle_chunk(chunk: Any) -> None:
         nonlocal final_response
         final_response = chunk
+        if stream_callback:
+            try:
+                maybe = stream_callback(chunk)
+                if asyncio.iscoroutine(maybe):
+                    await maybe
+            except Exception:
+                logger.warning(
+                    "stream_callback failed while processing a stream chunk",
+                    exc_info=True,
+                )
         if getattr(chunk, "msg", None) and chunk.msg.content is not None:
             contents.append(chunk.msg.content)
-            if stream_callback:
-                try:
-                    maybe = stream_callback(chunk)
-                    if asyncio.iscoroutine(maybe):
-                        await maybe
-                except Exception:
-                    logger.warning(
-                        "stream_callback failed during decomposition",
-                        exc_info=True,
-                    )
 
     if isinstance(response, AsyncStreamingChatAgentResponse):
         async for chunk in response:
@@ -149,6 +149,7 @@ def is_streaming_response(response: Any) -> bool:
         StreamingChatAgentResponse,
     )
 
+    non_streaming_iterables = (str, bytes, bytearray, dict)
     is_streaming = (
         isinstance(response, StreamingChatAgentResponse)
         or isinstance(response, AsyncStreamingChatAgentResponse)
@@ -158,6 +159,7 @@ def is_streaming_response(response: Any) -> bool:
         not is_streaming
         and hasattr(response, "__iter__")
         and not hasattr(response, "msg")
+        and not isinstance(response, non_streaming_iterables)
     ):
         is_streaming = True
 
