@@ -56,6 +56,11 @@ from openai import (
 )
 from pydantic import BaseModel, ValidationError
 
+from camel.agents._middleware import (
+    MessageMiddleware,
+    MiddlewareContext,
+    MiddlewareError,
+)
 from camel.agents._types import ModelResponse, ToolCallRequest
 from camel.agents._utils import (
     build_default_summary_prompt,
@@ -462,6 +467,11 @@ class ChatAgent(BaseAgent):
             context window that can be occupied by summary information. Used
             to limit how much of the model's context is reserved for
             summarization results. (default: :obj:`0.6`)
+        middlewares (Optional[List[MessageMiddleware]], optional): List of
+            :obj:`MessageMiddleware` instances to apply before and after
+            model invocations. Middlewares are executed in order for
+            requests and in the same order for responses. (default:
+            :obj:`None`)
     """
 
     def __init__(
@@ -509,6 +519,7 @@ class ChatAgent(BaseAgent):
         step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
+        middlewares: Optional[List[MessageMiddleware]] = None,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -631,6 +642,7 @@ class ChatAgent(BaseAgent):
         self._last_tool_call_record: Optional[ToolCallingRecord] = None
         self._last_tool_call_signature: Optional[str] = None
         self.summary_window_ratio = summary_window_ratio
+        self._middlewares: List[MessageMiddleware] = list(middlewares or [])
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -3473,6 +3485,58 @@ class ChatAgent(BaseAgent):
                 "Record selected message manually using `record_message()`."
             )
 
+    def _build_middleware_context(
+        self, current_iteration: int
+    ) -> MiddlewareContext:
+        r"""Build a MiddlewareContext for the current invocation."""
+        return MiddlewareContext(
+            model_type=self.model_backend.model_type,
+            agent_id=self.agent_id,
+            iteration=current_iteration,
+        )
+
+    def _apply_request_middlewares(
+        self,
+        messages: List[OpenAIMessage],
+        ctx: MiddlewareContext,
+    ) -> List[OpenAIMessage]:
+        r"""Apply all registered middlewares to the request messages."""
+        for middleware in self._middlewares:
+            try:
+                messages = middleware.process_request(messages, ctx)
+            except MiddlewareError:
+                raise
+            except Exception as e:
+                middleware_name = type(middleware).__name__
+                raise MiddlewareError(
+                    f"Middleware '{middleware_name}' failed in "
+                    f"process_request: {e}",
+                    middleware_name=middleware_name,
+                    phase="process_request",
+                ) from e
+        return messages
+
+    def _apply_response_middlewares(
+        self,
+        response: ChatCompletion,
+        ctx: MiddlewareContext,
+    ) -> ChatCompletion:
+        r"""Apply all registered middlewares to the model response."""
+        for middleware in self._middlewares:
+            try:
+                response = middleware.process_response(response, ctx)
+            except MiddlewareError:
+                raise
+            except Exception as e:
+                middleware_name = type(middleware).__name__
+                raise MiddlewareError(
+                    f"Middleware '{middleware_name}' failed in "
+                    f"process_response: {e}",
+                    middleware_name=middleware_name,
+                    phase="process_response",
+                ) from e
+        return response
+
     @observe()
     def _get_model_response(
         self,
@@ -3483,6 +3547,9 @@ class ChatAgent(BaseAgent):
         prev_num_openai_messages: int = 0,
     ) -> ModelResponse:
         r"""Internal function for agent step model response."""
+        ctx = self._build_middleware_context(current_iteration)
+        openai_messages = self._apply_request_middlewares(openai_messages, ctx)
+
         last_error = None
 
         for attempt in range(self.retry_attempts):
@@ -3533,6 +3600,8 @@ class ChatAgent(BaseAgent):
                 f"Expected ChatCompletion, got {type(response).__name__}"
             )
 
+        response = self._apply_response_middlewares(response, ctx)
+
         return self._handle_batch_response(response)
 
     @observe()
@@ -3545,6 +3614,9 @@ class ChatAgent(BaseAgent):
         prev_num_openai_messages: int = 0,
     ) -> ModelResponse:
         r"""Internal function for agent async step model response."""
+        ctx = self._build_middleware_context(current_iteration)
+        openai_messages = self._apply_request_middlewares(openai_messages, ctx)
+
         last_error = None
 
         for attempt in range(self.retry_attempts):
@@ -3596,6 +3668,8 @@ class ChatAgent(BaseAgent):
             raise TypeError(
                 f"Expected ChatCompletion, got {type(response).__name__}"
             )
+
+        response = self._apply_response_middlewares(response, ctx)
 
         return self._handle_batch_response(response)
 
