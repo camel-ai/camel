@@ -4734,8 +4734,10 @@ class ChatAgent(BaseAgent):
 
             # Accumulate tool call data
             if tool_call_id:
+                from camel.agents._types import _MAX_TOOL_CALL_ID_LEN
+
                 tool_call_entry['id'] = (
-                    tool_call_id  # Set full ID, don't append
+                    tool_call_id[:_MAX_TOOL_CALL_ID_LEN] # Set full ID, don't append
                 )
 
             if (
