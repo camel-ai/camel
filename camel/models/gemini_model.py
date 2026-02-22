@@ -24,6 +24,10 @@ from typing import (
 )
 
 from openai import AsyncStream, Stream
+from openai.lib.streaming.chat import (
+    AsyncChatCompletionStreamManager,
+    ChatCompletionStreamManager,
+)
 from pydantic import BaseModel
 
 from camel.configs import GeminiConfig
@@ -451,6 +455,47 @@ class GeminiModel(OpenAICompatibleModel):
 
         return async_thought_preserving_generator()
 
+    @staticmethod
+    def _clean_gemini_tools(
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> Optional[List[Dict[str, Any]]]:
+        r"""Clean tools for Gemini API compatibility.
+
+        Removes unsupported fields like strict, anyOf, and restricts
+        enum/format to allowed types.
+        """
+        if not tools:
+            return tools
+        import copy
+
+        tools = copy.deepcopy(tools)
+        for tool in tools:
+            function_dict = tool.get('function', {})
+            function_dict.pop("strict", None)
+
+            if 'parameters' in function_dict:
+                params = function_dict['parameters']
+                if 'properties' in params:
+                    for prop_name, prop_value in params['properties'].items():
+                        if 'anyOf' in prop_value:
+                            first_type = prop_value['anyOf'][0]
+                            params['properties'][prop_name] = first_type
+                            if 'description' in prop_value:
+                                params['properties'][prop_name][
+                                    'description'
+                                ] = prop_value['description']
+
+                        if prop_value.get('type') != 'string':
+                            prop_value.pop('enum', None)
+
+                        if prop_value.get('type') not in [
+                            'string',
+                            'integer',
+                            'number',
+                        ]:
+                            prop_value.pop('format', None)
+        return tools
+
     @observe()
     def _run(
         self,
@@ -479,19 +524,18 @@ class GeminiModel(OpenAICompatibleModel):
             "response_format", None
         )
         messages = self._process_messages(messages)
-        if response_format:
-            if tools:
-                raise ValueError(
-                    "Gemini does not support function calling with "
-                    "response format."
-                )
-            result: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
-                self._request_parse(messages, response_format)
-            )
-        else:
-            result = self._request_chat_completion(messages, tools)
+        is_streaming = self.model_config_dict.get("stream", False)
 
-        return result
+        if response_format:
+            tools = self._clean_gemini_tools(tools)
+            if is_streaming:
+                return self._request_stream_parse(  # type: ignore[return-value]
+                    messages, response_format, tools
+                )
+            else:
+                return self._request_parse(messages, response_format, tools)
+        else:
+            return self._request_chat_completion(messages, tools)
 
     @observe()
     async def _arun(
@@ -521,67 +565,90 @@ class GeminiModel(OpenAICompatibleModel):
             "response_format", None
         )
         messages = self._process_messages(messages)
-        if response_format:
-            if tools:
-                raise ValueError(
-                    "Gemini does not support function calling with "
-                    "response format."
-                )
-            result: Union[
-                ChatCompletion, AsyncStream[ChatCompletionChunk]
-            ] = await self._arequest_parse(messages, response_format)
-        else:
-            result = await self._arequest_chat_completion(messages, tools)
+        is_streaming = self.model_config_dict.get("stream", False)
 
-        return result
+        if response_format:
+            tools = self._clean_gemini_tools(tools)
+            if is_streaming:
+                return await self._arequest_stream_parse(  # type: ignore[return-value]
+                    messages, response_format, tools
+                )
+            else:
+                return await self._arequest_parse(
+                    messages, response_format, tools
+                )
+        else:
+            return await self._arequest_chat_completion(messages, tools)
+
+    @staticmethod
+    def _build_gemini_response_format(
+        response_format: Type[BaseModel],
+    ) -> Dict[str, Any]:
+        r"""Convert a Pydantic model to Gemini-compatible response_format."""
+        schema = response_format.model_json_schema()
+        # Remove $defs and other unsupported fields for Gemini
+        schema.pop("$defs", None)
+        schema.pop("definitions", None)
+        return {
+            "type": "json_schema",
+            "json_schema": {
+                "name": response_format.__name__,
+                "schema": schema,
+            },
+        }
+
+    def _request_stream_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletionStreamManager[BaseModel]:
+        r"""Gemini-specific streaming structured output.
+
+        Uses regular streaming with response_format as JSON schema
+        instead of OpenAI's beta streaming API which is incompatible
+        with Gemini's tool call delta format.
+        """
+        request_config = self._prepare_request_config(tools)
+        request_config["stream"] = True
+        request_config["response_format"] = self._build_gemini_response_format(
+            response_format
+        )
+
+        response = self._client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+        return self._preserve_thought_signatures(response)  # type: ignore[return-value]
+
+    async def _arequest_stream_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> AsyncChatCompletionStreamManager[BaseModel]:
+        r"""Gemini-specific async streaming structured output."""
+        request_config = self._prepare_request_config(tools)
+        request_config["stream"] = True
+        request_config["response_format"] = self._build_gemini_response_format(
+            response_format
+        )
+
+        response = await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+        return self._preserve_thought_signatures(response)  # type: ignore[return-value]
 
     def _request_chat_completion(
         self,
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-        # Remove strict and anyOf from each tool's function parameters since
-        # Gemini does not support them
-        if tools:
-            for tool in tools:
-                function_dict = tool.get('function', {})
-                function_dict.pop("strict", None)
-
-                # Process parameters to remove anyOf and handle enum/format
-                if 'parameters' in function_dict:
-                    params = function_dict['parameters']
-                    if 'properties' in params:
-                        for prop_name, prop_value in params[
-                            'properties'
-                        ].items():
-                            if 'anyOf' in prop_value:
-                                # Replace anyOf with the first type in the list
-                                first_type = prop_value['anyOf'][0]
-                                params['properties'][prop_name] = first_type
-                                # Preserve description if it exists
-                                if 'description' in prop_value:
-                                    params['properties'][prop_name][
-                                        'description'
-                                    ] = prop_value['description']
-
-                            # Handle enum and format restrictions for Gemini
-                            # API enum: only allowed for string type
-                            if prop_value.get('type') != 'string':
-                                prop_value.pop('enum', None)
-
-                            # format: only allowed for string, integer, and
-                            # number types
-                            if prop_value.get('type') not in [
-                                'string',
-                                'integer',
-                                'number',
-                            ]:
-                                prop_value.pop('format', None)
-
-            request_config["tools"] = tools
+        tools = self._clean_gemini_tools(tools)
+        request_config = self._prepare_request_config(tools)
 
         response = self._call_client(
             self._client.chat.completions.create,
@@ -598,48 +665,8 @@ class GeminiModel(OpenAICompatibleModel):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-        # Remove strict and anyOf from each tool's function parameters since
-        # Gemini does not support them
-        if tools:
-            for tool in tools:
-                function_dict = tool.get('function', {})
-                function_dict.pop("strict", None)
-
-                # Process parameters to remove anyOf and handle enum/format
-                if 'parameters' in function_dict:
-                    params = function_dict['parameters']
-                    if 'properties' in params:
-                        for prop_name, prop_value in params[
-                            'properties'
-                        ].items():
-                            if 'anyOf' in prop_value:
-                                # Replace anyOf with the first type in the list
-                                first_type = prop_value['anyOf'][0]
-                                params['properties'][prop_name] = first_type
-                                # Preserve description if it exists
-                                if 'description' in prop_value:
-                                    params['properties'][prop_name][
-                                        'description'
-                                    ] = prop_value['description']
-
-                            # Handle enum and format restrictions for Gemini
-                            # API enum: only allowed for string type
-                            if prop_value.get('type') != 'string':
-                                prop_value.pop('enum', None)
-
-                            # format: only allowed for string, integer, and
-                            # number types
-                            if prop_value.get('type') not in [
-                                'string',
-                                'integer',
-                                'number',
-                            ]:
-                                prop_value.pop('format', None)
-
-            request_config["tools"] = tools
+        tools = self._clean_gemini_tools(tools)
+        request_config = self._prepare_request_config(tools)
 
         response = await self._acall_client(
             self._async_client.chat.completions.create,
