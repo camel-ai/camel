@@ -329,3 +329,51 @@ class TestSemanticCache:
         assert "SemanticCache" in repr_str
         assert "threshold=0.85" in repr_str
         assert "enabled=True" in repr_str
+
+    def test_set_stores_new_entry(
+        self, cache, mock_vector_storage, mock_embedding_model
+    ):
+        """Test that set() stores a new entry."""
+        mock_vector_storage.query.return_value = []
+
+        new_id = cache.set("What is Python?", "A programming language.")
+
+        # New entry should be added
+        mock_vector_storage.add.assert_called_once()
+        assert new_id is not None
+
+    def test_set_replaces_duplicate(
+        self, cache, mock_vector_storage, mock_embedding_model
+    ):
+        """Test that set() deletes existing entry for similar query."""
+        # Mock: vector storage finds an existing similar entry
+        mock_existing = MagicMock()
+        mock_existing.similarity = 0.95  # Above threshold
+        mock_existing.record.id = "old-entry-id"
+        mock_vector_storage.query.return_value = [mock_existing]
+
+        new_id = cache.set("What is Python?", "Updated answer.")
+
+        # Old entry should be deleted from vector storage
+        mock_vector_storage.delete.assert_called_once_with(["old-entry-id"])
+        # New entry should be added
+        mock_vector_storage.add.assert_called_once()
+        assert new_id is not None
+        assert new_id != "old-entry-id"
+
+    def test_set_no_replace_below_threshold(
+        self, cache, mock_vector_storage, mock_embedding_model
+    ):
+        """Test that set() does not replace when similarity is below
+        threshold.
+        """
+        mock_existing = MagicMock()
+        mock_existing.similarity = 0.5  # Below threshold
+        mock_vector_storage.query.return_value = [mock_existing]
+
+        cache.set("What is Python?", "A programming language.")
+
+        # Old entry should NOT be deleted
+        mock_vector_storage.delete.assert_not_called()
+        # New entry should still be added
+        mock_vector_storage.add.assert_called_once()
