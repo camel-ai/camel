@@ -216,8 +216,9 @@ NAVI_BENCH_GUIDELINES: dict[str, str] = {
             "- Ensure location/restaurant, date, time, and party size are correctly set (use the UI controls).",
             f"- Today is {datetime.now().strftime('%d/%m/%Y')}",
             "- For dropdown/combobox controls (party size, time, filters), prefer browser_select(ref=..., value=...) instead of repeatedly clicking; options may not have clickable refs.",
-            "- You will only see the pre-selected results under the corresponding conditions after you have selected all the options."
+            "- You will only see the pre-selected results under the corresponding conditions after you have selected all the options.",
             "- After changing key constraints (date/time/party size), call browser_get_tab_info and confirm the URL/state reflects the requested constraints before moving on.",
+            "- IMPORTANT: The restaurant name in search results may not be an exact match with the task. Accept close/partial matches (e.g. 'Russell House Tavern' may appear as 'Russell House Tavern - Cambridge'). Do not skip a result just because the name is not identical—look for the closest match.",
             "- If the task is about availability, stay on the results/reservation page that shows available times (or the no-availability message).",
             "- Scroll within results so availability/no-availability sections are visible before finishing.",
             "- Avoid navigating away at the end; keep the final page on the relevant OpenTable results/restaurant page.",
@@ -228,9 +229,9 @@ NAVI_BENCH_GUIDELINES: dict[str, str] = {
             "- Target site: Resy",
             "- Ensure venue/date/time/party size are correctly set (use the UI controls).",
             f"- Today is {datetime.now().strftime('%d/%m/%Y')}",
-            "- For dropdown/combobox controls (Guests, Date, Time), prefer browser_select(ref=..., value=...) instead of repeatedly clicking, and `value` arg need to be exact match; options may not have clickable refs.",
+            "- IMPORTANT: All dropdown/combobox controls on Resy (Guests, Date, Time, etc.) MUST be operated by manually clicking to open the dropdown, then clicking the desired option. Do NOT use browser_select—Resy's custom dropdowns are not native <select> elements and browser_select will not work. Always click to open, then click to choose.",
             "- Resy may not display the correct availability information, but you still need to check the availability of all possible options. Do not stop checking until all options are confirmed.",
-            "- When you see Form, the Click the time-slot selector first to expand all time-slot options, and then select your demand time-slot.",
+            "- When you see Form, click the time-slot selector first to expand all time-slot options, and then click your desired time-slot to select it.",
             "- Even if you have already confirmed the future situation through the calendar, in order to ensure the effectiveness of the evaluation, you still need to click every corresponding date in the calendar to prove your conclusion.",
             "- You need to expand the calendar, see what date is currently selected, get snapshot to locate the date button, and click the next date to check, and so on, until you reach the last date to check. Every button of data is 100% clickable. You must repeat the above steps for each check, opening the corresponding page one by one.",
             "- Finally, you need to include in your answer whether you have clicked on each date that needs to be checked. List all the dates you have viewed by **clicking**. And make sure all checks have been performed using the click action."
@@ -445,7 +446,7 @@ class BrowserAgent:
             ),
             browser_log_to_file=True,
             log_dir=str(browser_log_dir),
-            viewport_limit=False,
+            viewport_limit=True,
             viewport={"width": 1920, "height": 1080},
             session_id=self.toolkit_session_id,
             connect_over_cdp=False,  # Launch own browser instead of CDP
