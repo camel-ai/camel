@@ -886,7 +886,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.90a1"
+version = "0.2.90a3"
 source = { editable = "." }
 dependencies = [
     { name = "astor" },
@@ -1182,6 +1182,7 @@ eigent = [
     { name = "markitdown", extra = ["all"], marker = "python_full_version < '3.13'" },
     { name = "mcp-server-fetch" },
     { name = "mcp-simple-arxiv" },
+    { name = "mistralai" },
     { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
     { name = "numpy", version = "2.2.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
     { name = "onnxruntime" },
@@ -1526,6 +1527,7 @@ requires-dist = [
     { name = "microsandbox", marker = "extra == 'all'", specifier = ">=0.1.8" },
     { name = "microsandbox", marker = "extra == 'dev-tools'", specifier = ">=0.1.8" },
     { name = "mistralai", marker = "extra == 'all'", specifier = ">=1.1.0,<2" },
+    { name = "mistralai", marker = "extra == 'eigent'", specifier = ">=1.1.0,<2" },
     { name = "mistralai", marker = "extra == 'model-platforms'", specifier = ">=1.1.0,<2" },
     { name = "mock", marker = "extra == 'all'", specifier = ">=5,<6" },
     { name = "mock", marker = "extra == 'dev'", specifier = ">=5,<6" },

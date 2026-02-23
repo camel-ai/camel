@@ -267,7 +267,8 @@ class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
             messages, response_format, tools
         )
 
-        return self._client.chat.completions.create(
+        return self._call_client(
+            self._client.chat.completions.create,
             messages=messages,
             model=self.model_type,
             **request_config,
@@ -302,7 +303,8 @@ class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
             messages, response_format, tools
         )
 
-        return await self._async_client.chat.completions.create(
+        return await self._acall_client(
+            self._async_client.chat.completions.create,
             messages=messages,
             model=self.model_type,
             **request_config,
