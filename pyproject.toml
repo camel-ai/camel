@@ -30,6 +30,7 @@ dependencies = [
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
     "openai>=1.86.0",
+    "google-genai>=1.13.0",
     "websockets>=13.0,<15.1",
     "astor>=0.8.1",
     "pillow>=10.0.0",
@@ -88,7 +89,6 @@ rag = [
     "unstructured==0.16.20; python_version < '3.13'",
     "crawl4ai>=0.3.745",
     "pyobvector>=0.1.18; python_version < '3.13'",
-    "google-genai>=1.13.0",
     "chunkr-ai>=0.0.50, <0.1.0",
     "chromadb>=0.6.0,<1.0.0",
 ]
@@ -431,7 +431,6 @@ all = [
     "scrapegraph-py>=1.12.0,<2",
     "daytona-sdk>=0.20.0",
     "ibm-watsonx-ai>=1.3.11",
-    "google-genai>=1.13.0",
     "aci-sdk>=1.0.0b1",
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50, <0.1.0",
