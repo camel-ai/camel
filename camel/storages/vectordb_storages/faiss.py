@@ -471,15 +471,12 @@ class FaissStorage(BaseVectorStorage):
             )
 
             if len(indices_to_remove) > 0:
-                # Create a selector where 1 means "remove"
-                selector = np.zeros(self._index.ntotal, dtype=bool)
-                selector[indices_to_remove] = True
-
                 try:
-                    # Remove from FAISS index
-                    id_selector = faiss.IDSelectorArray(
-                        len(indices_to_remove), indices_to_remove
-                    )
+                    # NOTE: Pass only the array (1 arg) so FAISS's
+                    # Python wrapper auto-converts via swig_ptr().
+                    # Passing 2 args (len, array) bypasses the
+                    # wrapper and fails on some platforms.
+                    id_selector = faiss.IDSelectorArray(indices_to_remove)
                     self._index.remove_ids(id_selector)
 
                     # Update mappings and storage

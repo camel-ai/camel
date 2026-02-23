@@ -350,7 +350,9 @@ class SemanticCache(BaseCache):
         r"""Store a query-response pair in the cache.
 
         Generates an embedding for the query and stores it along with the
-        response in the vector storage.
+        response in the vector storage. If a semantically similar query
+        already exists (above the similarity threshold), the old entry is
+        deleted and replaced with the new one.
 
         Args:
             query (str): The query text.
@@ -378,6 +380,31 @@ class SemanticCache(BaseCache):
 
         # Generate embedding for the query
         query_embedding = self._embedding_model.embed(query)
+
+        # Check for existing similar entry to avoid duplicates
+        try:
+            existing = self._vector_storage.query(
+                VectorDBQuery(
+                    query_vector=query_embedding,
+                    top_k=1,
+                )
+            )
+            if existing:
+                best = existing[0]
+                sim = self._normalize_similarity(best.similarity)
+                if sim >= self._similarity_threshold:
+                    old_id = best.record.id
+                    try:
+                        self._vector_storage.delete([old_id])
+                        logger.debug(
+                            f"Deleted duplicate entry "
+                            f"id={old_id} "
+                            f"(similarity={sim:.4f})"
+                        )
+                    except Exception as e:
+                        logger.debug(f"Could not delete old entry: {e}")
+        except Exception as e:
+            logger.debug(f"Duplicate check skipped: {e}")
 
         # Create unique ID for this entry
         entry_id = str(uuid4())
