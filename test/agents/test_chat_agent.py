@@ -15,7 +15,7 @@ import asyncio
 import json
 from copy import deepcopy
 from io import BytesIO
-from typing import List
+from typing import List, Literal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -592,7 +592,9 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
 def _mock_completion_with_usage(
     response_id: str,
     *,
-    finish_reason: str,
+    finish_reason: Literal[
+        "stop", "length", "tool_calls", "content_filter", "function_call"
+    ],
     content: str | None,
     created: int,
     prompt_tokens: int,
