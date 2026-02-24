@@ -53,15 +53,16 @@ print(response.info.get("usage"))
 
 '''
 ===============================================================================
-[request 1] response_id=chatcmpl-DChD9WKCUdpDYfH6M5TOnWLrxaoTW 
+[request 1] response_id=chatcmpl-DChD9WKCUdpDYfH6M5TOnWLrxaoTW
 request_total_tokens=437 step_total_tokens=437
-[request 2] response_id=chatcmpl-DChDA0sYqi9lHpRTy86SvSs339tQ9 
+[request 2] response_id=chatcmpl-DChDA0sYqi9lHpRTy86SvSs339tQ9
 request_total_tokens=470 step_total_tokens=907
-[request 3] response_id=chatcmpl-DChDBFYQnSla6ZokAdbIzVA1Day0R 
+[request 3] response_id=chatcmpl-DChDBFYQnSla6ZokAdbIzVA1Day0R
 request_total_tokens=519 step_total_tokens=1426
 
 Final answer:
-The result of \( 123 + 456 \) is \( 579 \). When you multiply that by \( 2 \), the final result is \( 1158 \).
+The result of \( 123 + 456 \) is \( 579 \). When you multiply that by \( 2 \),
+the final result is \( 1158 \).
 
 Step usage:
 {'prompt_tokens': 1346, 'completion_tokens': 80, 'total_tokens': 1426}
