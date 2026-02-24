@@ -489,7 +489,7 @@ class NaviBenchRunner:
                         session_dir=str(session_dir),
                     )
                 
-                # If Navi-Bench says success but WebJudge disagrees, use WebJudge's reasoning
+                # If not passed, let's check WebJudge feedback and print suggestions for retry.
                 suggestions_parts: List[str] = []
                 if not webjudge_result.success:
                     print("\n⚠️WebJudge failed.")

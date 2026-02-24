@@ -201,22 +201,23 @@ NAVI_BENCH_GUIDELINES: dict[str, str] = {
     "apartments.com": "\n".join(
         [
             "- Target site: https://www.apartments.com/",
-            "- Use site search/filters on the page; avoid external search.",
-            "- Use short keywords to search, the search input accepts multiple regions search, Click the dropdown suggestions to confirm one search region, ",
-            "and repeatly add multiple demand regions, until you've confirmed all required regions are added.",
+            "- Use only the search bar and filters on this site, avoid any external search.",
+            "- Once you open the target site, you should first use the smart search bar to search the first given region or city name in the task, and then choose the most relative suggestions.",
+            "- By chosing the suggestion, you will get into the subpage for that region and then you need to add other regions by the order precised in the task requirement in the search bar with the same way. You need to repeat this process until you have added all the required regions in the task.",
             "- Only if you've add all regions, you can continue to configure other filter conditions.",
-            "- Navi-Bench often verifies the FINAL URL; apply only the filters required by the task (avoid extra filters).",
-            "- After applying filters, call browser_get_tab_info to confirm the URL reflects the required constraints.",
-            "- If results use infinite scroll or lazy loading, scroll a bit to ensure listings are loaded before you stop.",
-            "- If the task asks for an overview, base it on visible results (do not guess counts).",
+            "- Use the filters to narrow down the search results based on the task requirements (price range, number of bedrooms, etc.). If you cannot see the filter, click 'All Filters' to open the filter panel.",
+            "- You can scroll down in all filters panel to find more filter options. If you cannot find the required filter, try to click the 'Show All Amenities' in the filters panel to unfold all filters.",
+            "- When you chose the bed filter, by default it will show n+, but if you click again, if will show exactly n. n is a number here, so you need to chose the correct one based on the task requirement.",
+            "- Do not miss the filters or add extra filters. All these behaviors will be evaluted as wrong. You need to make sure the URL query parameters reflect the required constraints after you apply the filters. You can call browser_get_tab_info to get the current URL and check the query parameters.",
+            "- If the task asks for an overview, do the summary base on visible results (do not guess any content).",
         ]
     ),
     "craigslist": "\n".join(
         [
             "- Target site: Craigslist",
-            "- Prefer applying filters directly on the search page (price, bedrooms, posted today, rent period, etc.)",
-            "- Navi-Bench commonly verifies the URL query parameters EXACTLY; apply only the filters required by the task (avoid extra filters).",
-            "- After applying filters, call browser_get_tab_info and confirm the URL query parameters reflect the required constraints.",
+            "- Applying filters directly on the search page, they are elements in the search panel, click or give values to in the search panel, do not use the site search box or any external search.",
+            "- Verifies the URL query parameters EXACTLY; apply only all the filters required by the task has been filled, do not give more filters or miss filters.",
+            "- You need to click the search button to apply the filter. After applying filters, call browser_get_tab_info and confirm the URL query parameters reflect the required constraints.",
             "- If asked to extract listing details, open each listing page and capture the required fields + URL",
         ]
     ),

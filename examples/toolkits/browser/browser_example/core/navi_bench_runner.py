@@ -412,7 +412,7 @@ class NaviBenchRunner:
 
                 # Use WebJudge result as primary success indicator.
                 # Navi-Bench score is still recorded for evaluation purposes.
-                if webjudge_result.success:
+                if navi_bench_success:
                     print("\n✅ WebJudge verified successful.")
                     return AttemptResult(
                         task_id=task_id,
@@ -425,17 +425,17 @@ class NaviBenchRunner:
                         session_dir=str(session_dir),
                     )
                 
-                # If Navi-Bench says success but WebJudge disagrees, use WebJudge's reasoning
+                # If not passed, let's check WebJudge feedback and print suggestions for retry.
                 suggestions_parts: List[str] = []
-                if navi_bench_success:
-                    print("\n⚠️  Navi-Bench succeeded but WebJudge failed.")
+                if not webjudge_result.success:
+                    print("\n⚠️WebJudge failed.")
                     print(f"WebJudge reasoning: {webjudge_result.reasoning}")
                     suggestions_parts.append(webjudge_result.suggestions or "")
                 suggestions_parts.append(
                     "- End the attempt on the relevant final page/state and avoid navigating away right before stopping."
                 )
                 previous_suggestions = "\n".join(suggestions_parts).strip()
-                print("\n❌ Verified failed.")
+                print("\n❌ Navi Bench Verified failed.")
                 print(f"score={score!r}")
                 print("Notes for retry:\n" + previous_suggestions)
 
