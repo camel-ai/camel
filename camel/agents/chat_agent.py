@@ -3513,9 +3513,7 @@ class ChatAgent(BaseAgent):
             "response_id": response_id,
             "request_usage": {
                 "prompt_tokens": int(usage.get("prompt_tokens") or 0),
-                "completion_tokens": int(
-                    usage.get("completion_tokens") or 0
-                ),
+                "completion_tokens": int(usage.get("completion_tokens") or 0),
                 "total_tokens": int(usage.get("total_tokens") or 0),
             },
             "step_usage": step_usage,
