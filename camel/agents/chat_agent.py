@@ -452,6 +452,12 @@ class ChatAgent(BaseAgent):
         step_timeout (Optional[float], optional): Timeout in seconds for the
             entire step operation. If None, no timeout is applied.
             (default: :obj:`None`)
+        on_request_usage (Optional[Callable[[Dict[str, Any]], Any]],
+            optional): Callback triggered after each LLM request completes.
+            Useful for real-time token metering within a single step loop.
+            The callback receives a payload with per-request usage and
+            cumulative step usage.
+            (default: :obj:`None`)
         stream_accumulate (Optional[bool], optional): When True, partial
             streaming updates return accumulated content. When False, partial
             updates return only the incremental delta (recommended).
@@ -507,6 +513,7 @@ class ChatAgent(BaseAgent):
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        on_request_usage: Optional[Callable[[Dict[str, Any]], Any]] = None,
         stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
     ) -> None:
@@ -619,6 +626,7 @@ class ChatAgent(BaseAgent):
         self.retry_attempts = max(1, retry_attempts)
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
+        self.on_request_usage = on_request_usage
         self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
 
@@ -2960,6 +2968,12 @@ class ChatAgent(BaseAgent):
             self._update_token_usage_tracker(
                 step_token_usage, response.usage_dict
             )
+            self._emit_request_usage(
+                usage_dict=response.usage_dict,
+                step_usage=step_token_usage.copy(),
+                request_index=iteration_count,
+                response_id=response.response_id,
+            )
 
             # Update token cache from LLM response
             self._update_token_cache(response.usage_dict, len(openai_messages))
@@ -3259,6 +3273,12 @@ class ChatAgent(BaseAgent):
             self._update_token_usage_tracker(
                 step_token_usage, response.usage_dict
             )
+            await self._aemit_request_usage(
+                usage_dict=response.usage_dict,
+                step_usage=step_token_usage.copy(),
+                request_index=iteration_count,
+                response_id=response.response_id,
+            )
 
             # Update token cache from LLM response
             self._update_token_cache(response.usage_dict, len(openai_messages))
@@ -3423,6 +3443,83 @@ class ChatAgent(BaseAgent):
             usage_dict.get("completion_tokens") or 0
         )
         tracker["total_tokens"] += usage_dict.get("total_tokens") or 0
+
+    def _emit_request_usage(
+        self,
+        usage_dict: Dict[str, Any],
+        step_usage: Dict[str, int],
+        request_index: int,
+        response_id: str,
+    ) -> None:
+        if self.on_request_usage is None:
+            return
+
+        payload = self._build_request_usage_payload(
+            usage_dict=usage_dict,
+            step_usage=step_usage,
+            request_index=request_index,
+            response_id=response_id,
+        )
+        try:
+            callback_result = self.on_request_usage(payload)
+            if inspect.isawaitable(callback_result):
+                logger.warning(
+                    "on_request_usage returned awaitable in sync step. "
+                    "Use a sync callback for `step`, or use `astep`."
+                )
+        except Exception as exc:
+            logger.warning(
+                f"on_request_usage callback failed at request "
+                f"{request_index}: {exc}"
+            )
+
+    async def _aemit_request_usage(
+        self,
+        usage_dict: Dict[str, Any],
+        step_usage: Dict[str, int],
+        request_index: int,
+        response_id: str,
+    ) -> None:
+        if self.on_request_usage is None:
+            return
+
+        payload = self._build_request_usage_payload(
+            usage_dict=usage_dict,
+            step_usage=step_usage,
+            request_index=request_index,
+            response_id=response_id,
+        )
+        try:
+            callback_result = self.on_request_usage(payload)
+            if inspect.isawaitable(callback_result):
+                await callback_result
+        except Exception as exc:
+            logger.warning(
+                f"on_request_usage callback failed at request "
+                f"{request_index}: {exc}"
+            )
+
+    def _build_request_usage_payload(
+        self,
+        usage_dict: Dict[str, Any],
+        step_usage: Dict[str, int],
+        request_index: int,
+        response_id: str,
+    ) -> Dict[str, Any]:
+        usage = usage_dict or {}
+        return {
+            "agent_id": self.agent_id,
+            "request_index": request_index,
+            "response_id": response_id,
+            "request_usage": {
+                "prompt_tokens": int(usage.get("prompt_tokens") or 0),
+                "completion_tokens": int(
+                    usage.get("completion_tokens") or 0
+                ),
+                "total_tokens": int(usage.get("total_tokens") or 0),
+            },
+            "step_usage": step_usage,
+        }
 
     def _convert_to_chatagent_response(
         self,
@@ -5944,6 +6041,7 @@ class ChatAgent(BaseAgent):
             tool_execution_timeout=self.tool_execution_timeout,
             pause_event=self.pause_event,
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
+            on_request_usage=self.on_request_usage,
             stream_accumulate=self.stream_accumulate,
         )
 
