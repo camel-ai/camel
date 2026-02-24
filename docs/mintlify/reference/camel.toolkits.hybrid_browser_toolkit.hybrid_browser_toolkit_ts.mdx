@@ -1,5 +1,31 @@
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts"></a>
 
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts._add_rulers_to_image"></a>
+
+## _add_rulers_to_image
+
+```python
+def _add_rulers_to_image(image_bytes: bytes, tick_interval: int = 100):
+```
+
+Add rulers with tick marks to an image (like a real measuring ruler).
+
+Adds horizontal ruler at the top and vertical ruler on the left side,
+with multi-level tick marks like a real ruler:
+- Every 100 pixels: longest tick + number label
+- Every 50 pixels: long tick (no label)
+- Every 10 pixels: medium tick
+- Every 5 pixels: short tick
+
+**Parameters:**
+
+- **image_bytes**: The original image as bytes.
+- **tick_interval**: Major interval for number labels (default: 100). (default: 100)
+
+**Returns:**
+
+  The modified image with rulers as bytes.
+
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.SheetCell"></a>
 
 ## SheetCell
@@ -52,11 +78,13 @@ Initialize the HybridBrowserToolkit.
 - **screenshot_timeout** (Optional[int]): Screenshot timeout in milliseconds. Defaults to None.
 - **page_stability_timeout** (Optional[int]): Page stability timeout in milliseconds. Defaults to None.
 - **dom_content_loaded_timeout** (Optional[int]): DOM content loaded timeout in milliseconds. Defaults to None.
+- **download_timeout** (Optional[int]): Download timeout in milliseconds. Defaults to None.
 - **viewport_limit** (bool): Whether to filter page snapshot elements to only those visible in the current viewport. When True, only elements within the current viewport bounds will be included in snapshots. When False (default), all elements on the page are included. Defaults to False.
 - **connect_over_cdp** (bool): Whether to connect to an existing browser via Chrome DevTools Protocol. Defaults to False.
 - **cdp_url** (Optional[str]): WebSocket endpoint URL for CDP connection (e.g., 'ws://localhost:9222/devtools/browser/...'). Required when connect_over_cdp is True. Defaults to None.
 - **cdp_keep_current_page** (bool): When True and using CDP mode, won't create new pages but use the existing one. Defaults to False.
 - **full_visual_mode** (bool): When True, browser actions like click, browser_open, visit_page, etc. will not return snapshots. Defaults to False.
+- **download_dir** (Optional[str]): Directory path where downloaded files will be saved when using browser_download_file tool. Defaults to None.
 
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.__del__"></a>
 
@@ -139,6 +167,27 @@ session.
   A new HybridBrowserToolkit instance with the same configuration
 but a different session.
 
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit._create_mode_wrapper"></a>
+
+### _create_mode_wrapper
+
+```python
+def _create_mode_wrapper(
+    self,
+    method: Callable[..., Any],
+    tool_name: str,
+    pixel_mode: bool
+):
+```
+
+Create a wrapper with mode-specific signature and docstring.
+
+**Parameters:**
+
+- **method**: The original method to wrap.
+- **tool_name**: Name of the tool.
+- **pixel_mode**: If True, create pixel-coordinate wrapper. If False, create ref-based wrapper.
+
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.get_tools"></a>
 
 ### get_tools
@@ -147,5 +196,8 @@ but a different session.
 def get_tools(self):
 ```
 
-Get available function tools based
-on enabled_tools configuration.
+Get available function tools based on enabled_tools configuration.
+
+In full_visual_mode:
+- Tools requiring ref with no pixel alternative are excluded
+- browser_click and browser_type use pixel coordinates instead of ref

@@ -891,11 +891,11 @@ image sets. Returns np.nan if no valid pixels found.
 ```python
 def calculate_max_lst_by_ndvi(
     self,
-    red_path,
-    nir_path,
-    lst_path,
-    ndvi_threshold,
-    mode = 'above'
+    red_path: str,
+    nir_path: str,
+    lst_path: str,
+    ndvi_threshold: float,
+    mode: str = 'above'
 ):
 ```
 
@@ -1195,9 +1195,9 @@ NTU = Nephelometric Turbidity Units. Saves result to output path.
 ```python
 def threshold_segmentation(
     self,
-    input_image_path,
-    threshold,
-    output_path
+    input_image_path: str,
+    threshold: float | int,
+    output_path: str
 ):
 ```
 
@@ -1269,7 +1269,7 @@ Number of pixels with values greater than the threshold.
 ### count_skeleton_contours
 
 ```python
-def count_skeleton_contours(self, image_path):
+def count_skeleton_contours(self, image_path: str):
 ```
 
 Count external contours in a skeletonized binary image.
@@ -1291,7 +1291,7 @@ Number of external contours detected after skeletonization.
 ### bboxes2centroids
 
 ```python
-def bboxes2centroids(self, bboxes):
+def bboxes2centroids(self, bboxes: list[list[float]]):
 ```
 
 Convert bounding boxes to centroid coordinates.
@@ -1312,7 +1312,7 @@ A list of centroid coordinates, each in (x, y) format.
 ### centroid_distance_extremes
 
 ```python
-def centroid_distance_extremes(self, centroids):
+def centroid_distance_extremes(self, centroids: list[tuple[float, float]]):
 ```
 
 Find closest and farthest centroid pairs.
@@ -1338,7 +1338,7 @@ Indices of the farthest centroid pair and their distance.
 ### calculate_bbox_area
 
 ```python
-def calculate_bbox_area(self, bboxes, gsd = None):
+def calculate_bbox_area(self, bboxes: list[list[float]], gsd: float | None = None):
 ```
 
 Calculate the total area of bounding boxes in [x, y, w, h] format.
@@ -1471,9 +1471,9 @@ containing list[float] of component values.
 ```python
 def detect_change_points(
     self,
-    signal,
-    model = 'l2',
-    penalty = 10
+    signal: list[float],
+    model: str = 'l2',
+    penalty: float = 10
 ):
 ```
 
@@ -1598,9 +1598,9 @@ or "no hotspots found" if no hotspot pixels exist.
 ```python
 def count_spikes_from_values(
     self,
-    values,
-    spike_threshold = 0.1,
-    verbose = True
+    values: list[float],
+    spike_threshold: float = 0.1,
+    verbose: bool = True
 ):
 ```
 
@@ -2214,7 +2214,7 @@ and its index.
 ### multiply
 
 ```python
-def multiply(self, a, b):
+def multiply(self, a: float | int, b: float | int):
 ```
 
 Description:
@@ -2255,7 +2255,7 @@ The smallest integer greater than or equal to n.
 ### get_list_object_via_indexes
 
 ```python
-def get_list_object_via_indexes(self, input_list, indexes):
+def get_list_object_via_indexes(self, input_list: list, indexes: list[int]):
 ```
 
 Description:
@@ -2264,7 +2264,7 @@ Retrieve elements from a list using a list or tuple of indices.
 **Parameters:**
 
 - **input_list** (list): The source list from which elements will be extracted.
-- **indexes** (list[int] or tuple[int]): A sequence of indices specifying the positions of elements to retrieve.
+- **indexes** (list[int]): A sequence of indices specifying the positions of elements to retrieve.
 
 **Returns:**
 
@@ -2426,7 +2426,7 @@ A tuple containing:
 ### get_percentile_value_from_image
 
 ```python
-def get_percentile_value_from_image(self, image_path, percentile):
+def get_percentile_value_from_image(self, image_path: str, percentile: int | float):
 ```
 
 Description:
@@ -2453,10 +2453,10 @@ rasters, float for floating-point rasters).
 ```python
 def image_division_mean(
     self,
-    image_path1,
-    image_path2 = None,
-    band1 = 1,
-    band2 = 2
+    image_path1: str,
+    image_path2: str | None = None,
+    band1: int | None = 1,
+    band2: int | None = 2
 ):
 ```
 
@@ -2483,10 +2483,10 @@ The mean of the valid pixel-wise division results.
 ```python
 def calculate_intersection_percentage(
     self,
-    path1,
-    threshold1,
-    path2,
-    threshold2
+    path1: str,
+    threshold1: float,
+    path2: str,
+    threshold2: float
 ):
 ```
 
@@ -2890,7 +2890,7 @@ Subtract two images and save result.
 ### calculate_area
 
 ```python
-def calculate_area(self, input_image_path, gsd):
+def calculate_area(self, input_image_path: str, gsd: float | None):
 ```
 
 Description:
@@ -2952,7 +2952,7 @@ Returns a list of files in the specified directory.
 ### radiometric_correction_sr
 
 ```python
-def radiometric_correction_sr(self, input_band_path, output_path):
+def radiometric_correction_sr(self, input_band_path: str, output_path: str):
 ```
 
 Apply Landsat 8 surface reflectance (SR_B*) radiometric correction.
@@ -2973,9 +2973,9 @@ Apply Landsat 8 surface reflectance (SR_B*) radiometric correction.
 ```python
 def apply_cloud_mask(
     self,
-    sr_band_path,
-    qa_pixel_path,
-    output_path
+    sr_band_path: str,
+    qa_pixel_path: str,
+    output_path: str
 ):
 ```
 
