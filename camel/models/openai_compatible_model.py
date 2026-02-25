@@ -281,7 +281,8 @@ class OpenAICompatibleModel(BaseModelBackend):
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         request_config = self._prepare_request_config(tools)
 
-        return self._client.chat.completions.create(
+        return self._call_client(
+            self._client.chat.completions.create,
             messages=messages,
             model=self.model_type,
             **request_config,
@@ -294,7 +295,8 @@ class OpenAICompatibleModel(BaseModelBackend):
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         request_config = self._prepare_request_config(tools)
 
-        return await self._async_client.chat.completions.create(
+        return await self._acall_client(
+            self._async_client.chat.completions.create,
             messages=messages,
             model=self.model_type,
             **request_config,
@@ -313,7 +315,8 @@ class OpenAICompatibleModel(BaseModelBackend):
         request_config.pop("stream", None)
 
         try:
-            return self._client.beta.chat.completions.parse(
+            return self._call_client(
+                self._client.beta.chat.completions.parse,
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -326,7 +329,8 @@ class OpenAICompatibleModel(BaseModelBackend):
             try_modify_message_with_format(messages[-1], response_format)
             request_config["response_format"] = {"type": "json_object"}
             try:
-                return self._client.beta.chat.completions.parse(
+                return self._call_client(
+                    self._client.beta.chat.completions.parse,
                     messages=messages,
                     model=self.model_type,
                     **request_config,
@@ -348,7 +352,8 @@ class OpenAICompatibleModel(BaseModelBackend):
         request_config.pop("stream", None)
 
         try:
-            return await self._async_client.beta.chat.completions.parse(
+            return await self._acall_client(
+                self._async_client.beta.chat.completions.parse,
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -361,7 +366,8 @@ class OpenAICompatibleModel(BaseModelBackend):
             try_modify_message_with_format(messages[-1], response_format)
             request_config["response_format"] = {"type": "json_object"}
             try:
-                return await self._async_client.beta.chat.completions.parse(
+                return await self._acall_client(
+                    self._async_client.beta.chat.completions.parse,
                     messages=messages,
                     model=self.model_type,
                     **request_config,
@@ -385,7 +391,8 @@ class OpenAICompatibleModel(BaseModelBackend):
         request_config.pop("stream", None)
 
         # Use the beta streaming API for structured outputs
-        return self._client.beta.chat.completions.stream(
+        return self._call_client(
+            self._client.beta.chat.completions.stream,
             messages=messages,
             model=self.model_type,
             response_format=response_format,
@@ -407,7 +414,8 @@ class OpenAICompatibleModel(BaseModelBackend):
         request_config.pop("stream", None)
 
         # Use the beta streaming API for structured outputs
-        return self._async_client.beta.chat.completions.stream(
+        return self._call_client(
+            self._async_client.beta.chat.completions.stream,
             messages=messages,
             model=self.model_type,
             response_format=response_format,

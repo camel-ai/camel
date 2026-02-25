@@ -781,11 +781,15 @@ class AnthropicModel(BaseModelBackend):
 
         if is_streaming:
             # Return streaming response
-            stream = create_func(**request_params, stream=True)
+            stream = self._call_client(
+                create_func,
+                **request_params,
+                stream=True,
+            )
             return self._wrap_anthropic_stream(stream, str(self.model_type))
         else:
             # Return non-streaming response
-            response = create_func(**request_params)
+            response = self._call_client(create_func, **request_params)
             return self._convert_anthropic_to_openai_response(
                 response, str(self.model_type)
             )
@@ -906,13 +910,17 @@ class AnthropicModel(BaseModelBackend):
 
         if is_streaming:
             # Return streaming response
-            stream = await create_func(**request_params, stream=True)
+            stream = await self._acall_client(
+                create_func,
+                **request_params,
+                stream=True,
+            )
             return self._wrap_anthropic_async_stream(
                 stream, str(self.model_type)
             )
         else:
             # Return non-streaming response
-            response = await create_func(**request_params)
+            response = await self._acall_client(create_func, **request_params)
             return self._convert_anthropic_to_openai_response(
                 response, str(self.model_type)
             )
