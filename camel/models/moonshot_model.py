@@ -16,12 +16,13 @@ import copy
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncStream
+from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
 from camel.configs import MoonshotConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
+from camel.models._interleaved_thinking_mixin import InterleavedThinkingMixin
 from camel.models._utils import try_modify_message_with_format
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
@@ -50,7 +51,7 @@ else:
     from camel.utils import observe
 
 
-class MoonshotModel(OpenAICompatibleModel):
+class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
     r"""Moonshot API in a unified OpenAICompatibleModel interface.
 
     Args:
@@ -112,6 +113,8 @@ class MoonshotModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+        # Initialize interleaved thinking state
+        self._init_thinking_state()
 
     def _prepare_request(
         self,
@@ -133,6 +136,9 @@ class MoonshotModel(OpenAICompatibleModel):
             Dict[str, Any]: The prepared request configuration.
         """
         request_config = copy.deepcopy(self.model_config_dict)
+
+        # Remove internal config params that are not part of the API
+        request_config.pop("interleaved_thinking", None)
 
         if tools:
             # Clean tools to remove null types (Moonshot API incompatibility)
@@ -232,6 +238,40 @@ class MoonshotModel(OpenAICompatibleModel):
                     )
 
         return cleaned_tools
+
+    @observe()
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of Moonshot chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
+        """
+        self._log_and_trace()
+
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+
+        return self._client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
 
     @observe()
     async def _arun(
