@@ -25,6 +25,7 @@ Important:
 - This is a simplified version without skill-related components.
 """
 
+import asyncio
 import json
 import time
 import traceback
@@ -39,28 +40,27 @@ from examples.toolkits.browser.browser_example.core.modeling import (
     DEFAULT_MODEL_PLATFORM,
     DEFAULT_MODEL_TYPE,
 )
+from examples.toolkits.browser.utils.navi_bench_eval_hook import (
+    NaviBenchEvalStats,
+    navi_bench_on_action_update,
+)
 from examples.toolkits.browser.utils.utils import (
     compute_session_summary,
     get_timestamp_iso,
     resolve_run_dir,
 )
 
-from examples.toolkits.browser.utils.navi_bench_eval_hook import (
-    NaviBenchEvalStats,
-    navi_bench_on_action_update,
-)
-
 load_dotenv()
 
 from examples.toolkits.browser.utils.navi_bench_common import (
     AttemptResult,
-    safe_name,
-    pydantic_dump,
-    score_from_result,
+    WebJudgeTaskVerifier,
+    domain_to_website,
     extract_token_usage_from_payload,
     normalize_website_key,
-    domain_to_website,
-    WebJudgeTaskVerifier,
+    pydantic_dump,
+    safe_name,
+    score_from_result,
 )
 
 
@@ -89,7 +89,7 @@ class NaviBenchRunner:
         self.cdp_port = int(cdp_port)
         self.step_timeout = step_timeout
         self.tool_execution_timeout = tool_execution_timeout
-        
+
         # Initialize WebJudge verifier
         self.webjudge_verifier = WebJudgeTaskVerifier(
             model_platform=DEFAULT_MODEL_PLATFORM,
@@ -97,22 +97,22 @@ class NaviBenchRunner:
         )
 
         self._website_attempt_counts: Dict[str, int] = {}
+        self._website_lock = asyncio.Lock()
 
     def _website_attempts_used(self, website: str) -> int:
         return int(
-            self._website_attempt_counts.get(
-                normalize_website_key(website), 0
-            )
+            self._website_attempt_counts.get(normalize_website_key(website), 0)
             or 0
         )
 
-    def _reserve_website_attempt(self, website: str) -> bool:
-        key = normalize_website_key(website)
-        used = int(self._website_attempt_counts.get(key, 0) or 0)
-        if used >= self.max_attempts_per_website:
-            return False
-        self._website_attempt_counts[key] = used + 1
-        return True
+    async def _reserve_website_attempt(self, website: str) -> bool:
+        async with self._website_lock:
+            key = normalize_website_key(website)
+            used = int(self._website_attempt_counts.get(key, 0) or 0)
+            if used >= self.max_attempts_per_website:
+                return False
+            self._website_attempt_counts[key] = used + 1
+            return True
 
     async def run_single_dataset_item(
         self, item: DatasetItem
@@ -127,7 +127,7 @@ class NaviBenchRunner:
         previous_suggestions = ""
 
         for attempt in range(1, self.max_attempts_per_task + 1):
-            if not self._reserve_website_attempt(website):
+            if not await self._reserve_website_attempt(website):
                 return AttemptResult(
                     task_id=task_id,
                     domain=domain,
@@ -229,31 +229,37 @@ class NaviBenchRunner:
                     await agent.toolkit.capture_final_evidence()
                 except Exception as e:
                     print(f"⚠️  Could not capture final evidence: {e}")
-                
+
                 # Get agent's response content
                 agent_response = "Task completed."
                 if response and response.msgs:
-                    agent_response = response.msgs[-1].content or "Task completed."
+                    agent_response = (
+                        response.msgs[-1].content or "Task completed."
+                    )
                 elif agent.agent_communication_log:
                     last_entry = agent.agent_communication_log[-1]
-                    agent_response = last_entry.get("assistant_response", "Task completed.")
-                
+                    agent_response = last_entry.get(
+                        "assistant_response", "Task completed."
+                    )
+
                 # WebJudge verification (vision-based)
                 print(f"\n{'=' * 80}")
                 print("🔍 WEBJUDGE VERIFICATION")
                 print(f"{'=' * 80}")
-                
+
                 webjudge_result = self.webjudge_verifier.verify_task(
                     full_task,
                     agent_response,
                     session_dir=session_dir,
                     website=website,
                 )
-                
+
                 print("\n✓ WebJudge verification complete:")
                 print(f"  Success: {webjudge_result.success}")
                 print(f"  Reasoning: {webjudge_result.reasoning}")
-                print(f"  Execution time: {webjudge_result.execution_time:.2f}s")
+                print(
+                    f"  Execution time: {webjudge_result.execution_time:.2f}s"
+                )
                 print(f"  Tokens used: {webjudge_result.token_usage['total']}")
                 if webjudge_result.suggestions:
                     print(f"  Suggestions: {webjudge_result.suggestions}")
@@ -262,7 +268,7 @@ class NaviBenchRunner:
                 print(f"\n{'=' * 80}")
                 print("🧪 NAVI-BENCH EVALUATION")
                 print(f"{'=' * 80}")
-                
+
                 # Best-effort: force a final update before compute.
                 final_url = ""
                 try:
@@ -285,11 +291,15 @@ class NaviBenchRunner:
                     pass
 
                 t_compute0 = time.perf_counter()
-                eval_result = await evaluator.compute(include_gt_in_result=True)
+                eval_result = await evaluator.compute(
+                    include_gt_in_result=True
+                )
                 eval_stats.compute_calls += 1
                 eval_stats.compute_time_s += time.perf_counter() - t_compute0
                 score = score_from_result(eval_result)
-                navi_bench_success = bool(score is not None and abs(score - 1.0) < 1e-9)
+                navi_bench_success = bool(
+                    score is not None and abs(score - 1.0) < 1e-9
+                )
 
                 if eval_stats.llm_usage is None:
                     eval_stats.llm_usage = extract_token_usage_from_payload(
@@ -323,7 +333,9 @@ class NaviBenchRunner:
                 summary["domain"] = domain
                 summary["start_url"] = task_config.url
                 summary["attempt"] = attempt
-                summary["attempt_runtime_seconds"] = time.perf_counter() - attempt_start_time
+                summary["attempt_runtime_seconds"] = (
+                    time.perf_counter() - attempt_start_time
+                )
                 summary["phase"] = "post_run_pre_extract"
                 summary["generated_at"] = get_timestamp_iso()
                 (session_dir / "summary.json").write_text(
@@ -337,7 +349,8 @@ class NaviBenchRunner:
                     "domain": domain,
                     "website": website,
                     "attempt": attempt,
-                    "attempt_runtime_seconds": time.perf_counter() - attempt_start_time,
+                    "attempt_runtime_seconds": time.perf_counter()
+                    - attempt_start_time,
                     "score": score,
                     "success": navi_bench_success,
                     "final_url": final_url,
@@ -391,13 +404,17 @@ class NaviBenchRunner:
                     f"compute_time={eval_stats.compute_time_s:.2f}s "
                     f"llm_tokens={tokens_hint!r}"
                 )
-                
+
                 # Print comparison
                 print(f"\n{'=' * 80}")
                 print("📊 EVALUATION COMPARISON")
                 print(f"{'=' * 80}")
-                print(f"Navi-Bench: {'✅ Success' if navi_bench_success else '❌ Failed'} (score={score})")
-                print(f"WebJudge:   {'✅ Success' if webjudge_result.success else '❌ Failed'}")
+                print(
+                    f"Navi-Bench: {'✅ Success' if navi_bench_success else '❌ Failed'} (score={score})"
+                )
+                print(
+                    f"WebJudge:   {'✅ Success' if webjudge_result.success else '❌ Failed'}"
+                )
                 if navi_bench_success != webjudge_result.success:
                     print("⚠️  Evaluators disagree on task success!")
                 print(f"{'=' * 80}\n")
@@ -424,7 +441,7 @@ class NaviBenchRunner:
                         eval_result_path=eval_result_path,
                         session_dir=str(session_dir),
                     )
-                
+
                 # If not passed, let's check WebJudge feedback and print suggestions for retry.
                 suggestions_parts: List[str] = []
                 if not webjudge_result.success:
@@ -472,8 +489,10 @@ class NaviBenchRunner:
                 # CRITICAL: Write fallback JSON files even on crash
                 if session_dir is not None:
                     crash_path = session_dir / "navi_bench_crash.txt"
-                    crash_path.write_text(err + "\n" + traceback.format_exc(), encoding="utf-8")
-                    
+                    crash_path.write_text(
+                        err + "\n" + traceback.format_exc(), encoding="utf-8"
+                    )
+
                     # Write fallback summary.json
                     try:
                         crash_summary = {
@@ -482,19 +501,25 @@ class NaviBenchRunner:
                             "domain": domain,
                             "start_url": task_config.url,
                             "attempt": attempt,
-                            "attempt_runtime_seconds": time.perf_counter() - attempt_start_time,
+                            "attempt_runtime_seconds": time.perf_counter()
+                            - attempt_start_time,
                             "phase": "crashed",
                             "generated_at": get_timestamp_iso(),
                             "error": err,
                             "error_type": type(e).__name__,
                         }
                         (session_dir / "summary.json").write_text(
-                            json.dumps(crash_summary, indent=2, ensure_ascii=False) + "\n",
+                            json.dumps(
+                                crash_summary, indent=2, ensure_ascii=False
+                            )
+                            + "\n",
                             encoding="utf-8",
                         )
                     except Exception as write_err:
-                        print(f"⚠️  Failed to write crash summary.json: {write_err}")
-                    
+                        print(
+                            f"⚠️  Failed to write crash summary.json: {write_err}"
+                        )
+
                     # Write fallback navi_bench_eval_result.json
                     try:
                         crash_eval = {
@@ -502,7 +527,8 @@ class NaviBenchRunner:
                             "domain": domain,
                             "website": website,
                             "attempt": attempt,
-                            "attempt_runtime_seconds": time.perf_counter() - attempt_start_time,
+                            "attempt_runtime_seconds": time.perf_counter()
+                            - attempt_start_time,
                             "score": None,
                             "success": False,
                             "final_url": "",
@@ -517,18 +543,29 @@ class NaviBenchRunner:
                                 "reasoning": f"Attempt crashed: {err}",
                                 "suggestions": previous_suggestions,
                                 "execution_time": 0.0,
-                                "token_usage": {"prompt": 0, "completion": 0, "total": 0},
+                                "token_usage": {
+                                    "prompt": 0,
+                                    "completion": 0,
+                                    "total": 0,
+                                },
                                 "key_points": [],
                                 "evidence_count": 0,
                                 "debug_path": "",
                             },
                         }
-                        (session_dir / "navi_bench_eval_result.json").write_text(
-                            json.dumps(crash_eval, indent=2, ensure_ascii=False) + "\n",
+                        (
+                            session_dir / "navi_bench_eval_result.json"
+                        ).write_text(
+                            json.dumps(
+                                crash_eval, indent=2, ensure_ascii=False
+                            )
+                            + "\n",
                             encoding="utf-8",
                         )
                     except Exception as write_err:
-                        print(f"⚠️  Failed to write crash navi_bench_eval_result.json: {write_err}")
+                        print(
+                            f"⚠️  Failed to write crash navi_bench_eval_result.json: {write_err}"
+                        )
 
         return AttemptResult(
             task_id=task_id,

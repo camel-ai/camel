@@ -429,12 +429,15 @@ class BrowserAgent:
         evidence_dir = Path(self.session_log_dir) / "evidence"
         evidence_dir.mkdir(parents=True, exist_ok=True)
 
-        user_data_dir = os.getenv("CAMEL_BROWSER_USER_DATA_DIR")
-        user_data_dir_path = (
-            Path(user_data_dir).expanduser().resolve()
-            if user_data_dir
+        user_data_dir_env = os.getenv("CAMEL_BROWSER_USER_DATA_DIR")
+        user_data_dir_base = (
+            Path(user_data_dir_env).expanduser().resolve()
+            if user_data_dir_env
             else DEFAULT_USER_DATA_DIR
         )
+        # Each session gets its own user_data_dir so that parallel browser
+        # instances don't conflict (Chromium locks the profile directory).
+        user_data_dir_path = user_data_dir_base / self.toolkit_session_id
         user_data_dir_path.mkdir(parents=True, exist_ok=True)
 
         # Initialize toolkit - launches its own browser (no CDP)

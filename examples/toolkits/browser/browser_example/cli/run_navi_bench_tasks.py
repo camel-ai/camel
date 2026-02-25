@@ -30,11 +30,11 @@ EXAMPLE_ROOT = SCRIPT_DIR.parent
 from examples.toolkits.browser.browser_example.core.navi_bench_runner import (
     NaviBenchRunner,
 )
-
 from examples.toolkits.browser.utils.navi_bench_common import (
-    select_items,
     load_dataset_items_from_jsonl,
+    select_items,
 )
+
 
 async def _amain() -> int:
     parser = argparse.ArgumentParser()
@@ -65,6 +65,12 @@ async def _amain() -> int:
         default="",
         help="Output dir root; creates a session_*/ folder inside.",
     )
+    parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=1,
+        help="Number of tasks to run in parallel (default=1, sequential).",
+    )
     parser.add_argument("--cdp-port", type=int, default=9223)
     parser.add_argument("--max-attempts-per-task", type=int, default=5)
     parser.add_argument("--max-attempts-per-website", type=int, default=100)
@@ -92,8 +98,10 @@ async def _amain() -> int:
         )
         return 2
 
+    concurrency = max(1, args.concurrency)
     print(f"Run dir: {run_dir}")
     print(f"Selected tasks: {len(selected)} (from {jsonl_path})")
+    print(f"Concurrency: {concurrency}")
 
     runner = NaviBenchRunner(
         domain_filter=args.domain,
@@ -107,22 +115,59 @@ async def _amain() -> int:
         ),
     )
 
+    def _result_to_dict(r) -> Dict[str, Any]:
+        return {
+            "task_id": r.task_id,
+            "domain": r.domain,
+            "website": r.website,
+            "attempt": r.attempt,
+            "success": r.success,
+            "score": r.score,
+            "session_dir": r.session_dir,
+            "eval_result_path": r.eval_result_path,
+            "error": r.error,
+        }
+
     results: List[Dict[str, Any]] = []
-    for item in selected:
-        r = await runner.run_single_dataset_item(item)
-        results.append(
-            {
-                "task_id": r.task_id,
-                "domain": r.domain,
-                "website": r.website,
-                "attempt": r.attempt,
-                "success": r.success,
-                "score": r.score,
-                "session_dir": r.session_dir,
-                "eval_result_path": r.eval_result_path,
-                "error": r.error,
-            }
+
+    if concurrency <= 1:
+        # Sequential mode (original behaviour).
+        for item in selected:
+            r = await runner.run_single_dataset_item(item)
+            results.append(_result_to_dict(r))
+    else:
+        # Parallel mode: run up to `concurrency` tasks simultaneously,
+        # each with its own independent browser session.
+        semaphore = asyncio.Semaphore(concurrency)
+
+        async def _run_with_semaphore(item):
+            async with semaphore:
+                return await runner.run_single_dataset_item(item)
+
+        attempt_results = await asyncio.gather(
+            *[_run_with_semaphore(item) for item in selected],
+            return_exceptions=True,
         )
+
+        for idx, ar in enumerate(attempt_results):
+            if isinstance(ar, BaseException):
+                item = selected[idx]
+                print(f"\n💥 Task {item.task_id} raised: {ar}")
+                results.append(
+                    {
+                        "task_id": item.task_id,
+                        "domain": (item.domain or "").strip(),
+                        "website": "",
+                        "attempt": 0,
+                        "success": False,
+                        "score": None,
+                        "session_dir": None,
+                        "eval_result_path": None,
+                        "error": f"{type(ar).__name__}: {ar}",
+                    }
+                )
+            else:
+                results.append(_result_to_dict(ar))
 
     out_path = run_dir / "navi_bench_results.json"
     out_path.write_text(
