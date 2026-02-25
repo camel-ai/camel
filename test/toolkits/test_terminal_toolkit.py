@@ -18,6 +18,8 @@ from pathlib import Path
 import pytest
 
 from camel.toolkits import TerminalToolkit
+from camel.toolkits.terminal_toolkit import DANGEROUS_COMMANDS
+from camel.toolkits.terminal_toolkit.utils import sanitize_command
 
 
 @pytest.fixture
@@ -158,3 +160,103 @@ def test_shell_write_content_to_file_safe_mode_blocks_path_traversal(
     )
     assert "error" in result.lower()
     assert "outside" in result.lower() or "working directory" in result.lower()
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'bash -c "rm -rf /"',
+        "sh -c 'rm -rf /'",
+    ],
+)
+def test_sanitize_command_blocks_dangerous_shell_c_payloads(temp_dir, command):
+    """Dangerous commands in shell-wrapper payloads must be blocked."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe
+    assert "blocked for safety" in message.lower()
+
+
+def test_sanitize_command_blocks_cd_expansion_outside_workdir(
+    temp_dir, monkeypatch
+):
+    """Expanded env vars should be resolved before cd path validation."""
+    outside_dir = temp_dir.parent
+    monkeypatch.setenv("HOME", str(outside_dir))
+
+    is_safe, message = sanitize_command("cd $HOME", working_dir=str(temp_dir))
+    assert not is_safe
+    assert "outside" in message.lower()
+    assert "copy" in message.lower()
+    assert "working directory" in message.lower()
+
+    is_safe, message = sanitize_command(
+        "cd ${HOME}", working_dir=str(temp_dir)
+    )
+    assert not is_safe
+    assert "outside" in message.lower()
+    assert "copy" in message.lower()
+
+
+def test_shell_exec_cd_outside_returns_copy_guidance(temp_dir, request):
+    """Shell exec should provide copy guidance for blocked cd traversal."""
+    toolkit = TerminalToolkit(working_directory=str(temp_dir), safe_mode=True)
+    request.addfinalizer(toolkit.cleanup)
+
+    result = toolkit.shell_exec("test_session", "cd ../")
+    lowered = result.lower()
+    assert "error:" in lowered
+    assert "outside of the working directory" in lowered
+    assert "copy" in lowered
+    assert str(temp_dir) in result
+
+
+def test_shell_exec_safe_mode_rejection_prefix(temp_dir, request):
+    """Blocked command errors should clearly mention safe mode rejection."""
+    toolkit = TerminalToolkit(working_directory=str(temp_dir), safe_mode=True)
+    request.addfinalizer(toolkit.cleanup)
+
+    result = toolkit.shell_exec("test_session", "rm -rf /")
+    lowered = result.lower()
+    assert lowered.startswith("error:")
+    assert "rejected by terminaltoolkit safe mode" in lowered
+    assert "blocked for safety" in lowered
+
+
+@pytest.mark.parametrize("command", ["cd $(pwd)", "cd `pwd`"])
+def test_sanitize_command_blocks_cd_command_substitution(temp_dir, command):
+    """Dynamic command substitutions in cd targets must be rejected."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe
+    assert "command substitution" in message.lower()
+
+
+def test_sanitize_command_allows_expanded_cd_inside_workdir(
+    temp_dir, monkeypatch
+):
+    """Expanded env vars pointing inside working_dir should remain allowed."""
+    subdir = temp_dir / "inner"
+    subdir.mkdir()
+    monkeypatch.setenv("CAMEL_INSIDE_DIR", str(subdir))
+
+    is_safe, message = sanitize_command(
+        "cd $CAMEL_INSIDE_DIR", working_dir=str(temp_dir)
+    )
+    assert is_safe
+    assert message == "cd $CAMEL_INSIDE_DIR"
+
+
+def test_sanitize_command_respects_customized_dangerous_commands(
+    temp_dir, monkeypatch
+):
+    r"""Module-level dangerous commands should be importable/customizable."""
+    import camel.toolkits.terminal_toolkit.utils as terminal_utils
+
+    custom_commands = DANGEROUS_COMMANDS.copy()
+    custom_commands.append("echo")
+    monkeypatch.setattr(terminal_utils, "DANGEROUS_COMMANDS", custom_commands)
+
+    is_safe, message = sanitize_command(
+        'echo "should be blocked"', working_dir=str(temp_dir)
+    )
+    assert not is_safe
+    assert "echo" in message.lower()

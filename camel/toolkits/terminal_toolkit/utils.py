@@ -15,12 +15,13 @@
 import os
 import platform
 import re
+import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
 import venv
-from typing import Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 from camel.logger import get_logger
 
@@ -34,6 +35,129 @@ _QUOTED_STRING_PATTERN = re.compile(r'''["'][^"']*["']''')
 # Match cd command with optional quoted or unquoted path
 # Handles: cd path, cd "path with spaces", cd 'path with spaces'
 _CD_PATTERN = re.compile(r'\bcd\s+(["\'][^"\']*["\']|[^\s;|&]+)')
+_SHELL_SUBSTITUTION_PATTERN = re.compile(r'`|(?<!\\)\$\(')
+_SHELL_COMMANDS = {'bash', 'sh', 'zsh', 'dash', 'ksh', 'ash'}
+_SEPARATORS = {';', '&&', '||', '|', '&'}
+_CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE = (
+    "Cannot 'cd' outside of the working directory in safe mode. "
+    "Allowed root: '{working_dir}'. "
+    "To modify files there, copy them (for example with `cp`) "
+    "into '{working_dir}' first."
+)
+
+# Public list for downstream customization/import.
+DANGEROUS_COMMANDS: List[str] = [
+    # System administration
+    'sudo',
+    'su',
+    'reboot',
+    'shutdown',
+    'halt',
+    'poweroff',
+    'init',
+    # File system manipulation
+    'rm',
+    'chown',
+    'chgrp',
+    'umount',
+    'mount',
+    # Disk operations
+    'dd',
+    'mkfs',
+    'fdisk',
+    'parted',
+    'fsck',
+    'mkswap',
+    'swapon',
+    'swapoff',
+    # Process management
+    'service',
+    'systemctl',
+    'systemd',
+    # Network configuration
+    'iptables',
+    'ip6tables',
+    'ifconfig',
+    'route',
+    'iptables-save',
+    # Cron and scheduling
+    'crontab',
+    'at',
+    'batch',
+    # User management
+    'useradd',
+    'userdel',
+    'usermod',
+    'passwd',
+    'chpasswd',
+    'newgrp',
+    # Kernel modules
+    'modprobe',
+    'rmmod',
+    'insmod',
+    'lsmod',
+]
+
+
+def _normalize_command_name(command: str) -> str:
+    r"""Normalize command names for safer matching."""
+    normalized = os.path.basename(command).lower()
+    if normalized.endswith('.exe'):
+        normalized = normalized[:-4]
+    return normalized
+
+
+def _split_command_segments(command: str) -> Optional[List[List[str]]]:
+    r"""Split command by shell separators while preserving quoted content."""
+    try:
+        lexer = shlex.shlex(command, posix=True, punctuation_chars=';&|')
+        lexer.whitespace_split = True
+        tokens = list(lexer)
+    except ValueError:
+        return None
+
+    segments: List[List[str]] = []
+    current: List[str] = []
+    for token in tokens:
+        if token in _SEPARATORS:
+            if current:
+                segments.append(current)
+                current = []
+        else:
+            current.append(token)
+    if current:
+        segments.append(current)
+    return segments
+
+
+def _extract_shell_c_payloads(command: str) -> List[str]:
+    r"""Extract payloads from shell wrapper commands like `bash -c "<cmd>"`."""
+    segments = _split_command_segments(command)
+    if segments is None:
+        return []
+
+    payloads: List[str] = []
+    for segment in segments:
+        if not segment:
+            continue
+
+        if _normalize_command_name(segment[0]) not in _SHELL_COMMANDS:
+            continue
+
+        args = segment[1:]
+        for i, arg in enumerate(args):
+            is_explicit_c = arg in {'-c', '--command'}
+            is_combined_short_flag = (
+                arg.startswith('-')
+                and not arg.startswith('--')
+                and 'c' in arg[1:]
+            )
+            if is_explicit_c or is_combined_short_flag:
+                if i + 1 < len(args):
+                    payloads.append(args[i + 1])
+                break
+
+    return payloads
 
 
 def check_command_safety(
@@ -53,58 +177,12 @@ def check_command_safety(
     if not command.strip():
         return False, "Empty command is not allowed."
 
-    # Dangerous commands list - including ALL rm operations
-    dangerous_commands = [
-        # System administration
-        'sudo',
-        'su',
-        'reboot',
-        'shutdown',
-        'halt',
-        'poweroff',
-        'init',
-        # File system manipulation
-        'rm',
-        'chown',
-        'chgrp',
-        'umount',
-        'mount',
-        # Disk operations
-        'dd',
-        'mkfs',
-        'fdisk',
-        'parted',
-        'fsck',
-        'mkswap',
-        'swapon',
-        'swapoff',
-        # Process management
-        'service',
-        'systemctl',
-        'systemd',
-        # Network configuration
-        'iptables',
-        'ip6tables',
-        'ifconfig',
-        'route',
-        'iptables-save',
-        # Cron and scheduling
-        'crontab',
-        'at',
-        'batch',
-        # User management
-        'useradd',
-        'userdel',
-        'usermod',
-        'passwd',
-        'chpasswd',
-        'newgrp',
-        # Kernel modules
-        'modprobe',
-        'rmmod',
-        'insmod',
-        'lsmod',
-    ]
+    # Recursively inspect shell-wrapper payloads to prevent bypasses such as
+    # `bash -c "rm -rf /"` where the dangerous sub-command is quoted.
+    for payload in _extract_shell_c_payloads(command):
+        is_safe, reason = check_command_safety(payload, allowed_commands)
+        if not is_safe:
+            return False, reason
 
     # Remove quoted strings to avoid false positives
     clean_command = _QUOTED_STRING_PATTERN.sub(' ', command)
@@ -122,7 +200,7 @@ def check_command_safety(
         return True, ""
 
     # Check for dangerous commands
-    for cmd in dangerous_commands:
+    for cmd in DANGEROUS_COMMANDS:
         pattern = rf'(?:^|;|\||&&)\s*\b{re.escape(cmd)}\b'
         if re.search(pattern, clean_command, re.IGNORECASE):
             return False, f"Command '{cmd}' is blocked for safety."
@@ -162,11 +240,24 @@ def sanitize_command(
         # Extract cd commands and check their targets
         # Normalize working_dir to ensure consistent comparison
         normalized_working_dir = os.path.normpath(os.path.abspath(working_dir))
+        current_dir = normalized_working_dir
         for match in _CD_PATTERN.finditer(command):
             target_path = match.group(1).strip('\'"')
-            target_dir = os.path.normpath(
-                os.path.abspath(os.path.join(working_dir, target_path))
+            if _SHELL_SUBSTITUTION_PATTERN.search(target_path):
+                return (
+                    False,
+                    "Command substitution is not allowed in 'cd' paths.",
+                )
+
+            expanded_target = os.path.expanduser(
+                os.path.expandvars(target_path)
             )
+            if os.path.isabs(expanded_target):
+                resolved_target = expanded_target
+            else:
+                resolved_target = os.path.join(current_dir, expanded_target)
+
+            target_dir = os.path.normpath(os.path.abspath(resolved_target))
             # Use os.path.commonpath for safe path comparison
             try:
                 common = os.path.commonpath(
@@ -175,11 +266,19 @@ def sanitize_command(
                 if common != normalized_working_dir:
                     return (
                         False,
-                        "Cannot 'cd' outside of the working directory.",
+                        _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE.format(
+                            working_dir=normalized_working_dir
+                        ),
                     )
+                current_dir = target_dir
             except ValueError:
                 # Different drives on Windows or other path issues
-                return False, "Cannot 'cd' outside of the working directory."
+                return (
+                    False,
+                    _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE.format(
+                        working_dir=normalized_working_dir
+                    ),
+                )
 
     return True, command
 
