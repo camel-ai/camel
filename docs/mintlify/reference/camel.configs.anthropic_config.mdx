@@ -23,5 +23,6 @@ See: https://docs.anthropic.com/en/api/messages
 - **stream** (bool, optional): Whether to incrementally stream the response using server-sent events. (default: :obj:`None`)
 - **metadata** (dict, optional): An object describing metadata about the request. Can include user_id as an external identifier for the user associated with the request. (default: :obj:`None`)
 - **tool_choice** (dict, optional): How the model should use the provided tools. The model can use a specific tool, any available tool, decide by itself, or not use tools at all. (default: :obj:`None`)
+- **cache_control** (`Optional[Literal["5m", "1h"]], optional`): The cache control TTL for prompt caching. Use '5m' for 5-minute cache or '1h' for 1-hour cache. (default: :obj:`None`)
 - **extra_headers** (Optional[dict], optional): Additional headers for the request. (default: :obj:`None`)
 - **extra_body** (dict, optional): Extra body parameters to be passed to the Anthropic API.

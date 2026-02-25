@@ -242,7 +242,8 @@ class RekaModel(BaseModelBackend):
 
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
-        response = await self._async_client.chat.create(
+        response = await self._acall_client(
+            self._async_client.chat.create,
             messages=reka_messages,
             model=self.model_type,
             **self.model_config_dict,
@@ -300,7 +301,8 @@ class RekaModel(BaseModelBackend):
 
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
-        response = self._client.chat.create(
+        response = self._call_client(
+            self._client.chat.create,
             messages=reka_messages,
             model=self.model_type,
             **self.model_config_dict,

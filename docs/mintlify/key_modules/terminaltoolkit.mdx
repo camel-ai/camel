@@ -62,6 +62,11 @@ terminal_toolkit = TerminalToolkit(clone_current_env=True)
 ### Executing Commands
 The `shell_exec` function is the primary way to execute commands. Each command is run within a session, identified by a unique `id`.
 
+**How it works**
+- `block=True` (default): waits for completion and returns combined stdout/stderr.
+- `block=False`: starts a background session for interactive/long-running tasks.
+- The `id` is how you later view output or terminate the session.
+
 <Tabs>
 <Tab title="Listing Files">
 ```python
@@ -88,18 +93,20 @@ print(output)
 ### Interacting with Processes
 You can manage long-running or interactive processes.
 
+**Tip**: `shell_view` returns only *new* output since the last call. Call it
+periodically to stream logs.
+
 <Tabs>
 <Tab title="Writing to a Process">
-You can write to a process's standard input using `shell_write_to_process`. This is useful for interactive command-line tools.
+You can write to a process's standard input using `shell_write_to_process`. Start the process in non-blocking mode, then send input and read output.
 ```python
 # Start a python REPL in a new session
-terminal_toolkit.shell_exec(id='interactive_session', command='python')
+terminal_toolkit.shell_exec(id='interactive_session', command='python', block=False)
 
 # Write code to the python process
 terminal_toolkit.shell_write_to_process(
     id='interactive_session',
-    input='print("Hello, interactive world!")',
-    press_enter=True
+    command='print("Hello, interactive world!")'
 )
 
 # View the output
@@ -111,7 +118,7 @@ print(output)
 Forcibly terminate a running process using `shell_kill_process`.
 ```python
 # Start a long-running process
-terminal_toolkit.shell_exec(id='long_process', command='sleep 100')
+terminal_toolkit.shell_exec(id='long_process', command='sleep 100', block=False)
 
 # Kill the process before it finishes
 result = terminal_toolkit.shell_kill_process(id='long_process')
@@ -120,6 +127,83 @@ print(result)
 </Tab>
 </Tabs>
 
+### Advanced Usage
+
+#### Non-blocking Sessions and Timeouts
+Blocking commands that exceed `timeout` are converted into background sessions. You can then view output or terminate them.
+
+This is useful for long tasks where you still want a quick response, but
+need to keep the process alive in the background.
+
+```python
+# If this exceeds timeout, it becomes a background session automatically
+output = terminal_toolkit.shell_exec(
+    id='long_task',
+    command='python long_running_job.py',
+    block=True,
+    timeout=5,
+)
+print(output)
+
+# Later, check output or terminate
+print(terminal_toolkit.shell_view(id='long_task'))
+print(terminal_toolkit.shell_kill_process(id='long_task'))
+```
+
+#### Safe Mode Allowlist
+When `safe_mode=True`, you can restrict execution to an explicit allowlist.
+
+This is helpful for production deployments where only specific commands
+should be allowed.
+
+```python
+terminal_toolkit = TerminalToolkit(
+    safe_mode=True,
+    allowed_commands=["ls", "cat", "python", "pip", "uv"]
+)
+```
+
+#### Docker Backend
+Run commands inside a pre-existing Docker container for stronger isolation.
+
+The container must already exist and be running.
+
+```python
+terminal_toolkit = TerminalToolkit(
+    use_docker_backend=True,
+    docker_container_name="camel-runtime",
+    working_directory="/workspace",
+)
+```
+
+#### Environment and Dependencies
+Clone the current environment or preinstall dependencies into the sandboxed workspace.
+
+Use this to ensure tools like `python`, `pip`, or `uv` are available
+inside the sandboxed workspace.
+
+```python
+terminal_toolkit = TerminalToolkit(
+    working_directory="./workspace",
+    clone_current_env=True,
+    install_dependencies=["python-pptx", "pandas"],
+)
+```
+
+#### Write Files Directly
+Use `shell_write_content_to_file` to write large files without shell escaping issues.
+
+Relative paths are resolved under `working_directory`. In safe mode, the
+path must stay inside that directory.
+
+```python
+content = "line1\nline2\nline3\n"
+result = terminal_toolkit.shell_write_content_to_file(
+    content=content,
+    file_path="notes/demo.txt",
+)
+print(result)
+```
 
 ### Safe Mode
 When `safe_mode` is enabled (default), the toolkit blocks commands that could be harmful to your system.
@@ -138,15 +222,26 @@ print(output)
 
 
 ### Human-in-the-Loop
-When an agent gets stuck, it can use `ask_user_for_help` to request human intervention.
+When an agent gets stuck, it can use `shell_ask_user_for_help` to request human intervention.
+
+This call blocks and waits for a human response in the console, then returns
+the user's input or the resulting command output.
 
 <Card title="Asking for Human Help" icon="hand">
 ```python
 # The agent is stuck, so it asks for help in 'session_1'
-help_result = terminal_toolkit.ask_user_for_help(id='session_1')
+help_result = terminal_toolkit.shell_ask_user_for_help(
+    id='session_1',
+    prompt="The tool is asking for a filename. Please type 'config.json'.",
+)
 
-# The script will now pause and wait for the user to type commands
-# in the console. After the user types '/exit', the script will resume.
+# The script will now pause and wait for the user to type a response
+# in the console. It will then resume with the user's input.
 print(help_result)
 ```
 </Card>
+
+## References
+- `camel/toolkits/terminal_toolkit/terminal_toolkit.py`
+- `examples/toolkits/terminal_toolkit.py`
+- `examples/runtimes/shared_runtime_multi_toolkit.py`
