@@ -17,7 +17,6 @@ from camel.models import ModelFactory
 from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType
 
-
 def on_request_usage(payload: dict) -> None:
     r"""Callback invoked after each non-streaming LLM request."""
     request_usage = payload["request_usage"]
@@ -31,8 +30,8 @@ def on_request_usage(payload: dict) -> None:
 
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
 )
 
 agent = ChatAgent(

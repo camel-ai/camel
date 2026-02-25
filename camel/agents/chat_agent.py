@@ -3467,6 +3467,8 @@ class ChatAgent(BaseAgent):
                     "on_request_usage returned awaitable in sync step. "
                     "Use a sync callback for `step`, or use `astep`."
                 )
+                if inspect.iscoroutine(callback_result):
+                    callback_result.close()
         except Exception as exc:
             logger.warning(
                 f"on_request_usage callback failed at request "
