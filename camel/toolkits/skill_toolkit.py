@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 import yaml
 
@@ -33,6 +33,7 @@ class SkillToolkit(BaseToolkit):
     def __init__(
         self,
         working_directory: Optional[str] = None,
+        allowed_skills: Optional[Set[str]] = None,
         timeout: Optional[float] = None,
     ) -> None:
         super().__init__(timeout=timeout)
@@ -42,6 +43,11 @@ class SkillToolkit(BaseToolkit):
             else Path.cwd().resolve()
         )
         self._skills_cache: Optional[Dict[str, Dict[str, str]]] = None
+        self._allowed_skills = (
+            None
+            if allowed_skills is None
+            else {name.strip() for name in allowed_skills if name.strip()}
+        )
 
     def _build_description(self) -> str:
         skills = self._get_skills()
@@ -59,12 +65,15 @@ class SkillToolkit(BaseToolkit):
             "<available_skills>",
         ]
         for skill in skills.values():
+            extra_files = self._list_skill_entries(Path(skill["path"]).parent)
+            files_text = ", ".join(extra_files) if extra_files else "(none)"
             summary_lines.extend(
                 [
                     "  <skill>",
                     f"    <name>{skill['name']}</name>",
                     f"    <description>{skill['description']}</description>",
                     f"    <path>{skill['path']}</path>",
+                    f"    <files>{files_text}</files>",
                     "  </skill>",
                 ]
             )
@@ -72,9 +81,12 @@ class SkillToolkit(BaseToolkit):
         # Build markdown list for display
         available = ""
         for skill in skills.values():
+            extra_files = self._list_skill_entries(Path(skill["path"]).parent)
+            files_text = ", ".join(extra_files) if extra_files else "(none)"
             available += (
                 f"- {skill['name']}: {skill['description']} "
                 f"({skill['path']})\n"
+                f"  - extra files: {files_text}\n"
             )
         return (
             "## Skills\n"
@@ -82,7 +94,10 @@ class SkillToolkit(BaseToolkit):
             "in a `SKILL.md` file. Below is the list of skills that can be "
             "used. Each entry includes a name, description, and file path so "
             "you can open the source for full instructions when using a "
-            "specific skill.\n"
+            "specific skill. It also includes additional files in each skill "
+            "folder so other files can be loaded on demand. This function can "
+            "be used to load Skill.md content, for additional files you can "
+            "use other tools to load\n"
             "### Available skills\n"
             f"{available}\n"
             "### How to use skills\n"
@@ -126,7 +141,13 @@ class SkillToolkit(BaseToolkit):
     def _get_skills(self) -> Dict[str, Dict[str, str]]:
         if self._skills_cache is None:
             self._skills_cache = self._scan_skills()
-        return self._skills_cache
+        if self._allowed_skills is None:
+            return self._skills_cache
+        return {
+            name: skill
+            for name, skill in self._skills_cache.items()
+            if name in self._allowed_skills
+        }
 
     def clear_cache(self) -> None:
         r"""Clear the cached skills to force rescanning on next access."""
@@ -303,12 +324,30 @@ class SkillToolkit(BaseToolkit):
 
         skill_dir = Path(skill["path"]).parent
         lines = [f"Files in {name}:"]
-        for item in sorted(skill_dir.iterdir()):
-            if item.is_dir():
-                lines.append(f"  - {item.name}/")
-            else:
-                lines.append(f"  - {item.name}")
+        for entry in self._list_skill_entries(
+            skill_dir, include_skill_md=True
+        ):
+            lines.append(f"  - {entry}")
         return "\n".join(lines)
+
+    def _list_skill_entries(
+        self, skill_dir: Path, include_skill_md: bool = False
+    ) -> List[str]:
+        r"""List direct child entries in a skill directory.
+
+        Args:
+            skill_dir (Path): The skill directory to inspect.
+            include_skill_md (bool): Whether to include ``SKILL.md``.
+
+        Returns:
+            List[str]: Sorted entry names. Directories end with ``/``.
+        """
+        entries: List[str] = []
+        for item in sorted(skill_dir.iterdir()):
+            if not include_skill_md and item.name == "SKILL.md":
+                continue
+            entries.append(f"{item.name}/" if item.is_dir() else item.name)
+        return entries
 
     def _load_single_skill(self, name: str) -> str:
         r"""Load a single skill by name.
@@ -334,15 +373,9 @@ class SkillToolkit(BaseToolkit):
         body = parsed.get("body", "").strip()
 
         # List files in skill directory
-        files_info = []
-        for item in sorted(base_dir.iterdir()):
-            if item.name == "SKILL.md":
-                continue
-            files_info.append(
-                f"  - {item.name}/ (dir)"
-                if item.is_dir()
-                else f"  - {item.name}"
-            )
+        files_info = [
+            f"  - {entry}" for entry in self._list_skill_entries(base_dir)
+        ]
 
         output_lines = [
             f"## Skill: {parsed['name']}",
