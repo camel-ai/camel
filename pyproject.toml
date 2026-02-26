@@ -524,6 +524,7 @@ extend-select = [
     "PGH", # pygrep-hooks
     "RUF", # ruff
     "E",
+    "PLR2004",  # magic number rule
 ]
 
 ignore = [
