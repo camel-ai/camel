@@ -17,6 +17,7 @@ from camel.models import ModelFactory
 from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType
 
+
 def on_request_usage(payload: dict) -> None:
     r"""Callback invoked after each non-streaming LLM request."""
     request_usage = payload["request_usage"]
