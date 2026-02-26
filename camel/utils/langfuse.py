@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from contextvars import ContextVar
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from camel.logger import get_logger
 from camel.utils import dependencies_required
@@ -33,7 +33,7 @@ try:
     LANGFUSE_AVAILABLE = True
 except ImportError:
     LANGFUSE_AVAILABLE = False
-    get_client = None
+    get_client: Optional[Callable[..., Any]] = None
 
 
 @dependencies_required('langfuse')

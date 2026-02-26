@@ -44,12 +44,12 @@ if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
         from langfuse import observe
     except ImportError:
-        from camel.utils import observe
+        from camel.utils import observe  # type: ignore[no-redef]
 elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
         from traceroot import trace as observe  # type: ignore[import]
     except ImportError:
-        from camel.utils import observe
+        from camel.utils import observe  # type: ignore[no-redef]
 else:
     from camel.utils import observe
 
