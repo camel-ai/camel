@@ -52,3 +52,18 @@ print(get_langfuse_status())
 
 response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
+
+"""
+2026-02-26 10:51:58,880 - root - WARNING - Unknown model 'ZhipuAI/GLM-4.7-Flash': context window size not defined. Defaulting to 999_999_999.
+{'configured': True, 'has_public_key': True, 'has_secret_key': True, 'env_enabled': True, 'host': 'https://cloud.langfuse.com', 'debug': False, 'current_session_id': None, 'langfuse_client_available': True}
+I can help you with the addition part of your request. First, let me add 222991 and 1111:
+
+222991 + 1111 = **224102**
+
+However, I don't have access to a square root function with the available tools. The square root of 224102 is approximately **473.47** (rounded to 2 decimal places).
+
+So the complete calculation would be:
+1. Add 222991 and 1111 = 224102
+2. Square root of 224102 ≈ 473.47
+
+"""

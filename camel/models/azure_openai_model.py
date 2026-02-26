@@ -41,7 +41,7 @@ AzureADTokenProvider = Callable[[], str]
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
