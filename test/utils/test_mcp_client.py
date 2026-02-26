@@ -521,5 +521,140 @@ class TestEdgeCases:
         assert client3.client_info.version == "2.0"
 
 
+class TestUnionTypeHandling:
+    """Test the Union type handling for JSON Schema types."""
+
+    def setup_method(self):
+        """Set up test client for Union type testing."""
+        config = ServerConfig(command="test")
+        self.client = MCPClient(config)
+
+    def test_handle_string_null_union(self):
+        """Test _handle_json_schema_type string/null union - Gmail case."""
+        from typing import Union
+
+        result = self.client._handle_json_schema_type(["string", "null"])
+
+        # Check that it's a Union type
+        assert hasattr(result, "__origin__")
+        assert result.__origin__ is Union
+
+        # Check the Union contains str and NoneType
+        assert str in result.__args__
+        assert type(None) in result.__args__
+
+    def test_handle_string_array_union(self):
+        """Test _handle_json_schema_type with ["string", "array"] union."""
+        from typing import Union
+
+        result = self.client._handle_json_schema_type(["string", "array"])
+
+        # Check that it's a Union type
+        assert hasattr(result, "__origin__")
+        assert result.__origin__ is Union
+
+        # Check the Union contains str and list
+        assert str in result.__args__
+        assert list in result.__args__
+
+    def test_handle_single_element_list(self):
+        """Test _handle_json_schema_type with ["array"] single element list."""
+        result = self.client._handle_json_schema_type(["array"])
+        assert result is list
+
+    def test_union_type_integration_with_function_generation(self):
+        """Test that Union types work properly in function generation."""
+        from typing import Union
+
+        import mcp.types as types
+
+        # Create a mock MCP tool with Union type parameter
+        mock_tool = types.Tool(
+            name="test_union_tool",
+            description="Test tool with Union type parameter",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "optional_subject": {
+                        "type": ["string", "null"],
+                        "description": "Subject that can be string or null",
+                    },
+                    "flexible_data": {
+                        "type": ["string", "array"],
+                        "description": "Data that can be string or array",
+                    },
+                },
+                "required": ["flexible_data"],
+            },
+        )
+
+        # Generate function from the tool
+        func = self.client.generate_function_from_mcp_tool(mock_tool)
+
+        # Check the function annotations
+        annotations = func.__annotations__
+
+        # Check optional_subject is Union[str, None]
+        optional_subject_type = annotations.get("optional_subject")
+        assert hasattr(optional_subject_type, "__origin__")
+        assert optional_subject_type.__origin__ is Union
+        assert str in optional_subject_type.__args__
+        assert type(None) in optional_subject_type.__args__
+
+        # Check flexible_data is Union[str, list]
+        flexible_data_type = annotations.get("flexible_data")
+        assert hasattr(flexible_data_type, "__origin__")
+        assert flexible_data_type.__origin__ is Union
+        assert str in flexible_data_type.__args__
+        assert list in flexible_data_type.__args__
+
+    def test_boolean_enum_sanitization(self):
+        """Test that boolean enums are sanitized for Gemini (Notion case)."""
+        # Test the sanitization method directly
+        schema_with_enum = {"type": "boolean", "enum": [True, False]}
+        result = self.client._sanitize_schema_for_gemini(schema_with_enum)
+
+        assert result["type"] == "boolean"
+        assert "enum" not in result
+
+        # Test that non-boolean types keep their enum
+        string_schema = {"type": "string", "enum": ["a", "b", "c"]}
+        result = self.client._sanitize_schema_for_gemini(string_schema)
+
+        assert result["type"] == "string"
+        assert result["enum"] == ["a", "b", "c"]
+
+    def test_boolean_enum_sanitization_in_tool_schema(self):
+        """Test boolean enum sanitization in full tool schema build."""
+        import mcp.types as types
+
+        # Create a mock Notion-like tool with boolean enum
+        mock_tool = types.Tool(
+            name="notion_toggle_archive",
+            description="Toggle page archive status",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "archived": {
+                        "type": "boolean",
+                        "description": "Archive status",
+                        "enum": [True, False],  # This should be removed
+                    }
+                },
+                "required": ["archived"],
+            },
+        )
+
+        # Build the tool schema
+        schema = self.client._build_tool_schema(mock_tool)
+
+        # Check that enum was removed from boolean property
+        params = schema["function"]["parameters"]
+        archived_prop = params["properties"]["archived"]
+        assert archived_prop["type"] == "boolean"
+        assert "enum" not in archived_prop
+        assert archived_prop["description"] == "Archive status"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
