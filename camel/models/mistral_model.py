@@ -176,8 +176,6 @@ class MistralModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
     ) -> List["Messages"]:
-        import uuid
-
         from mistralai.models import (
             AssistantMessage,
             FunctionCall,
@@ -187,16 +185,13 @@ class MistralModel(BaseModelBackend):
             UserMessage,
         )
 
-        new_messages = []
+        new_messages: List["Messages"] = []
         for msg in messages:
-            tool_id = uuid.uuid4().hex[:9]
-            tool_call_id = msg.get("tool_call_id") or uuid.uuid4().hex[:9]
-
             role = msg.get("role")
             tool_calls = msg.get("tool_calls")
             content = msg.get("content")
 
-            mistral_function_call = None
+            mistral_tool_calls = None
             if tool_calls:
                 # Ensure tool_calls is treated as a list
                 tool_calls_list = (
@@ -204,23 +199,29 @@ class MistralModel(BaseModelBackend):
                     if isinstance(tool_calls, list)
                     else [tool_calls]
                 )
+                mistral_tool_calls = []
                 for tool_call in tool_calls_list:
-                    mistral_function_call = FunctionCall(
+                    function_call = FunctionCall(
                         name=tool_call["function"].get("name"),  # type: ignore[attr-defined]
                         arguments=tool_call["function"].get("arguments"),  # type: ignore[attr-defined]
                     )
-
-            tool_calls = None
-            if mistral_function_call:
-                tool_calls = [
-                    ToolCall(function=mistral_function_call, id=tool_id)
-                ]
+                    # Preserve the original tool call id to keep tool result
+                    # ordering valid across turns.
+                    mistral_tool_calls.append(
+                        ToolCall(
+                            function=function_call,
+                            id=tool_call.get("id"),  # type: ignore[attr-defined]
+                        )
+                    )
 
             if role == "user":
                 new_messages.append(UserMessage(content=content))  # type: ignore[arg-type]
             elif role == "assistant":
                 new_messages.append(
-                    AssistantMessage(content=content, tool_calls=tool_calls)  # type: ignore[arg-type]
+                    AssistantMessage(
+                        content=content,  # type: ignore[arg-type]
+                        tool_calls=mistral_tool_calls,
+                    )
                 )
             elif role == "system":
                 new_messages.append(SystemMessage(content=content))  # type: ignore[arg-type]
@@ -228,7 +229,7 @@ class MistralModel(BaseModelBackend):
                 new_messages.append(
                     ToolMessage(
                         content=content,  # type: ignore[arg-type]
-                        tool_call_id=tool_call_id,  # type: ignore[arg-type]
+                        tool_call_id=msg.get("tool_call_id"),  # type: ignore[arg-type]
                         name=msg.get("name"),  # type: ignore[arg-type]
                     )
                 )
@@ -282,7 +283,8 @@ class MistralModel(BaseModelBackend):
         )
         mistral_messages = self._to_mistral_chatmessage(messages)
 
-        response = self._client.chat.complete(
+        response = self._call_client(
+            self._client.chat.complete,
             messages=mistral_messages,
             model=self.model_type,
             **request_config,
@@ -345,7 +347,8 @@ class MistralModel(BaseModelBackend):
         )
         mistral_messages = self._to_mistral_chatmessage(messages)
 
-        response = self._client.chat.complete(
+        response = self._call_client(
+            self._client.chat.complete,
             messages=mistral_messages,
             model=self.model_type,
             **request_config,

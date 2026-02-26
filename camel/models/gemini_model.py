@@ -650,7 +650,8 @@ class GeminiModel(OpenAICompatibleModel):
         tools = self._clean_gemini_tools(tools)
         request_config = self._prepare_request_config(tools)
 
-        response = self._client.chat.completions.create(
+        response = self._call_client(
+            self._client.chat.completions.create,
             messages=messages,
             model=self.model_type,
             **request_config,
@@ -667,7 +668,8 @@ class GeminiModel(OpenAICompatibleModel):
         tools = self._clean_gemini_tools(tools)
         request_config = self._prepare_request_config(tools)
 
-        response = await self._async_client.chat.completions.create(
+        response = await self._acall_client(
+            self._async_client.chat.completions.create,
             messages=messages,
             model=self.model_type,
             **request_config,
