@@ -18,11 +18,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import List
 
-from camel.agents import ChatAgent
-from camel.agents._middleware import (
-    MessageMiddleware,
-    MiddlewareContext,
-)
+from camel.agents import ChatAgent, MessageMiddleware, MiddlewareContext
 from camel.messages import OpenAIMessage
 from camel.models import ModelFactory
 from camel.types import ChatCompletion, ModelPlatformType, ModelType

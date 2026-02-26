@@ -6019,6 +6019,7 @@ class ChatAgent(BaseAgent):
             pause_event=self.pause_event,
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
             stream_accumulate=self.stream_accumulate,
+            middlewares=self._middlewares,
         )
 
         # Copy memory if requested

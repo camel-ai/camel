@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+from ._middleware import MessageMiddleware, MiddlewareContext, MiddlewareError
 from .base import BaseAgent
 from .chat_agent import ChatAgent
 from .critic_agent import CriticAgent
@@ -32,6 +33,9 @@ from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
 __all__ = [
     'BaseAgent',
     'ChatAgent',
+    'MessageMiddleware',
+    'MiddlewareContext',
+    'MiddlewareError',
     'TaskSpecifyAgent',
     'TaskPlannerAgent',
     'TaskCreationAgent',
