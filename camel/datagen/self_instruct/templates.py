@@ -51,7 +51,7 @@ class SelfInstructTemplates:
     Task: Rank these countries by their population.
     Is it classification? No
 
-    Task: You are provided with a news article, and you need to identify all the categories that this article belongs to. Possible categories include: Music, Sports, Politics, Tech, Finance, Basketball, Soccer, Tennis, Entertainment, Digital Game, World News. Output its categories one by one, seperated by comma.
+    Task: You are provided with a news article, and you need to identify all the categories that this article belongs to. Possible categories include: Music, Sports, Politics, Tech, Finance, Basketball, Soccer, Tennis, Entertainment, Digital Game, World News. Output its categories one by one, separated by comma.
     Is it classification? Yes
 
     Task: Given the name of an exercise, explain how to do it.

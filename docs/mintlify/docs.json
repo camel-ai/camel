@@ -256,6 +256,7 @@
               "reference/camel.configs.siliconflow_config",
               "reference/camel.configs.togetherai_config",
               "reference/camel.configs.vllm_config",
+              "reference/camel.configs.volcano_config",
               "reference/camel.configs.watsonx_config",
               "reference/camel.configs.yi_config",
               "reference/camel.configs.zhipuai_config"
@@ -303,6 +304,7 @@
           {
             "group": "Models",
             "pages": [
+              "reference/camel.models._interleaved_thinking_mixin",
               "reference/camel.models._utils",
               "reference/camel.models.aihubmix_model",
               "reference/camel.models.aiml_model",
@@ -426,6 +428,7 @@
               "reference/camel.retrievers.bm25_retriever",
               "reference/camel.retrievers.cohere_rerank_retriever",
               "reference/camel.retrievers.hybrid_retrival",
+              "reference/camel.retrievers.jina_rerank_retriever",
               "reference/camel.retrievers.vector_retriever"
             ]
           },
@@ -560,6 +563,7 @@
               "reference/camel.toolkits.search_toolkit",
               "reference/camel.toolkits.searxng_toolkit",
               "reference/camel.toolkits.semantic_scholar_toolkit",
+              "reference/camel.toolkits.skill_toolkit",
               "reference/camel.toolkits.slack_toolkit",
               "reference/camel.toolkits.sql_toolkit",
               "reference/camel.toolkits.stripe_toolkit",

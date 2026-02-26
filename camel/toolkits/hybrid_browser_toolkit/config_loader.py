@@ -36,6 +36,7 @@ class BrowserConfig:
     screenshot_timeout: int = 15000
     page_stability_timeout: int = 1500
     dom_content_loaded_timeout: int = 5000
+    download_timeout: int = 30000
     dom_stability_threshold: int = 200
     dom_stability_timeout: int = 5000
 
@@ -56,6 +57,7 @@ class ToolkitConfig:
     """Toolkit-specific configuration."""
 
     cache_dir: str = "tmp/"
+    download_dir: Optional[str] = None
     browser_log_to_file: bool = False
     log_dir: Optional[str] = None
     session_id: Optional[str] = None
@@ -165,6 +167,8 @@ class ConfigLoader:
             "cdpUrl": self.browser_config.cdp_url,
             "cdpKeepCurrentPage": self.browser_config.cdp_keep_current_page,
             "fullVisualMode": self.browser_config.full_visual_mode,
+            "downloadDir": self.toolkit_config.download_dir,
+            "downloadTimeout": self.browser_config.download_timeout,
             "browser_log_to_file": self.toolkit_config.browser_log_to_file,
             "log_dir": self.toolkit_config.log_dir,
             "session_id": self.toolkit_config.session_id,

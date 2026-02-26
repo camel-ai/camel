@@ -325,26 +325,42 @@ class DockerRuntime(BaseRuntime):
 
         return self.stop().build()
 
-    def stop(self, remove: Optional[bool] = None) -> "DockerRuntime":
-        r"""stop the Docker container.
+    def cleanup(self) -> None:
+        r"""Stop and optionally remove the Docker container.
 
-        Args:
-            remove (Optional[bool]): Whether to remove the container
-                after stopping it. (default: :obj:`None`)
-
-        Returns:
-            DockerRuntime: The DockerRuntime instance.
+        Uses the instance's :attr:`remove` setting to decide whether to
+        remove the container after stopping. For a one-off override,
+        use :meth:`stop` with the ``remove`` argument.
         """
         if self.container:
             self.container.stop()
-            if remove is None:
-                remove = self.remove
-            if remove:
+            if self.remove:
                 logger.info("Removing container.")
                 self.container.remove()
             self.container = None
         else:
             logger.warning("No container to stop.")
+
+    def stop(self, remove: Optional[bool] = None) -> "DockerRuntime":
+        r"""Stop the Docker container and release resources.
+
+        Args:
+            remove (Optional[bool]): If set, overrides the instance's
+                :attr:`remove` setting for this call only (e.g.
+                ``stop(remove=False)`` to keep the container).
+                (default: :obj:`None`)
+
+        Returns:
+            DockerRuntime: The DockerRuntime instance.
+        """
+        if remove is not None:
+            prev_remove = self.remove
+            self.remove = remove
+        try:
+            self.cleanup()
+        finally:
+            if remove is not None:
+                self.remove = prev_remove
         return self
 
     @property
@@ -392,7 +408,7 @@ class DockerRuntime(BaseRuntime):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         r"""Exit the context manager."""
-        self.stop()
+        self.cleanup()
 
     @property
     def docs(self) -> str:

@@ -1,0 +1,136 @@
+<a id="camel.models._interleaved_thinking_mixin"></a>
+
+<a id="camel.models._interleaved_thinking_mixin.InterleavedThinkingMixin"></a>
+
+## InterleavedThinkingMixin
+
+```python
+class InterleavedThinkingMixin:
+```
+
+Mixin class for models that support interleaved thinking.
+
+This mixin provides shared functionality for handling reasoning content
+in multi-turn conversations with tool calls. Models like ZhipuAI,
+Moonshot, Minimax, and Volcano require the reasoning content from a
+model response to be passed back in subsequent requests for proper
+context management.
+
+Class attributes:
+_reasoning_field (str): The field name used for reasoning content.
+Defaults to "reasoning_content". Subclasses can override this
+(e.g., Minimax uses "reasoning_details").
+
+Instance attributes:
+_last_reasoning (Optional[Any]): Stores the reasoning content from
+the last model response to be injected into the next request.
+
+<a id="camel.models._interleaved_thinking_mixin.InterleavedThinkingMixin._init_thinking_state"></a>
+
+### _init_thinking_state
+
+```python
+def _init_thinking_state(self):
+```
+
+Initialize the thinking state.
+
+Should be called in the subclass's __init__ method after
+super().__init__().
+
+<a id="camel.models._interleaved_thinking_mixin.InterleavedThinkingMixin._is_thinking_enabled"></a>
+
+### _is_thinking_enabled
+
+```python
+def _is_thinking_enabled(self):
+```
+
+**Returns:**
+
+  bool: True if interleaved_thinking is enabled in the model config.
+
+<a id="camel.models._interleaved_thinking_mixin.InterleavedThinkingMixin._extract_reasoning"></a>
+
+### _extract_reasoning
+
+```python
+def _extract_reasoning(self, response: ChatCompletion):
+```
+
+Extract reasoning content from the model response.
+
+**Parameters:**
+
+- **response**: The model response.
+
+**Returns:**
+
+  The reasoning content if available, None otherwise.
+
+<a id="camel.models._interleaved_thinking_mixin.InterleavedThinkingMixin._inject_reasoning"></a>
+
+### _inject_reasoning
+
+```python
+def _inject_reasoning(self, messages: List[OpenAIMessage]):
+```
+
+Inject the last reasoning content into assistant messages.
+
+For models with interleaved thinking enabled, the reasoning content
+from the model response needs to be passed back in subsequent requests
+for proper context management. This is especially important when using
+tools with interleaved thinking.
+
+**Parameters:**
+
+- **messages**: The original messages list.
+
+**Returns:**
+
+  Messages with reasoning content added to the last assistant
+message that has tool_calls.
+
+<a id="camel.models._interleaved_thinking_mixin.InterleavedThinkingMixin._prepare_thinking_config"></a>
+
+### _prepare_thinking_config
+
+```python
+def _prepare_thinking_config(self, config: Dict[str, Any]):
+```
+
+Prepare the request config for thinking-enabled requests.
+
+Removes the interleaved_thinking parameter which is only used
+internally. Subclasses can override this to add model-specific
+configuration (e.g., Minimax adds reasoning_split=True).
+
+**Parameters:**
+
+- **config**: The request configuration dictionary.
+
+**Returns:**
+
+  The modified configuration dictionary.
+
+<a id="camel.models._interleaved_thinking_mixin.InterleavedThinkingMixin.run"></a>
+
+### run
+
+```python
+def run(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+Run inference with interleaved thinking support.
+
+**Note:**
+
+Interleaved thinking is not supported with stream=True. When
+streaming is enabled, reasoning content cannot be captured and
+injected into subsequent requests.
