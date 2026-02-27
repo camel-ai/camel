@@ -91,7 +91,7 @@ from camel.toolkits import (
     SearchToolkit,
     ThinkingToolkit,
 )
-from camel.utils import dependencies_required
+from camel.utils import dependencies_required, safe_extract_parsed
 
 from .events import (
     AllTasksCompletedEvent,
@@ -102,6 +102,7 @@ from .events import (
     TaskDecomposedEvent,
     TaskFailedEvent,
     TaskStartedEvent,
+    TaskUpdatedEvent,
     WorkerCreatedEvent,
 )
 
@@ -1623,7 +1624,14 @@ class Workforce(BaseNode):
                 response = self.task_agent.step(
                     analysis_prompt, response_format=result_schema
                 )
-                return response.msg.parsed
+                parsed = safe_extract_parsed(response, result_schema)
+                if parsed is not None:
+                    return parsed
+                logger.warning(
+                    "Failed to get structured response from model, "
+                    "using fallback values"
+                )
+                return TaskAnalysisResult(**fallback_values)
 
         except Exception as e:
             logger.warning(
@@ -1673,8 +1681,30 @@ class Workforce(BaseNode):
             elif strategy == RecoveryStrategy.REPLAN:
                 # Modify the task content and retry
                 if recovery_decision.modified_task_content:
-                    task.content = recovery_decision.modified_task_content
-                    logger.info(f"Task {task.id} content modified for replan")
+                    old_content = task.content
+                    new_content = recovery_decision.modified_task_content
+
+                    task.content = new_content
+                    logger.info(
+                        f"Task {task.id} content modified for replan, "
+                        f"new_content: {new_content}"
+                    )
+
+                    task_updated_event = TaskUpdatedEvent(
+                        task_id=task.id,
+                        parent_task_id=task.parent.id if task.parent else None,
+                        worker_id=task.assigned_worker_id,
+                        update_type="replan",
+                        old_value=old_content,
+                        new_value=new_content,
+                        metadata={
+                            "quality_score": recovery_decision.quality_score,
+                            "reasoning": recovery_decision.reasoning,
+                            "issues": recovery_decision.issues,
+                        },
+                    )
+                    for cb in self._callbacks:
+                        cb.log_task_updated(task_updated_event)
 
                 # Repost the modified task to the same worker
                 await self._post_task(task, original_assignee)
@@ -1716,6 +1746,22 @@ class Workforce(BaseNode):
                     f"Task {task.id} reassigned from {old_worker} to "
                     f"{new_worker}"
                 )
+
+                task_updated_event = TaskUpdatedEvent(
+                    task_id=task.id,
+                    parent_task_id=task.parent.id if task.parent else None,
+                    worker_id=task.assigned_worker_id,
+                    update_type="reassign",
+                    old_value=old_worker,
+                    new_value=new_worker,
+                    metadata={
+                        "quality_score": recovery_decision.quality_score,
+                        "reasoning": recovery_decision.reasoning,
+                        "issues": recovery_decision.issues,
+                    },
+                )
+                for cb in self._callbacks:
+                    cb.log_task_updated(task_updated_event)
 
             elif strategy == RecoveryStrategy.DECOMPOSE:
                 # Decompose the task into subtasks
@@ -2056,8 +2102,21 @@ class Workforce(BaseNode):
 
         for task in self._pending_tasks:
             if task.id == task_id:
+                old_content = task.content
                 task.content = new_content
                 logger.info(f"Task {task_id} content modified.")
+
+                task_updated_event = TaskUpdatedEvent(
+                    task_id=task.id,
+                    parent_task_id=task.parent.id if task.parent else None,
+                    worker_id=task.assigned_worker_id,
+                    update_type="manual",
+                    old_value=old_content,
+                    new_value=new_content,
+                )
+                for cb in self._callbacks:
+                    cb.log_task_updated(task_updated_event)
+
                 return True
         logger.warning(f"Task {task_id} not found in pending tasks.")
         return False
@@ -3450,16 +3509,47 @@ class Workforce(BaseNode):
     ) -> str:
         r"""Get formatted information for a SingleAgentWorker node."""
         toolkit_tools = self._group_tools_by_toolkit(worker.worker.tool_dict)
-
-        if not toolkit_tools:
-            return ""
-
+        skill_names = self._get_single_agent_skill_names(worker)
         toolkit_info = []
         for toolkit_name, tools in sorted(toolkit_tools.items()):
             tools_str = ', '.join(sorted(tools))
             toolkit_info.append(f"{toolkit_name}({tools_str})")
-
+            # Append skill names right after SkillToolkit for clarity
+            if toolkit_name == "SkillToolkit" and skill_names:
+                toolkit_info.append(f"skills({', '.join(skill_names)})")
         return ", ".join(toolkit_info)
+
+    def _get_single_agent_skill_names(
+        self, worker: 'SingleAgentWorker'
+    ) -> List[str]:
+        r"""Extract available skill names from SkillToolkit instances."""
+        for tool in worker.worker.tool_dict.values():
+            toolkit_instance = getattr(tool.func, "__self__", None)
+            if toolkit_instance is None:
+                continue
+            if toolkit_instance.__class__.__name__ != "SkillToolkit":
+                continue
+
+            list_skills_fn = getattr(toolkit_instance, "list_skills", None)
+            if not callable(list_skills_fn):
+                continue
+
+            try:
+                skills = list_skills_fn()
+                return sorted(
+                    skill["name"].strip()
+                    for skill in skills
+                    if skill.get("name")
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Failed to list skills for worker %s: %s",
+                    worker.node_id,
+                    exc,
+                )
+                return []
+
+        return []
 
     def _group_tools_by_toolkit(self, tool_dict: dict) -> dict[str, list[str]]:
         r"""Group tools by their parent toolkit class names."""
@@ -3862,6 +3952,8 @@ class Workforce(BaseNode):
         # Record the start time when a task is posted
         self._task_start_times[task.id] = time.time()
 
+        # Ensure assignee mapping exists for retries and follow-up handling.
+        self._assignees[task.id] = assignee_id
         task.assigned_worker_id = assignee_id
 
         task_started_event = TaskStartedEvent(

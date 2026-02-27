@@ -1,0 +1,385 @@
+- generic [ref=e1]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - button [ref=e1113] [cursor=pointer]:
+          - img [ref=e7]
+        - link [ref=e1114] [cursor=pointer]:
+          - /url: /
+      - generic [ref=e13]:
+        - generic [ref=e15]:
+          - button [ref=e1115]
+          - button [ref=e1116]
+          - navigation [ref=e23]:
+            - link [ref=e1117]:
+              - img [ref=e29]
+            - link [ref=e1118]:
+              - img [ref=e38]
+            - link [ref=e1119]:
+              - img [ref=e46]
+            - link [ref=e1120]:
+              - img [ref=e54]
+            - link [ref=e1121]:
+              - img [ref=e65]
+        - generic [ref=e79]:
+          - button [ref=e1122]:
+            - img
+          - tooltip [ref=e84]: Change appearance
+      - generic [ref=e86]:
+        - button [ref=e1123] [cursor=pointer]:
+          - img [ref=e91]
+        - link [ref=e1124] [cursor=pointer]:
+          - /url: https://accounts.google.com/ServiceLogin?service=searchandassistant&passive=1209600&continue=https%3A%2F%2Fwww.google.com%2Ftravel%2Fflights%3Ftfs%3DCBwQARoJagcIARIDWFdDGglyBwgBEgNYV0NAAUABSAFwAYIBCwj___________8BmAEB%26tfu%3DKgIIAw%26utm_source%3Dsign_in_ogb&followup=https%3A%2F%2Fwww.google.com%2Ftravel%2Fflights%3Ftfs%3DCBwQARoJagcIARIDWFdDGglyBwgBEgNYV0NAAUABSAFwAYIBCwj___________8BmAEB%26tfu%3DKgIIAw%26utm_source%3Dsign_in_ogb&ec=GAZAlQM
+          - text: Sign in
+  - generic [ref=e102]:
+    - generic [ref=e105]: Flights
+    - generic [ref=e106]:
+      - search "Flight" [ref=e108]:
+        - generic [ref=e110]:
+          - generic [ref=e111]:
+            - combobox [ref=e1125] [cursor=pointer]:
+              - generic:
+                - img
+              - generic:
+                - generic: Round trip
+              - generic:
+                - img
+            - button [ref=e1126]:
+              - generic [ref=e125]:
+                - img [ref=e126]
+                - generic [ref=e128]: "2"
+              - img [ref=e129]
+            - combobox [ref=e1127] [cursor=pointer]:
+              - generic:
+                - generic: Economy
+              - generic:
+                - img
+          - generic [ref=e137]:
+            - generic [ref=e138]:
+              - generic [ref=e144]:
+                - combobox [ref=e1128]: Vienna
+                - generic [ref=e1037]: Vienna XWC
+                - img [ref=e148]
+              - generic [ref=e151]:
+                - button [disabled]:
+                  - img
+              - generic [ref=e157]:
+                - combobox [ref=e1129]
+                - img [ref=e159]
+              - dialog "Enter your origin" [ref=e822]:
+                - generic [ref=e823]:
+                  - generic [ref=e824]:
+                    - generic [ref=e826]:
+                      - combobox "Where else?" [expanded] [active] [ref=e827]:
+                        - text: Vienna
+                        - listbox [ref=e1130]:
+                          - option "Vienna, Austria" [ref=e1131]:
+                            - img [ref=e1133]
+                            - generic [ref=e1136]:
+                              - generic [ref=e1137]: Vienna, Austria
+                              - generic [ref=e1138]: Capital of Austria
+                          - button "Toggle nearby airports for Vienna, Austria" [expanded] [ref=e1139] [cursor=pointer]:
+                            - img [ref=e1140]
+                          - option "Vienna International Airport (VIE)" [ref=e1142]:
+                            - img [ref=e1144]
+                            - generic [ref=e1148]:
+                              - generic [ref=e1149]: Vienna International Airport VIE
+                              - generic [ref=e1150]: 17 km to destination
+                          - option "Vienna Hauptbahnhof" [selected] [ref=e1151]:
+                            - img [ref=e1153]
+                            - generic [ref=e1157]:
+                              - generic [ref=e1158]: Vienna Hauptbahnhof
+                              - generic [ref=e1159]: 2 km to destination
+                          - option "Vienna, Virginia, USA" [ref=e1160]:
+                            - img [ref=e1162]
+                            - generic [ref=e1165]:
+                              - generic [ref=e1166]: Vienna, Virginia, USA
+                              - generic [ref=e1167]: Town in Virginia
+                          - button "Toggle nearby airports for Vienna, Virginia, USA" [ref=e1168] [cursor=pointer]:
+                            - img [ref=e1169]
+                          - option "Vienna Woods, Austria" [ref=e1171]:
+                            - img [ref=e1173]
+                            - generic [ref=e1176]:
+                              - generic [ref=e1177]: Vienna Woods, Austria
+                              - generic [ref=e1178]: Highland in Austria
+                          - button "Toggle nearby airports for Vienna Woods, Austria" [ref=e1179] [cursor=pointer]:
+                            - img [ref=e1180]
+                          - option "Vienna, West Virginia, USA" [ref=e1182]:
+                            - img [ref=e1184]
+                            - generic [ref=e1187]:
+                              - generic [ref=e1188]: Vienna, West Virginia, USA
+                              - generic [ref=e1189]: City in West Virginia
+                          - button "Toggle nearby airports for Vienna, West Virginia, USA" [ref=e1190] [cursor=pointer]:
+                            - img [ref=e1191]
+                          - option "Vienna, Illinois, USA" [ref=e1193]:
+                            - img [ref=e1195]
+                            - generic [ref=e1198]:
+                              - generic [ref=e1199]: Vienna, Illinois, USA
+                              - generic [ref=e1200]: City in Illinois
+                          - button "Toggle nearby airports for Vienna, Illinois, USA" [ref=e1201] [cursor=pointer]:
+                            - img [ref=e1202]
+                      - generic [ref=e1204]: Vienna‌ Hauptbahnhof
+                    - img [ref=e929]
+                  - generic [ref=e932]:
+                    - button "Origin, Select multiple airports" [ref=e933] [cursor=pointer]:
+                      - img [ref=e934]
+                    - tooltip [ref=e936]: Select multiple airports
+            - generic [ref=e170]:
+              - generic [ref=e172]:
+                - img [ref=e174]
+                - textbox [ref=e1205]:
+                  - /placeholder: Departure
+              - textbox [ref=e1206]:
+                - /placeholder: Return
+        - button [ref=e1207]:
+          - img [ref=e188]
+          - generic [ref=e190]: Explore
+      - main [ref=e191]:
+        - generic [ref=e192]:
+          - generic [ref=e194]:
+            - img [ref=e195]
+            - generic [ref=e197]:
+              - heading [level=3] [ref=e1208]:
+                - text: Flexible? Discover the best flight deals with AI
+                - generic [ref=e200]: New
+              - generic [ref=e201]: Describe your ideal trip, and let Google Flights find the best deals for you
+            - button [ref=e1209]:
+              - generic [ref=e206]: Explore deals
+          - heading [level=1] [ref=e1210]: Find and book cheap flights worldwide and track prices
+          - generic [ref=e208]:
+            - generic [ref=e209]:
+              - heading [level=2] [ref=e1211]: Find cheap flights from France to anywhere
+              - button [ref=e1212] [cursor=pointer]:
+                - img [ref=e215]
+            - generic [ref=e217]:
+              - tablist [ref=e221]:
+                - tab [selected] [ref=e1213] [cursor=pointer]: Paris
+                - tab [ref=e1214] [cursor=pointer]: Nice
+                - tab [ref=e1215] [cursor=pointer]: Lyon
+                - tab [ref=e1216] [cursor=pointer]: Marseille
+              - list [ref=e226]:
+                - listitem [ref=e227]:
+                  - button [ref=e1217] [cursor=pointer]:
+                    - generic [ref=e229]:
+                      - generic [ref=e230]: Paris
+                      - img [ref=e231]
+                      - generic [ref=e233]: New York
+                    - generic [ref=e234]:
+                      - generic [ref=e235]: Mar 12 — Mar 18
+                      - generic [ref=e236]:
+                        - generic [ref=e237]: ·
+                        - text: 1 stop
+                    - generic [ref=e238]:
+                      - generic [ref=e239]: from €357
+                      - img [ref=e241]
+                - listitem [ref=e243]:
+                  - button [ref=e1218] [cursor=pointer]:
+                    - generic [ref=e245]:
+                      - generic [ref=e246]: Paris
+                      - img [ref=e247]
+                      - generic [ref=e249]: Los Angeles
+                    - generic [ref=e250]:
+                      - generic [ref=e251]: Feb 19 — Feb 25
+                      - generic [ref=e252]:
+                        - generic [ref=e253]: ·
+                        - text: 1 stop
+                    - generic [ref=e254]:
+                      - generic [ref=e255]: from €466
+                      - img [ref=e257]
+                - listitem [ref=e259]:
+                  - button [ref=e1219] [cursor=pointer]:
+                    - generic [ref=e261]:
+                      - generic [ref=e262]: Paris
+                      - img [ref=e263]
+                      - generic [ref=e265]: London
+                    - generic [ref=e266]:
+                      - generic [ref=e267]: Mar 5 — Mar 12
+                      - generic [ref=e268]:
+                        - generic [ref=e269]: ·
+                        - text: Nonstop
+                    - generic [ref=e270]:
+                      - generic [ref=e271]: from €53
+                      - img [ref=e273]
+                - text: · · · · · · · · ·
+              - generic [ref=e275]:
+                - button [ref=e1220] [cursor=pointer]
+                - button [ref=e277]:
+                  - generic [ref=e280]: Explore destinations
+          - generic [ref=e281]:
+            - heading [level=2] [ref=e1221]: Useful tools to help you find the best flight deals
+            - generic [ref=e283]:
+              - generic [ref=e284]:
+                - button [ref=e1222] [cursor=pointer]:
+                  - generic [ref=e286]:
+                    - img [ref=e287]
+                    - generic [ref=e289]:
+                      - generic [ref=e290]: Find the cheapest days to fly
+                      - generic [ref=e291]: The Date grid and Price graph make it easy to find the best flight deals
+                - button [ref=e1223] [cursor=pointer]:
+                  - generic [ref=e294]:
+                    - img [ref=e295]
+                    - generic [ref=e297]:
+                      - generic [ref=e298]: Know when to book with price insights
+                      - generic [ref=e299]: Price history and trend data show you the best time to book your airline ticket to get the cheapest price for your flight
+                - button [ref=e1224] [cursor=pointer]:
+                  - generic [ref=e301]:
+                    - img [ref=e302]
+                    - generic [ref=e305]:
+                      - generic [ref=e306]: Track flight prices for a trip
+                      - generic [ref=e307]: Not ready to book yet? Observe price changes for a route or flight and get notified when prices drop.
+              - generic [ref=e308]:
+                - generic [ref=e309]: Insightful tools help you choose your trip dates
+                - generic [ref=e310]: If your travel plans are flexible, use the form above to start searching for a specific trip. Then, play around with the Date grid and Price graph options on the Search page to find the cheapest days to fly and book your tickets.
+          - generic [ref=e312]:
+            - heading [level=2] [ref=e1225]: Popular flight destinations from France
+            - generic [ref=e316]:
+              - link [ref=e1226] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-london.html
+                - img [ref=e1227]
+                - generic [ref=e321]: London
+              - link [ref=e1228] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-milan.html
+                - img [ref=e1229]
+                - generic [ref=e326]: Milan
+              - link [ref=e1230] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-paris.html
+                - img [ref=e1231]
+                - generic [ref=e331]: Paris
+              - link [ref=e1232] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-tokyo.html
+                - img [ref=e1233]
+                - generic [ref=e336]: Tokyo
+              - link [ref=e1234] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-barcelona.html
+                - img [ref=e1235]
+                - generic [ref=e341]: Barcelona
+              - link [ref=e1236] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-rome.html
+                - img [ref=e1237]
+                - generic [ref=e346]: Rome
+              - link [ref=e1238] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-new-york.html
+                - img [ref=e1239]
+                - generic [ref=e351]: New York
+              - link [ref=e1240] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-madrid.html
+                - img [ref=e1241]
+                - generic [ref=e356]: Madrid
+              - link [ref=e1242] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-nice.html
+                - img [ref=e1243]
+                - generic [ref=e361]: Nice
+              - link [ref=e1244] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-amsterdam.html
+                - img [ref=e1245]
+                - generic [ref=e366]: Amsterdam
+          - generic [ref=e367]:
+            - heading [level=2] [ref=e1246]: Frequently asked questions
+            - group [ref=e1247]:
+              - generic [ref=e372] [cursor=pointer]:
+                - generic [ref=e373]: What are some good flight destinations from France?
+                - button [ref=e1248]:
+                  - img [ref=e379]
+              - generic [ref=e382] [cursor=pointer]:
+                - generic [ref=e383]: How can I find last-minute flight deals?
+                - button [ref=e1249]:
+                  - img [ref=e389]
+              - generic [ref=e392] [cursor=pointer]:
+                - generic [ref=e393]: How can I find cheap flights for a weekend getaway?
+                - button [ref=e1250]:
+                  - img [ref=e399]
+              - generic [ref=e402] [cursor=pointer]:
+                - generic [ref=e403]: How can I find flight deals if my travel plans are flexible?
+                - button [ref=e1251]:
+                  - img [ref=e409]
+              - generic [ref=e412] [cursor=pointer]:
+                - generic [ref=e413]: How can I find cheap flights to anywhere?
+                - button [ref=e1252]:
+                  - img [ref=e419]
+              - generic [ref=e422] [cursor=pointer]:
+                - generic [ref=e423]: How can I get flight alerts for my trip?
+                - button [ref=e1253]:
+                  - img [ref=e429]
+          - heading [level=2] [ref=e1254]: Search more flights
+          - generic [ref=e432]:
+            - heading [level=3] [ref=e1255]: Find cheap flights on popular routes
+            - generic [ref=e435]:
+              - tablist [ref=e436]:
+                - generic [ref=e439]:
+                  - tab [selected] [ref=e1256] [cursor=pointer]:
+                    - generic:
+                      - generic: Flights from cities in France
+                  - tab [ref=e1257] [cursor=pointer]:
+                    - generic:
+                      - generic: International flights from France
+                  - tab [ref=e1258] [cursor=pointer]:
+                    - generic:
+                      - generic: Domestic flights in France
+              - tabpanel [ref=e1259]:
+                - generic [ref=e452]:
+                  - link [ref=e1260] [cursor=pointer]:
+                    - /url: https://www.google.com/travel/flights/flights-from-paris.html
+                    - text: Flights from Paris
+                  - link [ref=e1261] [cursor=pointer]:
+                    - /url: https://www.google.com/travel/flights/flights-from-nice.html
+                    - text: Flights from Nice
+                  - link [ref=e1262] [cursor=pointer]:
+                    - /url: https://www.google.com/travel/flights/flights-from-lyon.html
+                    - text: Flights from Lyon
+                  - link [ref=e1263] [cursor=pointer]:
+                    - /url: https://www.google.com/travel/flights/flights-from-marseille.html
+                    - text: Flights from Marseille
+                  - link [ref=e1264] [cursor=pointer]:
+                    - /url: https://www.google.com/travel/flights/flights-from-toulouse.html
+                    - text: Flights from Toulouse
+                  - link [ref=e1265] [cursor=pointer]:
+                    - /url: https://www.google.com/travel/flights/flights-from-bordeaux.html
+                    - text: Flights from Bordeaux
+      - contentinfo [ref=e461]:
+        - generic [ref=e463]:
+          - button [ref=e1266]:
+            - img [ref=e467]
+            - generic [ref=e469]: Language·English (United States)
+          - button [ref=e1267]:
+            - img [ref=e473]
+            - generic [ref=e476]: Location·France
+          - button [ref=e1268]:
+            - img [ref=e480]
+            - generic [ref=e490]: Currency·EUR
+        - generic [ref=e491]:
+          - paragraph [ref=e492]: "Current language and currency options applied: English (United States) - France - EUR"
+          - paragraph [ref=e493]:
+            - text: Displayed currencies may differ from the currencies used to purchase flights.
+            - link [ref=e1269] [cursor=pointer]:
+              - /url: https://www.google.com/googlefinance/disclaimer?hl=en-US&gl=FR
+              - text: Learn more
+          - paragraph [ref=e495]: Prices are final prices and include all taxes and fees, including payment fees for the cheapest common payment method (which may differ depending on the provider). Additional charges may apply for other types of payment, luggage, meals, WLAN or other additional services. Prices, availability and travel details are provided based on the latest information received from our partners. This information is reflected in the results within a period of less than 24 hours. Additional conditions may also be applied by our partners. You should then check prices and conditions with the services providers before booking.
+        - generic [ref=e496]:
+          - link [ref=e1270] [cursor=pointer]:
+            - /url: https://about.google/?hl=en-US
+            - text: About
+          - link [ref=e1271] [cursor=pointer]:
+            - /url: https://policies.google.com/privacy?hl=en-US
+            - text: Privacy
+          - link [ref=e1272] [cursor=pointer]:
+            - /url: https://policies.google.com/terms?hl=en-US
+            - text: Terms
+          - link [ref=e1273] [cursor=pointer]:
+            - /url: https://google.qualtrics.com/jfe/form/SV_3NMIMtX0F2zkakR?reserved%3D1%26utm_source%3DFooter%2520link%26utm_medium%3Down_web%26%20utm_campaign%3DQ2%26productTag%3D0%26campaignDate%3DApril2020%26referral_code%3DUXbJ377133&Q_Language=en-US
+            - text: Join user studies
+          - button [ref=e1274] [cursor=pointer]: Report Illegal Content
+          - link [ref=e1275] [cursor=pointer]:
+            - /url: ./#0
+            - text: Feedback
+          - link [ref=e1276] [cursor=pointer]:
+            - /url: https://support.google.com/travel/?hl=en-US#topic=2475360
+            - text: Help Center and Consumer Information
+        - generic [ref=e505]:
+          - generic [ref=e509]:
+            - generic [ref=e510] [cursor=pointer]: International sites
+            - button [ref=e1277]:
+              - img [ref=e516]
+          - generic [ref=e521]:
+            - generic [ref=e522] [cursor=pointer]: Explore flights
+            - button [ref=e1278]:
+              - img [ref=e528]

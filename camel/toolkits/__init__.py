@@ -17,6 +17,7 @@ from .function_tool import (
     get_openai_function_schema,
     get_openai_tool_schema,
     generate_docstring,
+    tool,
 )
 from .open_api_specs.security_config import openapi_security_config
 
@@ -100,11 +101,13 @@ from .minimax_mcp_toolkit import MinimaxMCPToolkit
 from .imap_mail_toolkit import IMAPMailToolkit
 from .microsoft_outlook_mail_toolkit import OutlookMailToolkit
 from .earth_science_toolkit import EarthScienceToolkit
+from .skill_toolkit import SkillToolkit
 
 __all__ = [
     'BaseToolkit',
     'manual_timeout',
     'FunctionTool',
+    'tool',
     'get_openai_function_schema',
     'get_openai_tool_schema',
     "generate_docstring",
@@ -191,4 +194,5 @@ __all__ = [
     'IMAPMailToolkit',
     "OutlookMailToolkit",
     'EarthScienceToolkit',
+    'SkillToolkit',
 ]

@@ -15,6 +15,7 @@ from .aihubmix_config import AIHUBMIX_API_PARAMS, AihubMixConfig
 from .aiml_config import AIML_API_PARAMS, AIMLConfig
 from .amd_config import AMD_API_PARAMS, AMDConfig
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
+from .atlascloud_config import ATLASCLOUD_API_PARAMS, AtlasCloudConfig
 from .base_config import BaseConfig
 from .bedrock_config import BEDROCK_API_PARAMS, BedrockConfig
 from .cerebras_config import CEREBRAS_API_PARAMS, CerebrasConfig
@@ -56,6 +57,7 @@ from .sglang_config import SGLANG_API_PARAMS, SGLangConfig
 from .siliconflow_config import SILICONFLOW_API_PARAMS, SiliconFlowConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
+from .volcano_config import VOLCANO_API_PARAMS, VolcanoConfig
 from .watsonx_config import WATSONX_API_PARAMS, WatsonXConfig
 from .yi_config import YI_API_PARAMS, YiConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
@@ -130,6 +132,8 @@ __all__ = [
     'AMD_API_PARAMS',
     'OpenRouterConfig',
     'OPENROUTER_API_PARAMS',
+    'AtlasCloudConfig',
+    'ATLASCLOUD_API_PARAMS',
     'LMSTUDIO_API_PARAMS',
     'LMStudioConfig',
     'MINIMAX_API_PARAMS',
@@ -142,4 +146,6 @@ __all__ = [
     'CRYNUX_API_PARAMS',
     'FunctionGemmaConfig',
     'FUNCTION_GEMMA_API_PARAMS',
+    'VolcanoConfig',
+    'VOLCANO_API_PARAMS',
 ]

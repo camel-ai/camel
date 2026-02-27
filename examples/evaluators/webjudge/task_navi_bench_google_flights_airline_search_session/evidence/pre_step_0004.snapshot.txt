@@ -1,0 +1,321 @@
+- generic [ref=e1]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - button "Main menu" [ref=e714] [cursor=pointer]:
+          - img [ref=e7]
+        - link "Google" [ref=e715] [cursor=pointer]:
+          - /url: /
+      - generic [ref=e13]:
+        - generic [ref=e15]:
+          - generic:
+            - button "Skip to main content" [ref=e716]:
+              - generic: Skip to main content
+            - button "Accessibility feedback" [ref=e717]:
+              - generic: Accessibility feedback
+          - navigation [ref=e23]:
+            - link "Travel" [ref=e718]:
+              - img [ref=e29]
+              - generic: Travel
+            - link "Explore" [ref=e719]:
+              - img [ref=e38]
+              - generic: Explore
+            - link "Flights" [ref=e720]:
+              - img [ref=e46]
+              - generic: Flights
+            - link "Hotels" [ref=e721]:
+              - img [ref=e54]
+              - generic: Hotels
+            - link "Vacation rentals" [ref=e722]:
+              - img [ref=e65]
+              - generic: Vacation rentals
+        - generic [ref=e79]:
+          - button "Change appearance" [ref=e723]:
+            - img
+          - tooltip [ref=e84]: Change appearance
+      - generic [ref=e86]:
+        - button "Google apps" [ref=e724] [cursor=pointer]:
+          - img [ref=e91]
+        - link "Sign in" [ref=e725] [cursor=pointer]:
+          - /url: https://accounts.google.com/ServiceLogin?service=searchandassistant&passive=1209600&continue=https%3A%2F%2Fwww.google.com%2Ftravel%2Fflights%3Ftfs%3DCBwQARoOagwIAhIIL20vMDVxdGoaDnIMCAISCC9tLzA1cXRqQAFAAUgBcAGCAQsI____________AZgBAQ%26tfu%3DKgIIAw%26utm_source%3Dsign_in_ogb&followup=https%3A%2F%2Fwww.google.com%2Ftravel%2Fflights%3Ftfs%3DCBwQARoOagwIAhIIL20vMDVxdGoaDnIMCAISCC9tLzA1cXRqQAFAAUgBcAGCAQsI____________AZgBAQ%26tfu%3DKgIIAw%26utm_source%3Dsign_in_ogb&ec=GAZAlQM
+  - generic [ref=e102]:
+    - generic [ref=e105]: Flights
+    - generic [ref=e106]:
+      - search "Flight" [ref=e108]:
+        - generic [ref=e110]:
+          - generic [ref=e111]:
+            - combobox "Change ticket type. Round trip" [ref=e726] [cursor=pointer]:
+              - generic:
+                - img
+              - generic:
+                - generic: Round trip
+              - generic:
+                - img
+            - button "2 passengers" [active] [ref=e727]:
+              - generic [ref=e125]:
+                - img [ref=e126]
+                - generic [ref=e128]: "2"
+              - img [ref=e129]
+            - combobox "Change seating class. Economy" [ref=e728] [cursor=pointer]:
+              - generic:
+                - generic: Economy
+              - generic:
+                - img
+          - generic [ref=e137]:
+            - generic [ref=e138]:
+              - generic [ref=e144]:
+                - combobox "Where from?" [ref=e729]: Paris
+                - generic [ref=e147]: Paris
+                - img [ref=e148]
+              - generic [ref=e151]:
+                - button "Swap origin and destination." [disabled]:
+                  - img
+              - generic [ref=e157]:
+                - combobox "Where to?" [ref=e730]
+                - img [ref=e159]
+            - generic [ref=e170]:
+              - generic [ref=e172]:
+                - img [ref=e174]
+                - textbox "Departure" [ref=e731]
+              - textbox "Return" [ref=e732]
+        - button "Explore destinations" [ref=e733]:
+          - img [ref=e188]
+          - generic [ref=e190]: Explore
+      - main [ref=e191]:
+        - generic [ref=e192]:
+          - generic [ref=e194]:
+            - img [ref=e195]
+            - generic [ref=e197]:
+              - heading "Flexible? Discover the best flight deals with AI New" [level=3] [ref=e734]:
+                - text: Flexible? Discover the best flight deals with AI
+                - generic [ref=e200]: New
+              - generic [ref=e201]: Describe your ideal trip, and let Google Flights find the best deals for you
+            - button "Explore deals" [ref=e735]:
+              - generic [ref=e206]: Explore deals
+          - heading "Find and book cheap flights worldwide and track prices" [level=1] [ref=e736]
+          - generic [ref=e208]:
+            - generic [ref=e209]:
+              - heading "Find cheap flights from France to anywhere" [level=2] [ref=e737]
+              - button "Learn more about this section" [ref=e738] [cursor=pointer]:
+                - img [ref=e215]
+            - generic [ref=e217]:
+              - tablist [ref=e221]:
+                - tab "Paris" [selected] [ref=e739] [cursor=pointer]
+                - tab "Nice" [ref=e740] [cursor=pointer]
+                - tab "Lyon" [ref=e741] [cursor=pointer]
+                - tab "Marseille" [ref=e742] [cursor=pointer]
+              - list [ref=e226]:
+                - listitem [ref=e227]:
+                  - button "Find flights from Paris (ORY) to New York (EWR) from €357. Operated by Tap Air Portugal. Mar 12 to Mar 18. 1 stop" [ref=e743] [cursor=pointer]:
+                    - generic [ref=e229]:
+                      - generic [ref=e230]: Paris
+                      - img [ref=e231]
+                      - generic [ref=e233]: New York
+                    - generic [ref=e234]:
+                      - generic [ref=e235]: Mar 12 — Mar 18
+                      - generic [ref=e236]:
+                        - generic [ref=e237]: ·
+                        - text: 1 stop
+                    - generic [ref=e238]:
+                      - generic [ref=e239]: from €357
+                      - img [ref=e241]
+                - listitem [ref=e243]:
+                  - button "Find flights from Paris (CDG) to Los Angeles (LAX) from €466. Operated by JetBlue. Feb 19 to Feb 25. 1 stop" [ref=e744] [cursor=pointer]:
+                    - generic [ref=e245]:
+                      - generic [ref=e246]: Paris
+                      - img [ref=e247]
+                      - generic [ref=e249]: Los Angeles
+                    - generic [ref=e250]:
+                      - generic [ref=e251]: Feb 19 — Feb 25
+                      - generic [ref=e252]:
+                        - generic [ref=e253]: ·
+                        - text: 1 stop
+                    - generic [ref=e254]:
+                      - generic [ref=e255]: from €466
+                      - img [ref=e257]
+                - listitem [ref=e259]:
+                  - button "Find flights from Paris (CDG) to London (LTN) from €53. Operated by easyJet. Mar 5 to Mar 12. Nonstop" [ref=e745] [cursor=pointer]:
+                    - generic [ref=e261]:
+                      - generic [ref=e262]: Paris
+                      - img [ref=e263]
+                      - generic [ref=e265]: London
+                    - generic [ref=e266]:
+                      - generic [ref=e267]: Mar 5 — Mar 12
+                      - generic [ref=e268]:
+                        - generic [ref=e269]: ·
+                        - text: Nonstop
+                    - generic [ref=e270]:
+                      - generic [ref=e271]: from €53
+                      - img [ref=e273]
+                - text: · · · · · · · · ·
+              - generic [ref=e275]:
+                - button "Explore more destinations from Paris" [ref=e746] [cursor=pointer]
+                - button [ref=e277]:
+                  - generic [ref=e280]: Explore destinations
+          - generic [ref=e281]:
+            - heading "Useful tools to help you find the best flight deals" [level=2] [ref=e747]
+            - generic [ref=e283]:
+              - generic [ref=e284]:
+                - button "Find the cheapest days to fly The Date grid and Price graph make it easy to find the best flight deals" [ref=e748] [cursor=pointer]:
+                  - generic [ref=e286]:
+                    - img [ref=e287]
+                    - generic [ref=e289]:
+                      - generic [ref=e290]: Find the cheapest days to fly
+                      - generic [ref=e291]: The Date grid and Price graph make it easy to find the best flight deals
+                - button "Know when to book with price insights Price history and trend data show you the best time to book your airline ticket to get the cheapest price for your flight" [ref=e749] [cursor=pointer]:
+                  - generic [ref=e294]:
+                    - img [ref=e295]
+                    - generic [ref=e297]:
+                      - generic [ref=e298]: Know when to book with price insights
+                      - generic [ref=e299]: Price history and trend data show you the best time to book your airline ticket to get the cheapest price for your flight
+                - button "Track flight prices for a trip Not ready to book yet? Observe price changes for a route or flight and get notified when prices drop." [ref=e750] [cursor=pointer]:
+                  - generic [ref=e301]:
+                    - img [ref=e302]
+                    - generic [ref=e305]:
+                      - generic [ref=e306]: Track flight prices for a trip
+                      - generic [ref=e307]: Not ready to book yet? Observe price changes for a route or flight and get notified when prices drop.
+              - generic [ref=e308]:
+                - generic [ref=e309]: Insightful tools help you choose your trip dates
+                - generic [ref=e310]: If your travel plans are flexible, use the form above to start searching for a specific trip. Then, play around with the Date grid and Price graph options on the Search page to find the cheapest days to fly and book your tickets.
+          - generic [ref=e312]:
+            - heading "Popular flight destinations from France" [level=2] [ref=e751]
+            - generic [ref=e316]:
+              - link "City image for London London" [ref=e752] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-london.html
+                - img "City image for London" [ref=e753]
+                - generic [ref=e321]: London
+              - link "City image for Milan Milan" [ref=e754] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-milan.html
+                - img "City image for Milan" [ref=e755]
+                - generic [ref=e326]: Milan
+              - link "City image for Paris Paris" [ref=e756] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-paris.html
+                - img "City image for Paris" [ref=e757]
+                - generic [ref=e331]: Paris
+              - link "City image for Tokyo Tokyo" [ref=e758] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-tokyo.html
+                - img "City image for Tokyo" [ref=e759]
+                - generic [ref=e336]: Tokyo
+              - link "City image for Barcelona Barcelona" [ref=e760] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-barcelona.html
+                - img "City image for Barcelona" [ref=e761]
+                - generic [ref=e341]: Barcelona
+              - link "City image for Rome Rome" [ref=e762] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-rome.html
+                - img "City image for Rome" [ref=e763]
+                - generic [ref=e346]: Rome
+              - link "City image for New York New York" [ref=e764] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-new-york.html
+                - img "City image for New York" [ref=e765]
+                - generic [ref=e351]: New York
+              - link "City image for Madrid Madrid" [ref=e766] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-madrid.html
+                - img "City image for Madrid" [ref=e767]
+                - generic [ref=e356]: Madrid
+              - link "City image for Nice Nice" [ref=e768] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-nice.html
+                - img "City image for Nice" [ref=e769]
+                - generic [ref=e361]: Nice
+              - link "City image for Amsterdam Amsterdam" [ref=e770] [cursor=pointer]:
+                - /url: https://www.google.com/travel/flights/flights-to-amsterdam.html
+                - img "City image for Amsterdam" [ref=e771]
+                - generic [ref=e366]: Amsterdam
+          - generic [ref=e367]:
+            - heading "Frequently asked questions" [level=2] [ref=e772]
+            - group "Frequently asked questions" [ref=e773]:
+              - generic [ref=e372] [cursor=pointer]:
+                - generic [ref=e373]: What are some good flight destinations from France?
+                - button "What are some good flight destinations from France?" [ref=e774]:
+                  - img [ref=e379]
+              - generic [ref=e382] [cursor=pointer]:
+                - generic [ref=e383]: How can I find last-minute flight deals?
+                - button "How can I find last-minute flight deals?" [ref=e775]:
+                  - img [ref=e389]
+              - generic [ref=e392] [cursor=pointer]:
+                - generic [ref=e393]: How can I find cheap flights for a weekend getaway?
+                - button "How can I find cheap flights for a weekend getaway?" [ref=e776]:
+                  - img [ref=e399]
+              - generic [ref=e402] [cursor=pointer]:
+                - generic [ref=e403]: How can I find flight deals if my travel plans are flexible?
+                - button "How can I find flight deals if my travel plans are flexible?" [ref=e777]:
+                  - img [ref=e409]
+              - generic [ref=e412] [cursor=pointer]:
+                - generic [ref=e413]: How can I find cheap flights to anywhere?
+                - button "How can I find cheap flights to anywhere?" [ref=e778]:
+                  - img [ref=e419]
+              - generic [ref=e422] [cursor=pointer]:
+                - generic [ref=e423]: How can I get flight alerts for my trip?
+                - button "How can I get flight alerts for my trip?" [ref=e779]:
+                  - img [ref=e429]
+          - heading "Search more flights" [level=2] [ref=e780]
+          - generic [ref=e432]:
+            - heading "Find cheap flights on popular routes" [level=3] [ref=e781]
+            - generic [ref=e435]:
+              - tablist [ref=e436]:
+                - generic [ref=e439]:
+                  - tab "Flights from cities in France" [selected] [ref=e782] [cursor=pointer]:
+                    - generic:
+                      - generic: Flights from cities in France
+                  - tab "International flights from France" [ref=e783] [cursor=pointer]:
+                    - generic:
+                      - generic: International flights from France
+                  - tab "Domestic flights in France" [ref=e784] [cursor=pointer]:
+                    - generic:
+                      - generic: Domestic flights in France
+              - tabpanel "Flights from cities in France" [ref=e785]:
+                - generic [ref=e452]:
+                  - link "Flights from Paris" [ref=e786] [cursor=pointer]:
+                    - /url: https://www.google.com/travel/flights/flights-from-paris.html
+                  - link "Flights from Nice" [ref=e787] [cursor=pointer]:
+                    - /url: https://www.google.com/travel/flights/flights-from-nice.html
+                  - link "Flights from Lyon" [ref=e788] [cursor=pointer]:
+                    - /url: https://www.google.com/travel/flights/flights-from-lyon.html
+                  - link "Flights from Marseille" [ref=e789] [cursor=pointer]:
+                    - /url: https://www.google.com/travel/flights/flights-from-marseille.html
+                  - link "Flights from Toulouse" [ref=e790] [cursor=pointer]:
+                    - /url: https://www.google.com/travel/flights/flights-from-toulouse.html
+                  - link "Flights from Bordeaux" [ref=e791] [cursor=pointer]:
+                    - /url: https://www.google.com/travel/flights/flights-from-bordeaux.html
+      - contentinfo [ref=e461]:
+        - generic [ref=e463]:
+          - button "Language·English (United States)" [ref=e792]:
+            - img [ref=e467]
+            - generic [ref=e469]: Language·English (United States)
+          - button "Location·France" [ref=e793]:
+            - img [ref=e473]
+            - generic [ref=e476]: Location·France
+          - button "Currency EUR" [ref=e794]:
+            - img [ref=e480]
+            - generic [ref=e490]: Currency·EUR
+        - generic [ref=e491]:
+          - paragraph [ref=e492]: "Current language and currency options applied: English (United States) - France - EUR"
+          - paragraph [ref=e493]:
+            - text: Displayed currencies may differ from the currencies used to purchase flights.
+            - link "Learn more about currencies" [ref=e795] [cursor=pointer]:
+              - /url: https://www.google.com/googlefinance/disclaimer?hl=en-US&gl=FR
+              - text: Learn more
+          - paragraph [ref=e495]: Prices are final prices and include all taxes and fees, including payment fees for the cheapest common payment method (which may differ depending on the provider). Additional charges may apply for other types of payment, luggage, meals, WLAN or other additional services. Prices, availability and travel details are provided based on the latest information received from our partners. This information is reflected in the results within a period of less than 24 hours. Additional conditions may also be applied by our partners. You should then check prices and conditions with the services providers before booking.
+        - generic [ref=e496]:
+          - link "About Google Travel" [ref=e796] [cursor=pointer]:
+            - /url: https://about.google/?hl=en-US
+            - text: About
+          - link "Privacy" [ref=e797] [cursor=pointer]:
+            - /url: https://policies.google.com/privacy?hl=en-US
+          - link "Terms" [ref=e798] [cursor=pointer]:
+            - /url: https://policies.google.com/terms?hl=en-US
+          - link "Join user studies" [ref=e799] [cursor=pointer]:
+            - /url: https://google.qualtrics.com/jfe/form/SV_3NMIMtX0F2zkakR?reserved%3D1%26utm_source%3DFooter%2520link%26utm_medium%3Down_web%26%20utm_campaign%3DQ2%26productTag%3D0%26campaignDate%3DApril2020%26referral_code%3DUXbJ377133&Q_Language=en-US
+          - button "Report Illegal Content" [ref=e800] [cursor=pointer]
+          - link "Feedback" [ref=e801] [cursor=pointer]:
+            - /url: ./#0
+          - link "Help Center and Consumer Information" [ref=e802] [cursor=pointer]:
+            - /url: https://support.google.com/travel/?hl=en-US#topic=2475360
+        - generic [ref=e505]:
+          - generic [ref=e509]:
+            - generic [ref=e510] [cursor=pointer]: International sites
+            - button "International sites" [ref=e803]:
+              - img [ref=e516]
+          - generic [ref=e521]:
+            - generic [ref=e522] [cursor=pointer]: Explore flights
+            - button "Explore flights" [ref=e804]:
+              - img [ref=e528]

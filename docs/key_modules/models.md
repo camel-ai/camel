@@ -39,20 +39,21 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **OpenAI**       | gpt-4.5-preview<br/>gpt-4o, gpt-4o-mini<br/>o1, o1-preview, o1-mini<br/>o3-mini, o3-pro, o3<br/>o4-mini<br/>gpt-4.1, gpt-4.1-mini, gpt-4.1-nano<br/>gpt-5, gpt-5-mini, gpt-5-nano<br/>gpt-4-turbo, gpt-4, gpt-3.5-turbo |
 | **Azure OpenAI** | gpt-4o, gpt-4-turbo<br/>gpt-4, gpt-3.5-turbo |
 | **Mistral AI**   | mistral-large-latest, pixtral-12b-2409<br/>ministral-8b-latest, ministral-3b-latest<br/>open-mistral-nemo, codestral-latest<br/>open-mistral-7b, open-mixtral-8x7b<br/>open-mixtral-8x22b, open-codestral-mamba<br/>mistral-small-2506, mistral-medium-2508<br/>magistral-small-1.2, magistral-medium-1.2 |
-| **Moonshot**     | moonshot-v1-8k<br/>moonshot-v1-32k<br/>moonshot-v1-128k |
-| **Anthropic**    | claude-2.1, claude-2.0, claude-instant-1.2<br/>claude-3-opus-latest, claude-3-sonnet-20240229, claude-3-haiku-20240307<br/>claude-3-5-sonnet-latest, claude-3-5-haiku-latest, claude-3-7-sonnet-latest<br/>claude-sonnet-4-5, claude-sonnet-4-20250514, claude-opus-4-20250514, claude-opus-4-1-20250805 |
+| **Moonshot**     | kimi-k2-0905-Preview, kimi-k2.5, kimi-k2-turbo-preview<br/>kimi-k2-thinking, kimi-k2-thinking-turbo<br/>moonshot-v1-8k, moonshot-v1-32k, moonshot-v1-128k |
+| **Anthropic**    | claude-3-7-sonnet-latest<br/>claude-sonnet-4-5, claude-opus-4-5, claude-haiku-4-5<br/>claude-sonnet-4-20250514, claude-opus-4-20250514, claude-opus-4-1-20250805 |
 | **Gemini**       | gemini-3-pro-preview, gemini-3-flash-preview<br/>gemini-2.5-pro, gemini-2.5-flash<br/>gemini-2.0-flash, gemini-2.0-flash-thinking-exp<br/> gemini-2.0-flash-lite|
 | **Lingyiwanwu**  | yi-lightning, yi-large, yi-medium<br/>yi-large-turbo, yi-vision, yi-medium-200k<br/>yi-spark, yi-large-rag, yi-large-fc |
 | **Qwen**         | qwen3-coder-plus, qwq-32b-preview, qwq-plus, qvq-72b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long<br/>qwen-plus-latest, qwen-plus-2025-04-28, qwen-turbo-latest, qwen-turbo-2025-04-28<br/>qwen-vl-max, qwen-vl-plus, qwen-vl-72b-instruct, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo<br/>qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
 | **DeepSeek**     | deepseek-chat<br/>deepseek-reasoner |
 | **CometAPI**     | **All models available on [CometAPI](https://api.cometapi.com/pricing)**<br/>Including: gpt-5-chat-latest, gpt-5, gpt-5-mini, gpt-5-nano<br/>claude-opus-4-1-20250805, claude-sonnet-4-20250514, claude-3-7-sonnet-latest<br/>gemini-2.5-pro, gemini-2.5-flash, grok-4-0709, grok-3<br/>deepseek-v3.1, deepseek-v3, deepseek-r1-0528, qwen3-30b-a3b |
 | **Nebius**       | **All models available on [Nebius AI Studio](https://studio.nebius.com/)**<br/>Including: gpt-oss-120b, gpt-oss-20b, GLM-4.5<br/>DeepSeek V3 & R1, LLaMA, Mistral, and more |
-| **ZhipuAI**      | glm-4, glm-4v, glm-4v-flash<br/>glm-4v-plus-0111, glm-4-plus, glm-4-air<br/>glm-4-air-0111, glm-4-airx, glm-4-long<br/>glm-4-flashx, glm-zero-preview, glm-4-flash, glm-3-turbo |
+| **ZhipuAI**      | glm-4.7, glm-4.7-flash, glm-4.7-flashx<br/>glm-4.6, glm-4.6v, glm-4.6v-flash<br/>glm-4, glm-4v, glm-4v-flash<br/>glm-4v-plus-0111, glm-4-plus, glm-4-air<br/>glm-4-air-0111, glm-4-airx, glm-4-long<br/>glm-4-flashx, glm-4-flashx-250414<br/>glm-4-flash, glm-4-flash-250414<br/>glm-4.5-air, glm-4.5-airx, glm-4.5-flash<br/>glm-4.1v-thinking-flash, glm-4.1v-thinking-flashx<br/>glm-zero-preview, glm-3-turbo |
 | **InternLM**     | internlm3-latest, internlm3-8b-instruct<br/>internlm2.5-latest, internlm2-pro-chat |
 | **Reka**         | reka-core, reka-flash, reka-edge |
 | **COHERE**       | command-r-plus, command-r, command-light, command, command-nightly |
 | **ERNIE**        | ernie-x1-turbo-32k, ernie-x1-32k, ernie-x1-32k-preview<br/>ernie-4.5-turbo-128k, ernie-4.5-turbo-32k<br/>deepseek-v3, deepseek-r1, qwen3-235b-a22b |
-| **MiniMax**      | MiniMax-M2, MiniMax-M2-Stable |
+| **MiniMax**      | MiniMax-M2.1, MiniMax-M2.1-lightning, MiniMax-M2, MiniMax-M2-Stable |
+| **AtlasCloud**   | openai/gpt-oss-120b, zai-org/glm-4-7 |
 
 
 ### API & Connector Platforms
@@ -187,7 +188,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
 
   model = ModelFactory.create(
       model_platform=ModelPlatformType.ANTHROPIC,
-      model_type=ModelType.CLAUDE_3_5_SONNET,
+      model_type=ModelType.CLAUDE_HAIKU_4_5,
       model_config_dict=AnthropicConfig(temperature=0.2).as_dict(),
   )
 
@@ -454,6 +455,41 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
   </Tab>
 
 </Tabs>
+
+## Using OpenAI-Compatible Models
+
+If your provider exposes an OpenAI-compatible API, you can connect it by
+using `OPENAI_COMPATIBLE_MODEL` and passing the model name as a string. This
+lets you reuse the same request patterns while pointing to a different
+endpoint.
+
+```python
+import os
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+    model_type="your-model-name", #e.g. "gpt-4o"
+    url="https://your-openai-compatible-endpoint/v1",
+    api_key=os.getenv("OPENAI_COMPATIBLE_API_KEY"),
+    model_config_dict={"temperature": 0.2},
+)
+
+agent = ChatAgent(
+    system_message="You are a helpful assistant.",
+    model=model
+)
+
+response = agent.step("Explain quantum computing in simple terms.")
+print(response.msg.content)
+```
+
+<Note type="info">
+  Replace the model name, base URL, and API key with values provided by your
+  OpenAI-compatible service.
+</Note>
 
 
 ## Using On-Device Open Source Models

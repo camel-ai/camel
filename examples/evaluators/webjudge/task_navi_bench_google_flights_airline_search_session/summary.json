@@ -1,0 +1,32 @@
+{
+  "task_id": "navi_bench/google_flights/airline_search_simple/0",
+  "session_dir": "C:\\Users\\moizh\\workspace\\camel\\examples\\toolkits\\browser\\browser_skills_example\\session_logs\\session_20260203_210120\\task_navi_bench_google_flights_airline_search_simple_0_attempt_1",
+  "skills_dir": "C:\\Users\\moizh\\workspace\\camel\\examples\\toolkits\\browser\\browser_skills_example\\skills_store\\google_flights",
+  "subtasks_available": 0,
+  "reuse": {
+    "actions_total": 53,
+    "actions_in_subtasks": 0,
+    "reuse_ratio_actions": 0.0,
+    "subtask_calls": 0,
+    "browser_tool_calls": 53,
+    "reuse_ratio_calls": 0.0
+  },
+  "subtask_stats": [],
+  "agent_comm_summary": {
+    "total_communications": 54,
+    "subtask_calls": 0,
+    "browser_tool_calls": 53,
+    "main_agent_calls": 1,
+    "recovery_calls": 0,
+    "total_tools": 12
+  },
+  "website": "Google Flights",
+  "domain": "google_flights",
+  "start_url": "https://www.google.com/travel/flights",
+  "attempt": 1,
+  "subtasks_available_before": 0,
+  "subtasks_available_after": 0,
+  "phase": "post_run_pre_extract",
+  "generated_at": "2026-02-03T21:03:36.138039",
+  "attempt_runtime_seconds": 134.76487949996954
+}
