@@ -185,7 +185,12 @@ class MemoryRecord(BaseModel):
 
 
 class ContextRecord(BaseModel):
-    r"""The result of memory retrieving."""
+    r"""A memory record with a relevance score from retrieval.
+
+    Args:
+        memory_record (MemoryRecord): The retrieved record.
+        score (float): Relevance score from the retrieval.
+    """
 
     memory_record: MemoryRecord
     score: float
