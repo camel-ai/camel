@@ -53,7 +53,7 @@ from .langfuse import (
     is_langfuse_available,
     observe,
     update_current_observation,
-    update_current_trace,
+    update_langfuse_trace,
 )
 from .mcp import MCPServer
 from .response_format import get_pydantic_model, model_from_json_schema
@@ -112,7 +112,7 @@ __all__ = [
     "configure_langfuse",
     "is_langfuse_available",
     "get_current_agent_session_id",
-    "update_current_trace",
+    "update_langfuse_trace",
     "observe",
     "update_current_observation",
     "get_langfuse_status",

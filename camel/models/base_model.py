@@ -47,7 +47,7 @@ from camel.utils import (
     BaseTokenCounter,
     Constants,
     get_current_agent_session_id,
-    update_current_trace,
+    update_langfuse_trace,
 )
 
 if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
@@ -753,7 +753,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         _arun() methods before API execution.
         """
         agent_session_id = get_current_agent_session_id()
-        update_current_trace(
+        update_langfuse_trace(
             session_id=agent_session_id,
             metadata={
                 "source": "camel",

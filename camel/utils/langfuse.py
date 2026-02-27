@@ -189,7 +189,7 @@ def get_current_agent_session_id() -> Optional[str]:
     return None
 
 
-def update_current_trace(
+def update_langfuse_trace(
     session_id: Optional[str] = None,
     user_id: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,

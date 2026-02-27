@@ -63,12 +63,12 @@ def test_configure_langfuse_disabled_sets_disabled_flags(monkeypatch):
     assert langfuse_utils.os.environ["LANGFUSE_TRACING_ENABLED"] == "false"
 
 
-def test_update_current_trace_calls_v3_client(monkeypatch):
+def test_update_langfuse_trace_calls_v3_client(monkeypatch):
     client = MagicMock()
     monkeypatch.setattr(langfuse_utils, "_langfuse_configured", True)
     monkeypatch.setattr(langfuse_utils, "get_client", lambda: client)
 
-    ok = langfuse_utils.update_current_trace(
+    ok = langfuse_utils.update_langfuse_trace(
         session_id="session-1",
         user_id="user-1",
         metadata={"source": "camel"},
@@ -76,7 +76,7 @@ def test_update_current_trace_calls_v3_client(monkeypatch):
     )
 
     assert ok is True
-    client.update_current_trace.assert_called_once_with(
+    client.update_langfuse_trace.assert_called_once_with(
         session_id="session-1",
         user_id="user-1",
         metadata={"source": "camel"},
@@ -84,7 +84,7 @@ def test_update_current_trace_calls_v3_client(monkeypatch):
     )
 
 
-def test_update_current_trace_normalizes_non_string_tags(monkeypatch):
+def test_update_langfuse_trace_normalizes_non_string_tags(monkeypatch):
     class FakeTag:
         def __str__(self):
             return "fake-tag"
@@ -93,13 +93,13 @@ def test_update_current_trace_normalizes_non_string_tags(monkeypatch):
     monkeypatch.setattr(langfuse_utils, "_langfuse_configured", True)
     monkeypatch.setattr(langfuse_utils, "get_client", lambda: client)
 
-    ok = langfuse_utils.update_current_trace(
+    ok = langfuse_utils.update_langfuse_trace(
         session_id="session-1",
         tags=[FakeTag(), None],  # type: ignore[list-item]
     )
 
     assert ok is True
-    client.update_current_trace.assert_called_once_with(
+    client.update_langfuse_trace.assert_called_once_with(
         session_id="session-1",
         tags=["fake-tag"],
     )
