@@ -73,7 +73,7 @@ class StubTokenCounter(BaseTokenCounter):
 
 
 class StubModel(BaseModelBackend):
-    r"""Dummy model backend used for unit tests.
+    r"""A dummy model used for unit tests.
 
     Args:
         model_type (Union[ModelType, str]): Model type identifier.

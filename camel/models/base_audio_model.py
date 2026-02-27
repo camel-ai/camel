@@ -20,7 +20,8 @@ from camel.utils import Constants
 
 
 class BaseAudioModel(ABC):
-    r"""Base class for audio models providing TTS and STT.
+    r"""Base class for audio models providing Text-to-Speech (TTS) and
+    Speech-to-Text (STT) functionality.
 
     Args:
         api_key (Optional[str], optional): API key for the service.

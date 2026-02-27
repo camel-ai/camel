@@ -22,7 +22,8 @@ from camel.types import AudioModelType, VoiceType
 
 
 class OpenAIAudioModels(BaseAudioModel):
-    r"""OpenAI Text-to-Speech and Speech-to-Text models.
+    r"""Provides access to OpenAI's Text-to-Speech (TTS) and Speech_to_Text
+    (STT) models.
 
     Args:
         api_key (Optional[str], optional): OpenAI API key.

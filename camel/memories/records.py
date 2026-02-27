@@ -185,7 +185,7 @@ class MemoryRecord(BaseModel):
 
 
 class ContextRecord(BaseModel):
-    r"""A memory record with a relevance score from retrieval.
+    r"""The result of memory retrieving.
 
     Args:
         memory_record (MemoryRecord): The retrieved record.
