@@ -40,7 +40,7 @@ if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
         from camel.utils import observe  # type: ignore[no-redef]
 elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
-        from traceroot import trace as observe  # type: ignore[import]
+        from traceroot import trace as observe  # type: ignore[import,no-redef]
     except ImportError:
         from camel.utils import observe  # type: ignore[no-redef]
 else:
@@ -793,7 +793,7 @@ class FunctionGemmaModel(BaseModelBackend):
         except httpx.HTTPStatusError as e:
             raise RuntimeError(f"Ollama API request failed: {e}")
 
-    @observe()
+    @observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -836,7 +836,7 @@ class FunctionGemmaModel(BaseModelBackend):
         update_current_observation(usage=response.usage)
         return response
 
-    @observe()
+    @observe(as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],

@@ -30,7 +30,7 @@ from camel.utils import (
     api_keys_required,
     dependencies_required,
     get_current_agent_session_id,
-    update_langfuse_trace,
+    update_current_trace,
 )
 
 ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS = "structured-outputs-2025-11-13"
@@ -42,7 +42,7 @@ if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
         from camel.utils import observe  # type: ignore[no-redef]
 elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
-        from traceroot import trace as observe  # type: ignore[import]
+        from traceroot import trace as observe  # type: ignore[import,no-redef]
     except ImportError:
         from camel.utils import observe  # type: ignore[no-redef]
 else:
@@ -665,7 +665,7 @@ class AnthropicModel(BaseModelBackend):
 
         return anthropic_tools
 
-    @observe()
+    @observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -699,7 +699,7 @@ class AnthropicModel(BaseModelBackend):
         # Update Langfuse trace with current agent session and metadata
         agent_session_id = get_current_agent_session_id()
         if agent_session_id:
-            update_langfuse_trace(
+            update_current_trace(
                 session_id=agent_session_id,
                 metadata={
                     "agent_id": agent_session_id,
@@ -794,7 +794,7 @@ class AnthropicModel(BaseModelBackend):
                 response, str(self.model_type)
             )
 
-    @observe()
+    @observe(as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -828,7 +828,7 @@ class AnthropicModel(BaseModelBackend):
         # Update Langfuse trace with current agent session and metadata
         agent_session_id = get_current_agent_session_id()
         if agent_session_id:
-            update_langfuse_trace(
+            update_current_trace(
                 session_id=agent_session_id,
                 metadata={
                     "agent_id": agent_session_id,

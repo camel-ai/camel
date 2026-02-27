@@ -26,8 +26,8 @@ Configure Langfuse for CAMEL models.
 
 **Note:**
 
-This function configures the native langfuse_context which works with
-@observe() decorators. Set enabled=False to disable all tracing.
+This function configures environment variables used by Langfuse v3
+`@observe()` instrumentation. Set enabled=False to disable all tracing.
 
 <a id="camel.utils.langfuse.is_langfuse_available"></a>
 
@@ -68,12 +68,12 @@ def get_current_agent_session_id():
 
   Optional[str]: The session ID for the current agent.
 
-<a id="camel.utils.langfuse.update_langfuse_trace"></a>
+<a id="camel.utils.langfuse.update_current_trace"></a>
 
-## update_langfuse_trace
+## update_current_trace
 
 ```python
-def update_langfuse_trace(
+def update_current_trace(
     session_id: Optional[str] = None,
     user_id: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,

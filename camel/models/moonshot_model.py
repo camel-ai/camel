@@ -44,7 +44,7 @@ if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
         from camel.utils import observe  # type: ignore[no-redef]
 elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
-        from traceroot import trace as observe  # type: ignore[import]
+        from traceroot import trace as observe  # type: ignore[import,no-redef]
     except ImportError:
         from camel.utils import observe  # type: ignore[no-redef]
 else:
@@ -239,7 +239,7 @@ class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
 
         return cleaned_tools
 
-    @observe()
+    @observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -274,7 +274,7 @@ class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
             **request_config,
         )
 
-    @observe()
+    @observe(as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
