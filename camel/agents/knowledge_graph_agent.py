@@ -114,25 +114,24 @@ into Node and Relationship objects.
 
 @track_agent(name="KnowledgeGraphAgent")
 class KnowledgeGraphAgent(ChatAgent):
-    r"""An agent that can extract node and relationship information for
-    different entities from given `Element` content.
+    r"""An agent that extracts node and relationship information
+    for different entities from given `Element` content.
+
+    Args:
+        model (BaseModelBackend, optional): The model backend to
+            use for generating responses. (default: :obj:`OpenAIModel`
+            with :obj:`GPT_4O_MINI`)
 
     Attributes:
-        task_prompt (TextPrompt): A prompt for the agent to extract node and
-            relationship information for different entities.
+        task_prompt (TextPrompt): A prompt for the agent to extract
+            node and relationship information.
     """
 
     def __init__(
         self,
         model: Optional[BaseModelBackend] = None,
     ) -> None:
-        r"""Initialize the `KnowledgeGraphAgent`.
-
-        Args:
-        model (BaseModelBackend, optional): The model backend to use for
-            generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_4O_MINI`)
-        """
+        r"""Initialize the KnowledgeGraphAgent."""
         system_message = BaseMessage(
             role_name="Graphify",
             role_type=RoleType.ASSISTANT,

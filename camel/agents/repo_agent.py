@@ -40,14 +40,16 @@ logger = get_logger(__name__)
 
 
 class ProcessingMode(Enum):
+    r"""Processing modes for repository context building."""
+
     FULL_CONTEXT = auto()
     RAG = auto()
 
 
 class GitHubFile(BaseModel):
-    r"""Model to hold GitHub file information.
+    r"""Holds information about a single GitHub file.
 
-    Attributes:
+    Args:
         content (str): The content of the GitHub text.
         file_path (str): The path of the file.
         html_url (str): The actual url of the file.
@@ -59,12 +61,13 @@ class GitHubFile(BaseModel):
 
 
 class RepositoryInfo(BaseModel):
-    r"""Model to hold GitHub repository information.
+    r"""Holds GitHub repository information.
 
-    Attributes:
-        repo_name (str): The full name of the repository.
-        repo_url (str): The URL of the repository.
-        contents (list): A list to hold the repository contents.
+    Args:
+        repo_name (str): Full name of the repository.
+        repo_url (str): URL of the repository.
+        contents (List[GitHubFile]): File contents.
+            (default: :obj:`[]`)
     """
 
     repo_name: str
@@ -84,33 +87,30 @@ class RepoAgent(ChatAgent):
         code/documentation chunks using a vector store when context
         length exceeds a specified token limit.
 
-    Attributes:
-        vector_retriever (VectorRetriever): Retriever used to
-            perform semantic search in RAG mode. Required if repo content
-            exceeds context limit.
-        system_message (Optional[str]): The system message
-            for the chat agent. (default: :str:`"You are a code assistant
-            with repo context."`)
-        repo_paths (Optional[List[str]]): List of GitHub repository URLs to
-            load during initialization. (default: :obj:`None`)
-        model (BaseModelBackend): The model backend to use for generating
-            responses. (default: :obj:`ModelPlatformType.DEFAULT`
-            with `ModelType.DEFAULT`)
-        max_context_tokens (Optional[int]): Maximum number of tokens allowed
-            before switching to RAG mode. (default: :obj:`2000`)
-        github_auth_token (Optional[str]): GitHub personal access token
-            for accessing private or rate-limited repositories. (default:
-            :obj:`None`)
-        chunk_size (Optional[int]): Maximum number of characters per code chunk
-            when indexing files for RAG. (default: :obj:`8192`)
-        top_k (int): Number of top-matching chunks to retrieve from the vector
-            store in RAG mode. (default: :obj:`5`)
-        similarity (Optional[float]): Minimum similarity score required to
-            include a chunk in the RAG context. (default: :obj:`0.6`)
-        collection_name (Optional[str]): Name of the vector database
-            collection to use for storing and retrieving chunks. (default:
-            :obj:`None`)
-        **kwargs: Inherited from ChatAgent
+    Args:
+        vector_retriever (VectorRetriever): Retriever for semantic
+            search in RAG mode.
+        system_message (Optional[str]): System message for the
+            agent. (default: :obj:`"You are a code assistant with
+            repo context."`)
+        repo_paths (Optional[List[str]]): GitHub repo URLs to load
+            on init. (default: :obj:`None`)
+        model (BaseModelBackend, optional): Model backend.
+            (default: :obj:`ModelPlatformType.DEFAULT`
+            with :obj:`ModelType.DEFAULT`)
+        max_context_tokens (int, optional): Token limit before
+            switching to RAG. (default: :obj:`2000`)
+        github_auth_token (Optional[str]): GitHub PAT for private
+            repos. (default: :obj:`None`)
+        chunk_size (Optional[int]): Max characters per code chunk
+            in RAG indexing. (default: :obj:`8192`)
+        top_k (int): Top-k chunks to retrieve in RAG.
+            (default: :obj:`5`)
+        similarity (Optional[float]): Min similarity score for
+            RAG results. (default: :obj:`0.6`)
+        collection_name (Optional[str]): Vector DB collection
+            name. (default: :obj:`None`)
+        **kwargs: Passed to :obj:`ChatAgent`.
 
     Note:
         The current implementation of RAG mode requires using Qdrant as the

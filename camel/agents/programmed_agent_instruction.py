@@ -45,10 +45,10 @@ class ProgrammedAgentInstructionResult(BaseModel, Generic[T]):
     Contains the messages exchanged during execution and the computed value.
     The value type is specified by the generic type parameter T.
 
-    Attributes:
-        user_message (BaseMessage): The message sent by the user.
-        agent_message (BaseMessage): The message sent by the agent.
-        value (T): The computed result value of type T.
+    Args:
+        user_message (BaseMessage): The user's message.
+        agent_message (BaseMessage): The agent's response.
+        value (T): Computed result value.
     """
 
     user_message: BaseMessage
