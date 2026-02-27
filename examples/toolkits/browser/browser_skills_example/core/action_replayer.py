@@ -948,23 +948,29 @@ Your response should be a single line with just the ref, SKIP, or NONE.
             result = None
 
             if action_name == 'open_browser':
-                # Check if toolkit is already connected via CDP
-                # If toolkit has cdp_url, it means it's already connected to a browser
-                if hasattr(self.toolkit, 'cdp_url') and self.toolkit.cdp_url:
+                # Check if browser is already open (via CDP or prior launch)
+                # to avoid duplicate launchPersistentContext calls which can
+                # fail with "Target page, context or browser has been closed".
+                ws = getattr(self.toolkit, '_ws_wrapper', None)
+                browser_already_open = (
+                    (hasattr(self.toolkit, 'cdp_url') and self.toolkit.cdp_url)
+                    or (ws and getattr(ws, '_browser_opened', False))
+                )
+
+                if browser_already_open:
                     print(
-                        "  → Browser already connected via CDP, skipping open_browser"
+                        "  → Browser already open, skipping open_browser"
                     )
-                    # If there's a URL, visit it
+                    # If there's a URL, navigate to it
                     url = new_args[0] if new_args else None
                     if url:
                         result = await self.toolkit.browser_visit_page(url)
                     else:
-                        # No URL, just return success since browser is already open
                         result = {
-                            'result': 'Browser already connected via CDP'
+                            'result': 'Browser already open, skipped duplicate open_browser'
                         }
                 else:
-                    # Normal case: toolkit not connected via CDP
+                    # Browser not yet open: launch it
                     url = new_args[0] if new_args else None
                     if url:
                         result = await self.toolkit.browser_visit_page(url)
