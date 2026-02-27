@@ -773,6 +773,168 @@ async def test_chat_agent_astep_on_request_usage_callback():
 
 
 @pytest.mark.model_backend
+def test_chat_agent_stream_step_on_request_usage_callback():
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+    request_events = []
+
+    chunks = [
+        ChatCompletionChunk(
+            id="mock_stream_usage_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="Hello", role="assistant"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="mock_stream_usage_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content=" world"),
+                    index=0,
+                    finish_reason="stop",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "prompt_tokens": 10,
+                "completion_tokens": 3,
+                "total_tokens": 13,
+            },
+        ),
+    ]
+
+    def mock_stream():
+        for chunk in chunks:
+            yield chunk
+
+    model.run = MagicMock(return_value=mock_stream())
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        on_request_usage=lambda payload: request_events.append(payload),
+    )
+
+    responses = list(agent.step("Say hello"))
+    assert len(responses) > 0
+    assert responses[-1].info["usage"]["total_tokens"] == 13
+    assert len(request_events) == 1
+    _assert_request_usage_event(
+        request_events[0],
+        request_index=1,
+        response_id="mock_stream_usage_1",
+        request_total_tokens=13,
+        step_total_tokens=13,
+    )
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_on_request_usage_callback():
+    from typing import AsyncGenerator
+
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+    request_events = []
+
+    async def on_request_usage(payload):
+        request_events.append(payload)
+
+    chunks = [
+        ChatCompletionChunk(
+            id="mock_async_stream_usage_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="Hello", role="assistant"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="mock_async_stream_usage_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content=" world"),
+                    index=0,
+                    finish_reason="stop",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "prompt_tokens": 11,
+                "completion_tokens": 4,
+                "total_tokens": 15,
+            },
+        ),
+    ]
+
+    async def mock_async_stream() -> AsyncGenerator[ChatCompletionChunk, None]:
+        for chunk in chunks:
+            yield chunk
+
+    model.arun = AsyncMock(return_value=mock_async_stream())
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        on_request_usage=on_request_usage,
+    )
+
+    responses = []
+    streaming_response = await agent.astep("Say hello")
+    async for response in streaming_response:
+        responses.append(response)
+
+    assert len(responses) > 0
+    assert responses[-1].info["usage"]["total_tokens"] == 15
+    assert len(request_events) == 1
+    _assert_request_usage_event(
+        request_events[0],
+        request_index=1,
+        response_id="mock_async_stream_usage_1",
+        request_total_tokens=15,
+        step_total_tokens=15,
+    )
+
+
+@pytest.mark.model_backend
 def test_chat_agent_messages_window():
     system_msg = BaseMessage(
         role_name="assistant",

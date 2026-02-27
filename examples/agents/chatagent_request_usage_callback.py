@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 
 
 def on_request_usage(payload: dict) -> None:
-    r"""Callback invoked after each non-streaming LLM request."""
+    r"""Callback invoked after each LLM request."""
     request_usage = payload["request_usage"]
     step_usage = payload["step_usage"]
     print(
@@ -51,6 +51,32 @@ print(response.msg.content)
 print("\nStep usage:")
 print(response.info.get("usage"))
 
+# Streaming mode (request-level usage callback is also supported)
+stream_model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
+    model_config_dict={
+        "stream": True,
+        "stream_options": {"include_usage": True},
+    },
+)
+
+stream_agent = ChatAgent(
+    system_message="You are a concise assistant.",
+    model=stream_model,
+    on_request_usage=on_request_usage,
+    stream_accumulate=False,
+)
+
+print("\nStreaming output:")
+streaming_response = stream_agent.step("Write one short sentence about CAMEL.")
+for chunk in streaming_response:
+    if chunk.msg and chunk.msg.content:
+        print(chunk.msg.content, end="", flush=True)
+
+print("\n\nStreaming final usage:")
+print(streaming_response.info.get("usage"))
+
 '''
 ===============================================================================
 [request 1] response_id=chatcmpl-DChD9WKCUdpDYfH6M5TOnWLrxaoTW
@@ -61,10 +87,19 @@ request_total_tokens=470 step_total_tokens=907
 request_total_tokens=519 step_total_tokens=1426
 
 Final answer:
-The result of \( 123 + 456 \) is \( 579 \). When you multiply that by \( 2 \),
-the final result is \( 1158 \).
+The result of 123 + 456 is 579. When you multiply that by 2,
+the final result is 1158.
 
 Step usage:
 {'prompt_tokens': 1346, 'completion_tokens': 80, 'total_tokens': 1426}
+
+Streaming output:
+CAMEL is a banking supervision rating system assessing Capital, Assets,
+Management, Earnings, and Liquidity.[request 1]
+response_id=chatcmpl-DDqxHJPO7XUGOiBQri65Wiv3f87KH
+request_total_tokens=46 step_total_tokens=46
+
+Streaming final usage:
+{'prompt_tokens': 25, 'completion_tokens': 21, 'total_tokens': 46}
 ===============================================================================
 '''

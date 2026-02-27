@@ -4414,16 +4414,25 @@ class ChatAgent(BaseAgent):
                     and not isinstance(response, ChatCompletion)
                 )
             ):
+                request_token_usage = self._create_token_usage_tracker()
                 (
                     stream_completed,
                     tool_calls_complete,
+                    request_response_id,
                 ) = yield from self._process_stream_chunks_with_accumulator(
                     response,  # type: ignore[arg-type]
                     content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
+                    request_token_usage,
                     step_token_usage,
                     response_format,
+                )
+                self._emit_request_usage(
+                    usage_dict=request_token_usage,
+                    step_usage=step_token_usage.copy(),
+                    request_index=iteration_count,
+                    response_id=request_response_id,
                 )
 
                 if tool_calls_complete:
@@ -4460,6 +4469,7 @@ class ChatAgent(BaseAgent):
             elif hasattr(response, '__enter__') and not hasattr(
                 response, '__iter__'
             ):
+                request_token_usage = self._create_token_usage_tracker()
                 # Handle structured output stream (ChatCompletionStreamManager)
                 # This catches context managers that aren't iterators
                 with response as stream:  # type: ignore[union-attr]
@@ -4540,6 +4550,20 @@ class ChatAgent(BaseAgent):
                                 "partial": False,
                             },
                         )
+                        self._update_token_usage_tracker(
+                            request_token_usage,
+                            final_response.info["usage"],
+                        )
+                        self._update_token_usage_tracker(
+                            step_token_usage,
+                            final_response.info["usage"],
+                        )
+                        self._emit_request_usage(
+                            usage_dict=request_token_usage,
+                            step_usage=step_token_usage.copy(),
+                            request_index=iteration_count,
+                            response_id=final_completion.id or "",
+                        )
                         yield final_response
                         break
 
@@ -4553,6 +4577,15 @@ class ChatAgent(BaseAgent):
                 # Handle non-streaming response (fallback)
                 model_response = self._handle_batch_response(
                     response  # type: ignore[arg-type]
+                )
+                self._update_token_usage_tracker(
+                    step_token_usage, model_response.usage_dict
+                )
+                self._emit_request_usage(
+                    usage_dict=model_response.usage_dict,
+                    step_usage=step_token_usage.copy(),
+                    request_index=iteration_count,
+                    response_id=model_response.response_id,
                 )
                 yield self._convert_to_chatagent_response(
                     model_response,
@@ -4572,15 +4605,18 @@ class ChatAgent(BaseAgent):
         content_accumulator: StreamContentAccumulator,
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
+        request_token_usage: Dict[str, int],
         step_token_usage: Dict[str, int],
         response_format: Optional[Type[BaseModel]] = None,
-    ) -> Generator[ChatAgentResponse, None, Tuple[bool, bool]]:
+    ) -> Generator[ChatAgentResponse, None, Tuple[bool, bool, str]]:
         r"""Process streaming chunks with content accumulator."""
 
         tool_calls_complete = False
         stream_completed = False
+        last_response_id = ""
 
         for chunk in stream:
+            last_response_id = getattr(chunk, 'id', '') or last_response_id
             has_choices = bool(chunk.choices and len(chunk.choices) > 0)
 
             # Process chunk delta
@@ -4688,6 +4724,9 @@ class ChatAgent(BaseAgent):
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
                 self._update_token_usage_tracker(
+                    request_token_usage, safe_model_dump(chunk.usage)
+                )
+                self._update_token_usage_tracker(
                     step_token_usage, safe_model_dump(chunk.usage)
                 )
 
@@ -4755,7 +4794,7 @@ class ChatAgent(BaseAgent):
                 # consuming remaining chunks to capture final metadata.
                 continue
 
-        return stream_completed, tool_calls_complete
+        return stream_completed, tool_calls_complete, last_response_id
 
     def _accumulate_tool_calls(
         self,
@@ -5361,8 +5400,10 @@ class ChatAgent(BaseAgent):
                     and not isinstance(response, ChatCompletion)
                 )
             ):
+                request_token_usage = self._create_token_usage_tracker()
                 stream_completed = False
                 tool_calls_complete = False
+                request_response_id = ""
 
                 # Process chunks and forward them
                 async for (
@@ -5372,17 +5413,28 @@ class ChatAgent(BaseAgent):
                     content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
+                    request_token_usage,
                     step_token_usage,
                     response_format,
                 ):
                     if isinstance(item, tuple):
-                        # This is the final return value (stream_completed,
-                        # tool_calls_complete)
-                        stream_completed, tool_calls_complete = item
+                        # This is the final return value
+                        # (stream_completed, tool_calls_complete, response_id)
+                        (
+                            stream_completed,
+                            tool_calls_complete,
+                            request_response_id,
+                        ) = item
                         break
                     else:
                         # This is a ChatAgentResponse to be yielded
                         yield item
+                await self._aemit_request_usage(
+                    usage_dict=request_token_usage,
+                    step_usage=step_token_usage.copy(),
+                    request_index=iteration_count,
+                    response_id=request_response_id,
+                )
 
                 if tool_calls_complete:
                     # Clear completed tool calls
@@ -5418,6 +5470,7 @@ class ChatAgent(BaseAgent):
             elif hasattr(response, '__aenter__') and not hasattr(
                 response, '__aiter__'
             ):
+                request_token_usage = self._create_token_usage_tracker()
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
                 # Catches async context managers that aren't async iterators
@@ -5499,6 +5552,20 @@ class ChatAgent(BaseAgent):
                                 "partial": False,
                             },
                         )
+                        self._update_token_usage_tracker(
+                            request_token_usage,
+                            final_response.info["usage"],
+                        )
+                        self._update_token_usage_tracker(
+                            step_token_usage,
+                            final_response.info["usage"],
+                        )
+                        await self._aemit_request_usage(
+                            usage_dict=request_token_usage,
+                            step_usage=step_token_usage.copy(),
+                            request_index=iteration_count,
+                            response_id=final_completion.id or "",
+                        )
                         yield final_response
                         break
 
@@ -5514,6 +5581,15 @@ class ChatAgent(BaseAgent):
                 # Handle non-streaming response (fallback)
                 model_response = self._handle_batch_response(
                     response  # type: ignore[arg-type]
+                )
+                self._update_token_usage_tracker(
+                    step_token_usage, model_response.usage_dict
+                )
+                await self._aemit_request_usage(
+                    usage_dict=model_response.usage_dict,
+                    step_usage=step_token_usage.copy(),
+                    request_index=iteration_count,
+                    response_id=model_response.response_id,
                 )
                 yield self._convert_to_chatagent_response(
                     model_response,
@@ -5627,17 +5703,22 @@ class ChatAgent(BaseAgent):
         content_accumulator: StreamContentAccumulator,
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
+        request_token_usage: Dict[str, int],
         step_token_usage: Dict[str, int],
         response_format: Optional[Type[BaseModel]] = None,
-    ) -> AsyncGenerator[Union[ChatAgentResponse, Tuple[bool, bool]], None]:
+    ) -> AsyncGenerator[
+        Union[ChatAgentResponse, Tuple[bool, bool, str]], None
+    ]:
         r"""Async version of process streaming chunks with
         content accumulator.
         """
 
         tool_calls_complete = False
         stream_completed = False
+        last_response_id = ""
 
         async for chunk in stream:
+            last_response_id = getattr(chunk, 'id', '') or last_response_id
             has_choices = bool(chunk.choices and len(chunk.choices) > 0)
 
             # Process chunk delta
@@ -5747,6 +5828,9 @@ class ChatAgent(BaseAgent):
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
                 self._update_token_usage_tracker(
+                    request_token_usage, safe_model_dump(chunk.usage)
+                )
+                self._update_token_usage_tracker(
                     step_token_usage, safe_model_dump(chunk.usage)
                 )
 
@@ -5813,7 +5897,7 @@ class ChatAgent(BaseAgent):
                 continue
 
         # Yield the final status as a tuple
-        yield (stream_completed, tool_calls_complete)
+        yield (stream_completed, tool_calls_complete, last_response_id)
 
     async def _execute_tools_async_with_status_accumulator(
         self,
