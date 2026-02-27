@@ -624,10 +624,11 @@ class ActionReplayer:
         # Create model
         model = create_default_model()
 
-        # Create agent with toolkit
-        self.recovery_agent = ChatAgent(
-            model=model, tools=self.toolkit.get_tools() if self.toolkit else []
-        )
+        # Create agent WITHOUT browser tools.
+        # The recovery agent only analyses the snapshot text and returns a ref;
+        # giving it browser tools causes it to call async tools synchronously,
+        # which corrupts the event loop and kills the WebSocket connection.
+        self.recovery_agent = ChatAgent(model=model)
 
     async def agent_recovery(
         self,
@@ -953,14 +954,11 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                 # fail with "Target page, context or browser has been closed".
                 ws = getattr(self.toolkit, '_ws_wrapper', None)
                 browser_already_open = (
-                    (hasattr(self.toolkit, 'cdp_url') and self.toolkit.cdp_url)
-                    or (ws and getattr(ws, '_browser_opened', False))
-                )
+                    hasattr(self.toolkit, 'cdp_url') and self.toolkit.cdp_url
+                ) or (ws and getattr(ws, '_browser_opened', False))
 
                 if browser_already_open:
-                    print(
-                        "  → Browser already open, skipping open_browser"
-                    )
+                    print("  → Browser already open, skipping open_browser")
                     # If there's a URL, navigate to it
                     url = new_args[0] if new_args else None
                     if url:
