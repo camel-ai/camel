@@ -1195,6 +1195,7 @@ async def subtask_{subtask_func.subtask_id}():
             step_timeout_max_retries=self.step_timeout_max_retries,
             tool_execution_timeout=self.tool_execution_timeout,
             enable_snapshot_clean=False,
+            summarize_threshold=90,
             response_terminators=[
                 ResponseWordsTerminator({self._TASK_DONE_TOKEN: 1})
             ],
