@@ -268,7 +268,7 @@ class OpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    @observe(as_type="generation")
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -321,7 +321,7 @@ class OpenAIModel(BaseModelBackend):
 
         return result
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],

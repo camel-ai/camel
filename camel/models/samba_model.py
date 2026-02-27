@@ -171,7 +171,7 @@ class SambaModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(  # type: ignore[misc]
         self,
         messages: List[OpenAIMessage],
@@ -210,7 +210,7 @@ class SambaModel(BaseModelBackend):
             )
             return response
 
-    @observe(as_type="generation")
+    @observe()
     def _run(  # type: ignore[misc]
         self,
         messages: List[OpenAIMessage],

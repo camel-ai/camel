@@ -665,7 +665,7 @@ class AnthropicModel(BaseModelBackend):
 
         return anthropic_tools
 
-    @observe(as_type="generation")
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -794,7 +794,7 @@ class AnthropicModel(BaseModelBackend):
                 response, str(self.model_type)
             )
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],

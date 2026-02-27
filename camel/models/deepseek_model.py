@@ -163,7 +163,7 @@ class DeepSeekModel(OpenAICompatibleModel):
 
         return request_config
 
-    @observe(as_type="generation")
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -196,7 +196,7 @@ class DeepSeekModel(OpenAICompatibleModel):
 
         return response
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],

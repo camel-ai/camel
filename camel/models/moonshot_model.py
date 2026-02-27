@@ -239,7 +239,7 @@ class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
 
         return cleaned_tools
 
-    @observe(as_type="generation")
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -274,7 +274,7 @@ class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
             **request_config,
         )
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],

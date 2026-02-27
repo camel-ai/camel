@@ -169,7 +169,7 @@ class OpenAICompatibleModel(BaseModelBackend):
                     **kwargs,
                 )
 
-    @observe(as_type="generation")
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -220,7 +220,7 @@ class OpenAICompatibleModel(BaseModelBackend):
 
         return result
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],

@@ -451,7 +451,7 @@ class GeminiModel(OpenAICompatibleModel):
 
         return async_thought_preserving_generator()
 
-    @observe(as_type="generation")
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -493,7 +493,7 @@ class GeminiModel(OpenAICompatibleModel):
 
         return result
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],

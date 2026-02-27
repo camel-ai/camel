@@ -793,7 +793,7 @@ class FunctionGemmaModel(BaseModelBackend):
         except httpx.HTTPStatusError as e:
             raise RuntimeError(f"Ollama API request failed: {e}")
 
-    @observe(as_type="generation")
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -836,7 +836,7 @@ class FunctionGemmaModel(BaseModelBackend):
         update_current_observation(usage=response.usage)
         return response
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
