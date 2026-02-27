@@ -26,6 +26,9 @@ class MemoryBlock(ABC):
     However, it intentionally does not define a retrieval interface, as the
     structure of the data to be retrieved may vary in different types of
     memory blocks.
+
+    Args:
+        None.
     """
 
     @abstractmethod
@@ -86,15 +89,14 @@ class BaseContextCreator(ABC):
     primary goal is to create a context that is aligned with a specified token
     count limit, allowing subclasses to define their specific approach.
 
-    Subclasses should implement the :obj:`token_counter`,:obj: `token_limit`,
+    Subclasses should implement the :obj:`token_counter`, :obj:`token_limit`,
     and :obj:`create_context` methods to provide specific context creation
     logic.
 
-    Attributes:
-        token_counter (BaseTokenCounter): A token counter instance responsible
-            for counting tokens in a message.
-        token_limit (int): The maximum number of tokens allowed in the
-            generated context.
+    Args:
+        token_counter (BaseTokenCounter): Token counter implementation used by
+            subclasses.
+        token_limit (int): Maximum token budget used by subclasses.
     """
 
     @property
@@ -136,6 +138,10 @@ class AgentMemory(MemoryBlock, ABC):
     direct integration with an agent. Two key abstract functions, "retrieve"
     and "get_context_creator", are used for generating model context based on
     the memory records stored within the AgentMemory.
+
+    Args:
+        agent_id (Optional[str], optional): Identifier associated with records
+            in this memory. (default: :obj:`None`)
     """
 
     @property

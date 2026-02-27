@@ -165,6 +165,18 @@ SIMPLE_FORMAT_PROMPT = TextPrompt(
 
 @dataclass
 class _ToolOutputHistoryEntry:
+    r"""Represents one tool output entry stored in conversation history.
+
+    Args:
+        tool_name (str): Name of the executed tool.
+        tool_call_id (str): Identifier of the tool call.
+        result_text (str): Text result returned by the tool.
+        record_uuids (List[str]): UUIDs of memory records tied to this result.
+        record_timestamps (List[float]): Timestamps for related records.
+        cached (bool, optional): Whether the result came from cache.
+            (default: :obj:`False`)
+    """
+
     tool_name: str
     tool_call_id: str
     result_text: str
@@ -174,8 +186,13 @@ class _ToolOutputHistoryEntry:
 
 
 class StreamContentAccumulator:
-    r"""Manages content accumulation across streaming responses to ensure
-    all responses contain complete cumulative content."""
+    r"""Manages content accumulation across streaming
+    responses to ensure all responses contain complete
+    cumulative content.
+
+    Args:
+        None.
+    """
 
     def __init__(self):
         self.base_content = ""  # Content before tool calls
@@ -233,6 +250,10 @@ class StreamingChatAgentResponse:
     This class wraps a Generator[ChatAgentResponse, None, None] and provides
     the same interface as ChatAgentResponse, so existing code doesn't need to
     change.
+
+    Args:
+        generator (Generator[ChatAgentResponse, None, None]): Streaming
+            generator that yields partial responses.
     """
 
     def __init__(self, generator: Generator[ChatAgentResponse, None, None]):
@@ -310,6 +331,10 @@ class AsyncStreamingChatAgentResponse:
 
     This class wraps an AsyncGenerator[ChatAgentResponse, None] and provides
     both awaitable and async iterable interfaces.
+
+    Args:
+        async_generator (AsyncGenerator[ChatAgentResponse, None]): Async
+            streaming generator that yields partial responses.
     """
 
     def __init__(

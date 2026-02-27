@@ -37,6 +37,10 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
     facts and generates questions that require connecting these facts
     logically.
 
+    Args:
+        **kwargs (Any): Additional keyword arguments passed to
+            :obj:`ProgrammableChatAgent`.
+
     Attributes:
         model_config (ConfigDict): Configuration for model behavior.
         system_message (BaseMessage): System message defining agent's role and
@@ -46,12 +50,7 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, **kwargs: Any) -> None:
-        r"""Initialize the MultiHopGeneratorAgent.
-
-        Args:
-            **kwargs (Any): Additional keyword arguments to pass to parent
-                class.
-        """
+        r"""Initialize the MultiHopGeneratorAgent."""
         super().__init__(**kwargs)
 
         system_text: str = textwrap.dedent(

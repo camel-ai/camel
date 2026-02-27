@@ -104,26 +104,29 @@ Please answer me according to the result directly.
 @track_agent(name="MCPAgent")
 class MCPAgent(ChatAgent):
     r"""A specialized agent designed to interact with MCP registries.
+
     The MCPAgent enhances a base ChatAgent by integrating MCP tools from
     various registries for search capabilities.
 
-    Attributes:
-        system_message (Optional[str]): The system message for the chat agent.
-            (default: :str:`"You are an assistant with search capabilities
-            using MCP tools."`)
-        model (BaseModelBackend): The model backend to use for generating
-            responses. (default: :obj:`ModelPlatformType.DEFAULT` with
-            `ModelType.DEFAULT`)
+    Args:
+        system_message (Optional[Union[str, BaseMessage]], optional): System
+            message for the agent. (default: :obj:`"You are an assistant with
+            search capabilities using MCP tools."`)
+        model (BaseModelBackend, optional): Model backend for responses.
+            (default: :obj:`ModelPlatformType.DEFAULT` with
+            :obj:`ModelType.DEFAULT`)
         registry_configs (List[BaseMCPRegistryConfig]): List of registry
-            configurations (default: :obj:`None`)
+            configurations. (default: :obj:`None`)
         local_config (Optional[Dict[str, Any]]): The local configuration for
             the MCP agent. (default: :obj:`None`)
         local_config_path (Optional[str]): The path to the local configuration
             file for the MCP agent. (default: :obj:`None`)
+        tools (Optional[List[Union[FunctionTool, Callable]]], optional):
+            Tools exposed to the agent. (default: :obj:`None`)
         function_calling_available (bool): Flag indicating whether the
             model is equipped with the function calling ability.
             (default: :obj:`True`)
-        **kwargs: Inherited from ChatAgent
+        **kwargs: Additional keyword arguments for :obj:`ChatAgent`.
     """
 
     def __init__(

@@ -65,10 +65,12 @@ from camel.utils import BaseTokenCounter, configure_langfuse
 
 
 class ModelFactory:
-    r"""Factory of backend models.
+    r"""Factory for creating model backend instances.
+
+    Use :meth:`create` to build a backend from a model platform and type.
 
     Raises:
-        ValueError: in case the provided model type is unknown.
+        ValueError: If the provided model platform is unknown.
     """
 
     _MODEL_PLATFORM_TO_CLASS_MAP: ClassVar[

@@ -31,6 +31,8 @@ from camel.utils import BaseTokenCounter
 
 
 class StubTokenCounter(BaseTokenCounter):
+    r"""Token counter implementation for stub models."""
+
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Token counting for STUB models, directly returning a constant.
 
@@ -71,7 +73,23 @@ class StubTokenCounter(BaseTokenCounter):
 
 
 class StubModel(BaseModelBackend):
-    r"""A dummy model used for unit tests."""
+    r"""A dummy model used for unit tests.
+
+    Args:
+        model_type (Union[ModelType, str]): Model identifier.
+        model_config_dict (Optional[Dict[str, Any]], optional): Model
+            configuration dictionary. (default: :obj:`None`)
+        api_key (Optional[str], optional): API key placeholder.
+            (default: :obj:`None`)
+        url (Optional[str], optional): Endpoint URL placeholder.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter.
+            (default: :obj:`None`)
+        timeout (Optional[float], optional): Timeout in seconds.
+            (default: :obj:`None`)
+        max_retries (int, optional): Maximum retry attempts.
+            (default: :obj:`3`)
+    """
 
     model_type = ModelType.STUB
 

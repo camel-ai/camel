@@ -67,7 +67,13 @@ else:
 
 
 class _StreamLogger:
-    r"""Base for stream logging wrappers."""
+    r"""Base helper for stream logging wrappers.
+
+    Args:
+        log_path (Optional[str]): Path to the JSON log file.
+            (default: :obj:`None`)
+        log_enabled (bool): Whether streaming logs are enabled.
+    """
 
     def __init__(self, log_path: Optional[str], log_enabled: bool):
         self._log_path = log_path
@@ -119,7 +125,15 @@ class _StreamLogger:
 
 
 class _SyncStreamWrapper(_StreamLogger):
-    r"""Sync stream wrapper with logging."""
+    r"""Synchronous stream wrapper with logging support.
+
+    Args:
+        stream (Union[Stream[ChatCompletionChunk], Generator[
+            ChatCompletionChunk, None, None]]): Streaming iterator to wrap.
+        log_path (Optional[str]): Path to the JSON log file.
+            (default: :obj:`None`)
+        log_enabled (bool): Whether streaming logs are enabled.
+    """
 
     def __init__(
         self,
@@ -156,7 +170,15 @@ class _SyncStreamWrapper(_StreamLogger):
 
 
 class _AsyncStreamWrapper(_StreamLogger):
-    r"""Async stream wrapper with logging."""
+    r"""Asynchronous stream wrapper with logging support.
+
+    Args:
+        stream (Union[AsyncStream[ChatCompletionChunk], AsyncGenerator[
+            ChatCompletionChunk, None]]): Async streaming iterator to wrap.
+        log_path (Optional[str]): Path to the JSON log file.
+            (default: :obj:`None`)
+        log_enabled (bool): Whether streaming logs are enabled.
+    """
 
     def __init__(
         self,
@@ -200,6 +222,11 @@ class ModelBackendMeta(abc.ABCMeta):
     - Preprocess messages (remove <think> tags) before sending to the model.
     - Postprocess responses (extract <think> tags into reasoning_content)
       after receiving from the model.
+
+    Args:
+        name (str): Class name being created.
+        bases (Tuple[type, ...]): Base classes for the new class.
+        namespace (Dict[str, Any]): Namespace dictionary for the class body.
     """
 
     def __new__(mcs, name, bases, namespace):

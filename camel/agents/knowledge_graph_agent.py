@@ -117,22 +117,21 @@ class KnowledgeGraphAgent(ChatAgent):
     r"""An agent that can extract node and relationship information for
     different entities from given `Element` content.
 
+    Args:
+        model (BaseModelBackend, optional): Model backend used to generate
+            responses. (default: :obj:`OpenAIModel` with
+            :obj:`ModelType.GPT_4O_MINI`)
+
     Attributes:
-        task_prompt (TextPrompt): A prompt for the agent to extract node and
-            relationship information for different entities.
+        task_prompt (TextPrompt): Prompt used to extract nodes and
+            relationships for entities.
     """
 
     def __init__(
         self,
         model: Optional[BaseModelBackend] = None,
     ) -> None:
-        r"""Initialize the `KnowledgeGraphAgent`.
-
-        Args:
-        model (BaseModelBackend, optional): The model backend to use for
-            generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_4O_MINI`)
-        """
+        r"""Initialize the `KnowledgeGraphAgent`."""
         system_message = BaseMessage(
             role_name="Graphify",
             role_type=RoleType.ASSISTANT,

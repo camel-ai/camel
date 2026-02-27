@@ -45,10 +45,10 @@ class ProgrammedAgentInstructionResult(BaseModel, Generic[T]):
     Contains the messages exchanged during execution and the computed value.
     The value type is specified by the generic type parameter T.
 
-    Attributes:
-        user_message (BaseMessage): The message sent by the user.
-        agent_message (BaseMessage): The message sent by the agent.
-        value (T): The computed result value of type T.
+    Args:
+        user_message (BaseMessage): Message sent by the user.
+        agent_message (BaseMessage): Message sent by the agent.
+        value (T): Computed result value.
     """
 
     user_message: BaseMessage
@@ -143,6 +143,10 @@ class ProgrammableChatAgent(ChatAgent, AbstractProgrammableAgent):
     and basic state tracking for message roles. Implementing classes need to
     provide specific repair logic for their use cases.
 
+    Args:
+        **kwargs (Any): Additional keyword arguments passed to
+            :obj:`ChatAgent`.
+
     Attributes:
         _operation_lock (threading.Lock): Lock for ensuring atomic operations.
         _last_message_role (Optional[str]): Role of the last message in the
@@ -150,12 +154,7 @@ class ProgrammableChatAgent(ChatAgent, AbstractProgrammableAgent):
     """
 
     def __init__(self, **kwargs: Any) -> None:
-        r"""Initialize the ProgrammableChatAgent.
-
-        Args:
-            **kwargs (Any): Additional keyword arguments to pass to parent
-                class.
-        """
+        r"""Initialize the ProgrammableChatAgent."""
         super().__init__(**kwargs)
         self._operation_lock = threading.Lock()
         self._last_message_role: Optional[str] = None

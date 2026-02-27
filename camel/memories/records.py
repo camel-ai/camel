@@ -29,7 +29,7 @@ from camel.types import OpenAIBackendRole
 class MemoryRecord(BaseModel):
     r"""The basic message storing unit in the CAMEL memory system.
 
-    Attributes:
+    Args:
         message (BaseMessage): The main content of the record.
         role_at_backend (OpenAIBackendRole): An enumeration value representing
             the role this message played at the OpenAI backend. Note that this
@@ -38,12 +38,14 @@ class MemoryRecord(BaseModel):
         uuid (UUID, optional): A universally unique identifier for this record.
             This is used to uniquely identify this record in the memory system.
             If not given, it will be assigned with a random UUID.
+            (default: :obj:`uuid4()`)
         extra_info (Dict[str, str], optional): A dictionary of additional
             key-value pairs that provide more information. If not given, it
-            will be an empty `Dict`.
-        timestamp (float, optional): The timestamp when the record was created.
-        agent_id (str): The identifier of the agent associated with this
-            memory.
+            will be an empty dictionary. (default: :obj:`{}`)
+        timestamp (float, optional): Timestamp when the record was created.
+            (default: :obj:`time.time_ns() / 1_000_000_000`)
+        agent_id (str, optional): Identifier of the associated agent.
+            (default: :obj:`""`)
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -185,7 +187,14 @@ class MemoryRecord(BaseModel):
 
 
 class ContextRecord(BaseModel):
-    r"""The result of memory retrieving."""
+    r"""A scored memory record returned by retrieval.
+
+    Args:
+        memory_record (MemoryRecord): Retrieved memory record.
+        score (float): Retrieval relevance score.
+        timestamp (float, optional): Timestamp when the context record was
+            created. (default: :obj:`time.time_ns() / 1_000_000_000`)
+    """
 
     memory_record: MemoryRecord
     score: float

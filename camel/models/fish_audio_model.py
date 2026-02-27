@@ -21,6 +21,14 @@ from camel.models.base_audio_model import BaseAudioModel
 class FishAudioModel(BaseAudioModel):
     r"""Provides access to FishAudio's Text-to-Speech (TTS) and Speech_to_Text
     (STT) models.
+
+    Args:
+        api_key (Optional[str], optional): API key for FishAudio.
+            If not provided, :obj:`FISHAUDIO_API_KEY` is used.
+            (default: :obj:`None`)
+        url (Optional[str], optional): Base URL for FishAudio API.
+            If not provided, :obj:`FISHAUDIO_API_BASE_URL` is used.
+            (default: :obj:`None`)
     """
 
     def __init__(
