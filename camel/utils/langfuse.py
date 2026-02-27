@@ -172,9 +172,9 @@ def update_langfuse_trace(
 ) -> bool:
     r"""Update the current Langfuse trace with session ID and metadata.
 
-    Note: In Langfuse v3+, trace updates are handled automatically by the
-    @observe() decorator. This function is kept for backward compatibility
-    but may have limited functionality.
+    This function updates trace-level attributes on the currently active trace.
+    Trace attributes include user_id, session_id, metadata, and tags that apply
+    to the entire trace (not just a single observation).
 
     Args:
         session_id(Optional[str]): Optional session ID to use. If :obj:`None`
@@ -188,22 +188,51 @@ def update_langfuse_trace(
 
     Returns:
         bool: True if update was successful, False otherwise.
+
+    Note:
+        Must be called within a function decorated with @observe().
     """
     if not is_langfuse_available():
         return False
 
-    # In Langfuse v3+, trace updates are typically handled through the
-    # @observe() decorator's context. This function is kept for compatibility
-    # but trace updates should be done through the decorator's metadata parameter.
-    logger.debug(
-        "update_langfuse_trace called - in Langfuse v3+, "
-        "trace updates should be done through @observe() decorator metadata"
-    )
+    # Use provided session_id or get from thread-local storage
+    final_session_id = session_id or get_current_agent_session_id()
 
-    # Note: In v3, we cannot directly update the current trace without
-    # access to the trace object. The @observe() decorator handles this.
-    # This function returns True to maintain backward compatibility.
-    return True
+    # If no attributes to set, return early
+    if not any([final_session_id, user_id, metadata, tags]):
+        return False
+
+    try:
+        from opentelemetry import trace as otel_trace_api
+        from langfuse._client.attributes import LangfuseOtelSpanAttributes
+
+        current_span = otel_trace_api.get_current_span()
+        if current_span is None or not current_span.is_recording():
+            return False
+
+        # Set trace-level attributes on current span
+        if final_session_id:
+            current_span.set_attribute(
+                LangfuseOtelSpanAttributes.TRACE_SESSION_ID, final_session_id
+            )
+        if user_id:
+            current_span.set_attribute(
+                LangfuseOtelSpanAttributes.TRACE_USER_ID, user_id
+            )
+        if metadata:
+            for k, v in metadata.items():
+                current_span.set_attribute(
+                    f"{LangfuseOtelSpanAttributes.TRACE_METADATA}.{k}", str(v)
+                )
+        if tags:
+            current_span.set_attribute(
+                LangfuseOtelSpanAttributes.TRACE_TAGS, tags
+            )
+
+        return True
+
+    except Exception:
+        return False
 
 
 def update_current_observation(
@@ -217,9 +246,9 @@ def update_current_observation(
     r"""Update the current Langfuse observation with input, output,
     model, model_parameters, and usage_details.
 
-    Note: In Langfuse v3+, observation updates are handled automatically by the
-    @observe() decorator. This function is kept for backward compatibility
-    but may have limited functionality.
+    This function supplements the @observe() decorator by adding model-specific
+    metadata (model name, parameters, token usage) that are not automatically
+    captured by the decorator.
 
     Args:
         input(Optional[Dict[str, Any]]): Optional input dictionary.
@@ -230,22 +259,42 @@ def update_current_observation(
         model_parameters(Optional[Dict[str, Any]]): Optional model parameters
             dictionary. (default: :obj:`None`)
         usage_details(Optional[Dict[str, Any]]): Optional usage details
-            dictionary. (default: :obj:`None`)
+            dictionary. Can also be passed as 'usage' keyword argument.
+            (default: :obj:`None`)
 
     Returns:
         None
+
+    Note:
+        Must be called within a function decorated with @observe().
+        Silently fails if called outside of an observation context.
     """
     if not is_langfuse_available():
         return
 
-    # In Langfuse v3+, observation updates are typically handled through the
-    # @observe() decorator. This function is kept for compatibility.
-    logger.debug(
-        "update_current_observation called - in Langfuse v3+, "
-        "observation updates should be done through @observe() decorator"
-    )
-    # Note: Parameters are accepted but not used in v3+ as updates are
-    # handled automatically by the @observe() decorator.
+    try:
+        from langfuse import get_client
+
+        client = get_client()
+
+        # Handle usage parameter (some code passes 'usage' instead of 'usage_details')
+        if "usage" in kwargs and usage_details is None:
+            usage_details = kwargs.pop("usage")
+
+        # Update current generation (works for most model backends)
+        # Langfuse will handle object-to-dict conversion automatically
+        client.update_current_generation(
+            input=input,
+            output=output,
+            model=model,
+            model_parameters=model_parameters,
+            usage_details=usage_details,
+            **kwargs,
+        )
+
+    except Exception:
+        # Silently fail to maintain backward compatibility
+        pass
 
 
 def get_langfuse_status() -> Dict[str, Any]:
