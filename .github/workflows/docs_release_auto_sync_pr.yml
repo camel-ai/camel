@@ -1,0 +1,115 @@
+name: docs-release-auto-sync-pr
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Base ref for diff"
+        required: true
+      head_ref:
+        description: "Head ref for diff"
+        required: true
+      model_platform:
+        description: "Model platform for CAMEL ChatAgent"
+        required: false
+        default: "openai"
+      model_type:
+        description: "Model type for CAMEL ChatAgent"
+        required: false
+        default: "gpt-4o-mini"
+
+jobs:
+  auto-sync-docs-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install CAMEL
+        run: pip install -e .
+
+      - name: Verify doc_code_map
+        run: python docs/scripts/docs_sync/doc_code_map.py verify
+
+      - name: Determine refs
+        id: refs
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "base=${{ inputs.base_ref }}" >> "$GITHUB_OUTPUT"
+            echo "head=${{ inputs.head_ref }}" >> "$GITHUB_OUTPUT"
+            echo "model_platform=${{ inputs.model_platform }}" >> "$GITHUB_OUTPUT"
+            echo "model_type=${{ inputs.model_type }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          current_tag="${{ github.event.release.tag_name }}"
+          prev_tag=$(git tag --sort=-creatordate | grep -Fxv "$current_tag" | head -n 1 || true)
+          if [ -z "$prev_tag" ]; then
+            echo "No previous tag found; skip auto docs sync."
+            echo "base=" >> "$GITHUB_OUTPUT"
+            echo "head=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "base=$prev_tag" >> "$GITHUB_OUTPUT"
+          echo "head=$current_tag" >> "$GITHUB_OUTPUT"
+          echo "model_platform=openai" >> "$GITHUB_OUTPUT"
+          echo "model_type=gpt-4o-mini" >> "$GITHUB_OUTPUT"
+
+      - name: Compute impacted docs
+        if: steps.refs.outputs.base != ''
+        run: |
+          python docs/scripts/docs_sync/doc_code_map.py impacted \
+            --base-ref "${{ steps.refs.outputs.base }}" \
+            --head-ref "${{ steps.refs.outputs.head }}" > impacted_docs.txt
+          cat impacted_docs.txt
+
+      - name: Skip when no impacted docs
+        if: steps.refs.outputs.base != ''
+        run: |
+          if [ ! -s impacted_docs.txt ]; then
+            echo "No impacted docs. Skip."
+            exit 0
+          fi
+
+      - name: Auto update impacted docs with ChatAgent
+        if: steps.refs.outputs.base != ''
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "${OPENAI_API_KEY}" ]; then
+            echo "OPENAI_API_KEY is required for auto doc sync."
+            exit 1
+          fi
+          python docs/scripts/docs_sync/auto_sync_docs_with_chatagent.py \
+            --docs-file impacted_docs.txt \
+            --model-platform "${{ steps.refs.outputs.model_platform }}" \
+            --model-type "${{ steps.refs.outputs.model_type }}"
+
+      - name: Create docs sync PR
+        if: steps.refs.outputs.base != ''
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: bot/docs-sync-${{ github.run_id }}
+          commit-message: "docs: auto sync mapped docs after release"
+          title: "docs: auto sync mapped docs for release"
+          body: |
+            Auto-generated docs sync PR.
+
+            Base ref: `${{ steps.refs.outputs.base }}`
+            Head ref: `${{ steps.refs.outputs.head }}`
+
+            Updated by CAMEL ChatAgent using `doc_code_map`.
+          labels: documentation, automated-pr
