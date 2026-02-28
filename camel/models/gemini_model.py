@@ -473,7 +473,6 @@ class GeminiModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        self._log_and_trace()
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
@@ -515,7 +514,6 @@ class GeminiModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        self._log_and_trace()
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None

@@ -197,7 +197,6 @@ class OpenAICompatibleModel(BaseModelBackend):
                 `ChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-        self._log_and_trace()
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
@@ -249,7 +248,6 @@ class OpenAICompatibleModel(BaseModelBackend):
                 or `AsyncChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-        self._log_and_trace()
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None

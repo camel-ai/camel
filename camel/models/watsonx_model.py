@@ -191,7 +191,6 @@ class WatsonXModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
         try:
             request_config = self._prepare_request(
                 messages, response_format, tools
@@ -242,7 +241,6 @@ class WatsonXModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         try:
             request_config = self._prepare_request(

@@ -264,7 +264,6 @@ class SGLangModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         # Ensure server is running
         self._ensure_server_running()
@@ -328,7 +327,6 @@ class SGLangModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         # Ensure server is running
         self._ensure_server_running()

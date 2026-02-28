@@ -313,7 +313,6 @@ class CohereModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         from cohere.core.api_error import ApiError
 
@@ -383,7 +382,6 @@ class CohereModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         from cohere.core.api_error import ApiError
 

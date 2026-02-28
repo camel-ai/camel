@@ -822,7 +822,6 @@ class FunctionGemmaModel(BaseModelBackend):
             model_parameters=self.model_config_dict,
         )
 
-        self._log_and_trace()
 
         prompt = self._format_messages(messages, tools)
         logger.debug(f"FunctionGemma prompt:\n{prompt}")
@@ -865,7 +864,6 @@ class FunctionGemmaModel(BaseModelBackend):
             model_parameters=self.model_config_dict,
         )
 
-        self._log_and_trace()
 
         prompt = self._format_messages(messages, tools)
         logger.debug(f"FunctionGemma prompt:\n{prompt}")

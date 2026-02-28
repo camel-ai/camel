@@ -238,7 +238,6 @@ class RekaModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
@@ -297,7 +296,6 @@ class RekaModel(BaseModelBackend):
             model_parameters=self.model_config_dict,
         )
 
-        self._log_and_trace()
 
         reka_messages = self._convert_openai_to_reka_messages(messages)
 

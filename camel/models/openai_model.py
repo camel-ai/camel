@@ -297,7 +297,6 @@ class OpenAIModel(BaseModelBackend):
                 or `ChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-        self._log_and_trace()
 
         messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(
@@ -350,7 +349,6 @@ class OpenAIModel(BaseModelBackend):
                 `AsyncChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-        self._log_and_trace()
 
         messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(

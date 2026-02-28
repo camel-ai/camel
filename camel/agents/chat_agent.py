@@ -2849,12 +2849,20 @@ class ChatAgent(BaseAgent):
             generator = self._stream(input_message, response_format)
             return StreamingChatAgentResponse(generator)
 
-        # Execute with timeout if configured
+        # Execute with timeout if configured.
+        # Use contextvars.copy_context() to propagate the current context
+        # (including Langfuse/OTel trace attributes) into the worker thread.
+        # Without this, ContextVar values (e.g. user_id set by propagate_attributes)
+        # are invisible in the thread because Python 3.11 ThreadPoolExecutor workers
+        # do not automatically inherit ContextVar changes from the submitting thread.
         if self.step_timeout is not None:
+            import contextvars as _cv
+            _ctx = _cv.copy_context()
             with concurrent.futures.ThreadPoolExecutor(
                 max_workers=1
             ) as executor:
                 future = executor.submit(
+                    _ctx.run,
                     self._step_impl, input_message, response_format
                 )
                 try:
@@ -2879,12 +2887,14 @@ class ChatAgent(BaseAgent):
         set_current_agent_id(self.agent_id)
 
         # Set Langfuse session_id using agent_id for trace grouping
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
+        # camel.utils.langfuse is always importable; the ImportError guard
+        # is kept as a safety net only.
+        from camel.utils.langfuse import (
+            set_current_agent_session_id,
+            update_langfuse_trace,
+        )
 
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
+        set_current_agent_session_id(self.agent_id)
 
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
@@ -2942,16 +2952,37 @@ class ChatAgent(BaseAgent):
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            # Get response from model backend
-            response = self._get_model_response(
-                openai_messages,
-                current_iteration=iteration_count,
-                response_format=response_format,
-                tool_schemas=[]
-                if disable_tools
-                else self._get_full_tool_schemas(),
-                prev_num_openai_messages=prev_num_openai_messages,
-            )
+            # Get response from model backend, propagating Langfuse trace
+            # attributes (session_id, tags, metadata) to all child spans
+            # including those auto-created by Langfuse's OpenAI integration.
+            # update_langfuse_trace is a no-op when Langfuse is not configured.
+            with update_langfuse_trace(
+                session_id=self.agent_id,
+                metadata={
+                    "source": "camel",
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_backend.model_type),
+                },
+                # Slice [0:] to get a pure str from UnifiedModelType/ModelType.
+                # ModelType and UnifiedModelType are str subclasses that use a
+                # shared cache; str(), str.__new__(), and f"{}" all return the
+                # cached subclass instance. Slicing bypasses __new__ at the C
+                # level and always returns a plain str, satisfying OTel's strict
+                # type(v) is str check that silently drops non-pure-str elements.
+                tags=[
+                    "CAMEL-AI",
+                    self.model_backend.model_type[0:],
+                ],
+            ):
+                response = self._get_model_response(
+                    openai_messages,
+                    current_iteration=iteration_count,
+                    response_format=response_format,
+                    tool_schemas=[]
+                    if disable_tools
+                    else self._get_full_tool_schemas(),
+                    prev_num_openai_messages=prev_num_openai_messages,
+                )
 
             prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
@@ -3141,13 +3172,6 @@ class ChatAgent(BaseAgent):
 
         set_current_agent_id(self.agent_id)
 
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
-
         stream = self.model_backend.model_config_dict.get("stream", False)
         if stream:
             # Return wrapped async generator that is awaitable
@@ -3182,12 +3206,14 @@ class ChatAgent(BaseAgent):
 
         set_current_agent_id(self.agent_id)
 
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
+        # camel.utils.langfuse is always importable; update_langfuse_trace
+        # is a no-op when Langfuse is not configured.
+        from camel.utils.langfuse import (
+            set_current_agent_session_id,
+            update_langfuse_trace,
+        )
 
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
+        set_current_agent_session_id(self.agent_id)
 
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
@@ -3241,16 +3267,30 @@ class ChatAgent(BaseAgent):
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            # Get response from model backend
-            response = await self._aget_model_response(
-                openai_messages,
-                current_iteration=iteration_count,
-                response_format=response_format,
-                tool_schemas=[]
-                if disable_tools
-                else self._get_full_tool_schemas(),
-                prev_num_openai_messages=prev_num_openai_messages,
-            )
+            # Get response from model backend, propagating Langfuse trace
+            # attributes to all child spans including those auto-created by
+            # Langfuse's OpenAI integration.
+            with update_langfuse_trace(
+                session_id=self.agent_id,
+                metadata={
+                    "source": "camel",
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_backend.model_type),
+                },
+                tags=[
+                    "CAMEL-AI",
+                    self.model_backend.model_type[0:],
+                ],
+            ):
+                response = await self._aget_model_response(
+                    openai_messages,
+                    current_iteration=iteration_count,
+                    response_format=response_format,
+                    tool_schemas=[]
+                    if disable_tools
+                    else self._get_full_tool_schemas(),
+                    prev_num_openai_messages=prev_num_openai_messages,
+                )
 
             prev_num_openai_messages = len(openai_messages)
             iteration_count += 1

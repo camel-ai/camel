@@ -12,8 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
+from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Generator, List, Optional
 
 from camel.logger import get_logger
 from camel.utils import dependencies_required
@@ -28,12 +29,13 @@ _agent_session_id_var: ContextVar[Optional[str]] = ContextVar(
 _langfuse_configured = False
 
 try:
-    from langfuse import get_client
+    from langfuse import get_client, propagate_attributes as _langfuse_propagate_attributes
 
     LANGFUSE_AVAILABLE = True
 except ImportError:
     LANGFUSE_AVAILABLE = False
     get_client: Optional[Callable[..., Any]] = None
+    _langfuse_propagate_attributes: Optional[Callable[..., Any]] = None
 
 
 @dependencies_required('langfuse')
@@ -164,17 +166,20 @@ def get_current_agent_session_id() -> Optional[str]:
     return None
 
 
+@contextmanager
 def update_langfuse_trace(
     session_id: Optional[str] = None,
     user_id: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
     tags: Optional[List[str]] = None,
-) -> bool:
-    r"""Update the current Langfuse trace with session ID and metadata.
+) -> Generator[None, None, None]:
+    r"""Context manager that propagates trace-level attributes to all child
+    spans within the context.
 
-    This function updates trace-level attributes on the currently active trace.
-    Trace attributes include user_id, session_id, metadata, and tags that apply
-    to the entire trace (not just a single observation).
+    Uses Langfuse's ``propagate_attributes()`` to set ``session_id``,
+    ``user_id``, ``metadata`` and ``tags`` on the current span and
+    automatically propagates them to all new child spans created within the
+    context — including spans auto-created by Langfuse's OpenAI integration.
 
     Args:
         session_id(Optional[str]): Optional session ID to use. If :obj:`None`
@@ -182,57 +187,54 @@ def update_langfuse_trace(
         user_id(Optional[str]): Optional user ID for the trace.
             (default: :obj:`None`)
         metadata(Optional[Dict[str, Any]]): Optional metadata dictionary.
-            (default: :obj:`None`)
+            Values are converted to strings truncated to 200 characters as
+            required by Langfuse. (default: :obj:`None`)
         tags(Optional[List[str]]): Optional list of tags.
             (default: :obj:`None`)
 
-    Returns:
-        bool: True if update was successful, False otherwise.
+    Yields:
+        None
 
-    Note:
-        Must be called within a function decorated with @observe().
+    Example:
+        .. code-block:: python
+
+            with update_langfuse_trace(
+                session_id="session_123",
+                user_id="user_1",
+                metadata={"source": "camel"},
+                tags=["CAMEL-AI"],
+            ):
+                response = model.run(messages)
     """
     if not is_langfuse_available():
-        return False
+        yield
+        return
 
-    # Use provided session_id or get from thread-local storage
     final_session_id = session_id or get_current_agent_session_id()
 
-    # If no attributes to set, return early
     if not any([final_session_id, user_id, metadata, tags]):
-        return False
+        yield
+        return
 
     try:
-        from opentelemetry import trace as otel_trace_api
-        from langfuse._client.attributes import LangfuseOtelSpanAttributes
-
-        current_span = otel_trace_api.get_current_span()
-        if current_span is None or not current_span.is_recording():
-            return False
-
-        # Set trace-level attributes on current span
-        if final_session_id:
-            current_span.set_attribute(
-                LangfuseOtelSpanAttributes.TRACE_SESSION_ID, final_session_id
-            )
-        if user_id:
-            current_span.set_attribute(
-                LangfuseOtelSpanAttributes.TRACE_USER_ID, user_id
-            )
+        # propagate_attributes() requires string values ≤200 characters
+        str_metadata: Optional[Dict[str, str]] = None
         if metadata:
-            for k, v in metadata.items():
-                current_span.set_attribute(
-                    f"{LangfuseOtelSpanAttributes.TRACE_METADATA}.{k}", str(v)
-                )
-        if tags:
-            current_span.set_attribute(
-                LangfuseOtelSpanAttributes.TRACE_TAGS, tags
-            )
+            str_metadata = {k: str(v)[:200] for k, v in metadata.items()}
 
-        return True
+        # Use the module-level propagate_attributes function from langfuse.
+        # NOTE: get_client() returns a Langfuse *instance* which does NOT have
+        # a propagate_attributes() method — that is a module-level function.
+        with _langfuse_propagate_attributes(
+            session_id=final_session_id,
+            user_id=user_id,
+            metadata=str_metadata,
+            tags=tags,
+        ):
+            yield
 
     except Exception:
-        return False
+        yield
 
 
 def update_current_observation(

@@ -46,6 +46,7 @@ def reset_langfuse_state():
     import camel.utils.langfuse as langfuse_module
 
     langfuse_module._langfuse_configured = False
+    langfuse_module._agent_session_id_var.set(None)
 
     yield
 
@@ -59,6 +60,9 @@ def reset_langfuse_state():
     ]:
         if key in os.environ:
             del os.environ[key]
+
+    langfuse_module._langfuse_configured = False
+    langfuse_module._agent_session_id_var.set(None)
 
 
 def test_configure_langfuse_with_parameters():
@@ -156,111 +160,120 @@ def test_set_and_get_current_agent_session_id():
 
 
 def test_update_langfuse_trace_no_langfuse():
-    r"""Test update_langfuse_trace when Langfuse is not available."""
-    result = update_langfuse_trace(
+    r"""Test update_langfuse_trace is a no-op when Langfuse is not available."""
+    # Should not raise; context manager yields without entering propagation
+    with update_langfuse_trace(
         session_id="test_session",
         user_id="test_user",
-    )
-
-    assert result is False
-
-
-def test_update_langfuse_trace_no_active_span():
-    r"""Test update_langfuse_trace when no active span exists."""
-    with patch("camel.utils.langfuse.get_client") as mock_get_client:
-        mock_get_client.return_value = MagicMock()
-        configure_langfuse(
-            public_key="test_key",
-            secret_key="test_secret",
-            enabled=True,
-        )
-
-        with patch(
-            "opentelemetry.trace.get_current_span"
-        ) as mock_get_span:
-            mock_get_span.return_value = None
-
-            result = update_langfuse_trace(
-                session_id="test_session",
-                user_id="test_user",
-            )
-
-            assert result is False
+    ):
+        pass  # no-op path; Langfuse not configured
 
 
 def test_update_langfuse_trace_success():
-    r"""Test successful update of Langfuse trace."""
-    with patch("camel.utils.langfuse.get_client") as mock_get_client:
-        mock_get_client.return_value = MagicMock()
+    r"""Test that update_langfuse_trace calls propagate_attributes correctly."""
+    mock_ctx = MagicMock()
+    mock_ctx.__enter__ = MagicMock(return_value=None)
+    mock_ctx.__exit__ = MagicMock(return_value=False)
+
+    with patch(
+        "camel.utils.langfuse._langfuse_propagate_attributes",
+        return_value=mock_ctx,
+    ) as mock_propagate:
         configure_langfuse(
             public_key="test_key",
             secret_key="test_secret",
             enabled=True,
         )
 
-        # Set session ID
         set_current_agent_session_id("test_session_123")
 
-        # Mock OpenTelemetry span
-        mock_span = MagicMock()
-        mock_span.is_recording.return_value = True
-        mock_span.set_attribute = MagicMock()
+        with update_langfuse_trace(
+            user_id="test_user",
+            metadata={"key1": "value1", "key2": "value2"},
+            tags=["tag1", "tag2"],
+        ):
+            pass
 
-        with patch(
-            "opentelemetry.trace.get_current_span"
-        ) as mock_get_span:
-            mock_get_span.return_value = mock_span
-
-            result = update_langfuse_trace(
-                user_id="test_user",
-                metadata={"key1": "value1", "key2": "value2"},
-                tags=["tag1", "tag2"],
-            )
-
-            assert result is True
-            # Verify attributes were set
-            # session_id (from get_current_agent_session_id) + user_id + 2 metadata keys + tags = 5
-            assert mock_span.set_attribute.call_count == 5
+        mock_propagate.assert_called_once_with(
+            session_id="test_session_123",
+            user_id="test_user",
+            metadata={"key1": "value1", "key2": "value2"},
+            tags=["tag1", "tag2"],
+        )
 
 
 def test_update_langfuse_trace_with_session_id():
     r"""Test update_langfuse_trace with explicit session_id."""
-    with patch("camel.utils.langfuse.get_client") as mock_get_client:
-        mock_get_client.return_value = MagicMock()
+    mock_ctx = MagicMock()
+    mock_ctx.__enter__ = MagicMock(return_value=None)
+    mock_ctx.__exit__ = MagicMock(return_value=False)
+
+    with patch(
+        "camel.utils.langfuse._langfuse_propagate_attributes",
+        return_value=mock_ctx,
+    ) as mock_propagate:
         configure_langfuse(
             public_key="test_key",
             secret_key="test_secret",
             enabled=True,
         )
 
-        mock_span = MagicMock()
-        mock_span.is_recording.return_value = True
-        mock_span.set_attribute = MagicMock()
+        with update_langfuse_trace(session_id="explicit_session"):
+            pass
 
-        with patch(
-            "opentelemetry.trace.get_current_span"
-        ) as mock_get_span:
-            mock_get_span.return_value = mock_span
-
-            result = update_langfuse_trace(session_id="explicit_session")
-
-            assert result is True
-            mock_span.set_attribute.assert_called()
+        mock_propagate.assert_called_once_with(
+            session_id="explicit_session",
+            user_id=None,
+            metadata=None,
+            tags=None,
+        )
 
 
 def test_update_langfuse_trace_no_attributes():
-    r"""Test update_langfuse_trace with no attributes to set."""
-    with patch("camel.utils.langfuse.get_client") as mock_get_client:
-        mock_get_client.return_value = MagicMock()
+    r"""Test update_langfuse_trace is a no-op when no attributes are given."""
+    with patch(
+        "camel.utils.langfuse._langfuse_propagate_attributes"
+    ) as mock_propagate:
         configure_langfuse(
             public_key="test_key",
             secret_key="test_secret",
             enabled=True,
         )
 
-        result = update_langfuse_trace()
+        # No session_id set in context either
+        with update_langfuse_trace():
+            pass
 
-        assert result is False
+        # propagate_attributes should NOT be called since there's nothing to set
+        mock_propagate.assert_not_called()
+
+
+def test_update_langfuse_trace_metadata_truncated():
+    r"""Test that metadata values are converted to strings and truncated."""
+    mock_ctx = MagicMock()
+    mock_ctx.__enter__ = MagicMock(return_value=None)
+    mock_ctx.__exit__ = MagicMock(return_value=False)
+
+    with patch(
+        "camel.utils.langfuse._langfuse_propagate_attributes",
+        return_value=mock_ctx,
+    ) as mock_propagate:
+        configure_langfuse(
+            public_key="test_key",
+            secret_key="test_secret",
+            enabled=True,
+        )
+
+        long_value = "x" * 300
+        with update_langfuse_trace(
+            session_id="session_1",
+            metadata={"key": long_value, "num": 42},
+        ):
+            pass
+
+        call_kwargs = mock_propagate.call_args[1]
+        assert call_kwargs["metadata"]["key"] == "x" * 200
+        assert call_kwargs["metadata"]["num"] == "42"
 
 
 def test_update_current_observation_no_langfuse():
@@ -441,3 +454,18 @@ if __name__ == "__main__":
     import sys
 
     pytest.main([sys.argv[0]])
+
+"""
+================================= test session starts ==================================
+platform win32 -- Python 3.11.0, pytest-8.4.2, pluggy-1.6.0
+rootdir: D:\camel_project\camel
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.2.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 18 items
+
+test_langfuse.py ..................                                               [100%]
+
+================================== 18 passed in 2.18s ================================== 
+
+"""
