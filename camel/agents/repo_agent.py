@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import time
+from collections import deque
 from enum import Enum, auto
 from string import Template
 from typing import TYPE_CHECKING, List, Optional, Tuple, Union
@@ -266,16 +267,16 @@ class RepoAgent(ChatAgent):
             contents=[],
         )
 
-        # Create a list to process repository contents
-        content_list: List[ContentFile] = []
+        # Create a deque to process repository contents (BFS traversal)
+        content_queue: deque[ContentFile] = deque()
         if isinstance(contents, list):
-            content_list = contents
+            content_queue.extend(contents)
         else:
             # Handle single ContentFile case
-            content_list = [contents]
+            content_queue.append(contents)
 
-        while content_list:
-            file = content_list.pop(0)
+        while content_queue:
+            file = content_queue.popleft()
             if file.type == "file":
                 if any(
                     file.path.endswith(ext)
@@ -348,9 +349,9 @@ class RepoAgent(ChatAgent):
                 # Handle dir_contents which could be a single ContentFile or a
                 # list
                 if isinstance(dir_contents, list):
-                    content_list.extend(dir_contents)
+                    content_queue.extend(dir_contents)
                 else:
-                    content_list.append(dir_contents)
+                    content_queue.append(dir_contents)
         return info
 
     def count_tokens(self) -> int:

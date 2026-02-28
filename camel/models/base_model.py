@@ -15,6 +15,7 @@ import abc
 import inspect
 import os
 from abc import ABC, abstractmethod
+from collections import deque
 from contextvars import ContextVar
 from typing import (
     Any,
@@ -490,7 +491,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         """
         # Process all messages in a single pass
         processed_messages = []
-        tool_calls_buffer: List[OpenAIMessage] = []
+        tool_calls_buffer: deque[OpenAIMessage] = deque()
         tool_responses_buffer: Dict[str, OpenAIMessage] = {}
         has_tool_calls = False
 
@@ -533,7 +534,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
         # Format messages for parallel tool calls
         formatted_messages = []
-        tool_calls_buffer = []
+        tool_calls_buffer = deque()
         tool_responses_buffer = {}
 
         for msg in processed_messages:  # type: ignore[assignment]
@@ -571,7 +572,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                             )
                             del tool_responses_buffer[tool_call_id]
 
-                tool_calls_buffer.pop(0)
+                tool_calls_buffer.popleft()
 
             # Add the current regular message
             formatted_messages.append(msg)
@@ -594,7 +595,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                         )
                         del tool_responses_buffer[tool_call_id]
 
-            tool_calls_buffer.pop(0)
+            tool_calls_buffer.popleft()
 
         # Add any remaining tool responses
         for response in tool_responses_buffer.values():
