@@ -30,6 +30,8 @@ logger = get_logger(__name__)
 class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
     r"""A toolkit for taking screenshots."""
 
+    _vision_agent = None
+
     @dependencies_required('PIL')
     def __init__(
         self,
@@ -63,6 +65,33 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
         self.ImageGrab = ImageGrab
         self.screenshots_dir = path
         self.screenshots_dir.mkdir(parents=True, exist_ok=True)
+
+    def _get_vision_agent(self):
+        r"""Return a dedicated agent for image analysis.
+
+        Creates a lightweight agent on first call, reusing the registered
+        agent's model backend. This avoids re-entering the calling agent's
+        ``step()`` during tool execution, which would corrupt the tool-call
+        message sequence.
+        """
+        if self.agent is None:
+            raise RuntimeError(
+                "Cannot create vision agent: no agent registered. "
+                "Please pass this toolkit to ChatAgent via the "
+                "'toolkits_to_register_agent' parameter."
+            )
+        if self._vision_agent is None:
+            from camel.agents import ChatAgent
+
+            self._vision_agent = ChatAgent(
+                system_message=(
+                    "You are a vision assistant. Describe and analyze the "
+                    "provided image according to the user's instructions."
+                ),
+                model=self.agent.model_backend,
+                agent_id=f"{self.agent.agent_id}_vision",
+            )
+        return self._vision_agent
 
     def read_image(
         self,
@@ -116,8 +145,10 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                 image_list=[img],
             )
 
-            # Record the message in agent's memory
-            response = self.agent.step(message)
+            # Use a separate agent for image analysis to avoid re-entering
+            # the calling agent's step() during tool execution, which would
+            # corrupt the tool-call message sequence.
+            response = self._get_vision_agent().step(message)
             return response.msgs[0].content
 
         except Exception as e:
