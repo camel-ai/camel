@@ -51,7 +51,6 @@ from typing import (
 
 from openai import (
     AsyncStream,
-    RateLimitError,
     Stream,
 )
 from pydantic import BaseModel, ValidationError
@@ -101,6 +100,7 @@ from camel.types.agents import ToolCallingRecord
 from camel.utils import (
     Constants,
     get_model_encoding,
+    get_rate_limit_errors,
     model_from_json_schema,
 )
 from camel.utils.commons import dependencies_required
@@ -111,6 +111,8 @@ if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
 
 logger = get_logger(__name__)
+
+_RATE_LIMIT_ERRORS = get_rate_limit_errors()
 
 # Cleanup temp files on exit
 _temp_files: Set[str] = set()
@@ -3492,7 +3494,7 @@ class ChatAgent(BaseAgent):
                 )
                 if response:
                     break
-            except RateLimitError as e:
+            except _RATE_LIMIT_ERRORS as e:
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
@@ -3554,7 +3556,7 @@ class ChatAgent(BaseAgent):
                 )
                 if response:
                     break
-            except RateLimitError as e:
+            except _RATE_LIMIT_ERRORS as e:
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)

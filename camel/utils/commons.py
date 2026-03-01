@@ -728,6 +728,42 @@ def retry_on_error(
     return decorator
 
 
+def get_rate_limit_errors() -> tuple:
+    r"""Collect rate-limit error classes from all installed LLM providers.
+
+    Dynamically imports ``RateLimitError`` from every provider SDK that
+    CAMEL supports so that retry logic in
+    :meth:`~camel.agents.chat_agent.ChatAgent` can catch rate-limit
+    responses regardless of which backend is in use.
+
+    Returns:
+        tuple: A tuple of exception classes for each installed provider.
+        Typically includes ``openai.RateLimitError`` since OpenAI is a
+        hard dependency.
+    """
+    rate_limit_errors: list = []
+
+    # (module_path, attribute_name) for each provider's rate-limit exception.
+    _PROVIDERS: list[tuple[str, str]] = [
+        ("openai", "RateLimitError"),
+        ("anthropic", "RateLimitError"),
+        ("google.api_core.exceptions", "ResourceExhausted"),
+        ("cohere", "TooManyRequestsError"),
+        ("mistralai", "RateLimitError"),
+    ]
+
+    for module_path, attr_name in _PROVIDERS:
+        try:
+            mod = importlib.import_module(module_path)
+            err_cls = getattr(mod, attr_name, None)
+            if err_cls is not None:
+                rate_limit_errors.append(err_cls)
+        except ImportError:
+            continue
+
+    return tuple(rate_limit_errors)
+
+
 class BatchProcessor:
     r"""Handles batch processing with dynamic sizing and error handling based
     on system load.
