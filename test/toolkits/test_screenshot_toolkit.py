@@ -128,9 +128,7 @@ def test_read_image_handles_streaming_response(
     assert result == "Hello world"
 
 
-def test_read_image_restores_on_error(
-    toolkit, mock_agent, sample_image
-):
+def test_read_image_restores_on_error(toolkit, mock_agent, sample_image):
     """read_image should return error message when model.run() raises."""
     mock_agent.model_backend.run.side_effect = RuntimeError("model error")
     toolkit.register_agent(mock_agent)
@@ -140,9 +138,7 @@ def test_read_image_restores_on_error(
     assert "Error" in result
 
 
-def test_read_image_handles_none_content(
-    toolkit, mock_agent, sample_image
-):
+def test_read_image_handles_none_content(toolkit, mock_agent, sample_image):
     """Return empty string when model returns None."""
     mock_agent.model_backend.run.return_value = MagicMock(
         choices=[MagicMock(message=MagicMock(content=None))]
