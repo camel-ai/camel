@@ -1,8 +1,22 @@
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+
 """Tests for ScreenshotToolkit verifying no re-entrant agent.step() call."""
 
 import os
 import tempfile
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -14,7 +28,6 @@ def mock_agent():
     agent.model_backend.run.return_value = MagicMock(
         choices=[MagicMock(message=MagicMock(content="Image analysis result"))]
     )
-    agent.model_backend.model_config_dict = {"stream": False}
     agent.system_message = None
     return agent
 
@@ -95,29 +108,34 @@ def test_read_image_includes_system_message(toolkit, mock_agent, sample_image):
     assert messages[1]["role"] == "user"
 
 
-def test_read_image_disables_streaming(toolkit, mock_agent, sample_image):
-    """read_image should temporarily disable streaming for the direct call."""
-    mock_agent.model_backend.model_config_dict = {"stream": True}
+def test_read_image_handles_streaming_response(toolkit, mock_agent, sample_image):
+    """read_image should accumulate content from streaming chunks."""
+    chunk1 = MagicMock()
+    chunk1.choices = [MagicMock(delta=MagicMock(content="Hello "))]
+    chunk2 = MagicMock()
+    chunk2.choices = [MagicMock(delta=MagicMock(content="world"))]
+
+    class StreamResponse:
+        def __iter__(self):
+            return iter([chunk1, chunk2])
+
+    mock_agent.model_backend.run.return_value = StreamResponse()
     toolkit.register_agent(mock_agent)
 
-    toolkit.read_image(sample_image, "Describe")
-
-    assert mock_agent.model_backend.model_config_dict["stream"] is True
-    mock_agent.model_backend.run.assert_called_once()
+    result = toolkit.read_image(sample_image, "Describe")
+    assert result == "Hello world"
 
 
-def test_read_image_restores_streaming_on_error(
+def test_read_image_restores_on_error(
     toolkit, mock_agent, sample_image
 ):
-    """Streaming config must be restored even if model.run() raises."""
-    mock_agent.model_backend.model_config_dict = {"stream": True}
+    """read_image should return error message when model.run() raises."""
     mock_agent.model_backend.run.side_effect = RuntimeError("model error")
     toolkit.register_agent(mock_agent)
 
     result = toolkit.read_image(sample_image, "Describe")
 
     assert "Error" in result
-    assert mock_agent.model_backend.model_config_dict["stream"] is True
 
 
 def test_read_image_handles_none_content(toolkit, mock_agent, sample_image):

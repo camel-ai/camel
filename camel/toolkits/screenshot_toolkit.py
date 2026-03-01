@@ -127,18 +127,42 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                 sys_msg = self.agent.system_message.to_openai_system_message()
                 messages.insert(0, sys_msg)
 
-            # Temporarily disable streaming so run() returns ChatCompletion.
             model = self.agent.model_backend
-            was_streaming = model.model_config_dict.get("stream", False)
-            if was_streaming:
-                model.model_config_dict["stream"] = False
-            try:
-                model_response = model.run(messages)
-            finally:
-                if was_streaming:
-                    model.model_config_dict["stream"] = True
+            model_response = model.run(messages)
 
-            return model_response.choices[0].message.content or ""
+            if hasattr(model_response, "choices"):
+                return (
+                    getattr(
+                        getattr(model_response.choices[0], "message", ""),
+                        "content",
+                        "",
+                    )
+                    or ""
+                )
+
+            # Streaming response: accumulate content from chunks.
+            content_parts: List[str] = []
+            try:
+                iterator = iter(model_response)
+            except TypeError:
+                return str(model_response)
+
+            for chunk in iterator:
+                choices = getattr(chunk, "choices", None)
+                if not choices:
+                    continue
+                delta = getattr(choices[0], "delta", None)
+                piece = (
+                    getattr(delta, "content", None)
+                    if delta is not None
+                    else None
+                )
+                if piece is None and hasattr(choices[0], "message"):
+                    piece = getattr(choices[0].message, "content", None)
+                if piece:
+                    content_parts.append(piece)
+
+            return "".join(content_parts)
 
         except Exception as e:
             logger.error(f"Error reading screenshot: {e}")
