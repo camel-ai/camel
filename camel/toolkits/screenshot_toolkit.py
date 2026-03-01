@@ -143,7 +143,7 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
             # Streaming response: accumulate content from chunks.
             content_parts: List[str] = []
             try:
-                iterator = iter(model_response)
+                iterator = iter(model_response)  # type: ignore[arg-type]
             except TypeError:
                 return str(model_response)
 
