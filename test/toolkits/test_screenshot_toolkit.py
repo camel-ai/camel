@@ -78,9 +78,7 @@ def test_read_image_passes_openai_formatted_message(
     assert messages[0]["role"] == "user"
 
 
-def test_read_image_includes_system_message(
-    toolkit, mock_agent, sample_image
-):
+def test_read_image_includes_system_message(toolkit, mock_agent, sample_image):
     """read_image should prepend the agent's system message if available."""
     sys_msg = MagicMock()
     sys_msg.to_openai_system_message.return_value = {
