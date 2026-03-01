@@ -108,7 +108,9 @@ def test_read_image_includes_system_message(toolkit, mock_agent, sample_image):
     assert messages[1]["role"] == "user"
 
 
-def test_read_image_handles_streaming_response(toolkit, mock_agent, sample_image):
+def test_read_image_handles_streaming_response(
+    toolkit, mock_agent, sample_image
+):
     """read_image should accumulate content from streaming chunks."""
     chunk1 = MagicMock()
     chunk1.choices = [MagicMock(delta=MagicMock(content="Hello "))]
@@ -138,8 +140,10 @@ def test_read_image_restores_on_error(
     assert "Error" in result
 
 
-def test_read_image_handles_none_content(toolkit, mock_agent, sample_image):
-    """read_image should return empty string when model returns None content."""
+def test_read_image_handles_none_content(
+    toolkit, mock_agent, sample_image
+):
+    """Return empty string when model returns None."""
     mock_agent.model_backend.run.return_value = MagicMock(
         choices=[MagicMock(message=MagicMock(content=None))]
     )
