@@ -128,6 +128,10 @@ def _cleanup_temp_files():
 
 atexit.register(_cleanup_temp_files)
 
+# OpenAI enforces a maximum of 40 characters for tool_call IDs.
+# https://github.com/camel-ai/camel/issues/2215
+_OPENAI_MAX_TOOL_CALL_ID_LEN = 40
+
 # AgentOps decorator setting
 try:
     if os.getenv("AGENTOPS_API_KEY") is not None:
@@ -3958,6 +3962,8 @@ class ChatAgent(BaseAgent):
             for tool_call in tool_calls:
                 tool_name = tool_call.function.name  # type: ignore[union-attr]
                 tool_call_id = tool_call.id
+                if self._is_openai_platform():
+                    tool_call_id = tool_call_id[:_OPENAI_MAX_TOOL_CALL_ID_LEN]
                 args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
                 extra_content = getattr(tool_call, 'extra_content', None)
 
@@ -4807,6 +4813,15 @@ class ChatAgent(BaseAgent):
 
         return stream_completed, tool_calls_complete, last_response_id
 
+    def _is_openai_platform(self) -> bool:
+        r"""Check if the current model backend is OpenAI."""
+        from camel.models.openai_model import OpenAIModel
+
+        backend = self.model_backend
+        if isinstance(backend, ModelManager):
+            backend = backend.current_model
+        return isinstance(backend, OpenAIModel)
+
     def _accumulate_tool_calls(
         self,
         tool_call_deltas: List[Any],
@@ -4881,9 +4896,9 @@ class ChatAgent(BaseAgent):
 
             # Accumulate tool call data
             if tool_call_id:
-                tool_call_entry['id'] = (
-                    tool_call_id  # Set full ID, don't append
-                )
+                if self._is_openai_platform():
+                    tool_call_id = tool_call_id[:_OPENAI_MAX_TOOL_CALL_ID_LEN]
+                tool_call_entry['id'] = tool_call_id
 
             if (
                 hasattr(delta_tool_call, 'function')
