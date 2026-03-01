@@ -116,9 +116,29 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                 image_list=[img],
             )
 
-            # Record the message in agent's memory
-            response = self.agent.step(message)
-            return response.msgs[0].content
+            # Call the model backend directly to avoid re-entrant step()
+            # which would corrupt the tool-call message sequence.
+            openai_msg = message.to_openai_user_message()
+            messages: list = [openai_msg]
+            if (
+                hasattr(self.agent, "system_message")
+                and self.agent.system_message
+            ):
+                sys_msg = self.agent.system_message.to_openai_system_message()
+                messages.insert(0, sys_msg)
+
+            # Temporarily disable streaming so run() returns ChatCompletion.
+            model = self.agent.model_backend
+            was_streaming = model.model_config_dict.get("stream", False)
+            if was_streaming:
+                model.model_config_dict["stream"] = False
+            try:
+                model_response = model.run(messages)
+            finally:
+                if was_streaming:
+                    model.model_config_dict["stream"] = True
+
+            return model_response.choices[0].message.content or ""
 
         except Exception as e:
             logger.error(f"Error reading screenshot: {e}")
