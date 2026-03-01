@@ -524,6 +524,27 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             if is_tool_call or is_tool_response:
                 has_tool_calls = True
 
+            # Sanitize tool_call IDs to max 40 chars (OpenAI API limit)
+            _max_tc_id_len = 40
+            if is_tool_call:
+                tc_list = processed_msg.get("tool_calls", [])
+                if isinstance(tc_list, list):
+                    sanitized = []
+                    for tc in tc_list:
+                        if (
+                            isinstance(tc, dict)
+                            and isinstance(tc.get("id"), str)
+                            and len(tc["id"]) > _max_tc_id_len
+                        ):
+                            tc = dict(tc)
+                            tc["id"] = tc["id"][:_max_tc_id_len]
+                        sanitized.append(tc)
+                    processed_msg["tool_calls"] = sanitized
+            if is_tool_response:
+                tc_id = processed_msg.get("tool_call_id")
+                if isinstance(tc_id, str) and len(tc_id) > _max_tc_id_len:
+                    processed_msg["tool_call_id"] = tc_id[:_max_tc_id_len]
+
             # Store the processed message for later formatting if needed
             processed_messages.append(processed_msg)
 
