@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import asyncio
 import json
 import re
 import urllib.parse
@@ -293,8 +292,6 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
             (default: :obj:`True`)
         lang (str): Language hint for search results.
             (default: :obj:`"en"`)
-        wait_seconds (float): Seconds to wait for page load.
-            (default: :obj:`3.0`)
 
     Example:
         >>> from camel.toolkits import (
@@ -309,7 +306,6 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
         headless: bool = True,
         stealth: bool = True,
         lang: str = "en",
-        wait_seconds: float = 3.0,
     ):
         super().__init__()
         self.lang = lang
@@ -317,7 +313,6 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
         self._headless = headless
         self._stealth = stealth
         self._browser_opened = False
-        self._wait_seconds = wait_seconds
 
     async def _ensure_browser(self) -> Any:
         r"""Initialize the browser toolkit if not already done."""
@@ -471,7 +466,6 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
             logger.info(f"[{engine}] Page {page}: {url}")
 
             await toolkit.browser_visit_page(url)
-            await asyncio.sleep(self._wait_seconds)
 
             # Check for blocks/captcha
             block_info = await self._check_blocked(toolkit)
@@ -502,11 +496,6 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
                 )
 
             results = await self._extract_results(toolkit, engine)
-
-            # Retry once if no results (page may load)
-            if not results:
-                await asyncio.sleep(self._wait_seconds)
-                results = await self._extract_results(toolkit, engine)
 
             # Fallback: snapshot if JS got nothing
             snapshot = ""
