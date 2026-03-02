@@ -384,8 +384,11 @@ def setup_initial_env_with_venv(
                 symlinks=True,
             )
         except Exception:
+            # Clean up partial environment
+            if os.path.exists(env_path):
+                shutil.rmtree(env_path)
             # Fallback to symlinks=False if symlinks=True fails
-            # (e.g., on some Windows configurations)
+            # (e.g., on some Windows configurations or macOS Beta)
             venv.create(
                 env_path,
                 with_pip=True,
@@ -555,6 +558,9 @@ def clone_current_environment(
             try:
                 venv.create(env_path, with_pip=True, symlinks=True)
             except Exception:
+                # Clean up partial environment
+                if os.path.exists(env_path):
+                    shutil.rmtree(env_path)
                 # Fallback to symlinks=False if symlinks=True fails
                 venv.create(env_path, with_pip=True, symlinks=False)
 
