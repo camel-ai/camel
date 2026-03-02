@@ -86,15 +86,12 @@ def _parse_console_result(raw: str) -> str:
     """Strip the 'Console execution result: ' prefix and unquote."""
     prefix = "Console execution result: "
     if raw.startswith(prefix):
-        raw = raw[len(prefix) :]
+        raw = raw[len(prefix):]
     if raw.startswith('"') and raw.endswith('"'):
-        raw = raw[1:-1]
-        raw = (
-            raw.replace('\\"', '"')
-            .replace('\\n', '\n')
-            .replace('\\t', '\t')
-            .replace('\\\\', '\\')
-        )
+        try:
+            return json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            pass
     return raw
 
 
@@ -211,9 +208,7 @@ _BRAVE_JS = """
     for (var i = 0; i < items.length; i++) {
         var item = items[i];
         var url = '';
-        var titleEl = item.querySelector(
-            '.title a, a.svelte-14r20fy'
-        );
+        var titleEl = item.querySelector('.title a');
         if (!titleEl) {
             var links = item.querySelectorAll('a[href]');
             for (var j = 0; j < links.length; j++) {
@@ -298,6 +293,8 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
             (default: :obj:`True`)
         lang (str): Language hint for search results.
             (default: :obj:`"en"`)
+        wait_seconds (float): Seconds to wait for page load.
+            (default: :obj:`3.0`)
 
     Example:
         >>> from camel.toolkits import (
@@ -312,6 +309,7 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
         headless: bool = True,
         stealth: bool = True,
         lang: str = "en",
+        wait_seconds: float = 3.0,
     ):
         super().__init__()
         self.lang = lang
@@ -319,6 +317,7 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
         self._headless = headless
         self._stealth = stealth
         self._browser_opened = False
+        self._wait_seconds = wait_seconds
 
     async def _ensure_browser(self) -> Any:
         r"""Initialize the browser toolkit if not already done."""
@@ -432,7 +431,7 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
     async def search(
         self,
         query: str,
-        engine: str = "brave",
+        engine: EngineType = "brave",
         page: int = 1,
     ) -> str:
         r"""Perform a web search and return structured results.
@@ -472,7 +471,7 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
             logger.info(f"[{engine}] Page {page}: {url}")
 
             await toolkit.browser_visit_page(url)
-            await asyncio.sleep(3)
+            await asyncio.sleep(self._wait_seconds)
 
             # Check for blocks/captcha
             block_info = await self._check_blocked(toolkit)
@@ -506,7 +505,7 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
 
             # Retry once if no results (page may load)
             if not results:
-                await asyncio.sleep(3)
+                await asyncio.sleep(self._wait_seconds)
                 results = await self._extract_results(toolkit, engine)
 
             # Fallback: snapshot if JS got nothing

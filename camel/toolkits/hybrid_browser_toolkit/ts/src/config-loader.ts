@@ -112,11 +112,29 @@ function getDefaultStealthConfig(): StealthConfig {
 
 // Enhanced stealth configuration that patches common fingerprint leaks
 function getEnhancedStealthConfig(): StealthConfig {
-  // A realistic Chrome UA (no "HeadlessChrome")
-  const realUserAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+  // Platform-aware Chrome UA (no "HeadlessChrome")
+  const platform = process.platform;
+  let uaPlatform: string;
+  let webglVendor: string;
+  let webglRenderer: string;
+  if (platform === 'win32') {
+    uaPlatform = 'Windows NT 10.0; Win64; x64';
+    webglVendor = 'Google Inc. (NVIDIA)';
+    webglRenderer = 'ANGLE (NVIDIA, NVIDIA GeForce GTX 1650, OpenGL 4.5)';
+  } else if (platform === 'linux') {
+    uaPlatform = 'X11; Linux x86_64';
+    webglVendor = 'Google Inc. (Mesa)';
+    webglRenderer = 'ANGLE (Mesa, llvmpipe, OpenGL 4.5)';
+  } else {
+    // macOS / darwin
+    uaPlatform = 'Macintosh; Intel Mac OS X 10_15_7';
+    webglVendor = 'Google Inc. (Apple)';
+    webglRenderer = 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)';
+  }
+  const realUserAgent = `Mozilla/5.0 (${uaPlatform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36`;
 
   const stealthInitScript = `
-    // === Stealth Init Script ===
+    // === Stealth Init Script (platform: ${platform}) ===
 
     // 1. Override navigator.webdriver
     Object.defineProperty(navigator, 'webdriver', {
@@ -250,9 +268,9 @@ function getEnhancedStealthConfig(): StealthConfig {
     const getParameterProto = WebGLRenderingContext.prototype.getParameter;
     WebGLRenderingContext.prototype.getParameter = function(parameter) {
       // UNMASKED_VENDOR_WEBGL
-      if (parameter === 0x9245) return 'Google Inc. (Apple)';
+      if (parameter === 0x9245) return '${webglVendor}';
       // UNMASKED_RENDERER_WEBGL
-      if (parameter === 0x9246) return 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)';
+      if (parameter === 0x9246) return '${webglRenderer}';
       return getParameterProto.call(this, parameter);
     };
     // Same for WebGL2
@@ -279,11 +297,6 @@ function getEnhancedStealthConfig(): StealthConfig {
       });
     }
 
-    // 10. Prevent toString detection of overridden functions
-    const nativeToString = Function.prototype.toString;
-    const customFunctions = new Set();
-    const originalGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
-    // Nothing more needed - the above overrides use defineProperty which is hard to detect
   `;
 
   return {
