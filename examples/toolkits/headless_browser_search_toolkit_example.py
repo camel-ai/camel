@@ -11,28 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-"""HeadlessBrowserSearchToolkit Example
-
-Usage:
-    python examples/toolkits/headless_browser_search_toolkit_example.py
-
-Example output of ``example_agent_tools``::
-
-    {
-      "type": "function",
-      "function": {
-        "name": "search",
-        "parameters": {
-          "properties": {
-            "query":  {"type": "string"},
-            "engine": {"type": ["string", "null"]},
-            "page":   {"type": ["integer", "null"]}
-          },
-          "required": ["query", "engine", "page"]
-        }
-      }
-    }
-"""
+"""HeadlessBrowserSearchToolkit Example."""
 
 import asyncio
 import json
