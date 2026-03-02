@@ -13,15 +13,20 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from mock import patch
 
+import pytest
+
 import examples.role_description.role_generation
 import examples.role_description.role_playing_with_role_description
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
-model_gpt = ModelFactory.create(
-    ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
-)
+try:
+    model_gpt = ModelFactory.create(
+        ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O,
+    )
+except ValueError as e:
+    pytest.skip(str(e), allow_module_level=True)
 
 model_stub = ModelFactory.create(
     ModelPlatformType.OPENAI,

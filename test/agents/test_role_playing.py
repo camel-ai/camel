@@ -32,10 +32,13 @@ from camel.types import (
     TaskType,
 )
 
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.DEFAULT,
-)
+try:
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.DEFAULT,
+    )
+except ValueError as e:
+    pytest.skip(str(e), allow_module_level=True)
 
 model_backend_rsp = ChatCompletion(
     id="mock_response_id",
