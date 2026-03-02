@@ -20,9 +20,10 @@ from _pytest.nodes import Item
 from dotenv import load_dotenv
 
 load_dotenv()
-if not os.environ.get("OPENAI_API_KEY"):
-    os.environ["OPENAI_API_KEY"] = "test-openai-key"
-    os.environ["CAMEL_DUMMY_OPENAI_API_KEY"] = "1"
+if os.environ.get("GITHUB_ACTIONS") == "true" and not os.environ.get(
+    "OPENAI_API_KEY"
+):
+    os.environ["CAMEL_SKIP_MISSING_API_KEYS_IN_TESTS"] = "1"
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -52,7 +53,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
-    if os.environ.get("CAMEL_DUMMY_OPENAI_API_KEY") == "1":
+    if not os.environ.get("OPENAI_API_KEY"):
         skip_model_backend = pytest.mark.skip(
             reason="Skipped because OPENAI_API_KEY is not configured for CI."
         )
