@@ -127,19 +127,44 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                 sys_msg = self.agent.system_message.to_openai_system_message()
                 messages.insert(0, sys_msg)
 
+            # Call run() with existing configuration and handle both
+            # ChatCompletion and streaming/generator-style responses.
             model = self.agent.model_backend
+            model_response = model.run(messages)
 
-            # Temporarily disable streaming so model.run() returns a
-            # complete ChatCompletion instead of a stream.  Restore the
-            # original value afterwards to avoid side-effects.
-            config = getattr(model, "model_config_dict", {})
-            original_stream = config.get("stream", False)
+            # Non-streaming: response has .choices like a ChatCompletion.
+            if hasattr(model_response, "choices"):
+                return (
+                    getattr(
+                        getattr(model_response.choices[0], "message", ""),
+                        "content",
+                        "",
+                    )
+                    or ""
+                )
+
+            # Streaming / iterable of chunks: accumulate content pieces.
+            content_parts: List[str] = []
             try:
-                config["stream"] = False
-                model_response = model.run(messages)
-            finally:
-                config["stream"] = original_stream
+                iterator = iter(model_response)
+            except TypeError:
+                # Fallback: not iterable and no .choices; return string form.
+                return str(model_response)
 
+            for chunk in iterator:
+                # OpenAI-style chunk: choices[0].delta.content
+                choices = getattr(chunk, "choices", None)
+                if not choices:
+                    continue
+                first_choice = choices[0]
+                delta = getattr(first_choice, "delta", None)
+                piece = getattr(delta, "content", None) if delta is not None else None
+                if piece is None and hasattr(first_choice, "message"):
+                    piece = getattr(first_choice.message, "content", None)
+                if piece:
+                    content_parts.append(piece)
+
+            return "".join(content_parts)
             if hasattr(model_response, "choices"):
                 return (
                     getattr(
