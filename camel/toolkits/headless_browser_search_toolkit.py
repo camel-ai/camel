@@ -292,12 +292,6 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
     search URLs, navigates pages, and extracts structured results.
 
     Args:
-        engine (EngineType): Search engine to use.
-            Options: ``"brave"``, ``"bing"``, ``"google"``.
-            (default: :obj:`"brave"`)
-        num_pages (int): Which result page to return (1-based).
-            For example, ``num_pages=3`` returns page 3.
-            (default: :obj:`1`)
         headless (bool): Run browser in headless mode.
             (default: :obj:`True`)
         stealth (bool): Enable anti-fingerprint stealth mode.
@@ -309,28 +303,17 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
         >>> from camel.toolkits import (
         ...     HeadlessBrowserSearchToolkit,
         ... )
-        >>> toolkit = HeadlessBrowserSearchToolkit(
-        ...     engine="brave", num_pages=2
-        ... )
+        >>> toolkit = HeadlessBrowserSearchToolkit()
         >>> tools = toolkit.get_tools()
     """
 
     def __init__(
         self,
-        engine: EngineType = "brave",
-        num_pages: int = 1,
         headless: bool = True,
         stealth: bool = True,
         lang: str = "en",
     ):
         super().__init__()
-        if engine not in _ENGINE_JS:
-            raise ValueError(
-                f"Unsupported engine: {engine!r}. "
-                f"Choose from: {list(_ENGINE_JS.keys())}"
-            )
-        self.engine = engine
-        self.num_pages = num_pages
         self.lang = lang
         self._toolkit: Any = None
         self._headless = headless
@@ -369,30 +352,35 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
             await self._toolkit.browser_close()
             self._browser_opened = False
 
-    def _build_search_url(self, query: str, page: int = 0) -> str:
-        r"""Build search URL for the given query and page number.
+    def _build_search_url(
+        self, query: str, engine: str, page_idx: int = 0
+    ) -> str:
+        r"""Build search URL for the given query and page.
 
         Args:
             query (str): The search query.
-            page (int): Zero-based page index. (default: :obj:`0`)
+            engine (str): Search engine name.
+            page_idx (int): Zero-based page index.
+                (default: :obj:`0`)
 
         Returns:
             str: The full search URL.
         """
         q = urllib.parse.quote_plus(query)
-        if self.engine == "google":
+        if engine == "google":
             return (
                 f"https://www.google.com/search?q={q}"
-                f"&start={page * 10}&hl={self.lang}"
+                f"&start={page_idx * 10}&hl={self.lang}"
             )
-        elif self.engine == "bing":
+        elif engine == "bing":
             return (
-                f"https://www.bing.com/search?q={q}" f"&first={page * 10 + 1}"
+                f"https://www.bing.com/search?q={q}"
+                f"&first={page_idx * 10 + 1}"
             )
         else:  # brave
             return (
                 f"https://search.brave.com/search?q={q}"
-                f"&source=web&offset={page}"
+                f"&source=web&offset={page_idx}"
             )
 
     async def _check_blocked(self, toolkit: Any) -> dict:
@@ -413,16 +401,19 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
         except (json.JSONDecodeError, TypeError):
             return {}
 
-    async def _extract_results(self, toolkit: Any) -> List[SearchResult]:
+    async def _extract_results(
+        self, toolkit: Any, engine: str
+    ) -> List[SearchResult]:
         r"""Extract search results from current page via JS.
 
         Args:
             toolkit: The browser toolkit instance.
+            engine (str): Search engine name.
 
         Returns:
             List[SearchResult]: Extracted search results.
         """
-        js_code = _ENGINE_JS[self.engine]
+        js_code = _ENGINE_JS[engine]
         resp = await toolkit.browser_console_exec(js_code)
         raw = resp.get("result", "")
 
@@ -444,20 +435,24 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
     async def search(
         self,
         query: str,
-        num_pages: int = 0,
+        engine: str = "brave",
+        page: int = 1,
     ) -> str:
         r"""Perform a web search and return structured results.
 
-        Uses a headless browser to search the configured engine,
-        extract structured results (title, URL, snippet), and
-        return them as a JSON string.
+        Uses a stealth headless browser to search the specified
+        engine, extract structured results (title, URL, snippet),
+        and return them as a JSON string. The browser is
+        automatically closed after each search.
 
         Args:
             query (str): The search query string.
-            num_pages (int): Which result page to return
-                (1-based). For example, ``num_pages=3`` fetches
-                page 3. If ``0``, uses the instance default
-                ``self.num_pages``. (default: :obj:`0`)
+            engine (str): Search engine to use. Options:
+                ``"brave"``, ``"bing"``, ``"google"``.
+                (default: :obj:`"brave"`)
+            page (int): Which result page to return (1-based).
+                For example, ``page=3`` fetches page 3.
+                (default: :obj:`1`)
 
         Returns:
             str: JSON string containing the page result with
@@ -465,90 +460,104 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
                 ``total_results``, ``results``, and optionally
                 ``raw_snapshot`` fields.
         """
-        target_page = num_pages if num_pages > 0 else self.num_pages
-        # Convert to 0-based index for URL building
-        page_idx = target_page - 1
-        toolkit = await self._ensure_browser()
-        page_num = page_idx
-        url = self._build_search_url(query, page_num)
-        logger.info(
-            f"[{self.engine}] Page {target_page}: {url}"
-        )
-
-        await toolkit.browser_visit_page(url)
-        await asyncio.sleep(3)
-
-        # Check for blocks/captcha
-        block_info = await self._check_blocked(toolkit)
-        is_blocked = block_info.get(
-            "hasCaptcha"
-        ) or block_info.get("isSorryPage")
-
-        if is_blocked:
-            logger.warning(
-                f"[{self.engine}] Page {target_page} "
-                f"BLOCKED: captcha="
-                f"{block_info.get('hasCaptcha')}, "
-                f"sorry={block_info.get('isSorryPage')}, "
-                f"url={block_info.get('url', '')}"
-            )
-            snapshot = (
-                await toolkit.browser_get_page_snapshot()
-            )
+        if engine not in _ENGINE_JS:
             return json.dumps(
-                SearchResponse(
-                    query=query,
-                    engine=self.engine,
-                    page=target_page,
-                    results=[],
-                    raw_snapshot=snapshot,
-                ).to_dict(),
+                {
+                    "error": f"Unsupported engine: {engine!r}."
+                    f" Choose from: {list(_ENGINE_JS.keys())}"
+                }
+            )
+
+        page_idx = max(page - 1, 0)
+        try:
+            toolkit = await self._ensure_browser()
+            url = self._build_search_url(
+                query, engine, page_idx
+            )
+            logger.info(
+                f"[{engine}] Page {page}: {url}"
+            )
+
+            await toolkit.browser_visit_page(url)
+            await asyncio.sleep(3)
+
+            # Check for blocks/captcha
+            block_info = await self._check_blocked(toolkit)
+            is_blocked = block_info.get(
+                "hasCaptcha"
+            ) or block_info.get("isSorryPage")
+
+            if is_blocked:
+                logger.warning(
+                    f"[{engine}] Page {page} BLOCKED: "
+                    f"captcha="
+                    f"{block_info.get('hasCaptcha')}, "
+                    f"sorry="
+                    f"{block_info.get('isSorryPage')}, "
+                    f"url={block_info.get('url', '')}"
+                )
+                snapshot = (
+                    await toolkit.browser_get_page_snapshot()
+                )
+                return json.dumps(
+                    SearchResponse(
+                        query=query,
+                        engine=engine,
+                        page=page,
+                        results=[],
+                        raw_snapshot=snapshot,
+                    ).to_dict(),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+
+            results = await self._extract_results(
+                toolkit, engine
+            )
+
+            # Retry once if no results (page may load)
+            if not results:
+                await asyncio.sleep(3)
+                results = await self._extract_results(
+                    toolkit, engine
+                )
+
+            # Fallback: snapshot if JS got nothing
+            snapshot = ""
+            if not results:
+                logger.info(
+                    f"[{engine}] Page {page}: "
+                    f"JS extraction empty, "
+                    f"falling back to snapshot"
+                )
+                snapshot = (
+                    await toolkit.browser_get_page_snapshot()
+                )
+
+            page_response = SearchResponse(
+                query=query,
+                engine=engine,
+                page=page,
+                results=results,
+                raw_snapshot=snapshot,
+            )
+            logger.info(
+                f"[{engine}] Page {page}: "
+                f"{len(results)} results"
+                + (
+                    f" (snapshot: {len(snapshot)} chars)"
+                    if snapshot
+                    else ""
+                )
+            )
+
+            return json.dumps(
+                page_response.to_dict(),
                 ensure_ascii=False,
                 indent=2,
             )
-
-        results = await self._extract_results(toolkit)
-
-        # Retry once if no results (page may still load)
-        if not results:
-            await asyncio.sleep(3)
-            results = await self._extract_results(toolkit)
-
-        # Fallback: attach snapshot if JS got nothing
-        snapshot = ""
-        if not results:
-            logger.info(
-                f"[{self.engine}] Page {target_page}: "
-                f"JS extraction empty, "
-                f"falling back to snapshot"
-            )
-            snapshot = (
-                await toolkit.browser_get_page_snapshot()
-            )
-
-        page_response = SearchResponse(
-            query=query,
-            engine=self.engine,
-            page=target_page,
-            results=results,
-            raw_snapshot=snapshot,
-        )
-        logger.info(
-            f"[{self.engine}] Page {target_page}: "
-            f"{len(results)} results"
-            + (
-                f" (snapshot fallback: "
-                f"{len(snapshot)} chars)"
-                if snapshot
-                else ""
-            )
-        )
-
-        return json.dumps(
-            page_response.to_dict(),
-            ensure_ascii=False,
-            indent=2,
-        )
+        finally:
+            await self.close()
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing
