@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+
 import gradio as gr
 import pytest
 
@@ -36,6 +38,10 @@ def test_utils():
     assert args is not None
 
 
+@pytest.mark.skipif(
+    not os.environ.get("OPENAI_API_KEY"),
+    reason="OPENAI_API_KEY not set",
+)
 @pytest.mark.model_backend
 def test_session():
     for society_name in ("AI Society", "Code"):

@@ -34,19 +34,24 @@ def add(
     return a + b
 
 
-@tool(synthesize_output=True)
-def format_result(
-    result: int,
-) -> str:
-    r"""Format the calculation result.
+try:
 
-    Args:
-        result (int): The number to format.
+    @tool(synthesize_output=True)
+    def format_result(
+        result: int,
+    ) -> str:
+        r"""Format the calculation result.
 
-    Returns:
-        str: A formatted string.
-    """
-    return f"Result: {result}"
+        Args:
+            result (int): The number to format.
+
+        Returns:
+            str: A formatted string.
+        """
+        return f"Result: {result}"
+
+except ValueError:
+    format_result = None
 
 
 def test_basic_tool_decorator():
@@ -79,6 +84,8 @@ def test_tool_schema_generation():
 
 def test_tool_with_synthesis():
     r"""Test the tool decorator with output synthesis enabled."""
+    if format_result is None:
+        pytest.skip("OPENAI_API_KEY not set")
     assert format_result.synthesize_output is True
 
     result = format_result(42)
