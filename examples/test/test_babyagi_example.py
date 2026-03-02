@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+
 import pytest
 from mock import MagicMock, patch
 
@@ -19,14 +21,33 @@ from camel.models import ModelFactory
 from camel.societies.babyagi_playing import BabyAGI
 from camel.types import ModelPlatformType, ModelType
 
+_skip_no_key = not os.environ.get("OPENAI_API_KEY")
+
+try:
+    _stub_model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.STUB,
+    )
+except ValueError:
+    _stub_model = None
+
 parametrize = pytest.mark.parametrize(
     'model',
     [
-        ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
+        pytest.param(
+            _stub_model,
+            marks=pytest.mark.skipif(
+                _stub_model is None,
+                reason="OPENAI_API_KEY not set",
+            ),
         ),
-        pytest.param(None, marks=pytest.mark.model_backend),
+        pytest.param(
+            None,
+            marks=pytest.mark.skipif(
+                _skip_no_key,
+                reason="OPENAI_API_KEY not set",
+            ),
+        ),
     ],
 )
 

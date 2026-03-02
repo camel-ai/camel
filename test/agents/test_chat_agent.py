@@ -15,7 +15,7 @@ import asyncio
 import json
 from copy import deepcopy
 from io import BytesIO
-from typing import List
+from typing import List, Optional
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -88,7 +88,7 @@ model_backend_rsp_base = ChatCompletion(
 )
 
 try:
-    _openai_model = ModelFactory.create(
+    _openai_model: Optional[BaseModelBackend] = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.DEFAULT,
     )
