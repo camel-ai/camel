@@ -14,7 +14,7 @@
 
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Iterable, List, Optional, cast
 
 from PIL import Image
 
@@ -146,7 +146,7 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
             # Streaming / iterable of chunks: accumulate content pieces.
             content_parts: List[str] = []
             try:
-                iterator = iter(model_response)
+                iterator = iter(cast(Iterable[Any], model_response))
             except TypeError:
                 # Fallback: not iterable and no .choices; return string form.
                 return str(model_response)
@@ -158,42 +158,13 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                     continue
                 first_choice = choices[0]
                 delta = getattr(first_choice, "delta", None)
-                piece = getattr(delta, "content", None) if delta is not None else None
-                if piece is None and hasattr(first_choice, "message"):
-                    piece = getattr(first_choice.message, "content", None)
-                if piece:
-                    content_parts.append(piece)
-
-            return "".join(content_parts)
-            if hasattr(model_response, "choices"):
-                return (
-                    getattr(
-                        getattr(model_response.choices[0], "message", ""),
-                        "content",
-                        "",
-                    )
-                    or ""
-                )
-
-            # Streaming response: accumulate content from chunks.
-            content_parts: List[str] = []
-            try:
-                iterator = iter(model_response)  # type: ignore[arg-type]
-            except TypeError:
-                return str(model_response)
-
-            for chunk in iterator:
-                choices = getattr(chunk, "choices", None)
-                if not choices:
-                    continue
-                delta = getattr(choices[0], "delta", None)
                 piece = (
                     getattr(delta, "content", None)
                     if delta is not None
                     else None
                 )
-                if piece is None and hasattr(choices[0], "message"):
-                    piece = getattr(choices[0].message, "content", None)
+                if piece is None and hasattr(first_choice, "message"):
+                    piece = getattr(first_choice.message, "content", None)
                 if piece:
                     content_parts.append(piece)
 
