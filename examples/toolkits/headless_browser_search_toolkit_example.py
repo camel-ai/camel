@@ -26,7 +26,7 @@ Note:
     captcha pages even with stealth mode.
 
 Usage:
-    python examples/toolkits/web_search_toolkit_example.py
+    python examples/toolkits/headless_browser_search_toolkit_example.py
 """
 
 import asyncio
@@ -37,86 +37,80 @@ from camel.toolkits.headless_browser_search_toolkit import (
 )
 
 
-# -- Example 1: Basic single-page search (Brave) -------------------------
+# -- Example 1: Basic search (page 1, Brave) -----------------------------
 async def example_basic_search():
-    """Search Brave for a query and print structured results."""
+    """Search Brave and print page 1 results."""
     print("=" * 70)
-    print("Example 1: Basic Brave search (1 page)")
+    print("Example 1: Basic Brave search (page 1)")
     print("=" * 70)
 
-    toolkit = HeadlessBrowserSearchToolkit(engine="brave", num_pages=1)
+    toolkit = HeadlessBrowserSearchToolkit(engine="brave")
     try:
-        result_json = await toolkit.search("large language model applications")
-        pages = json.loads(result_json)
-        for page in pages:
-            print(
-                f"\nPage {page['page']} - "
-                f"{page['total_results']} results\n"
-            )
-            for i, r in enumerate(page["results"], 1):
-                print(f"  [{i}] {r['title']}")
-                print(f"      URL:     {r['url']}")
-                if r.get("snippet"):
-                    print(f"      Snippet: {r['snippet'][:120]}")
-                print()
-    finally:
-        await toolkit.close()
-
-
-# -- Example 2: Multi-page search ----------------------------------------
-async def example_multi_page():
-    """Fetch the first 3 pages of Brave results."""
-    print("=" * 70)
-    print("Example 2: Multi-page Brave search (3 pages)")
-    print("=" * 70)
-
-    toolkit = HeadlessBrowserSearchToolkit(engine="brave", num_pages=3)
-    try:
-        result_json = await toolkit.search("climate change 2026")
-        pages = json.loads(result_json)
-        total = sum(p["total_results"] for p in pages)
-        print(f"\nTotal results across {len(pages)} pages: {total}\n")
-        for page in pages:
-            print(
-                f"--- Page {page['page']} "
-                f"({page['total_results']} results) ---"
-            )
-            for r in page["results"][:5]:
-                print(f"  - {r['title']}")
-                print(f"    {r['url']}")
-            if page["total_results"] > 5:
-                print(f"  ... and {page['total_results'] - 5} more")
+        result_json = await toolkit.search(
+            "large language model applications"
+        )
+        page = json.loads(result_json)
+        print(
+            f"\nPage {page['page']} - "
+            f"{page['total_results']} results\n"
+        )
+        for i, r in enumerate(page["results"], 1):
+            print(f"  [{i}] {r['title']}")
+            print(f"      URL:     {r['url']}")
+            if r.get("snippet"):
+                print(f"      Snippet: {r['snippet'][:120]}")
             print()
     finally:
         await toolkit.close()
 
 
-# -- Example 3: Export results to JSON ------------------------------------
-async def example_export_json():
-    """Search and save results as a JSON file."""
+# -- Example 2: Fetch a specific page (page 3) ---------------------------
+async def example_specific_page():
+    """Fetch page 3 of Brave results."""
     print("=" * 70)
-    print("Example 3: Export results to JSON")
+    print("Example 2: Brave search page 3")
     print("=" * 70)
 
-    toolkit = HeadlessBrowserSearchToolkit(engine="brave", num_pages=2)
+    toolkit = HeadlessBrowserSearchToolkit(
+        engine="brave", num_pages=3
+    )
     try:
-        result_json = await toolkit.search("python asyncio tutorial")
-        data = json.loads(result_json)
-        output_path = "web_search_results.json"
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        print(f"\nResults saved to {output_path}")
-        total = sum(d["total_results"] for d in data)
-        print(f"Total results: {total}")
-        print("\nSample entry:")
-        if data and data[0]["results"]:
-            print(
-                json.dumps(
-                    data[0]["results"][0],
-                    indent=2,
-                    ensure_ascii=False,
-                )
-            )
+        result_json = await toolkit.search("climate change 2026")
+        page = json.loads(result_json)
+        print(
+            f"\nPage {page['page']} - "
+            f"{page['total_results']} results\n"
+        )
+        for r in page["results"][:5]:
+            print(f"  - {r['title']}")
+            print(f"    {r['url']}")
+        if page["total_results"] > 5:
+            extra = page["total_results"] - 5
+            print(f"  ... and {extra} more")
+    finally:
+        await toolkit.close()
+
+
+# -- Example 3: Override num_pages at call time ---------------------------
+async def example_override_page():
+    """Default is page 1, but override to page 2 at call time."""
+    print("=" * 70)
+    print("Example 3: Override num_pages at call time")
+    print("=" * 70)
+
+    toolkit = HeadlessBrowserSearchToolkit(engine="brave")
+    try:
+        result_json = await toolkit.search(
+            "python asyncio tutorial", num_pages=2
+        )
+        page = json.loads(result_json)
+        print(
+            f"\nPage {page['page']} - "
+            f"{page['total_results']} results\n"
+        )
+        for i, r in enumerate(page["results"][:5], 1):
+            print(f"  [{i}] {r['title']}")
+            print(f"      {r['url']}")
     finally:
         await toolkit.close()
 
@@ -125,26 +119,25 @@ async def example_export_json():
 async def example_bing_search():
     """Search using Bing engine."""
     print("=" * 70)
-    print("Example 4: Bing search")
+    print("Example 4: Bing search (page 1)")
     print("=" * 70)
 
-    toolkit = HeadlessBrowserSearchToolkit(engine="bing", num_pages=1)
+    toolkit = HeadlessBrowserSearchToolkit(engine="bing")
     try:
         result_json = await toolkit.search(
             "transformer architecture explained"
         )
-        pages = json.loads(result_json)
-        for page in pages:
-            print(
-                f"\nPage {page['page']} - "
-                f"{page['total_results']} results\n"
-            )
-            for i, r in enumerate(page["results"][:5], 1):
-                print(f"  [{i}] {r['title']}")
-                print(f"      {r['url']}")
-                if r.get("snippet"):
-                    print(f"      {r['snippet'][:120]}")
-                print()
+        page = json.loads(result_json)
+        print(
+            f"\nPage {page['page']} - "
+            f"{page['total_results']} results\n"
+        )
+        for i, r in enumerate(page["results"][:5], 1):
+            print(f"  [{i}] {r['title']}")
+            print(f"      {r['url']}")
+            if r.get("snippet"):
+                print(f"      {r['snippet'][:120]}")
+            print()
     finally:
         await toolkit.close()
 
@@ -156,28 +149,30 @@ async def example_google_search():
     print("Example 5: Google search (stealth mode)")
     print("=" * 70)
 
-    toolkit = HeadlessBrowserSearchToolkit(engine="google", num_pages=1)
+    toolkit = HeadlessBrowserSearchToolkit(engine="google")
     try:
         result_json = await toolkit.search("camel-ai framework")
-        pages = json.loads(result_json)
-        for page in pages:
-            if not page["results"]:
-                print(
-                    f"\nPage {page['page']}: No results "
-                    f"(likely blocked by captcha)."
-                )
-                print(
-                    "  Tip: Google has aggressive IP-level "
-                    "anti-bot detection."
-                )
-                print("  Consider using engine='brave' " "or engine='bing'.")
-            else:
-                n = page["total_results"]
-                print(f"\nPage {page['page']} - {n} results\n")
-                for i, r in enumerate(page["results"][:5], 1):
-                    print(f"  [{i}] {r['title']}")
-                    print(f"      {r['url']}")
-                    print()
+        page = json.loads(result_json)
+        if not page["results"]:
+            print(
+                f"\nPage {page['page']}: No results "
+                f"(likely blocked by captcha)."
+            )
+            print(
+                "  Tip: Google has aggressive IP-level "
+                "anti-bot detection."
+            )
+            print(
+                "  Consider using engine='brave' "
+                "or engine='bing'."
+            )
+        else:
+            n = page["total_results"]
+            print(f"\nPage {page['page']} - {n} results\n")
+            for i, r in enumerate(page["results"][:5], 1):
+                print(f"  [{i}] {r['title']}")
+                print(f"      {r['url']}")
+                print()
     finally:
         await toolkit.close()
 
@@ -186,10 +181,10 @@ async def example_google_search():
 async def example_reuse_browser():
     """Reuse the same browser session for multiple searches."""
     print("=" * 70)
-    print("Example 6: Reuse browser for multiple queries (Brave)")
+    print("Example 6: Reuse browser for multiple queries")
     print("=" * 70)
 
-    toolkit = HeadlessBrowserSearchToolkit(engine="brave", num_pages=1)
+    toolkit = HeadlessBrowserSearchToolkit(engine="brave")
     queries = [
         "python web scraping",
         "rust vs go performance",
@@ -198,11 +193,11 @@ async def example_reuse_browser():
     try:
         for query in queries:
             result_json = await toolkit.search(query)
-            pages = json.loads(result_json)
-            count = sum(p["total_results"] for p in pages)
+            page = json.loads(result_json)
+            count = page["total_results"]
             top = None
-            if pages and pages[0]["results"]:
-                top = pages[0]["results"][0]
+            if page["results"]:
+                top = page["results"][0]
             print(f"\n  Query: {query!r}")
             print(f"  Results: {count}")
             if top:
@@ -212,19 +207,22 @@ async def example_reuse_browser():
         await toolkit.close()
 
 
-# -- Example 7: Use with get_tools() for agent integration ---------------
+# -- Example 7: get_tools() for agent integration ------------------------
 async def example_agent_tools():
     """Show how to get FunctionTool list for agent integration."""
     print("=" * 70)
     print("Example 7: get_tools() for agent integration")
     print("=" * 70)
 
-    toolkit = HeadlessBrowserSearchToolkit(engine="brave", num_pages=2)
+    toolkit = HeadlessBrowserSearchToolkit(
+        engine="brave", num_pages=2
+    )
     tools = toolkit.get_tools()
     for t in tools:
         schema = t.get_openai_tool_schema()
         print(f"\n  Tool: {schema['function']['name']}")
-        print(f"  Desc: {schema['function']['description'][:80]}")
+        desc = schema['function']['description'][:80]
+        print(f"  Desc: {desc}")
         params = schema['function']['parameters']
         print(f"  Params: {list(params['properties'])}")
 
@@ -232,9 +230,9 @@ async def example_agent_tools():
 async def main():
     await example_basic_search()
     # print("\n\n")
-    # await example_multi_page()
+    # await example_specific_page()
     # print("\n\n")
-    # await example_export_json()
+    # await example_override_page()
     # print("\n\n")
     # await example_bing_search()
     # print("\n\n")

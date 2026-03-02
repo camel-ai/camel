@@ -295,7 +295,8 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
         engine (EngineType): Search engine to use.
             Options: ``"brave"``, ``"bing"``, ``"google"``.
             (default: :obj:`"brave"`)
-        num_pages (int): Number of result pages to fetch per search.
+        num_pages (int): Which result page to return (1-based).
+            For example, ``num_pages=3`` returns page 3.
             (default: :obj:`1`)
         headless (bool): Run browser in headless mode.
             (default: :obj:`True`)
@@ -453,90 +454,98 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
 
         Args:
             query (str): The search query string.
-            num_pages (int): Number of result pages to fetch.
-                If ``0``, uses the instance default
+            num_pages (int): Which result page to return
+                (1-based). For example, ``num_pages=3`` fetches
+                page 3. If ``0``, uses the instance default
                 ``self.num_pages``. (default: :obj:`0`)
 
         Returns:
-            str: JSON string containing a list of page results.
-                Each page has ``query``, ``engine``, ``page``,
+            str: JSON string containing the page result with
+                ``query``, ``engine``, ``page``,
                 ``total_results``, ``results``, and optionally
                 ``raw_snapshot`` fields.
         """
-        pages_to_fetch = num_pages if num_pages > 0 else self.num_pages
+        target_page = num_pages if num_pages > 0 else self.num_pages
+        # Convert to 0-based index for URL building
+        page_idx = target_page - 1
         toolkit = await self._ensure_browser()
-        all_pages: List[SearchResponse] = []
+        page_num = page_idx
+        url = self._build_search_url(query, page_num)
+        logger.info(
+            f"[{self.engine}] Page {target_page}: {url}"
+        )
 
-        for page_num in range(pages_to_fetch):
-            url = self._build_search_url(query, page_num)
-            logger.info(f"[{self.engine}] Page {page_num + 1}: {url}")
+        await toolkit.browser_visit_page(url)
+        await asyncio.sleep(3)
 
-            await toolkit.browser_visit_page(url)
-            await asyncio.sleep(3)
+        # Check for blocks/captcha
+        block_info = await self._check_blocked(toolkit)
+        is_blocked = block_info.get(
+            "hasCaptcha"
+        ) or block_info.get("isSorryPage")
 
-            # Check for blocks/captcha
-            block_info = await self._check_blocked(toolkit)
-            is_blocked = block_info.get("hasCaptcha") or block_info.get(
-                "isSorryPage"
+        if is_blocked:
+            logger.warning(
+                f"[{self.engine}] Page {target_page} "
+                f"BLOCKED: captcha="
+                f"{block_info.get('hasCaptcha')}, "
+                f"sorry={block_info.get('isSorryPage')}, "
+                f"url={block_info.get('url', '')}"
+            )
+            snapshot = (
+                await toolkit.browser_get_page_snapshot()
+            )
+            return json.dumps(
+                SearchResponse(
+                    query=query,
+                    engine=self.engine,
+                    page=target_page,
+                    results=[],
+                    raw_snapshot=snapshot,
+                ).to_dict(),
+                ensure_ascii=False,
+                indent=2,
             )
 
-            if is_blocked:
-                logger.warning(
-                    f"[{self.engine}] Page {page_num + 1} "
-                    f"BLOCKED: captcha="
-                    f"{block_info.get('hasCaptcha')}, "
-                    f"sorry={block_info.get('isSorryPage')}, "
-                    f"url={block_info.get('url', '')}"
-                )
-                snapshot = await toolkit.browser_get_page_snapshot()
-                all_pages.append(
-                    SearchResponse(
-                        query=query,
-                        engine=self.engine,
-                        page=page_num + 1,
-                        results=[],
-                        raw_snapshot=snapshot,
-                    )
-                )
-                continue
+        results = await self._extract_results(toolkit)
 
+        # Retry once if no results (page may still load)
+        if not results:
+            await asyncio.sleep(3)
             results = await self._extract_results(toolkit)
 
-            # Retry once if no results (page may still load)
-            if not results:
-                await asyncio.sleep(3)
-                results = await self._extract_results(toolkit)
-
-            # Fallback: attach snapshot if JS got nothing
-            snapshot = ""
-            if not results:
-                logger.info(
-                    f"[{self.engine}] Page {page_num + 1}: "
-                    f"JS extraction empty, "
-                    f"falling back to snapshot"
-                )
-                snapshot = await toolkit.browser_get_page_snapshot()
-
-            page_response = SearchResponse(
-                query=query,
-                engine=self.engine,
-                page=page_num + 1,
-                results=results,
-                raw_snapshot=snapshot,
-            )
-            all_pages.append(page_response)
+        # Fallback: attach snapshot if JS got nothing
+        snapshot = ""
+        if not results:
             logger.info(
-                f"[{self.engine}] Page {page_num + 1}: "
-                f"{len(results)} results"
-                + (
-                    f" (snapshot fallback: " f"{len(snapshot)} chars)"
-                    if snapshot
-                    else ""
-                )
+                f"[{self.engine}] Page {target_page}: "
+                f"JS extraction empty, "
+                f"falling back to snapshot"
             )
+            snapshot = (
+                await toolkit.browser_get_page_snapshot()
+            )
+
+        page_response = SearchResponse(
+            query=query,
+            engine=self.engine,
+            page=target_page,
+            results=results,
+            raw_snapshot=snapshot,
+        )
+        logger.info(
+            f"[{self.engine}] Page {target_page}: "
+            f"{len(results)} results"
+            + (
+                f" (snapshot fallback: "
+                f"{len(snapshot)} chars)"
+                if snapshot
+                else ""
+            )
+        )
 
         return json.dumps(
-            [p.to_dict() for p in all_pages],
+            page_response.to_dict(),
             ensure_ascii=False,
             indent=2,
         )
