@@ -11,10 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import pytest
+
 from camel.agents import KnowledgeGraphAgent
 from camel.storages.graph_storages.graph_element import Node, Relationship
 
-agent = KnowledgeGraphAgent()
+try:
+    agent = KnowledgeGraphAgent()
+except ValueError as e:
+    pytest.skip(str(e), allow_module_level=True)
 
 
 def test_validate_node_valid():

@@ -87,12 +87,23 @@ model_backend_rsp_base = ChatCompletion(
     ),
 )
 
+try:
+    _openai_model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.DEFAULT,
+    )
+except ValueError:
+    _openai_model = None
+
 parametrize = pytest.mark.parametrize(
     'model',
     [
-        ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.DEFAULT,
+        pytest.param(
+            _openai_model,
+            marks=pytest.mark.skipif(
+                _openai_model is None,
+                reason="OPENAI_API_KEY not set",
+            ),
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
