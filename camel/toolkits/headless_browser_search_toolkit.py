@@ -86,7 +86,7 @@ def _parse_console_result(raw: str) -> str:
     """Strip the 'Console execution result: ' prefix and unquote."""
     prefix = "Console execution result: "
     if raw.startswith(prefix):
-        raw = raw[len(prefix):]
+        raw = raw[len(prefix) :]
     if raw.startswith('"') and raw.endswith('"'):
         try:
             return json.loads(raw)
