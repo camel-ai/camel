@@ -369,9 +369,9 @@ def api_keys_required(
                     os.environ.get("CAMEL_SKIP_MISSING_API_KEYS_IN_TESTS")
                     == "1"
                 ):
-                    from unittest import SkipTest
+                    import pytest
 
-                    raise SkipTest(
+                    pytest.skip(
                         "Skipped because required API keys are missing: "
                         f"{', '.join(missing_keys)}"
                     )
