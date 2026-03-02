@@ -37,7 +37,7 @@ parametrize = pytest.mark.parametrize(
         pytest.param(
             _stub_model,
             marks=pytest.mark.skipif(
-                _stub_model is None,
+                _skip_no_key or _stub_model is None,
                 reason="OPENAI_API_KEY not set",
             ),
         ),
