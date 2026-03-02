@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+
 import pytest
 
 import examples.agents.single_agent
@@ -21,6 +23,8 @@ import examples.misalignment.single_agent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
+_skip_no_key = not os.environ.get("OPENAI_API_KEY")
+
 parametrize = pytest.mark.parametrize(
     'model',
     [
@@ -28,7 +32,13 @@ parametrize = pytest.mark.parametrize(
             ModelPlatformType.STUB,
             model_type=ModelType.STUB,
         ),
-        pytest.param(None, marks=pytest.mark.model_backend),
+        pytest.param(
+            None,
+            marks=pytest.mark.skipif(
+                _skip_no_key,
+                reason="OPENAI_API_KEY not set",
+            ),
+        ),
     ],
 )
 
@@ -61,13 +71,25 @@ def test_code_generate_metadata(model):
     examples.code.generate_meta_data.main(model=model)
 
 
+try:
+    _openai_stub = ModelFactory.create(
+        ModelPlatformType.OPENAI,
+        model_type=ModelType.STUB,
+    )
+except ValueError:
+    _openai_stub = None
+
+
 @pytest.mark.parametrize(
     'model',
     [
-        ModelFactory.create(
-            ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
-        )
+        pytest.param(
+            _openai_stub,
+            marks=pytest.mark.skipif(
+                _openai_stub is None,
+                reason="OPENAI_API_KEY not set",
+            ),
+        ),
     ],
 )
 def test_code_task_generation(model):
