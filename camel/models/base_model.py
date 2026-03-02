@@ -524,26 +524,21 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             if is_tool_call or is_tool_response:
                 has_tool_calls = True
 
-            # Sanitize tool_call IDs to max 40 chars (OpenAI API limit)
-            _max_tc_id_len = 40
+            # Clamp tool_call IDs to OpenAI's 40-character limit.
             if is_tool_call:
-                tc_list = processed_msg.get("tool_calls", [])
-                if isinstance(tc_list, list):
-                    sanitized = []
-                    for tc in tc_list:
-                        if (
-                            isinstance(tc, dict)
-                            and isinstance(tc.get("id"), str)
-                            and len(tc["id"]) > _max_tc_id_len
-                        ):
-                            tc = dict(tc)
-                            tc["id"] = tc["id"][:_max_tc_id_len]
-                        sanitized.append(tc)
-                    processed_msg["tool_calls"] = sanitized
+                tool_calls = processed_msg.get("tool_calls")
+                if isinstance(tool_calls, list):
+                    for i, tool_call in enumerate(tool_calls):
+                        if isinstance(tool_call, dict):
+                            tc_id = tool_call.get("id")
+                            if isinstance(tc_id, str) and len(tc_id) > 40:
+                                tool_call = dict(tool_call)
+                                tool_call["id"] = tc_id[:40]
+                                tool_calls[i] = tool_call
             if is_tool_response:
                 tc_id = processed_msg.get("tool_call_id")
-                if isinstance(tc_id, str) and len(tc_id) > _max_tc_id_len:
-                    processed_msg["tool_call_id"] = tc_id[:_max_tc_id_len]
+                if isinstance(tc_id, str) and len(tc_id) > 40:
+                    processed_msg["tool_call_id"] = tc_id[:40]
 
             # Store the processed message for later formatting if needed
             processed_messages.append(processed_msg)
