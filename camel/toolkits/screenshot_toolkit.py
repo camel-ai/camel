@@ -128,7 +128,17 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                 messages.insert(0, sys_msg)
 
             model = self.agent.model_backend
-            model_response = model.run(messages)
+
+            # Temporarily disable streaming so model.run() returns a
+            # complete ChatCompletion instead of a stream.  Restore the
+            # original value afterwards to avoid side-effects.
+            config = getattr(model, "model_config_dict", {})
+            original_stream = config.get("stream", False)
+            try:
+                config["stream"] = False
+                model_response = model.run(messages)
+            finally:
+                config["stream"] = original_stream
 
             if hasattr(model_response, "choices"):
                 return (
