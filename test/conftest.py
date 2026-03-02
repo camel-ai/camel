@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from typing import List
 
 import pytest
@@ -19,6 +20,9 @@ from _pytest.nodes import Item
 from dotenv import load_dotenv
 
 load_dotenv()
+if not os.environ.get("OPENAI_API_KEY"):
+    os.environ["OPENAI_API_KEY"] = "test-openai-key"
+    os.environ["CAMEL_DUMMY_OPENAI_API_KEY"] = "1"
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -48,6 +52,14 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
+    if os.environ.get("CAMEL_DUMMY_OPENAI_API_KEY") == "1":
+        skip_model_backend = pytest.mark.skip(
+            reason="Skipped because OPENAI_API_KEY is not configured for CI."
+        )
+        for item in items:
+            if "model_backend" in item.keywords:
+                item.add_marker(skip_model_backend)
+
     if config.getoption("--llm-test-only"):
         skip_fast = pytest.mark.skip(reason="Skipped for llm test only")
         for item in items:
