@@ -1819,6 +1819,7 @@ class ChatAgent(BaseAgent):
                     agent_id=f"{self.agent_id}_context_summarizer",
                     token_limit=self.token_limit,
                     summarize_threshold=None,
+                    on_request_usage=self.on_request_usage,
                 )
             else:
                 self._context_summary_agent.reset()
@@ -2112,6 +2113,7 @@ class ChatAgent(BaseAgent):
                     agent_id=f"{self.agent_id}_context_summarizer",
                     token_limit=self.token_limit,
                     summarize_threshold=None,
+                    on_request_usage=self.on_request_usage,
                 )
             else:
                 self._context_summary_agent.reset()
@@ -2257,6 +2259,7 @@ class ChatAgent(BaseAgent):
                     agent_id=f"{self.agent_id}_context_summarizer",
                     token_limit=self.token_limit,
                     summarize_threshold=None,
+                    on_request_usage=self.on_request_usage,
                 )
             else:
                 self._context_summary_agent.reset()
