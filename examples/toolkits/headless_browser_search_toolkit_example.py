@@ -26,9 +26,13 @@ from camel.toolkits.headless_browser_search_toolkit import (
 
 
 async def example_basic_search():
-    """Basic Brave search."""
+    """Search with all args: query, engine, page."""
     toolkit = HeadlessBrowserSearchToolkit()
-    result_json = await toolkit.search("large language model")
+    result_json = await toolkit.search(
+        query="large language model",
+        engine="brave",
+        page=1,
+    )
     page = json.loads(result_json)
     print(f"Results: {page['total_results']}")
     for r in page["results"][:3]:
