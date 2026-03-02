@@ -16,13 +16,6 @@
 Usage:
     python examples/toolkits/headless_browser_search_toolkit_example.py
 
-Example output of ``example_basic_search``::
-
-    Results: 20
-      Large language model - Wikipedia
-        https://en.wikipedia.org/wiki/Large_language_model
-      ...
-
 Example output of ``example_agent_tools``::
 
     {
@@ -50,15 +43,7 @@ from camel.toolkits.headless_browser_search_toolkit import (
 
 
 async def example_basic_search():
-    """Search with all args: query, engine, page.
-
-    Expected output::
-
-        Results: 20
-          Large language model - Wikipedia
-            https://en.wikipedia.org/wiki/Large_language_model
-          ...
-    """
+    """Search with all args: query, engine, page."""
     toolkit = HeadlessBrowserSearchToolkit()
     result_json = await toolkit.search(
         query="large language model",
