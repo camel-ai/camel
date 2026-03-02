@@ -13,18 +13,6 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """HeadlessBrowserSearchToolkit Example
 
-Demonstrates how to use the HeadlessBrowserSearchToolkit to perform
-structured web searches via a headless browser with stealth mode.
-
-Supported engines: "brave" (recommended), "bing", "google"
-
-Note:
-  - Brave Search: Best overall. No anti-bot blocks, 20 results per
-    page, clean direct URLs, fast.
-  - Bing: Works well. 10 results per page.
-  - Google: Has aggressive IP-level anti-bot detection. May return
-    captcha pages even with stealth mode.
-
 Usage:
     python examples/toolkits/headless_browser_search_toolkit_example.py
 """
@@ -37,140 +25,27 @@ from camel.toolkits.headless_browser_search_toolkit import (
 )
 
 
-# -- Example 1: Basic Brave search (page 1) ------------------------------
 async def example_basic_search():
-    """Search Brave and print page 1 results."""
-    print("=" * 70)
-    print("Example 1: Basic Brave search (page 1)")
-    print("=" * 70)
-
+    """Basic Brave search."""
     toolkit = HeadlessBrowserSearchToolkit()
-    result_json = await toolkit.search(
-        "large language model applications"
-    )
+    result_json = await toolkit.search("large language model")
     page = json.loads(result_json)
-    print(
-        f"\nPage {page['page']} - "
-        f"{page['total_results']} results\n"
-    )
-    for i, r in enumerate(page["results"], 1):
-        print(f"  [{i}] {r['title']}")
-        print(f"      URL:     {r['url']}")
-        if r.get("snippet"):
-            print(f"      Snippet: {r['snippet'][:120]}")
-        print()
+    print(f"Results: {page['total_results']}")
+    for r in page["results"][:3]:
+        print(f"  {r['title']} - {r['url']}")
 
 
-# -- Example 2: Specific page (page 3) -----------------------------------
-async def example_specific_page():
-    """Fetch page 3 of Brave results."""
-    print("=" * 70)
-    print("Example 2: Brave search page 3")
-    print("=" * 70)
-
-    toolkit = HeadlessBrowserSearchToolkit()
-    result_json = await toolkit.search(
-        "climate change 2026", page=3
-    )
-    page = json.loads(result_json)
-    print(
-        f"\nPage {page['page']} - "
-        f"{page['total_results']} results\n"
-    )
-    for r in page["results"][:5]:
-        print(f"  - {r['title']}")
-        print(f"    {r['url']}")
-    if page["total_results"] > 5:
-        extra = page["total_results"] - 5
-        print(f"  ... and {extra} more")
-
-
-# -- Example 3: Switch engine to Bing ------------------------------------
-async def example_bing_search():
-    """Search using Bing engine."""
-    print("=" * 70)
-    print("Example 3: Bing search (page 1)")
-    print("=" * 70)
-
-    toolkit = HeadlessBrowserSearchToolkit()
-    result_json = await toolkit.search(
-        "transformer architecture explained",
-        engine="bing",
-    )
-    page = json.loads(result_json)
-    print(
-        f"\nPage {page['page']} - "
-        f"{page['total_results']} results\n"
-    )
-    for i, r in enumerate(page["results"][:5], 1):
-        print(f"  [{i}] {r['title']}")
-        print(f"      {r['url']}")
-        if r.get("snippet"):
-            print(f"      {r['snippet'][:120]}")
-        print()
-
-
-# -- Example 4: Google search (may be blocked) ----------------------------
-async def example_google_search():
-    """Try Google search. Falls back gracefully if captcha."""
-    print("=" * 70)
-    print("Example 4: Google search (stealth mode)")
-    print("=" * 70)
-
-    toolkit = HeadlessBrowserSearchToolkit()
-    result_json = await toolkit.search(
-        "camel-ai framework", engine="google"
-    )
-    page = json.loads(result_json)
-    if not page["results"]:
-        print(
-            f"\nPage {page['page']}: No results "
-            f"(likely blocked by captcha)."
-        )
-        print(
-            "  Tip: Google has aggressive IP-level "
-            "anti-bot detection."
-        )
-        print(
-            "  Consider using engine='brave' "
-            "or engine='bing'."
-        )
-    else:
-        n = page["total_results"]
-        print(f"\nPage {page['page']} - {n} results\n")
-        for i, r in enumerate(page["results"][:5], 1):
-            print(f"  [{i}] {r['title']}")
-            print(f"      {r['url']}")
-            print()
-
-
-# -- Example 5: get_tools() for agent integration ------------------------
 async def example_agent_tools():
-    """Show the FunctionTool schema for agent integration."""
-    print("=" * 70)
-    print("Example 5: get_tools() for agent integration")
-    print("=" * 70)
-
+    """Show FunctionTool schema for agent integration."""
     toolkit = HeadlessBrowserSearchToolkit()
     tools = toolkit.get_tools()
     for t in tools:
         schema = t.get_openai_tool_schema()
-        print(f"\n  Tool: {schema['function']['name']}")
-        desc = schema['function']['description'][:80]
-        print(f"  Desc: {desc}")
-        params = schema['function']['parameters']
-        print(f"  Params: {list(params['properties'])}")
+        print(json.dumps(schema, indent=2))
 
 
 async def main():
     await example_basic_search()
-    # print("\n\n")
-    # await example_specific_page()
-    # print("\n\n")
-    # await example_bing_search()
-    # print("\n\n")
-    # await example_google_search()
-    # print("\n\n")
     # await example_agent_tools()
 
 

@@ -334,11 +334,8 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
                     "browser_open",
                     "browser_close",
                     "browser_visit_page",
-                    "browser_click",
-                    "browser_scroll",
                     "browser_get_page_snapshot",
                     "browser_console_exec",
-                    "browser_enter",
                 ],
             )
         if not self._browser_opened:
@@ -471,21 +468,17 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
         page_idx = max(page - 1, 0)
         try:
             toolkit = await self._ensure_browser()
-            url = self._build_search_url(
-                query, engine, page_idx
-            )
-            logger.info(
-                f"[{engine}] Page {page}: {url}"
-            )
+            url = self._build_search_url(query, engine, page_idx)
+            logger.info(f"[{engine}] Page {page}: {url}")
 
             await toolkit.browser_visit_page(url)
             await asyncio.sleep(3)
 
             # Check for blocks/captcha
             block_info = await self._check_blocked(toolkit)
-            is_blocked = block_info.get(
-                "hasCaptcha"
-            ) or block_info.get("isSorryPage")
+            is_blocked = block_info.get("hasCaptcha") or block_info.get(
+                "isSorryPage"
+            )
 
             if is_blocked:
                 logger.warning(
@@ -496,9 +489,7 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
                     f"{block_info.get('isSorryPage')}, "
                     f"url={block_info.get('url', '')}"
                 )
-                snapshot = (
-                    await toolkit.browser_get_page_snapshot()
-                )
+                snapshot = await toolkit.browser_get_page_snapshot()
                 return json.dumps(
                     SearchResponse(
                         query=query,
@@ -511,16 +502,12 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
                     indent=2,
                 )
 
-            results = await self._extract_results(
-                toolkit, engine
-            )
+            results = await self._extract_results(toolkit, engine)
 
             # Retry once if no results (page may load)
             if not results:
                 await asyncio.sleep(3)
-                results = await self._extract_results(
-                    toolkit, engine
-                )
+                results = await self._extract_results(toolkit, engine)
 
             # Fallback: snapshot if JS got nothing
             snapshot = ""
@@ -530,9 +517,7 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
                     f"JS extraction empty, "
                     f"falling back to snapshot"
                 )
-                snapshot = (
-                    await toolkit.browser_get_page_snapshot()
-                )
+                snapshot = await toolkit.browser_get_page_snapshot()
 
             page_response = SearchResponse(
                 query=query,
@@ -544,11 +529,7 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
             logger.info(
                 f"[{engine}] Page {page}: "
                 f"{len(results)} results"
-                + (
-                    f" (snapshot: {len(snapshot)} chars)"
-                    if snapshot
-                    else ""
-                )
+                + (f" (snapshot: {len(snapshot)} chars)" if snapshot else "")
             )
 
             return json.dumps(
