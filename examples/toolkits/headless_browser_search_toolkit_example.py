@@ -15,6 +15,30 @@
 
 Usage:
     python examples/toolkits/headless_browser_search_toolkit_example.py
+
+Example output of ``example_basic_search``::
+
+    Results: 20
+      Large language model - Wikipedia
+        https://en.wikipedia.org/wiki/Large_language_model
+      ...
+
+Example output of ``example_agent_tools``::
+
+    {
+      "type": "function",
+      "function": {
+        "name": "search",
+        "parameters": {
+          "properties": {
+            "query":  {"type": "string"},
+            "engine": {"type": ["string", "null"]},
+            "page":   {"type": ["integer", "null"]}
+          },
+          "required": ["query", "engine", "page"]
+        }
+      }
+    }
 """
 
 import asyncio
@@ -26,7 +50,15 @@ from camel.toolkits.headless_browser_search_toolkit import (
 
 
 async def example_basic_search():
-    """Search with all args: query, engine, page."""
+    """Search with all args: query, engine, page.
+
+    Expected output::
+
+        Results: 20
+          Large language model - Wikipedia
+            https://en.wikipedia.org/wiki/Large_language_model
+          ...
+    """
     toolkit = HeadlessBrowserSearchToolkit()
     result_json = await toolkit.search(
         query="large language model",
@@ -36,15 +68,42 @@ async def example_basic_search():
     page = json.loads(result_json)
     print(f"Results: {page['total_results']}")
     for r in page["results"][:3]:
-        print(f"  {r['title']} - {r['url']}")
+        print(f"  {r['title']}")
+        print(f"    {r['url']}")
 
 
 async def example_agent_tools():
-    """Show FunctionTool schema for agent integration."""
+    """Show FunctionTool schema for agent integration.
+
+    Expected output::
+
+        Tool: search
+        Params: ['query', 'engine', 'page']
+        Schema:
+        {
+          "type": "function",
+          "function": {
+            "name": "search",
+            "parameters": {
+              "properties": {
+                "query":  {"type": "string", ...},
+                "engine": {"type": ["string", "null"], ...},
+                "page":   {"type": ["integer", "null"], ...}
+              },
+              "required": ["query", "engine", "page"]
+            }
+          }
+        }
+    """
     toolkit = HeadlessBrowserSearchToolkit()
     tools = toolkit.get_tools()
     for t in tools:
         schema = t.get_openai_tool_schema()
+        func = schema["function"]
+        params = func["parameters"]
+        print(f"Tool: {func['name']}")
+        print(f"Params: {list(params['properties'])}")
+        print("Schema:")
         print(json.dumps(schema, indent=2))
 
 
