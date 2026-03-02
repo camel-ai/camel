@@ -20,7 +20,9 @@ from camel.toolkits import GoogleMapsToolkit
 
 @pytest.fixture
 @patch('googlemaps.Client')
-def google_maps_toolkit(mock_client):
+def google_maps_toolkit(mock_client, monkeypatch):
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-google-key")
+
     mock_instance = MagicMock()
     mock_validation_resp = {
         'result': {

@@ -29,9 +29,18 @@ from camel.storages.graph_storages.neo4j_graph import (
     REL_QUERY,
 )
 
-url = os.environ.get("NEO4J_URI", "Your_URI")
-username = os.environ.get("NEO4J_USERNAME", "Your_Username")
-password = os.environ.get("NEO4J_PASSWORD", "Your_Password")
+raw_url = os.environ.get("NEO4J_URI")
+raw_username = os.environ.get("NEO4J_USERNAME")
+raw_password = os.environ.get("NEO4J_PASSWORD")
+
+if not all([raw_url, raw_username, raw_password]):
+    pytestmark = pytest.mark.skip(
+        reason="NEO4J credentials are not configured"
+    )
+
+url = raw_url or "bolt://localhost:7687"
+username = raw_username or "neo4j"
+password = raw_password or "password"
 
 
 test_data = [
