@@ -365,6 +365,16 @@ def api_keys_required(
                 key_way = "https://avian.io"
 
             if missing_keys:
+                if (
+                    os.environ.get("CAMEL_SKIP_MISSING_API_KEYS_IN_TESTS")
+                    == "1"
+                ):
+                    from unittest import SkipTest
+
+                    raise SkipTest(
+                        "Skipped because required API keys are missing: "
+                        f"{', '.join(missing_keys)}"
+                    )
                 raise ValueError(
                     "Missing or empty required API keys in "
                     f"environment variables: {', '.join(missing_keys)}.\n"
