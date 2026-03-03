@@ -16,6 +16,7 @@ from .aiml_config import AIML_API_PARAMS, AIMLConfig
 from .amd_config import AMD_API_PARAMS, AMDConfig
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .atlascloud_config import ATLASCLOUD_API_PARAMS, AtlasCloudConfig
+from .avian_config import AVIAN_API_PARAMS, AvianConfig
 from .base_config import BaseConfig
 from .bedrock_config import BEDROCK_API_PARAMS, BedrockConfig
 from .cerebras_config import CEREBRAS_API_PARAMS, CerebrasConfig
@@ -148,4 +149,6 @@ __all__ = [
     'FUNCTION_GEMMA_API_PARAMS',
     'VolcanoConfig',
     'VOLCANO_API_PARAMS',
+    'AvianConfig',
+    'AVIAN_API_PARAMS',
 ]

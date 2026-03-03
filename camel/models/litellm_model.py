@@ -186,7 +186,6 @@ class LiteLLMModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         response = self.client(
             timeout=self._timeout,

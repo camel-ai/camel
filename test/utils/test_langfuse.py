@@ -29,6 +29,9 @@ def _clear_langfuse_env(monkeypatch):
     for key in keys:
         monkeypatch.delenv(key, raising=False)
 
+    langfuse_utils._langfuse_configured = False
+    langfuse_utils._agent_session_id_var.set(None)
+
 
 def test_configure_langfuse_enabled_sets_env_and_marks_configured(monkeypatch):
     _clear_langfuse_env(monkeypatch)
@@ -63,20 +66,29 @@ def test_configure_langfuse_disabled_sets_disabled_flags(monkeypatch):
     assert langfuse_utils.os.environ["LANGFUSE_TRACING_ENABLED"] == "false"
 
 
-def test_update_langfuse_trace_calls_v3_client(monkeypatch):
-    client = MagicMock()
-    monkeypatch.setattr(langfuse_utils, "_langfuse_configured", True)
-    monkeypatch.setattr(langfuse_utils, "get_client", lambda: client)
+def test_update_langfuse_trace_calls_propagate_attributes(monkeypatch):
+    _clear_langfuse_env(monkeypatch)
+    ctx = MagicMock()
+    ctx.__enter__ = MagicMock(return_value=None)
+    ctx.__exit__ = MagicMock(return_value=False)
 
-    ok = langfuse_utils.update_langfuse_trace(
+    monkeypatch.setattr(langfuse_utils, "_langfuse_configured", True)
+    propagate = MagicMock(return_value=ctx)
+    monkeypatch.setattr(
+        langfuse_utils,
+        "_langfuse_propagate_attributes",
+        propagate,
+    )
+
+    with langfuse_utils.update_langfuse_trace(
         session_id="session-1",
         user_id="user-1",
         metadata={"source": "camel"},
         tags=["tag-a"],
-    )
+    ):
+        pass
 
-    assert ok is True
-    client.update_langfuse_trace.assert_called_once_with(
+    propagate.assert_called_once_with(
         session_id="session-1",
         user_id="user-1",
         metadata={"source": "camel"},
@@ -89,23 +101,33 @@ def test_update_langfuse_trace_normalizes_non_string_tags(monkeypatch):
         def __str__(self):
             return "fake-tag"
 
-    client = MagicMock()
-    monkeypatch.setattr(langfuse_utils, "_langfuse_configured", True)
-    monkeypatch.setattr(langfuse_utils, "get_client", lambda: client)
+    _clear_langfuse_env(monkeypatch)
+    ctx = MagicMock()
+    ctx.__enter__ = MagicMock(return_value=None)
+    ctx.__exit__ = MagicMock(return_value=False)
 
-    ok = langfuse_utils.update_langfuse_trace(
-        session_id="session-1",
-        tags=[FakeTag(), None],  # type: ignore[list-item]
+    propagate = MagicMock(return_value=ctx)
+    monkeypatch.setattr(langfuse_utils, "_langfuse_configured", True)
+    monkeypatch.setattr(
+        langfuse_utils, "_langfuse_propagate_attributes", propagate
     )
 
-    assert ok is True
-    client.update_langfuse_trace.assert_called_once_with(
+    with langfuse_utils.update_langfuse_trace(
         session_id="session-1",
+        tags=[FakeTag(), None],  # type: ignore[list-item]
+    ):
+        pass
+
+    propagate.assert_called_once_with(
+        session_id="session-1",
+        user_id=None,
+        metadata=None,
         tags=["fake-tag"],
     )
 
 
 def test_update_current_observation_maps_usage_to_generation(monkeypatch):
+    _clear_langfuse_env(monkeypatch)
     client = MagicMock()
     monkeypatch.setattr(langfuse_utils, "_langfuse_configured", True)
     monkeypatch.setattr(langfuse_utils, "get_client", lambda: client)
@@ -139,6 +161,7 @@ def test_update_current_observation_maps_usage_to_generation(monkeypatch):
 def test_update_current_observation_uses_span_without_generation_fields(
     monkeypatch,
 ):
+    _clear_langfuse_env(monkeypatch)
     client = MagicMock()
     monkeypatch.setattr(langfuse_utils, "_langfuse_configured", True)
     monkeypatch.setattr(langfuse_utils, "get_client", lambda: client)

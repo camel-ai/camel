@@ -181,7 +181,6 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools
@@ -214,7 +213,6 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools
