@@ -4529,17 +4529,27 @@ class ChatAgent(BaseAgent):
 
                         self.record_message(final_message)
 
-                        # Create final response
+                        request_usage = (
+                            safe_model_dump(final_completion.usage)
+                            if final_completion.usage
+                            else {}
+                        )
+                        self._update_token_usage_tracker(
+                            request_token_usage,
+                            request_usage,
+                        )
+                        self._update_token_usage_tracker(
+                            step_token_usage,
+                            request_usage,
+                        )
+
+                        # Create final response with cumulative step usage.
                         final_response = ChatAgentResponse(
                             msgs=[final_message],
                             terminated=False,
                             info={
                                 "id": final_completion.id or "",
-                                "usage": safe_model_dump(
-                                    final_completion.usage
-                                )
-                                if final_completion.usage
-                                else {},
+                                "usage": step_token_usage.copy(),
                                 "finish_reasons": [
                                     choice.finish_reason or "stop"
                                     for choice in final_completion.choices
@@ -4552,14 +4562,6 @@ class ChatAgent(BaseAgent):
                                 "streaming": False,
                                 "partial": False,
                             },
-                        )
-                        self._update_token_usage_tracker(
-                            request_token_usage,
-                            final_response.info["usage"],
-                        )
-                        self._update_token_usage_tracker(
-                            step_token_usage,
-                            final_response.info["usage"],
                         )
                         self._emit_request_usage(
                             usage_dict=request_token_usage,
@@ -4595,9 +4597,9 @@ class ChatAgent(BaseAgent):
                     tool_call_records,
                     num_tokens,
                     None,
-                    model_response.usage_dict.get("prompt_tokens", 0),
-                    model_response.usage_dict.get("completion_tokens", 0),
-                    model_response.usage_dict.get("total_tokens", 0),
+                    step_token_usage["prompt_tokens"],
+                    step_token_usage["completion_tokens"],
+                    step_token_usage["total_tokens"],
                 )
                 accumulated_tool_calls.clear()
                 break
@@ -5531,17 +5533,27 @@ class ChatAgent(BaseAgent):
 
                         self.record_message(final_message)
 
-                        # Create final response
+                        request_usage = (
+                            safe_model_dump(final_completion.usage)
+                            if final_completion.usage
+                            else {}
+                        )
+                        self._update_token_usage_tracker(
+                            request_token_usage,
+                            request_usage,
+                        )
+                        self._update_token_usage_tracker(
+                            step_token_usage,
+                            request_usage,
+                        )
+
+                        # Create final response with cumulative step usage.
                         final_response = ChatAgentResponse(
                             msgs=[final_message],
                             terminated=False,
                             info={
                                 "id": final_completion.id or "",
-                                "usage": safe_model_dump(
-                                    final_completion.usage
-                                )
-                                if final_completion.usage
-                                else {},
+                                "usage": step_token_usage.copy(),
                                 "finish_reasons": [
                                     choice.finish_reason or "stop"
                                     for choice in final_completion.choices
@@ -5554,14 +5566,6 @@ class ChatAgent(BaseAgent):
                                 "streaming": False,
                                 "partial": False,
                             },
-                        )
-                        self._update_token_usage_tracker(
-                            request_token_usage,
-                            final_response.info["usage"],
-                        )
-                        self._update_token_usage_tracker(
-                            step_token_usage,
-                            final_response.info["usage"],
                         )
                         await self._aemit_request_usage(
                             usage_dict=request_token_usage,
@@ -5599,9 +5603,9 @@ class ChatAgent(BaseAgent):
                     tool_call_records,
                     num_tokens,
                     None,
-                    model_response.usage_dict.get("prompt_tokens", 0),
-                    model_response.usage_dict.get("completion_tokens", 0),
-                    model_response.usage_dict.get("total_tokens", 0),
+                    step_token_usage["prompt_tokens"],
+                    step_token_usage["completion_tokens"],
+                    step_token_usage["total_tokens"],
                 )
                 accumulated_tool_calls.clear()
                 break
