@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import time
 from typing import List
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -135,3 +135,81 @@ async def test_get_dep_tasks_info(mock_process_task, mock_decompose):
     # Verify the mocks were called
     mock_decompose.assert_called_once_with(agent)
     mock_process_task.assert_called_once_with(human_task, mock_subtasks)
+
+
+def _make_worker():
+    """Helper to create a SingleAgentWorker for breakpoint resume tests."""
+    sys_msg = BaseMessage.make_assistant_message(
+        role_name="test_worker",
+        content="You are a test worker.",
+    )
+    agent = ChatAgent(sys_msg)
+    return SingleAgentWorker("test worker", agent)
+
+
+class TestBuildRetryMessage:
+    """Tests for _build_retry_message."""
+
+    def test_basic_retry_message(self):
+        worker = _make_worker()
+        task = Task(content="do something", id="t1")
+        task.failure_count = 2
+        task.result = "ValueError: bad input"
+
+        msg = worker._build_retry_message(task)
+
+        assert "Retry attempt 2" in msg
+        assert "ValueError: bad input" in msg
+
+    def test_none_result_fallback(self):
+        worker = _make_worker()
+        task = Task(content="do something", id="t1")
+        task.failure_count = 1
+        task.result = None
+
+        msg = worker._build_retry_message(task)
+
+        assert "Unknown error" in msg
+
+
+class TestRetainedAgentLifecycle:
+    """Tests for agent retention, release and discard."""
+
+    @pytest.mark.asyncio
+    async def test_release_retained_agent_returns_to_pool(self):
+        worker = _make_worker()
+        mock_agent = AsyncMock(spec=ChatAgent)
+        worker._failed_task_agents["t1"] = mock_agent
+        worker._return_worker_agent = AsyncMock()
+
+        await worker.release_retained_agent("t1")
+
+        assert "t1" not in worker._failed_task_agents
+        worker._return_worker_agent.assert_awaited_once_with(mock_agent)
+
+    @pytest.mark.asyncio
+    async def test_release_nonexistent_agent_is_noop(self):
+        worker = _make_worker()
+        worker._return_worker_agent = AsyncMock()
+
+        await worker.release_retained_agent("no_such_task")
+
+        worker._return_worker_agent.assert_not_awaited()
+
+    def test_discard_retained_agent(self):
+        worker = _make_worker()
+        mock_agent = AsyncMock(spec=ChatAgent)
+        worker._failed_task_agents["t1"] = mock_agent
+
+        worker.discard_retained_agent("t1")
+
+        assert "t1" not in worker._failed_task_agents
+
+    def test_reset_clears_failed_task_agents(self):
+        worker = _make_worker()
+        worker._failed_task_agents["t1"] = AsyncMock(spec=ChatAgent)
+        worker._failed_task_agents["t2"] = AsyncMock(spec=ChatAgent)
+
+        worker.reset()
+
+        assert len(worker._failed_task_agents) == 0
