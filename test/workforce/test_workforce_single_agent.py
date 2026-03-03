@@ -12,19 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import time
-from typing import TYPE_CHECKING, Awaitable, Callable, List, Optional
+from typing import Awaitable, Callable, List, Optional
 from unittest.mock import patch
 
 import pytest
 
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
+from camel.responses import ChatAgentResponse
 from camel.societies.workforce import Workforce
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
 from camel.tasks.task import Task, TaskState
-
-if TYPE_CHECKING:
-    from camel.responses import ChatAgentResponse
 
 
 class AlwaysFailingWorker(SingleAgentWorker):
@@ -50,6 +48,48 @@ class AlwaysFailingWorker(SingleAgentWorker):
         task.state = TaskState.FAILED
         task.result = "Task failed deliberately for testing"
         return TaskState.FAILED
+
+
+class StreamingProbeWorker(SingleAgentWorker):
+    """A worker that emits one artificial streaming chunk."""
+
+    def __init__(self, description: str):
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="Streaming Probe",
+            content="Emit one stream chunk.",
+        )
+        agent = ChatAgent(sys_msg)
+        super().__init__(description, agent)
+
+    async def _process_task(
+        self,
+        task: Task,
+        dependencies: List[Task],
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], Optional[Awaitable[None]]]
+        ] = None,
+    ) -> TaskState:
+        chunk = ChatAgentResponse(
+            msgs=[
+                BaseMessage.make_assistant_message(
+                    role_name="Assistant", content="partial"
+                )
+            ],
+            terminated=False,
+            info={"stream_accumulate_mode": "delta"},
+        )
+        if stream_callback:
+            maybe = stream_callback(chunk)
+            if maybe is not None:
+                await maybe
+        task.state = TaskState.DONE
+        task.result = "ok"
+        return TaskState.DONE
+
+
+class _DummyChannel:
+    async def return_task(self, task_id: str) -> None:
+        self.last_task_id = task_id
 
 
 @pytest.mark.asyncio
@@ -143,3 +183,63 @@ async def test_get_dep_tasks_info(mock_process_task, mock_decompose):
     # Verify the mocks were called
     mock_decompose.assert_called_once_with(agent)
     mock_process_task.assert_called_once_with(human_task, mock_subtasks)
+
+
+@pytest.mark.asyncio
+async def test_worker_forwards_stream_chunks_to_registered_callback():
+    worker = StreamingProbeWorker("probe")
+    worker.set_channel(_DummyChannel())
+    received = []
+
+    async def stream_handler(chunk, worker_id, task_id):
+        received.append((worker_id, task_id, chunk.msg.content))
+
+    worker.set_stream_callback(stream_handler)
+    task = Task(content="test", id="task-stream")
+
+    await worker._process_single_task(task)
+
+    assert len(received) == 1
+    worker_id, task_id, content = received[0]
+    assert worker_id
+    assert task_id == "task-stream"
+    assert content == "partial"
+
+
+@pytest.mark.asyncio
+async def test_workforce_stream_callback_accumulate_mode_emits_delta():
+    chunks = []
+
+    def on_stream(worker_id: str, task_id: str, text: str, mode: str):
+        chunks.append((worker_id, task_id, text, mode))
+
+    workforce = Workforce("stream test", stream_callback=on_stream)
+
+    first_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate"},
+    )
+    second_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello world",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate"},
+    )
+
+    await workforce._on_worker_stream_chunk(first_chunk, "worker-1", "task-1")
+    await workforce._on_worker_stream_chunk(second_chunk, "worker-1", "task-1")
+
+    assert chunks == [
+        ("worker-1", "task-1", "Hello", "accumulate"),
+        ("worker-1", "task-1", " world", "accumulate"),
+    ]
