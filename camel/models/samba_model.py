@@ -201,12 +201,10 @@ class SambaModel(BaseModelBackend):
 
         self._log_and_trace()
 
-        if "tools" in self.model_config_dict:
-            del self.model_config_dict["tools"]
         if self.model_config_dict.get("stream") is True:
-            return await self._arun_streaming(messages)
+            return await self._arun_streaming(messages, tools)
         else:
-            response = await self._arun_non_streaming(messages)
+            response = await self._arun_non_streaming(messages, tools)
             update_current_observation(
                 usage=response.usage,
             )
@@ -240,19 +238,19 @@ class SambaModel(BaseModelBackend):
         )
         self._log_and_trace()
 
-        if "tools" in self.model_config_dict:
-            del self.model_config_dict["tools"]
         if self.model_config_dict.get("stream") is True:
-            return self._run_streaming(messages)
+            return self._run_streaming(messages, tools)
         else:
-            response = self._run_non_streaming(messages)
+            response = self._run_non_streaming(messages, tools)
             update_current_observation(
                 usage=response.usage,
             )
             return response
 
     def _run_streaming(
-        self, messages: List[OpenAIMessage]
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Stream[ChatCompletionChunk]:
         r"""Handles streaming inference with SambaNova's API.
 
@@ -271,10 +269,12 @@ class SambaModel(BaseModelBackend):
         """
         # Handle SambaNova's Cloud API
         if self._url == "https://api.sambanova.ai/v1":
-            response = self._client.chat.completions.create(
+            request_config = self._prepare_request_config(tools)
+            response = self._call_client(
+                self._client.chat.completions.create,
                 messages=messages,
                 model=self.model_type,
-                **self.model_config_dict,
+                **request_config,
             )
 
             # Add AgentOps LLM Event tracking
@@ -301,7 +301,9 @@ class SambaModel(BaseModelBackend):
         raise RuntimeError(f"Unknown URL: {self._url}")
 
     def _run_non_streaming(
-        self, messages: List[OpenAIMessage]
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
         r"""Handles non-streaming inference with SambaNova's API.
 
@@ -320,10 +322,12 @@ class SambaModel(BaseModelBackend):
         """
         # Handle SambaNova's Cloud API
         if self._url == "https://api.sambanova.ai/v1":
-            response = self._client.chat.completions.create(
+            request_config = self._prepare_request_config(tools)
+            response = self._call_client(
+                self._client.chat.completions.create,
                 messages=messages,
                 model=self.model_type,
-                **self.model_config_dict,
+                **request_config,
             )
 
             # Add AgentOps LLM Event tracking
@@ -344,6 +348,7 @@ class SambaModel(BaseModelBackend):
 
         # Handle SambaNova's Sambaverse API
         else:
+            request_config = self._prepare_request_config(tools)
             headers = {
                 "Content-Type": "application/json",
                 "key": str(self._api_key),
@@ -362,14 +367,12 @@ class SambaModel(BaseModelBackend):
                     "do_sample": {"type": "bool", "value": "true"},
                     "max_tokens_to_generate": {
                         "type": "int",
-                        "value": str(self.model_config_dict.get("max_tokens")),
+                        "value": str(request_config.get("max_tokens")),
                     },
                     "process_prompt": {"type": "bool", "value": "true"},
                     "repetition_penalty": {
                         "type": "float",
-                        "value": str(
-                            self.model_config_dict.get("repetition_penalty")
-                        ),
+                        "value": str(request_config.get("repetition_penalty")),
                     },
                     "return_token_count_only": {
                         "type": "bool",
@@ -381,21 +384,19 @@ class SambaModel(BaseModelBackend):
                     },
                     "stop_sequences": {
                         "type": "str",
-                        "value": self.model_config_dict.get("stop_sequences"),
+                        "value": request_config.get("stop_sequences"),
                     },
                     "temperature": {
                         "type": "float",
-                        "value": str(
-                            self.model_config_dict.get("temperature")
-                        ),
+                        "value": str(request_config.get("temperature")),
                     },
                     "top_k": {
                         "type": "int",
-                        "value": str(self.model_config_dict.get("top_k")),
+                        "value": str(request_config.get("top_k")),
                     },
                     "top_p": {
                         "type": "float",
-                        "value": str(self.model_config_dict.get("top_p")),
+                        "value": str(request_config.get("top_p")),
                     },
                 },
             }
@@ -403,7 +404,8 @@ class SambaModel(BaseModelBackend):
             try:
                 # Send the request and handle the response
                 with httpx.Client() as client:
-                    response = client.post(
+                    response = self._call_client(
+                        client.post,
                         self._url,  # type: ignore[arg-type]
                         headers=headers,
                         json=data,
@@ -483,7 +485,9 @@ class SambaModel(BaseModelBackend):
         return self.model_config_dict.get('stream', False)
 
     async def _arun_streaming(
-        self, messages: List[OpenAIMessage]
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> AsyncStream[ChatCompletionChunk]:
         r"""Handles streaming inference with SambaNova's API.
 
@@ -502,10 +506,12 @@ class SambaModel(BaseModelBackend):
         """
         # Handle SambaNova's Cloud API
         if self._url == "https://api.sambanova.ai/v1":
-            response = await self._async_client.chat.completions.create(
+            request_config = self._prepare_request_config(tools)
+            response = await self._acall_client(
+                self._async_client.chat.completions.create,
                 messages=messages,
                 model=self.model_type,
-                **self.model_config_dict,
+                **request_config,
             )
 
             # Add AgentOps LLM Event tracking
@@ -532,7 +538,9 @@ class SambaModel(BaseModelBackend):
         raise RuntimeError(f"Unknown URL: {self._url}")
 
     async def _arun_non_streaming(
-        self, messages: List[OpenAIMessage]
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
         r"""Handles non-streaming inference with SambaNova's API.
 
@@ -551,10 +559,12 @@ class SambaModel(BaseModelBackend):
         """
         # Handle SambaNova's Cloud API
         if self._url == "https://api.sambanova.ai/v1":
-            response = await self._async_client.chat.completions.create(
+            request_config = self._prepare_request_config(tools)
+            response = await self._acall_client(
+                self._async_client.chat.completions.create,
                 messages=messages,
                 model=self.model_type,
-                **self.model_config_dict,
+                **request_config,
             )
 
             # Add AgentOps LLM Event tracking
@@ -575,6 +585,7 @@ class SambaModel(BaseModelBackend):
 
         # Handle SambaNova's Sambaverse API
         else:
+            request_config = self._prepare_request_config(tools)
             headers = {
                 "Content-Type": "application/json",
                 "key": str(self._api_key),
@@ -593,14 +604,12 @@ class SambaModel(BaseModelBackend):
                     "do_sample": {"type": "bool", "value": "true"},
                     "max_tokens_to_generate": {
                         "type": "int",
-                        "value": str(self.model_config_dict.get("max_tokens")),
+                        "value": str(request_config.get("max_tokens")),
                     },
                     "process_prompt": {"type": "bool", "value": "true"},
                     "repetition_penalty": {
                         "type": "float",
-                        "value": str(
-                            self.model_config_dict.get("repetition_penalty")
-                        ),
+                        "value": str(request_config.get("repetition_penalty")),
                     },
                     "return_token_count_only": {
                         "type": "bool",
@@ -612,21 +621,19 @@ class SambaModel(BaseModelBackend):
                     },
                     "stop_sequences": {
                         "type": "str",
-                        "value": self.model_config_dict.get("stop_sequences"),
+                        "value": request_config.get("stop_sequences"),
                     },
                     "temperature": {
                         "type": "float",
-                        "value": str(
-                            self.model_config_dict.get("temperature")
-                        ),
+                        "value": str(request_config.get("temperature")),
                     },
                     "top_k": {
                         "type": "int",
-                        "value": str(self.model_config_dict.get("top_k")),
+                        "value": str(request_config.get("top_k")),
                     },
                     "top_p": {
                         "type": "float",
-                        "value": str(self.model_config_dict.get("top_p")),
+                        "value": str(request_config.get("top_p")),
                     },
                 },
             }
@@ -634,7 +641,8 @@ class SambaModel(BaseModelBackend):
             try:
                 # Send the request and handle the response
                 with httpx.Client() as client:
-                    response = client.post(
+                    response = self._call_client(
+                        client.post,
                         self._url,  # type: ignore[arg-type]
                         headers=headers,
                         json=data,
