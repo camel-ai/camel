@@ -2622,6 +2622,120 @@ class ChatAgent(BaseAgent):
         )
         return display_msg
 
+    def _handle_structured_stream_tool_iteration(
+        self,
+        final_completion: Any,
+        accumulated_tool_calls: Dict[str, Any],
+        tool_call_records: List[ToolCallingRecord],
+        step_token_usage: Dict[str, int],
+        iteration_count: int,
+        content_accumulator: 'StreamContentAccumulator',
+    ) -> Tuple[
+        bool,
+        Optional[Tuple[List[OpenAIMessage], int]],
+        Optional['ChatAgentResponse'],
+    ]:
+        r"""Handle post-tool-execution logic for structured output streaming.
+
+        Updates token usage, clears accumulated tool calls, and determines
+        whether the streaming loop should continue or terminate.
+
+        Args:
+            final_completion: The final completion object from the model.
+            accumulated_tool_calls: Mutable dict of accumulated tool calls,
+                cleared in-place before returning.
+            tool_call_records: List of executed tool call records.
+            step_token_usage: Mutable token usage dict to update.
+            iteration_count: Current loop iteration number.
+            content_accumulator: Accumulator used to reset streaming content
+                when continuing to the next iteration.
+
+        Returns:
+            A tuple of ``(should_continue, new_context, error_response)``:
+            - ``should_continue=True``: caller should continue the loop with
+              the returned ``(openai_messages, num_tokens)`` context.
+            - ``should_continue=False, error_response=None``: caller should
+              break the loop.
+            - ``should_continue=False, error_response!=None``: caller should
+              yield the error response and return.
+        """
+        if tool_call_records:
+            logger.info("Sending back result to model")
+
+        if final_completion.usage:
+            self._update_token_usage_tracker(
+                step_token_usage,
+                safe_model_dump(final_completion.usage),
+            )
+
+        accumulated_tool_calls.clear()
+
+        if tool_call_records and (
+            self.max_iteration is None or iteration_count < self.max_iteration
+        ):
+            try:
+                new_context = self.memory.get_context()
+            except RuntimeError as e:
+                return (
+                    False,
+                    None,
+                    self._step_terminate(
+                        e.args[1], tool_call_records, "max_tokens_exceeded"
+                    ),
+                )
+            content_accumulator.reset_streaming_content()
+            return True, new_context, None
+
+        return False, None, None
+
+    def _build_structured_completion_response(
+        self,
+        final_completion: Any,
+        final_content: str,
+        parsed_object: Any,
+        final_reasoning: Optional[str],
+        response_format: Optional[Type[BaseModel]],
+        tool_call_records: List[ToolCallingRecord],
+    ) -> 'ChatAgentResponse':
+        r"""Build the final ChatAgentResponse for a structured output stream.
+
+        Args:
+            final_completion: The final completion object from the model.
+            final_content: The full final text content.
+            parsed_object: The parsed Pydantic object, if any.
+            final_reasoning: The reasoning content, if any.
+            response_format: The response format class used for parsing.
+            tool_call_records: List of executed tool call records.
+
+        Returns:
+            ChatAgentResponse: The final response to yield to the caller.
+        """
+        final_message = self._record_and_build_display_message(
+            final_content,
+            parsed_object,
+            final_reasoning,
+            response_format,
+        )
+        return ChatAgentResponse(
+            msgs=[final_message],
+            terminated=False,
+            info={
+                "id": final_completion.id or "",
+                "usage": safe_model_dump(final_completion.usage)
+                if final_completion.usage
+                else {},
+                "finish_reasons": [
+                    choice.finish_reason or "stop"
+                    for choice in final_completion.choices
+                ],
+                "num_tokens": self._get_token_count(final_content),
+                "tool_calls": tool_call_records,
+                "external_tool_requests": None,
+                "streaming": False,
+                "partial": False,
+            },
+        )
+
     def _is_called_from_registered_toolkit(self) -> bool:
         r"""Check if current step/astep call originates from a
         RegisteredAgentToolkit.
@@ -4282,34 +4396,21 @@ class ChatAgent(BaseAgent):
                             ):
                                 yield status_response
 
-                            if tool_call_records:
-                                logger.info("Sending back result to model")
-
-                            # Update usage
-                            if final_completion.usage:
-                                self._update_token_usage_tracker(
+                            should_continue, new_context, error_response = (
+                                self._handle_structured_stream_tool_iteration(
+                                    final_completion,
+                                    accumulated_tool_calls,
+                                    tool_call_records,
                                     step_token_usage,
-                                    safe_model_dump(final_completion.usage),
+                                    iteration_count,
+                                    content_accumulator,
                                 )
-
-                            # Continue the loop for next model call
-                            accumulated_tool_calls.clear()
-                            if tool_call_records and (
-                                self.max_iteration is None
-                                or iteration_count < self.max_iteration
-                            ):
-                                try:
-                                    openai_messages, num_tokens = (
-                                        self.memory.get_context()
-                                    )
-                                except RuntimeError as e:
-                                    yield self._step_terminate(
-                                        e.args[1],
-                                        tool_call_records,
-                                        "max_tokens_exceeded",
-                                    )
-                                    return
-                                content_accumulator.reset_streaming_content()
+                            )
+                            if error_response:
+                                yield error_response
+                                return
+                            if should_continue:
+                                openai_messages, num_tokens = new_context  # type: ignore[misc]
                                 continue
                             else:
                                 break
@@ -4319,39 +4420,14 @@ class ChatAgent(BaseAgent):
                             content_accumulator.get_full_reasoning_content()
                             or None
                         )
-
-                        final_message = self._record_and_build_display_message(
+                        yield self._build_structured_completion_response(
+                            final_completion,
                             final_content,
                             parsed_object,
                             final_reasoning,
                             response_format,
+                            tool_call_records,
                         )
-
-                        # Create final response
-                        final_response = ChatAgentResponse(
-                            msgs=[final_message],
-                            terminated=False,
-                            info={
-                                "id": final_completion.id or "",
-                                "usage": safe_model_dump(
-                                    final_completion.usage
-                                )
-                                if final_completion.usage
-                                else {},
-                                "finish_reasons": [
-                                    choice.finish_reason or "stop"
-                                    for choice in final_completion.choices
-                                ],
-                                "num_tokens": self._get_token_count(
-                                    final_content
-                                ),
-                                "tool_calls": tool_call_records,
-                                "external_tool_requests": None,
-                                "streaming": False,
-                                "partial": False,
-                            },
-                        )
-                        yield final_response
                         break
 
                     except Exception as e:
@@ -5289,34 +5365,21 @@ class ChatAgent(BaseAgent):
                             ):
                                 yield status_response
 
-                            if tool_call_records:
-                                logger.info("Sending back result to model")
-
-                            # Update usage
-                            if final_completion.usage:
-                                self._update_token_usage_tracker(
+                            should_continue, new_context, error_response = (
+                                self._handle_structured_stream_tool_iteration(
+                                    final_completion,
+                                    accumulated_tool_calls,
+                                    tool_call_records,
                                     step_token_usage,
-                                    safe_model_dump(final_completion.usage),
+                                    iteration_count,
+                                    content_accumulator,
                                 )
-
-                            # Continue the loop for next model call
-                            accumulated_tool_calls.clear()
-                            if tool_call_records and (
-                                self.max_iteration is None
-                                or iteration_count < self.max_iteration
-                            ):
-                                try:
-                                    openai_messages, num_tokens = (
-                                        self.memory.get_context()
-                                    )
-                                except RuntimeError as e:
-                                    yield self._step_terminate(
-                                        e.args[1],
-                                        tool_call_records,
-                                        "max_tokens_exceeded",
-                                    )
-                                    return
-                                content_accumulator.reset_streaming_content()
+                            )
+                            if error_response:
+                                yield error_response
+                                return
+                            if should_continue:
+                                openai_messages, num_tokens = new_context  # type: ignore[misc]
                                 continue
                             else:
                                 break
@@ -5326,39 +5389,14 @@ class ChatAgent(BaseAgent):
                             content_accumulator.get_full_reasoning_content()
                             or None
                         )
-
-                        final_message = self._record_and_build_display_message(
+                        yield self._build_structured_completion_response(
+                            final_completion,
                             final_content,
                             parsed_object,
                             final_reasoning,
                             response_format,
+                            tool_call_records,
                         )
-
-                        # Create final response
-                        final_response = ChatAgentResponse(
-                            msgs=[final_message],
-                            terminated=False,
-                            info={
-                                "id": final_completion.id or "",
-                                "usage": safe_model_dump(
-                                    final_completion.usage
-                                )
-                                if final_completion.usage
-                                else {},
-                                "finish_reasons": [
-                                    choice.finish_reason or "stop"
-                                    for choice in final_completion.choices
-                                ],
-                                "num_tokens": self._get_token_count(
-                                    final_content
-                                ),
-                                "tool_calls": tool_call_records,
-                                "external_tool_requests": None,
-                                "streaming": False,
-                                "partial": False,
-                            },
-                        )
-                        yield final_response
                         break
 
                     except Exception as e:
