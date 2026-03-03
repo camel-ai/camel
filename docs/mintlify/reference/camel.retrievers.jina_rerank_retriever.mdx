@@ -1,0 +1,70 @@
+<a id="camel.retrievers.jina_rerank_retriever"></a>
+
+<a id="camel.retrievers.jina_rerank_retriever.JinaRerankRetriever"></a>
+
+## JinaRerankRetriever
+
+```python
+class JinaRerankRetriever(BaseRetriever):
+```
+
+An implementation of the `BaseRetriever` using the `Jina AI Reranker`
+model.
+
+This retriever uses Jina AI's reranking API to re-order retrieved documents
+based on their relevance to the query. It supports multilingual retrieval
+across 100+ languages.
+
+**Parameters:**
+
+- **model_name** (Union[JinaRerankerModelType, str]): The model name to use for re-ranking.
+- **api_key** (str, optional): The API key for authenticating with the Jina AI service.
+- **References**: 
+- **https**: //jina.ai/reranker/
+
+<a id="camel.retrievers.jina_rerank_retriever.JinaRerankRetriever.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_name: Union[JinaRerankerModelType, str] = JinaRerankerModelType.JINA_RERANKER_V2_BASE_MULTILINGUAL,
+    api_key: str | None = None
+):
+```
+
+Initializes an instance of the JinaRerankRetriever. This
+constructor sets up the API key for interacting with the Jina AI
+Reranker API.
+
+**Parameters:**
+
+- **model_name** (Union[JinaRerankerModelType, str]): The name of the model to be used for re-ranking. Can be a JinaRerankerModelType enum value or a string. Defaults to `JinaRerankerModelType.JINA_RERANKER_V2_BASE_MULTILINGUAL`.
+- **api_key** (Optional[str]): The API key for authenticating requests to the Jina AI API. If not provided, the method will attempt to retrieve the key from the environment variable 'JINA_API_KEY'.
+
+<a id="camel.retrievers.jina_rerank_retriever.JinaRerankRetriever.query"></a>
+
+### query
+
+```python
+def query(
+    self,
+    query: str,
+    retrieved_result: list[dict[str, Any]],
+    top_k: int = DEFAULT_TOP_K_RESULTS
+):
+```
+
+Queries and compiles results using the Jina AI re-ranking model.
+
+**Parameters:**
+
+- **query** (str): Query string for information retriever.
+- **retrieved_result** (List[Dict[str, Any]]): The content to be re-ranked, should be the output from `BaseRetriever` like `VectorRetriever`. Each dict should have a 'text' key containing the document text.
+- **top_k** (int, optional): The number of top results to return during retrieval. Must be a positive integer. Defaults to `DEFAULT_TOP_K_RESULTS`.
+
+**Returns:**
+
+  List[Dict[str, Any]]: Concatenated list of the query results,
+each containing the original data plus a 'similarity score'.
