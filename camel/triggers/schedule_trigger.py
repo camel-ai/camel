@@ -19,6 +19,7 @@ from enum import Enum
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
+from zoneinfo import ZoneInfo
 
 # Optional croniter import for advanced cron parsing
 try:
@@ -130,7 +131,7 @@ class ScheduleTrigger(BaseTrigger):
             basic validation without croniter.
         """
         # Create config dictionary for base class
-        config_dict = {
+        config_dict: Dict[str, Any] = {
             "cron_expression": cron_expression,
             "timezone": timezone,
         }
@@ -145,9 +146,10 @@ class ScheduleTrigger(BaseTrigger):
         )
         self.cron_expression: str = cron_expression
         self.timezone: str = timezone
+        self._tz = self._get_timezone(timezone)
         self.next_run_at: Optional[datetime] = None
-        self.created_at: datetime = datetime.now()
-        self.updated_at: datetime = datetime.now()
+        self.created_at: datetime = datetime.now(self._tz)
+        self.updated_at: datetime = datetime.now(self._tz)
 
         self._scheduler_thread: Optional[threading.Thread] = None
         self._stop_event: threading.Event = threading.Event()
@@ -183,6 +185,19 @@ class ScheduleTrigger(BaseTrigger):
             # Fallback to basic format validation
             parts = expression.strip().split()
             return len(parts) == 5
+
+    def _get_timezone(self, timezone: str) -> ZoneInfo:
+        """Resolve timezone to a ZoneInfo instance.
+
+        Defaults to UTC if the timezone string is invalid.
+        """
+        try:
+            return ZoneInfo(timezone)
+        except Exception:
+            logger.warning(
+                "Invalid timezone '%s', falling back to UTC.", timezone
+            )
+            return ZoneInfo("UTC")
 
     def validate_config(self, config: Dict[str, Any]) -> bool:
         """Validate that the configuration contains valid cron expression.
@@ -238,10 +253,11 @@ class ScheduleTrigger(BaseTrigger):
 
         if timezone:
             self.timezone = timezone
+            self._tz = self._get_timezone(timezone)
 
         # Calculate next run time
         self._calculate_next_run()
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(self._tz)
 
         return True
 
@@ -257,7 +273,7 @@ class ScheduleTrigger(BaseTrigger):
             If cron parsing fails, defaults to next minute as fallback.
         """
         try:
-            now = datetime.now()
+            now = datetime.now(self._tz)
 
             if HAS_CRONITER:
                 cron = croniter(self.cron_expression, now)
@@ -294,7 +310,7 @@ class ScheduleTrigger(BaseTrigger):
             raise ValueError("Invalid cron expression format")
 
         minute, hour, day, month, weekday = parts
-        now = datetime.now()
+        now = datetime.now(self._tz)
 
         # Handle simple cases
         if minute.startswith("*/"):
@@ -345,7 +361,7 @@ class ScheduleTrigger(BaseTrigger):
         self._scheduler_thread.start()
 
         self.state = TriggerState.ACTIVE
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(self._tz)
         return True
 
     async def deactivate(self) -> bool:
@@ -368,7 +384,7 @@ class ScheduleTrigger(BaseTrigger):
             self._scheduler_thread.join(timeout=5)
 
         self.state = TriggerState.INACTIVE
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(self._tz)
         return True
 
     async def test_connection(self) -> bool:
@@ -400,7 +416,7 @@ class ScheduleTrigger(BaseTrigger):
             - Updates self.updated_at timestamp
         """
         while not self._stop_event.is_set():
-            current_time = datetime.now()
+            current_time = datetime.now(self._tz)
 
             # Check if it's time to run
             if self.next_run_at and current_time >= self.next_run_at:
@@ -427,7 +443,7 @@ class ScheduleTrigger(BaseTrigger):
             runs in a synchronous thread context.
         """
         event_data = {
-            "scheduled_time": datetime.now(),
+            "scheduled_time": datetime.now(self._tz),
             "cron_expression": self.cron_expression,
             "timezone": self.timezone,
             "next_run_at": self.next_run_at,
@@ -467,7 +483,7 @@ class ScheduleTrigger(BaseTrigger):
         return TriggerEvent(
             trigger_id=self.trigger_id,
             trigger_type=TriggerType.SCHEDULE,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(self._tz),
             payload=event_data,
             metadata={
                 "cron_expression": self.cron_expression,

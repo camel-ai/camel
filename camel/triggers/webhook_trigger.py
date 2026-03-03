@@ -266,6 +266,7 @@ class WebhookTrigger(BaseTrigger):
         if not self.server:
             await self.initialize()
 
+        assert self.server is not None
         self.runner = web.AppRunner(self.server)
         await self.runner.setup()
 

@@ -89,10 +89,11 @@ async def main():
     signing_secret = os.getenv('SLACK_SIGNING_SECRET')
 
     if not signing_secret:
-        logger.warning(
+        logger.error(
             "SLACK_SIGNING_SECRET not set. "
-            "Running without signature verification."
+            "Webhook verification will fail; refusing to start."
         )
+        return
 
     # Create Slack authentication handler
     slack_auth = SlackAuth(signing_secret=signing_secret)
