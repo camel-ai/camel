@@ -18,6 +18,7 @@ Tests for the unified MCP client.
 import json
 import tempfile
 from pathlib import Path
+from typing import Any, Optional, Union
 from unittest.mock import MagicMock
 
 import mcp.types as types
@@ -204,6 +205,56 @@ class TestMCPClient:
         client._session = None
         assert client.session is None
         assert not client.is_connected()
+
+
+class TestBuildFunctionParamType:
+    @pytest.fixture
+    def client(self):
+        return MCPClient({"url": "https://example.com"})
+
+    @pytest.mark.parametrize(
+        ("input_type", "expected"),
+        [
+            ("string", str),
+            ("integer", int),
+            ("number", float),
+            ("boolean", bool),
+            ("array", list),
+            ("object", dict),
+        ],
+    )
+    def test_basic_primitive_types(self, client, input_type, expected):
+        assert client._build_function_param_type(input_type) == expected
+
+    def test_unknown_type_fallback(self, client):
+        assert client._build_function_param_type("unknown_alien_type") == Any
+
+    def test_optional_types(self, client):
+        assert (
+            client._build_function_param_type(["string", "null"])
+            == Optional[str]
+        )
+
+    def test_union_types(self, client):
+        assert (
+            client._build_function_param_type(["string", "integer"])
+            == Union[str, int]
+        )
+
+    def test_complex_union_optional(self, client):
+        assert (
+            client._build_function_param_type(["string", "integer", "null"])
+            == Optional[Union[str, int]]
+        )
+
+    def test_edge_cases(self, client):
+        assert client._build_function_param_type([]) == Any
+        assert client._build_function_param_type(["null"]) == Any
+        assert (
+            client._build_function_param_type(["string", "unknown"])
+            == Union[str, Any]
+        )
+        assert client._build_function_param_type(123) == Any
 
 
 class TestCreateMCPClient:
