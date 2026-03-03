@@ -242,6 +242,86 @@ as OpenAI API only allows it when tools are present.
 
   Dict[str, Any]: The prepared request configuration.
 
+<a id="camel.models.base_model.BaseModelBackend._resolve_tools"></a>
+
+### _resolve_tools
+
+```python
+def _resolve_tools(self, tools: Optional[List[Dict[str, Any]]]):
+```
+
+Resolve tools for the current request.
+
+<a id="camel.models.base_model.BaseModelBackend._normalize_client_call_kwargs"></a>
+
+### _normalize_client_call_kwargs
+
+```python
+def _normalize_client_call_kwargs(
+    self,
+    call: Any,
+    args: Any,
+    kwargs: Dict[str, Any]
+):
+```
+
+Normalize client call arguments into a keyword dictionary.
+
+<a id="camel.models.base_model.BaseModelBackend._mark_request_log_client_call_seen"></a>
+
+### _mark_request_log_client_call_seen
+
+```python
+def _mark_request_log_client_call_seen(self):
+```
+
+Mark that a model client call happened during this run.
+
+<a id="camel.models.base_model.BaseModelBackend._call_client"></a>
+
+### _call_client
+
+```python
+def _call_client(
+    self,
+    call: Any,
+    *args: Any,
+    **kwargs: Any
+):
+```
+
+Invoke a sync client call and sync request logs with payload.
+
+<a id="camel.models.base_model.BaseModelBackend._should_sync_request_log"></a>
+
+### _should_sync_request_log
+
+```python
+def _should_sync_request_log(self, kwargs: Dict[str, Any]):
+```
+
+Check whether a client call should sync request logs.
+
+<a id="camel.models.base_model.BaseModelBackend._extract_model_config_from_client_kwargs"></a>
+
+### _extract_model_config_from_client_kwargs
+
+```python
+def _extract_model_config_from_client_kwargs(self, kwargs: Dict[str, Any]):
+```
+
+Extract model config payload from client call kwargs.
+
+<a id="camel.models.base_model.BaseModelBackend._sync_request_log_with_client_kwargs"></a>
+
+### _sync_request_log_with_client_kwargs
+
+```python
+def _sync_request_log_with_client_kwargs(self, kwargs: Dict[str, Any]):
+```
+
+Sync request log with final payload passed to the model client.
+
 <a id="camel.models.base_model.BaseModelBackend.preprocess_messages"></a>
 
 ### preprocess_messages
@@ -296,7 +376,11 @@ populated and `__INLINE_CODE_1__` cleaned.
 ### _log_request
 
 ```python
-def _log_request(self, messages: List[OpenAIMessage]):
+def _log_request(
+    self,
+    messages: List[OpenAIMessage],
+    model_config_dict: Optional[Dict[str, Any]] = None
+):
 ```
 
 Log the request messages to a JSON file if logging is enabled.
@@ -304,6 +388,7 @@ Log the request messages to a JSON file if logging is enabled.
 **Parameters:**
 
 - **messages** (List[OpenAIMessage]): The messages to log.
+- **model_config_dict** (Optional[Dict[str, Any]]): The effective model configuration used for this request.
 
 **Returns:**
 
