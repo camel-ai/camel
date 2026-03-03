@@ -290,7 +290,7 @@ class CohereModel(BaseModelBackend):
 
         return request_config
 
-    @observe(as_type="generation")
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -359,7 +359,7 @@ class CohereModel(BaseModelBackend):
 
         return openai_response
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
