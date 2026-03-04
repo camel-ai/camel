@@ -3959,10 +3959,11 @@ class ChatAgent(BaseAgent):
         tool_call_requests: Optional[List[ToolCallRequest]] = None
         if tool_calls := response.choices[0].message.tool_calls:
             tool_call_requests = []
+            is_openai_platform = self._is_openai_platform()
             for tool_call in tool_calls:
                 tool_name = tool_call.function.name  # type: ignore[union-attr]
                 tool_call_id = tool_call.id
-                if self._is_openai_platform():
+                if is_openai_platform:
                     tool_call_id = tool_call_id[:_OPENAI_MAX_TOOL_CALL_ID_LEN]
                 args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
                 extra_content = getattr(tool_call, 'extra_content', None)
