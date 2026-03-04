@@ -5,7 +5,7 @@
 ## VolcanoModel
 
 ```python
-class VolcanoModel(OpenAICompatibleModel):
+class VolcanoModel(InterleavedThinkingMixin, OpenAICompatibleModel):
 ```
 
 Volcano Engine API in a unified OpenAICompatibleModel interface.
@@ -38,73 +38,15 @@ def __init__(
 ):
 ```
 
-<a id="camel.models.volcano_model.VolcanoModel._inject_reasoning_content"></a>
+<a id="camel.models.volcano_model.VolcanoModel._prepare_request_config"></a>
 
-### _inject_reasoning_content
-
-```python
-def _inject_reasoning_content(self, messages: List[OpenAIMessage]):
-```
-
-Inject the last reasoning_content into assistant messages.
-
-For Volcano Engine's doubao-seed models with deep thinking enabled,
-the reasoning_content from the model response needs to be passed back
-in subsequent requests for proper context management.
-
-**Parameters:**
-
-- **messages**: The original messages list.
-
-**Returns:**
-
-  Messages with reasoning_content added to the last assistant
-message that has tool_calls.
-
-<a id="camel.models.volcano_model.VolcanoModel._extract_reasoning_content"></a>
-
-### _extract_reasoning_content
+### _prepare_request_config
 
 ```python
-def _extract_reasoning_content(self, response: ChatCompletion):
+def _prepare_request_config(self, tools: Optional[List[Dict[str, Any]]] = None):
 ```
 
-Extract reasoning_content from the model response.
+Prepare the request configuration dictionary.
 
-**Parameters:**
-
-- **response**: The model response.
-
-**Returns:**
-
-  The reasoning_content if available, None otherwise.
-
-<a id="camel.models.volcano_model.VolcanoModel.run"></a>
-
-### run
-
-```python
-def run(
-    self,
-    messages: List[OpenAIMessage],
-    response_format: Optional[Type[BaseModel]] = None,
-    tools: Optional[List[Dict[str, Any]]] = None
-):
-```
-
-Runs inference of Volcano Engine chat completion.
-
-Overrides the base run method to inject reasoning_content from
-previous responses into subsequent requests, as required by
-Volcano Engine's doubao-seed models with deep thinking enabled.
-
-**Parameters:**
-
-- **messages**: Message list with the chat history in OpenAI API format.
-- **response_format**: The format of the response.
-- **tools**: The schema of the tools to use for the request.
-
-**Returns:**
-
-  ChatCompletion in the non-stream mode, or
-Stream[ChatCompletionChunk] in the stream mode.
+Overrides the base method to remove interleaved_thinking parameter
+which is only used internally.

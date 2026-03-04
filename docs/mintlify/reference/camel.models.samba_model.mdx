@@ -85,7 +85,11 @@ Runs SambaNova's service.
 ### _run_streaming
 
 ```python
-def _run_streaming(self, messages: List[OpenAIMessage]):
+def _run_streaming(
+    self,
+    messages: List[OpenAIMessage],
+    tools: Optional[List[Dict[str, Any]]] = None
+):
 ```
 
 Handles streaming inference with SambaNova's API.
@@ -105,7 +109,11 @@ API.
 ### _run_non_streaming
 
 ```python
-def _run_non_streaming(self, messages: List[OpenAIMessage]):
+def _run_non_streaming(
+    self,
+    messages: List[OpenAIMessage],
+    tools: Optional[List[Dict[str, Any]]] = None
+):
 ```
 
 Handles non-streaming inference with SambaNova's API.
