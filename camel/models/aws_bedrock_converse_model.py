@@ -23,12 +23,12 @@ from typing import (
     Dict,
     Generator,
     List,
-    NoReturn,
     Optional,
     Tuple,
     Type,
     Union,
 )
+from uuid import uuid4
 
 from pydantic import BaseModel
 
@@ -305,7 +305,7 @@ class AWSBedrockConverseModel(BaseModelBackend):
                             if not isinstance(name, str) or not name:
                                 continue
                             call_id = (
-                                call.get("id") or f"tool_{int(time.time())}"
+                                call.get("id") or f"tool_{uuid4().hex[:8]}"
                             )
                             raw_args = function.get("arguments", "{}")
                             try:
@@ -789,7 +789,7 @@ class AWSBedrockConverseModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> NoReturn:
+    ) -> None:
         raise NotImplementedError(
             "Async inference is not supported for AWSBedrockConverseModel "
             "because boto3 Bedrock Runtime client is synchronous. "

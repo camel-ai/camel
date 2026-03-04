@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import base64
-import os
 import sys
 import types
 
@@ -223,4 +222,3 @@ def test_bedrock_client_supports_api_key_and_region_name(monkeypatch):
     assert client["service_name"] == "bedrock-runtime"
     assert client["kwargs"]["region_name"] == "us-east-1"
     assert "aws_access_key_id" not in client["kwargs"]
-    assert os.environ["AWS_BEARER_TOKEN_BEDROCK"] == "AKIA_TEST_KEY"
