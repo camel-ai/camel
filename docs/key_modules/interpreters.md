@@ -71,6 +71,20 @@ Interpreters allow CAMEL agents to **execute code snippets** in various secure a
   </a>
 </Card>
 
+{" "}
+<Card icon="shield" title="exec-sandbox Interpreter">
+  <b>Hardware-isolated</b> execution in ephemeral QEMU microVMs (KVM/HVF).
+  Persistent sessions per language.
+  <br />
+  <small>
+    <b>Best for:</b> Self-hosted, hardware-level isolation. Python, JS, shell.
+  </small>
+  <br />
+  <a href="https://github.com/duale-ai/exec-sandbox" target="_blank" rel="noopener">
+    exec-sandbox Docs
+  </a>
+</Card>
+
 </div>
 
 ---
@@ -164,6 +178,32 @@ print(result)
 ```
 </Card>
 
+<Card icon="shield" title="exec-sandbox Interpreter (QEMU microVMs)" className="my-6">
+  Hardware-level isolation via ephemeral QEMU microVMs. Sessions are persistent per language—variables, imports, and functions survive across calls.<br/>
+  Supports Python, JavaScript, and shell. Self-hosted, no cloud account needed. Requires Python 3.12+.<br/>
+  Install: <code>pip install 'camel-ai[exec-sandbox]'</code><br/>
+  <a href="https://github.com/duale-ai/exec-sandbox" target="_blank">exec-sandbox on GitHub</a>
+  <br/><br/>
+  ```python
+  from camel.interpreters import ExecSandboxInterpreter
+
+interpreter = ExecSandboxInterpreter(require_confirm=False)
+try:
+    # State persists across calls within the same language
+    interpreter.run("x = 42", "python")
+    result = interpreter.run("print(x)", "python")
+    print(result)  # "42"
+
+    # Different languages are isolated
+    interpreter.run("console.log('hello from JS')", "javascript")
+
+    # Shell commands
+    interpreter.run("echo hello", "bash")
+finally:
+    interpreter.close()
+```
+</Card>
+
 <AccordionGroup>
 <Accordion title="Best Practices">
   <ul>
@@ -171,6 +211,7 @@ print(result)
     <li><b>Subprocess</b> and <b>Docker</b> interpreters are better for code isolation and dependency management.</li>
     <li>Prefer <b>Docker</b> for any untrusted code or when extra libraries are needed.</li>
     <li><b>E2B Interpreter</b> is ideal for scalable, managed, and safe cloud execution—no local risk.</li>
+    <li><b>exec-sandbox</b> provides hardware-level isolation with persistent sessions—ideal for self-hosted agent workflows that need state across calls.</li>
     <li>For interactive, multi-step logic, leverage <b>JupyterKernelInterpreter</b> for persistent session state.</li>
     <li>Always validate and sanitize user inputs if agents dynamically construct code for execution.</li>
   </ul>
@@ -184,4 +225,3 @@ print(result)
   </ul>
 </Accordion>
 </AccordionGroup>
-```

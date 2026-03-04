@@ -16,6 +16,8 @@ from typing import List, Literal, Optional, Union
 from camel.interpreters import (
     DockerInterpreter,
     E2BInterpreter,
+    ExecSandboxConfig,
+    ExecSandboxInterpreter,
     InternalPythonInterpreter,
     JupyterKernelInterpreter,
     MicrosandboxInterpreter,
@@ -50,6 +52,10 @@ class CodeExecutionToolkit(BaseToolkit):
             interpreter. Available keys: 'server_url', 'api_key',
             'namespace', 'sandbox_name', 'timeout'.
             If None, uses default configuration. (default: :obj:`None`)
+        exec_sandbox_config (Optional[ExecSandboxConfig]): Typed
+            configuration for the exec-sandbox interpreter.
+            If None, uses default configuration.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -61,6 +67,7 @@ class CodeExecutionToolkit(BaseToolkit):
             "subprocess",
             "e2b",
             "microsandbox",
+            "exec_sandbox",
         ] = "subprocess",
         verbose: bool = False,
         unsafe_mode: bool = False,
@@ -69,6 +76,8 @@ class CodeExecutionToolkit(BaseToolkit):
         timeout: Optional[float] = None,
         # Microsandbox configuration dictionary
         microsandbox_config: Optional[dict] = None,
+        # exec-sandbox configuration
+        exec_sandbox_config: Optional[ExecSandboxConfig] = None,
     ) -> None:
         super().__init__(timeout=timeout)
         self.verbose = verbose
@@ -82,6 +91,7 @@ class CodeExecutionToolkit(BaseToolkit):
             DockerInterpreter,
             SubprocessInterpreter,
             E2BInterpreter,
+            ExecSandboxInterpreter,
             MicrosandboxInterpreter,
         ]
 
@@ -121,6 +131,12 @@ class CodeExecutionToolkit(BaseToolkit):
                 namespace=config.get("namespace", "default"),
                 sandbox_name=config.get("sandbox_name"),
                 timeout=config.get("timeout", 30),
+            )
+        elif sandbox == "exec_sandbox":
+            self.interpreter = ExecSandboxInterpreter(
+                require_confirm=require_confirm,
+                timeout=int(timeout) if timeout is not None else 30,
+                config=exec_sandbox_config,
             )
         else:
             raise RuntimeError(
