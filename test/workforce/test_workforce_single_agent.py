@@ -207,6 +207,23 @@ async def test_worker_forwards_stream_chunks_to_registered_callback():
 
 
 @pytest.mark.asyncio
+async def test_worker_stream_callback_exception_does_not_fail_task():
+    worker = StreamingProbeWorker("probe")
+    worker.set_channel(_DummyChannel())
+
+    async def failing_stream_handler(chunk, worker_id, task_id):
+        raise RuntimeError("stream push failed")
+
+    worker.set_stream_callback(failing_stream_handler)
+    task = Task(content="test", id="task-stream-fail-safe")
+
+    await worker._process_single_task(task)
+
+    assert task.state == TaskState.DONE
+    assert task.result == "ok"
+
+
+@pytest.mark.asyncio
 async def test_workforce_stream_callback_accumulate_mode_emits_delta():
     chunks = []
 
