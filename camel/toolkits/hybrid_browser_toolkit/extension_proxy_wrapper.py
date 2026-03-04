@@ -116,6 +116,7 @@ class ExtensionProxyWrapper:
         self._on_log: Optional[Callable[[str, str], None]] = None
         self._on_task: Optional[Callable[[str, str], asyncio.Future]] = None
         self._task_queue: asyncio.Queue = asyncio.Queue()
+        self._chat_queue: asyncio.Queue = asyncio.Queue()
 
         # Browser action logging support (compatible with ws_wrapper)
         self.browser_log_to_file = config.get("browser_log_to_file", False)
@@ -160,6 +161,33 @@ class ExtensionProxyWrapper:
             return await self._task_queue.get()
         except asyncio.TimeoutError:
             return None
+
+    async def wait_for_chat_message(
+        self, timeout: float = None
+    ) -> Optional[Dict[str, Any]]:
+        """Wait for a chat message from the extension UI."""
+        try:
+            if timeout:
+                return await asyncio.wait_for(
+                    self._chat_queue.get(), timeout
+                )
+            return await self._chat_queue.get()
+        except asyncio.TimeoutError:
+            return None
+
+    async def send_chat_response(
+        self, msg_type: str, data: Dict[str, Any]
+    ):
+        """Send a chat response message to the extension.
+
+        msg_type: CHAT_RESPONSE_START, CHAT_RESPONSE_TEXT,
+                  CHAT_RESPONSE_END, CHAT_TOOL_CALL, CHAT_ERROR
+        """
+        if self._client:
+            payload = {"type": msg_type, **data}
+            await self._client.send(
+                json.dumps(payload, ensure_ascii=False)
+            )
 
     def _log(self, level: str, message: str):
         """Log a message and optionally call the callback."""
@@ -284,6 +312,8 @@ class ExtensionProxyWrapper:
     async def _handle_message(self, data: Dict[str, Any]):
         """Handle message from Chrome extension."""
         msg_type = data.get("type")
+        if msg_type not in ("CDP_RESULT", "CDP_ERROR", "CDP_EVENT"):
+            self._log("info", f"[EXT MSG] type={msg_type} data_keys={list(data.keys())}")
 
         if msg_type == "CDP_RESULT":
             cmd_id = data.get("id")
@@ -319,14 +349,21 @@ class ExtensionProxyWrapper:
                     )
 
         elif msg_type == "START_TASK":
-            # Task received from extension - add to queue
-            task_data = {
-                "task": data.get("task", ""),
-                "url": data.get("url", ""),
+            # Task from extension UI → chat queue
+            chat_data = {
+                "type": "CHAT_MESSAGE",
+                "message": data.get("task", ""),
                 "tabId": data.get("tabId", 0),
+                "url": data.get("url", ""),
+                "fullVisionMode": data.get("fullVisionMode", False),
             }
-            await self._task_queue.put(task_data)
-            self._log("info", f"Task received: {task_data['task']}")
+            await self._chat_queue.put(chat_data)
+            self._log(
+                "info",
+                f"[EXT CHAT] START_TASK received, "
+                f"fullVision={chat_data['fullVisionMode']}, "
+                f"message: {chat_data['message'][:100]}",
+            )
 
         elif msg_type == "CLEAR_CONTEXT":
             # Signal to clear agent context
@@ -335,6 +372,20 @@ class ExtensionProxyWrapper:
             }
             await self._task_queue.put(task_data)
             self._log("info", "Context clear requested")
+
+        elif msg_type == "CHAT_MESSAGE":
+            # Chat message from extension UI
+            chat_data = {
+                "type": "CHAT_MESSAGE",
+                "message": data.get("message", ""),
+                "tabId": data.get("tabId", 0),
+                "url": data.get("url", ""),
+            }
+            await self._chat_queue.put(chat_data)
+            self._log(
+                "info",
+                f"Chat message received: {chat_data['message'][:100]}",
+            )
 
         elif msg_type == "DEBUG_COMMAND":
             # Debug command from extension - add to queue
