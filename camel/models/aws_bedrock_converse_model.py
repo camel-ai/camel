@@ -165,7 +165,7 @@ class AWSBedrockConverseModel(BaseModelBackend):
     @staticmethod
     def _new_cache_point(ttl: Optional[str] = None) -> Dict[str, Any]:
         cp: Dict[str, Any] = {"type": "default"}
-        if ttl and ttl not in ("5m"):
+        if ttl and ttl != "5m":
             cp["ttl"] = ttl
         return {"cachePoint": cp}
 
