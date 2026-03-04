@@ -31,7 +31,6 @@ from openai import AsyncStream, Stream
 if TYPE_CHECKING:
     from google.genai.client import Client as GenaiClient
     from google.genai.types import CachedContent
-from google.genai.errors import ClientError
 from pydantic import BaseModel
 
 from camel.configs import GeminiConfig
@@ -361,6 +360,8 @@ class GeminiModel(OpenAICompatibleModel):
     def _is_stale_cached_content_error(self, err: Exception) -> bool:
         if not self._cached_content:
             return False
+
+        from google.genai.errors import ClientError
 
         if not isinstance(err, ClientError):
             return False
