@@ -241,12 +241,6 @@ class AWSBedrockConverseModel(BaseModelBackend):
             if not isinstance(item, dict):
                 continue
 
-            if item.get("type") == "text" and isinstance(
-                item.get("text"), str
-            ):
-                blocks.append({"text": item["text"]})
-                continue
-
             if isinstance(item.get("text"), str):
                 blocks.append({"text": item["text"]})
                 continue
@@ -500,6 +494,22 @@ class AWSBedrockConverseModel(BaseModelBackend):
             "tool_use": "tool_calls",
         }.get(stop_reason or "", "stop")
 
+    @staticmethod
+    def _parse_bedrock_usage(usage_raw: Dict[str, Any]) -> Dict[str, Any]:
+        prompt_tokens = int(usage_raw.get("inputTokens", 0) or 0)
+        completion_tokens = int(usage_raw.get("outputTokens", 0) or 0)
+        cache_read = int(usage_raw.get("cacheReadInputTokens", 0) or 0)
+        cache_write = int(usage_raw.get("cacheWriteInputTokens", 0) or 0)
+        return {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens,
+            "prompt_tokens_details": {
+                "cached_tokens": cache_read,
+                "cache_write_tokens": cache_write,
+            },
+        }
+
     def _convert_converse_to_openai_response(
         self,
         response: Dict[str, Any],
@@ -537,23 +547,7 @@ class AWSBedrockConverseModel(BaseModelBackend):
                 }
             )
 
-        usage_raw = response.get("usage", {}) or {}
-        prompt_tokens = int(usage_raw.get("inputTokens", 0) or 0)
-        completion_tokens = int(usage_raw.get("outputTokens", 0) or 0)
-        cache_read_tokens = int(usage_raw.get("cacheReadInputTokens", 0) or 0)
-        cache_write_tokens = int(
-            usage_raw.get("cacheWriteInputTokens", 0) or 0
-        )
-
-        usage = {
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": completion_tokens,
-            "total_tokens": prompt_tokens + completion_tokens,
-            "prompt_tokens_details": {
-                "cached_tokens": cache_read_tokens,
-                "cache_write_tokens": cache_write_tokens,
-            },
-        }
+        usage = self._parse_bedrock_usage(response.get("usage", {}) or {})
 
         message_payload: Dict[str, Any] = {
             "role": "assistant",
@@ -593,14 +587,19 @@ class AWSBedrockConverseModel(BaseModelBackend):
         next_tool_idx = 0
         finish_reason_sent = False
 
+        def _make_chunk(**kwargs: Any) -> ChatCompletionChunk:
+            return ChatCompletionChunk.construct(
+                id=request_id,
+                created=int(time.time()),
+                model=model,
+                object="chat.completion.chunk",
+                **kwargs,
+            )
+
         for event in stream_obj.get("stream", []):
             if "messageStart" in event:
-                yield ChatCompletionChunk.construct(
-                    id=request_id,
-                    choices=[{"index": 0, "delta": {}, "finish_reason": None}],
-                    created=int(time.time()),
-                    model=model,
-                    object="chat.completion.chunk",
+                yield _make_chunk(
+                    choices=[{"index": 0, "delta": {}, "finish_reason": None}]
                 )
                 continue
 
@@ -614,8 +613,7 @@ class AWSBedrockConverseModel(BaseModelBackend):
                     block_to_tool_idx[block_idx] = next_tool_idx
                     tool_id = str(tool_use.get("toolUseId", ""))
                     tool_name = str(tool_use.get("name", ""))
-                    yield ChatCompletionChunk.construct(
-                        id=request_id,
+                    yield _make_chunk(
                         choices=[
                             {
                                 "index": 0,
@@ -634,10 +632,7 @@ class AWSBedrockConverseModel(BaseModelBackend):
                                 },
                                 "finish_reason": None,
                             }
-                        ],
-                        created=int(time.time()),
-                        model=model,
-                        object="chat.completion.chunk",
+                        ]
                     )
                     next_tool_idx += 1
                 continue
@@ -649,33 +644,27 @@ class AWSBedrockConverseModel(BaseModelBackend):
                 )
 
                 if isinstance(delta_obj.get("text"), str):
-                    yield ChatCompletionChunk.construct(
-                        id=request_id,
+                    yield _make_chunk(
                         choices=[
                             {
                                 "index": 0,
                                 "delta": {"content": delta_obj["text"]},
                                 "finish_reason": None,
                             }
-                        ],
-                        created=int(time.time()),
-                        model=model,
-                        object="chat.completion.chunk",
+                        ]
                     )
                     continue
 
                 tool_use = delta_obj.get("toolUse")
                 if isinstance(tool_use, dict):
                     raw_input = tool_use.get("input", "")
-                    if isinstance(raw_input, str):
-                        argument_delta = raw_input
-                    else:
-                        argument_delta = json.dumps(
-                            raw_input, ensure_ascii=False
-                        )
+                    argument_delta = (
+                        raw_input
+                        if isinstance(raw_input, str)
+                        else json.dumps(raw_input, ensure_ascii=False)
+                    )
                     mapped_idx = block_to_tool_idx.get(block_idx, 0)
-                    yield ChatCompletionChunk.construct(
-                        id=request_id,
+                    yield _make_chunk(
                         choices=[
                             {
                                 "index": 0,
@@ -691,67 +680,36 @@ class AWSBedrockConverseModel(BaseModelBackend):
                                 },
                                 "finish_reason": None,
                             }
-                        ],
-                        created=int(time.time()),
-                        model=model,
-                        object="chat.completion.chunk",
+                        ]
                     )
                 continue
 
             if "metadata" in event:
-                usage_obj = event["metadata"].get("usage", {}) or {}
-                prompt_tokens = int(usage_obj.get("inputTokens", 0) or 0)
-                completion_tokens = int(usage_obj.get("outputTokens", 0) or 0)
-                cache_read_tokens = int(
-                    usage_obj.get("cacheReadInputTokens", 0) or 0
+                usage = self._parse_bedrock_usage(
+                    event["metadata"].get("usage", {}) or {}
                 )
-                cache_write_tokens = int(
-                    usage_obj.get("cacheWriteInputTokens", 0) or 0
-                )
-
-                yield ChatCompletionChunk.construct(
-                    id=request_id,
+                yield _make_chunk(
                     choices=[{"index": 0, "delta": {}, "finish_reason": None}],
-                    created=int(time.time()),
-                    model=model,
-                    object="chat.completion.chunk",
-                    usage={
-                        "prompt_tokens": prompt_tokens,
-                        "completion_tokens": completion_tokens,
-                        "total_tokens": prompt_tokens + completion_tokens,
-                        "prompt_tokens_details": {
-                            "cached_tokens": cache_read_tokens,
-                            "cache_write_tokens": cache_write_tokens,
-                        },
-                    },
+                    usage=usage,
                 )
                 continue
 
             if "messageStop" in event:
                 reason = event["messageStop"].get("stopReason")
-                finish_reason = self._map_stop_reason(reason)
                 finish_reason_sent = True
-                yield ChatCompletionChunk.construct(
-                    id=request_id,
+                yield _make_chunk(
                     choices=[
                         {
                             "index": 0,
                             "delta": {},
-                            "finish_reason": finish_reason,
+                            "finish_reason": self._map_stop_reason(reason),
                         }
-                    ],
-                    created=int(time.time()),
-                    model=model,
-                    object="chat.completion.chunk",
+                    ]
                 )
 
         if not finish_reason_sent:
-            yield ChatCompletionChunk.construct(
-                id=request_id,
-                choices=[{"index": 0, "delta": {}, "finish_reason": "stop"}],
-                created=int(time.time()),
-                model=model,
-                object="chat.completion.chunk",
+            yield _make_chunk(
+                choices=[{"index": 0, "delta": {}, "finish_reason": "stop"}]
             )
 
     @observe()
