@@ -104,7 +104,12 @@ class ExtensionProxyWrapper:
         self._current_url = ""
         self._current_title = ""
 
-        # Track ARIA snapshot module initialization
+        # Multi-tab support
+        # Track tabs: tabId -> {url, title, aria_initialized}
+        self._tabs: Dict[int, Dict[str, Any]] = {}
+        self._default_tab_id: Optional[int] = None
+
+        # Track ARIA snapshot module initialization (legacy single-tab)
         self._aria_module_initialized = False
 
         # Callbacks for external handling
@@ -297,13 +302,20 @@ class ExtensionProxyWrapper:
         elif msg_type == "CDP_EVENT":
             method = data.get("method")
             params = data.get("params", {})
+            event_tab_id = data.get("tabId")
 
             if method == "Page.frameNavigated":
                 frame = params.get("frame", {})
                 if not frame.get("parentId"):
-                    self._current_url = frame.get("url", "")
+                    url = frame.get("url", "")
+                    self._current_url = url
+                    # Update per-tab URL
+                    if event_tab_id is not None and event_tab_id in self._tabs:
+                        self._tabs[event_tab_id]["url"] = url
+                        self._tabs[event_tab_id]["aria_initialized"] = False
                     self._log(
-                        "debug", f"Page navigated to: {self._current_url}"
+                        "debug",
+                        f"Page navigated to: {url} (tab={event_tab_id})",
                     )
 
         elif msg_type == "START_TASK":
@@ -341,11 +353,22 @@ class ExtensionProxyWrapper:
             # Result of attach request
             if hasattr(self, '_attach_future') and self._attach_future:
                 if data.get("success"):
+                    tab_id = data.get("tabId")
+                    url = data.get("url", "")
+                    # Track the attached tab
+                    if tab_id is not None:
+                        self._tabs[tab_id] = {
+                            "url": url,
+                            "title": "",
+                            "aria_initialized": False,
+                        }
+                        if self._default_tab_id is None:
+                            self._default_tab_id = tab_id
                     self._attach_future.set_result(
                         {
                             "success": True,
-                            "tabId": data.get("tabId"),
-                            "url": data.get("url"),
+                            "tabId": tab_id,
+                            "url": url,
                         }
                     )
                 else:
@@ -355,6 +378,62 @@ class ExtensionProxyWrapper:
                             "error": data.get("error", "Unknown error"),
                         }
                     )
+
+        elif msg_type == "TAB_CREATED":
+            # Response to TAB_CREATE request
+            cmd_id = data.get("id")
+            tab_id = data.get("tabId")
+            url = data.get("url", "about:blank")
+            if tab_id is not None:
+                self._tabs[tab_id] = {
+                    "url": url,
+                    "title": "",
+                    "aria_initialized": False,
+                }
+                if self._default_tab_id is None:
+                    self._default_tab_id = tab_id
+            if cmd_id in self._pending_commands:
+                self._pending_commands[cmd_id].set_result(data)
+
+        elif msg_type == "TAB_CREATE_ERROR":
+            cmd_id = data.get("id")
+            if cmd_id in self._pending_commands:
+                self._pending_commands[cmd_id].set_exception(
+                    Exception(data.get("error", "Tab creation failed"))
+                )
+
+        elif msg_type == "TAB_CLOSED":
+            cmd_id = data.get("id")
+            tab_id = data.get("tabId")
+            if tab_id is not None:
+                self._tabs.pop(tab_id, None)
+                if self._default_tab_id == tab_id:
+                    # Pick next available tab as default
+                    self._default_tab_id = (
+                        next(iter(self._tabs)) if self._tabs else None
+                    )
+            if cmd_id in self._pending_commands:
+                self._pending_commands[cmd_id].set_result(data)
+
+        elif msg_type == "TAB_CLOSE_ERROR":
+            cmd_id = data.get("id")
+            if cmd_id in self._pending_commands:
+                self._pending_commands[cmd_id].set_exception(
+                    Exception(data.get("error", "Tab close failed"))
+                )
+
+        elif msg_type == "TAB_DETACHED":
+            tab_id = data.get("tabId")
+            if tab_id is not None:
+                self._tabs.pop(tab_id, None)
+                if self._default_tab_id == tab_id:
+                    self._default_tab_id = (
+                        next(iter(self._tabs)) if self._tabs else None
+                    )
+                self._log(
+                    "info",
+                    f"Tab {tab_id} detached: {data.get('reason', 'unknown')}",
+                )
 
     async def request_attach(self, timeout: float = 10.0) -> Dict[str, Any]:
         """Request the extension to attach debugger to current tab.
@@ -379,8 +458,16 @@ class ExtensionProxyWrapper:
         finally:
             self._attach_future = None
 
-    async def _send_command(self, method: str, params: Dict = None) -> Any:
-        """Send a CDP command through the extension."""
+    async def _send_command(
+        self, method: str, params: Dict = None, tab_id: Optional[int] = None
+    ) -> Any:
+        """Send a CDP command through the extension.
+
+        Args:
+            method: CDP method name (e.g., 'Runtime.evaluate')
+            params: CDP command parameters
+            tab_id: Target tab ID. If None, uses self._default_tab_id.
+        """
         if not self._client:
             raise RuntimeError("Chrome extension not connected")
 
@@ -390,18 +477,27 @@ class ExtensionProxyWrapper:
         future = asyncio.get_event_loop().create_future()
         self._pending_commands[cmd_id] = future
 
-        await self._client.send(
-            json.dumps(
-                {
-                    "type": "CDP_COMMAND",
-                    "id": cmd_id,
-                    "method": method,
-                    "params": params or {},
-                }
-            )
-        )
+        message = {
+            "type": "CDP_COMMAND",
+            "id": cmd_id,
+            "method": method,
+            "params": params or {},
+        }
 
-        self._log("debug", f"Sent CDP command: {method}")
+        # Route to specific tab
+        target_tab = tab_id if tab_id is not None else self._default_tab_id
+        if target_tab is not None:
+            message["tabId"] = target_tab
+        else:
+            self._log(
+                "warning",
+                f"Sending CDP command {method} without tab ID "
+                f"(default_tab_id={self._default_tab_id}, tabs={list(self._tabs.keys())})",
+            )
+
+        await self._client.send(json.dumps(message))
+
+        self._log("debug", f"Sent CDP command: {method} (tab={target_tab})")
 
         try:
             result = await asyncio.wait_for(future, timeout=30.0)
@@ -460,23 +556,29 @@ class ExtensionProxyWrapper:
         if self._client:
             await self._client.send(json.dumps({"type": "STREAM_END"}))
 
-    async def highlight_element(self, selector: str, duration: int = 400):
+    async def highlight_element(
+        self,
+        selector: str,
+        duration: int = 400,
+        tab_id: Optional[int] = None,
+    ):
         """Highlight an element on the page before interacting with it.
 
         Args:
             selector: The element selector (ref like 'e1' or CSS selector)
             duration: How long to show the highlight in milliseconds
+            tab_id: Target tab. If None, uses default tab.
         """
         if self._client:
-            await self._client.send(
-                json.dumps(
-                    {
-                        "type": "HIGHLIGHT",
-                        "selector": selector,
-                        "duration": duration,
-                    }
-                )
-            )
+            target = tab_id if tab_id is not None else self._default_tab_id
+            message = {
+                "type": "HIGHLIGHT",
+                "selector": selector,
+                "duration": duration,
+            }
+            if target is not None:
+                message["tabId"] = target
+            await self._client.send(json.dumps(message))
             # Brief wait for highlight to be visible
             await asyncio.sleep(0.1)
             logger.info("HIGHLIGHT sent, waited 0.5s")
@@ -488,6 +590,27 @@ class ExtensionProxyWrapper:
         """Open browser / initialize session."""
         self._browser_opened = True
         await self._send_log("info", "Browser session initialized")
+
+        # Attach to current tab if no tab is attached yet
+        if self._default_tab_id is None:
+            self._log("info", "No tab attached, requesting attach...")
+            attach_result = await self.request_attach(timeout=15.0)
+            if not attach_result.get("success"):
+                self._log(
+                    "warning",
+                    f"Attach failed: {attach_result.get('error')}, opening new tab",
+                )
+                # Fallback: open a new tab
+                target_url = url or "about:blank"
+                await self.open_tab(target_url)
+
+        # Navigate to URL if provided and we have a tab
+        if url and self._default_tab_id is not None:
+            try:
+                await self._send_command("Page.navigate", {"url": url})
+                await asyncio.sleep(1)
+            except Exception as e:
+                self._log("warning", f"Navigation to {url} failed: {e}")
 
         # Get current page info
         snapshot = await self.get_page_snapshot()
@@ -508,19 +631,33 @@ class ExtensionProxyWrapper:
 
         return {"result": "Browser session closed"}
 
-    async def visit_page(self, url: str) -> Dict[str, Any]:
-        """Navigate to a URL."""
+    async def visit_page(
+        self, url: str, tab_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Navigate to a URL.
+
+        Args:
+            url: URL to navigate to.
+            tab_id: Target tab. If None, uses default tab.
+        """
         start_time = time.time()
         await self._send_action("Navigating", url)
 
         try:
-            await self._send_command("Page.navigate", {"url": url})
+            await self._send_command(
+                "Page.navigate", {"url": url}, tab_id=tab_id
+            )
             await asyncio.sleep(2)  # Wait for navigation
 
             self._current_url = url
-            # Reset ARIA module after navigation
-            self._aria_module_initialized = False
-            snapshot = await self.get_page_snapshot()
+            # Reset ARIA module after navigation (per-tab)
+            target = tab_id if tab_id is not None else self._default_tab_id
+            if target is not None and target in self._tabs:
+                self._tabs[target]["aria_initialized"] = False
+                self._tabs[target]["url"] = url
+            else:
+                self._aria_module_initialized = False
+            snapshot = await self.get_page_snapshot(tab_id=tab_id)
 
             result = {
                 "result": f"Navigated to {url}",
@@ -545,8 +682,12 @@ class ExtensionProxyWrapper:
             )
             raise
 
-    async def _init_aria_module(self) -> bool:
-        """Initialize the Playwright ARIA snapshot module in the page."""
+    async def _init_aria_module(self, tab_id: Optional[int] = None) -> bool:
+        """Initialize the Playwright ARIA snapshot module in the page.
+
+        Args:
+            tab_id: Target tab. If None, uses default tab.
+        """
         if not ARIA_SNAPSHOT_AVAILABLE:
             logger.warning(
                 "ARIA snapshot module not available, using fallback"
@@ -558,81 +699,110 @@ class ExtensionProxyWrapper:
             await self._send_command(
                 "Runtime.evaluate",
                 {"expression": init_script, "returnByValue": True},
+                tab_id=tab_id,
             )
-            self._aria_module_initialized = True
-            logger.info("ARIA snapshot module initialized")
+            # Update per-tab ARIA state
+            target = tab_id if tab_id is not None else self._default_tab_id
+            if target is not None and target in self._tabs:
+                self._tabs[target]["aria_initialized"] = True
+            else:
+                self._aria_module_initialized = True
+            logger.info(f"ARIA snapshot module initialized (tab={target})")
             return True
         except Exception as e:
             logger.error(f"Failed to initialize ARIA module: {e}")
             return False
 
-    async def get_page_snapshot(self, viewport_limit: bool = False) -> str:
+    async def get_page_snapshot(
+        self, viewport_limit: bool = False, tab_id: Optional[int] = None
+    ) -> str:
         """Get a text snapshot of the current page using Playwright's _snapshotForAI format.
 
-        This uses the same ARIA snapshot implementation as Playwright,
-        providing a consistent AI-friendly representation of the page.
+        Args:
+            viewport_limit: Whether to limit to viewport (unused, for compatibility).
+            tab_id: Target tab. If None, uses default tab.
         """
         try:
             # Get page title
             title_result = await self._send_command(
                 "Runtime.evaluate",
                 {"expression": "document.title", "returnByValue": True},
+                tab_id=tab_id,
             )
-            self._current_title = title_result.get("result", {}).get(
-                "value", ""
-            )
+            current_title = title_result.get("result", {}).get("value", "")
 
             # Get page URL
             url_result = await self._send_command(
                 "Runtime.evaluate",
                 {"expression": "window.location.href", "returnByValue": True},
+                tab_id=tab_id,
             )
-            self._current_url = url_result.get("result", {}).get("value", "")
+            current_url = url_result.get("result", {}).get("value", "")
+
+            # Update state
+            self._current_title = current_title
+            self._current_url = current_url
+            target = tab_id if tab_id is not None else self._default_tab_id
+            if target is not None and target in self._tabs:
+                self._tabs[target]["url"] = current_url
+                self._tabs[target]["title"] = current_title
+
+            # Check per-tab ARIA init state
+            aria_initialized = self._aria_module_initialized
+            if target is not None and target in self._tabs:
+                aria_initialized = self._tabs[target].get(
+                    "aria_initialized", False
+                )
 
             # Use Playwright's ARIA snapshot if available
             if ARIA_SNAPSHOT_AVAILABLE:
                 # Initialize module if not already done
-                if not self._aria_module_initialized:
-                    await self._init_aria_module()
+                if not aria_initialized:
+                    await self._init_aria_module(tab_id=tab_id)
 
                 # Get ARIA snapshot
                 snapshot_script = get_snapshot_only_script()
                 result = await self._send_command(
                     "Runtime.evaluate",
                     {"expression": snapshot_script, "returnByValue": True},
+                    tab_id=tab_id,
                 )
 
                 aria_snapshot = result.get("result", {}).get("value", "")
 
                 if aria_snapshot and not aria_snapshot.startswith("Error:"):
-                    snapshot = f"Page: {self._current_title}\nURL: {self._current_url}\n\nAccessibility Tree:\n{aria_snapshot}"
+                    snapshot = f"Page: {current_title}\nURL: {current_url}\n\nAccessibility Tree:\n{aria_snapshot}"
                     return snapshot
                 else:
                     # Module might need re-initialization after navigation
                     logger.info("Re-initializing ARIA module after navigation")
-                    self._aria_module_initialized = False
-                    await self._init_aria_module()
+                    if target is not None and target in self._tabs:
+                        self._tabs[target]["aria_initialized"] = False
+                    else:
+                        self._aria_module_initialized = False
+                    await self._init_aria_module(tab_id=tab_id)
 
                     result = await self._send_command(
                         "Runtime.evaluate",
                         {"expression": snapshot_script, "returnByValue": True},
+                        tab_id=tab_id,
                     )
                     aria_snapshot = result.get("result", {}).get("value", "")
 
                     if aria_snapshot and not aria_snapshot.startswith(
                         "Error:"
                     ):
-                        snapshot = f"Page: {self._current_title}\nURL: {self._current_url}\n\nAccessibility Tree:\n{aria_snapshot}"
+                        snapshot = f"Page: {current_title}\nURL: {current_url}\n\nAccessibility Tree:\n{aria_snapshot}"
                         return snapshot
 
             # Fallback to simple snapshot if ARIA module fails
-            return await self._get_simple_snapshot()
+            return await self._get_simple_snapshot(tab_id=tab_id)
 
         except Exception as e:
             logger.error(f"Error getting page snapshot: {e}")
             return f"Error getting snapshot: {e}"
 
-    async def _get_simple_snapshot(self) -> str:
+    async def _get_simple_snapshot(self, tab_id: Optional[int] = None) -> str:
         """Fallback simple snapshot when ARIA module is not available."""
         elements_js = """
         (function() {
@@ -680,6 +850,7 @@ class ExtensionProxyWrapper:
         result = await self._send_command(
             "Runtime.evaluate",
             {"expression": elements_js, "returnByValue": True},
+            tab_id=tab_id,
         )
 
         elements_text = result.get("result", {}).get("value", "")
@@ -1811,30 +1982,128 @@ class ExtensionProxyWrapper:
             )
             raise
 
+    async def open_tab(self, url: str = "about:blank") -> Dict[str, Any]:
+        """Create a new browser tab via the extension.
+
+        Args:
+            url: URL to open in the new tab.
+
+        Returns:
+            Dict with tabId and url of the created tab.
+        """
+        if not self._client:
+            raise RuntimeError("Chrome extension not connected")
+
+        self._command_id += 1
+        cmd_id = self._command_id
+
+        future = asyncio.get_event_loop().create_future()
+        self._pending_commands[cmd_id] = future
+
+        await self._client.send(
+            json.dumps(
+                {
+                    "type": "TAB_CREATE",
+                    "id": cmd_id,
+                    "url": url,
+                }
+            )
+        )
+
+        self._log("info", f"Requesting new tab: {url}")
+
+        try:
+            result = await asyncio.wait_for(future, timeout=15.0)
+            tab_id = result.get("tabId")
+            if tab_id is not None:
+                self._tabs[tab_id] = {
+                    "url": url,
+                    "title": "",
+                    "aria_initialized": False,
+                }
+                if self._default_tab_id is None:
+                    self._default_tab_id = tab_id
+            self._log("info", f"Tab created: tabId={tab_id}")
+            return {"tabId": tab_id, "url": url}
+        except asyncio.TimeoutError:
+            if cmd_id in self._pending_commands:
+                del self._pending_commands[cmd_id]
+            raise TimeoutError("Tab creation timed out")
+
     async def get_tab_info(self) -> List[Dict[str, Any]]:
-        """Get information about the current tab."""
+        """Get information about all tracked tabs."""
+        if not self._tabs:
+            # Fallback for single-tab mode
+            return [
+                {
+                    "id": self._default_tab_id or 0,
+                    "url": self._current_url,
+                    "title": self._current_title,
+                    "is_current": True,
+                }
+            ]
+
         return [
             {
-                "id": 0,
-                "url": self._current_url,
-                "title": self._current_title,
-                "is_current": True,
+                "id": tab_id,
+                "url": info.get("url", ""),
+                "title": info.get("title", ""),
+                "is_current": tab_id == self._default_tab_id,
             }
+            for tab_id, info in self._tabs.items()
         ]
 
     async def switch_tab(self, tab_id: int) -> Dict[str, Any]:
-        """Switch to a different tab (not fully supported in extension mode)."""
+        """Switch the default active tab.
+
+        Args:
+            tab_id: The tab ID to switch to.
+        """
+        if tab_id in self._tabs:
+            self._default_tab_id = tab_id
+            snapshot = await self.get_page_snapshot(tab_id=tab_id)
+            return {
+                "result": f"Switched to tab {tab_id}",
+                "snapshot": snapshot,
+            }
         return {
-            "result": "Tab switching not supported in extension proxy mode",
-            "snapshot": await self.get_page_snapshot(),
+            "result": f"Tab {tab_id} not found",
+            "snapshot": "",
         }
 
     async def close_tab(self, tab_id: int) -> Dict[str, Any]:
-        """Close a tab (not fully supported in extension mode)."""
-        return {
-            "result": "Tab closing not supported in extension proxy mode",
-            "snapshot": await self.get_page_snapshot(),
-        }
+        """Close a browser tab via the extension.
+
+        Args:
+            tab_id: The tab ID to close.
+        """
+        if not self._client:
+            raise RuntimeError("Chrome extension not connected")
+
+        self._command_id += 1
+        cmd_id = self._command_id
+
+        future = asyncio.get_event_loop().create_future()
+        self._pending_commands[cmd_id] = future
+
+        await self._client.send(
+            json.dumps(
+                {
+                    "type": "TAB_CLOSE",
+                    "id": cmd_id,
+                    "tabId": tab_id,
+                }
+            )
+        )
+
+        try:
+            await asyncio.wait_for(future, timeout=10.0)
+            self._log("info", f"Tab {tab_id} closed")
+            return {"result": f"Tab {tab_id} closed"}
+        except asyncio.TimeoutError:
+            if cmd_id in self._pending_commands:
+                del self._pending_commands[cmd_id]
+            raise TimeoutError(f"Tab close timed out for tab {tab_id}")
 
     async def console_exec(self, code: str) -> Dict[str, Any]:
         """Execute JavaScript in the page console."""
@@ -1910,6 +2179,429 @@ class ExtensionProxyWrapper:
                 error=str(e),
             )
             raise
+
+    # ── Aliases expected by HybridBrowserToolkit ──────────────────────
+
+    async def enter(self) -> Dict[str, Any]:
+        """Press Enter key."""
+        return await self.press_key("Enter")
+
+    async def back(self) -> Dict[str, Any]:
+        """Go back in browser history (alias for go_back)."""
+        return await self.go_back()
+
+    async def forward(self) -> Dict[str, Any]:
+        """Go forward in browser history (alias for go_forward)."""
+        return await self.go_forward()
+
+    async def mouse_control(
+        self, control: str, x: float, y: float
+    ) -> Dict[str, Any]:
+        """Perform mouse action at coordinates.
+
+        Args:
+            control: 'click', 'dblclick', 'move', etc.
+            x: X coordinate.
+            y: Y coordinate.
+        """
+        start_time = time.time()
+        await self._send_action("Mouse", f"{control} at ({x}, {y})")
+
+        try:
+            if control == "click":
+                await self._send_command(
+                    "Input.dispatchMouseEvent",
+                    {
+                        "type": "mousePressed",
+                        "x": x,
+                        "y": y,
+                        "button": "left",
+                        "clickCount": 1,
+                    },
+                )
+                await self._send_command(
+                    "Input.dispatchMouseEvent",
+                    {
+                        "type": "mouseReleased",
+                        "x": x,
+                        "y": y,
+                        "button": "left",
+                        "clickCount": 1,
+                    },
+                )
+            elif control == "dblclick":
+                for _ in range(2):
+                    await self._send_command(
+                        "Input.dispatchMouseEvent",
+                        {
+                            "type": "mousePressed",
+                            "x": x,
+                            "y": y,
+                            "button": "left",
+                            "clickCount": 2,
+                        },
+                    )
+                    await self._send_command(
+                        "Input.dispatchMouseEvent",
+                        {
+                            "type": "mouseReleased",
+                            "x": x,
+                            "y": y,
+                            "button": "left",
+                            "clickCount": 2,
+                        },
+                    )
+            elif control == "move":
+                await self._send_command(
+                    "Input.dispatchMouseEvent",
+                    {"type": "mouseMoved", "x": x, "y": y},
+                )
+            else:
+                # Default: click
+                await self._send_command(
+                    "Input.dispatchMouseEvent",
+                    {
+                        "type": "mousePressed",
+                        "x": x,
+                        "y": y,
+                        "button": "left",
+                        "clickCount": 1,
+                    },
+                )
+                await self._send_command(
+                    "Input.dispatchMouseEvent",
+                    {
+                        "type": "mouseReleased",
+                        "x": x,
+                        "y": y,
+                        "button": "left",
+                        "clickCount": 1,
+                    },
+                )
+
+            await asyncio.sleep(0.3)
+            self._aria_module_initialized = False
+            snapshot = await self.get_page_snapshot()
+
+            action_result = {
+                "result": f"Mouse {control} at ({x}, {y})",
+                "snapshot": snapshot,
+            }
+
+            await self._log_action(
+                action_name="mouse_control",
+                inputs={"control": control, "x": x, "y": y},
+                outputs=action_result,
+                execution_time=time.time() - start_time,
+            )
+            return action_result
+        except Exception as e:
+            await self._log_action(
+                action_name="mouse_control",
+                inputs={"control": control, "x": x, "y": y},
+                outputs=None,
+                execution_time=time.time() - start_time,
+                error=str(e),
+            )
+            raise
+
+    async def batch_keyboard_input(
+        self,
+        operations: List[Dict[str, Any]],
+        skip_stability_wait: bool = True,
+    ) -> Dict[str, Any]:
+        """Execute a batch of keyboard operations.
+
+        Args:
+            operations: List of dicts with 'type' and relevant params.
+                e.g. [{"type": "type", "text": "hello", "delay": 0},
+                      {"type": "press", "key": "Enter"}]
+            skip_stability_wait: Skip waiting for page stability.
+        """
+        start_time = time.time()
+
+        try:
+            for op in operations:
+                op_type = op.get("type", "")
+                if op_type == "type":
+                    text = op.get("text", "")
+                    for char in text:
+                        await self._send_command(
+                            "Input.dispatchKeyEvent",
+                            {
+                                "type": "keyDown",
+                                "key": char,
+                                "text": char,
+                                "unmodifiedText": char,
+                            },
+                        )
+                        await self._send_command(
+                            "Input.dispatchKeyEvent",
+                            {"type": "keyUp", "key": char},
+                        )
+                elif op_type == "press":
+                    key = op.get("key", "")
+                    await self.press_key(key)
+                elif op_type == "selectAll":
+                    await self._send_command(
+                        "Input.dispatchKeyEvent",
+                        {
+                            "type": "keyDown",
+                            "key": "a",
+                            "code": "KeyA",
+                            "windowsVirtualKeyCode": 65,
+                            "modifiers": 2,
+                        },  # 2 = Ctrl/Cmd
+                    )
+                    await self._send_command(
+                        "Input.dispatchKeyEvent",
+                        {
+                            "type": "keyUp",
+                            "key": "a",
+                            "code": "KeyA",
+                            "windowsVirtualKeyCode": 65,
+                            "modifiers": 2,
+                        },
+                    )
+                elif op_type == "copy":
+                    await self._send_command(
+                        "Input.dispatchKeyEvent",
+                        {
+                            "type": "keyDown",
+                            "key": "c",
+                            "code": "KeyC",
+                            "windowsVirtualKeyCode": 67,
+                            "modifiers": 2,
+                        },
+                    )
+                    await self._send_command(
+                        "Input.dispatchKeyEvent",
+                        {
+                            "type": "keyUp",
+                            "key": "c",
+                            "code": "KeyC",
+                            "windowsVirtualKeyCode": 67,
+                            "modifiers": 2,
+                        },
+                    )
+
+            if not skip_stability_wait:
+                await asyncio.sleep(0.5)
+
+            snapshot = await self.get_page_snapshot()
+            action_result = {
+                "result": f"Executed {len(operations)} keyboard operations",
+                "snapshot": snapshot,
+            }
+
+            await self._log_action(
+                action_name="batch_keyboard_input",
+                inputs={"operations_count": len(operations)},
+                outputs=action_result,
+                execution_time=time.time() - start_time,
+            )
+            return action_result
+        except Exception as e:
+            await self._log_action(
+                action_name="batch_keyboard_input",
+                inputs={"operations_count": len(operations)},
+                outputs=None,
+                execution_time=time.time() - start_time,
+                error=str(e),
+            )
+            raise
+
+    async def type_multiple(
+        self, inputs: List[Dict[str, str]]
+    ) -> Dict[str, Any]:
+        """Type text into multiple elements.
+
+        Args:
+            inputs: List of dicts with 'ref' and 'text' keys.
+        """
+        results = []
+        for inp in inputs:
+            ref = inp.get("ref", "")
+            text = inp.get("text", "")
+            result = await self.type(ref, text)
+            results.append(result.get("result", ""))
+
+        snapshot = await self.get_page_snapshot()
+        return {
+            "result": f"Typed into {len(inputs)} fields: "
+            + "; ".join(results),
+            "snapshot": snapshot,
+        }
+
+    async def get_screenshot(self) -> Dict[str, Any]:
+        """Capture a screenshot of the current page.
+
+        Returns:
+            Dict with base64 screenshot data.
+        """
+        try:
+            result = await self._send_command(
+                "Page.captureScreenshot",
+                {"format": "png"},
+            )
+            return {
+                "screenshot": result.get("data", ""),
+                "metadata": {
+                    "url": self._current_url,
+                    "title": self._current_title,
+                },
+            }
+        except Exception as e:
+            self._log("error", f"Error capturing screenshot: {e}")
+            return {"screenshot": "", "error": str(e)}
+
+    async def get_som_screenshot(self) -> Dict[str, Any]:
+        """Capture a screenshot with element annotations (SoM).
+
+        Falls back to regular screenshot since extension proxy
+        doesn't have native SoM support.
+        """
+        return await self.get_screenshot()
+
+    async def console_view(self) -> List[Dict[str, Any]]:
+        """Get console log entries.
+
+        Returns:
+            List of console log entries.
+        """
+        try:
+            # Enable console if not already
+            await self._send_command("Console.enable", {})
+
+            result = await self._send_command(
+                "Runtime.evaluate",
+                {
+                    "expression": """
+                    (function() {
+                        if (!window.__consoleLogs) return [];
+                        return JSON.stringify(window.__consoleLogs.slice(-50));
+                    })()
+                    """,
+                    "returnByValue": True,
+                },
+            )
+
+            value = result.get("result", {}).get("value", "[]")
+            if isinstance(value, str):
+                try:
+                    return json.loads(value)
+                except json.JSONDecodeError:
+                    return []
+            return []
+        except Exception as e:
+            self._log("error", f"Error getting console logs: {e}")
+            return []
+
+    async def mouse_drag(
+        self,
+        start_x: float,
+        start_y: float,
+        end_x: float,
+        end_y: float,
+    ) -> Dict[str, Any]:
+        """Drag from one position to another.
+
+        Args:
+            start_x: Start X coordinate.
+            start_y: Start Y coordinate.
+            end_x: End X coordinate.
+            end_y: End Y coordinate.
+        """
+        start_time = time.time()
+
+        try:
+            await self._send_command(
+                "Input.dispatchMouseEvent",
+                {
+                    "type": "mousePressed",
+                    "x": start_x,
+                    "y": start_y,
+                    "button": "left",
+                    "clickCount": 1,
+                },
+            )
+            # Move in steps
+            steps = 10
+            for i in range(1, steps + 1):
+                ix = start_x + (end_x - start_x) * i / steps
+                iy = start_y + (end_y - start_y) * i / steps
+                await self._send_command(
+                    "Input.dispatchMouseEvent",
+                    {"type": "mouseMoved", "x": ix, "y": iy, "button": "left"},
+                )
+            await self._send_command(
+                "Input.dispatchMouseEvent",
+                {
+                    "type": "mouseReleased",
+                    "x": end_x,
+                    "y": end_y,
+                    "button": "left",
+                    "clickCount": 1,
+                },
+            )
+
+            await asyncio.sleep(0.3)
+            self._aria_module_initialized = False
+            snapshot = await self.get_page_snapshot()
+
+            action_result = {
+                "result": f"Dragged from ({start_x},{start_y}) to ({end_x},{end_y})",
+                "snapshot": snapshot,
+            }
+
+            await self._log_action(
+                action_name="mouse_drag",
+                inputs={
+                    "start_x": start_x,
+                    "start_y": start_y,
+                    "end_x": end_x,
+                    "end_y": end_y,
+                },
+                outputs=action_result,
+                execution_time=time.time() - start_time,
+            )
+            return action_result
+        except Exception as e:
+            await self._log_action(
+                action_name="mouse_drag",
+                inputs={
+                    "start_x": start_x,
+                    "start_y": start_y,
+                    "end_x": end_x,
+                    "end_y": end_y,
+                },
+                outputs=None,
+                execution_time=time.time() - start_time,
+                error=str(e),
+            )
+            raise
+
+    async def upload_file(
+        self, ref: str = "", x: float = 0, y: float = 0, file_path: str = ""
+    ) -> Dict[str, Any]:
+        """Upload a file (limited support via extension proxy)."""
+        return {
+            "result": "File upload is not supported via Chrome extension proxy. "
+            "Please upload files manually through the browser UI.",
+            "snapshot": await self.get_page_snapshot(),
+        }
+
+    async def download_file(
+        self, ref: str = "", x: float = 0, y: float = 0
+    ) -> Dict[str, Any]:
+        """Download a file (limited support via extension proxy)."""
+        return {
+            "result": "File download is not directly supported via Chrome extension proxy. "
+            "The browser will handle downloads normally.",
+            "snapshot": await self.get_page_snapshot(),
+        }
+
+    # ── Server lifecycle ─────────────────────────────────────────────
 
     async def stop(self):
         """Stop the WebSocket server."""

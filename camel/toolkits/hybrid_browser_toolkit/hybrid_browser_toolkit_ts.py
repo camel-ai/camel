@@ -330,13 +330,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         cdp_url: Optional[str] = None,
         cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
-
         extension_proxy_mode: bool = False,
         extension_proxy_host: str = "localhost",
         extension_proxy_port: int = 8765,
-
         download_dir: Optional[str] = None,
-
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
