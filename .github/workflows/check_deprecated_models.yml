@@ -3,6 +3,9 @@
 name: Check Deprecated Models
 
 on:
+  push:
+    branches:
+      - 3868-feature-request-clean-and-remove-deprecated-models-from-model-list
   schedule:
     - cron: '0 3 * * 0'  # Every Sunday at 03:00 UTC
   workflow_dispatch:
