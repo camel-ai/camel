@@ -119,9 +119,7 @@ class Worker(BaseNode, ABC):
                 if self._stream_callback is None:
                     return
                 try:
-                    maybe = self._stream_callback(
-                        chunk, self.node_id, task.id
-                    )
+                    maybe = self._stream_callback(chunk, self.node_id, task.id)
                     if asyncio.iscoroutine(maybe):
                         await maybe
                 except Exception:
