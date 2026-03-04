@@ -53,6 +53,9 @@ class AWSBedrockModel(OpenAICompatibleModel):
         https://docs.aws.amazon.com/bedrock/latest/APIReference/welcome.html
     """
 
+    _API_KEY_ENV_VAR: str = "BEDROCK_API_KEY"
+    _BASE_URL_ENV_VAR: str = "BEDROCK_API_BASE_URL"
+
     @api_keys_required(
         [
             ("url", "BEDROCK_API_BASE_URL"),
@@ -72,10 +75,8 @@ class AWSBedrockModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = BedrockConfig().as_dict()
-        api_key = api_key or os.environ.get("BEDROCK_API_KEY")
-        url = url or os.environ.get(
-            "BEDROCK_API_BASE_URL",
-        )
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
+        url = url or os.environ.get(self._BASE_URL_ENV_VAR)
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
             model_type=model_type,

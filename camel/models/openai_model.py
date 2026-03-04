@@ -105,6 +105,9 @@ class OpenAIModel(BaseModelBackend):
             Ignored if custom clients are provided.
     """
 
+    _API_KEY_ENV_VAR: str = "OPENAI_API_KEY"
+    _BASE_URL_ENV_VAR: str = "OPENAI_API_BASE_URL"
+
     @api_keys_required(
         [
             ("api_key", "OPENAI_API_KEY"),
@@ -125,8 +128,8 @@ class OpenAIModel(BaseModelBackend):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
-        api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        url = url or os.environ.get("OPENAI_API_BASE_URL")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
+        url = url or os.environ.get(self._BASE_URL_ENV_VAR)
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
 
         # Store additional client args for later use
@@ -494,6 +497,38 @@ class OpenAIModel(BaseModelBackend):
             response_format=response_format,
             **request_config,
         )
+
+    @classmethod
+    def list_available_models(
+        cls,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        timeout: int = 30,
+    ) -> List[str]:
+        r"""List available model IDs from the OpenAI API.
+
+        Args:
+            api_key (Optional[str], optional): The API key. If not
+                provided, reads from ``OPENAI_API_KEY``.
+                (default: :obj:`None`)
+            url (Optional[str], optional): The base URL.
+                (default: :obj:`None`)
+            timeout (int, optional): Timeout in seconds.
+                (default: :obj:`30`)
+
+        Returns:
+            List[str]: A sorted list of available model ID strings.
+        """
+        api_key = api_key or os.environ.get(cls._API_KEY_ENV_VAR)
+        url = url or os.environ.get(cls._BASE_URL_ENV_VAR)
+        client = OpenAI(
+            api_key=api_key,
+            base_url=url,
+            timeout=float(timeout),
+            max_retries=0,
+        )
+        models = client.models.list()
+        return sorted(m.id for m in models)
 
     @property
     def stream(self) -> bool:

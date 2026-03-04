@@ -81,6 +81,10 @@ class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
             initialization.
     """
 
+    _API_KEY_ENV_VAR: str = "MOONSHOT_API_KEY"
+    _BASE_URL_ENV_VAR: str = "MOONSHOT_API_BASE_URL"
+    _DEFAULT_BASE_URL: str = "https://api.moonshot.ai/v1"
+
     @api_keys_required([("api_key", "MOONSHOT_API_KEY")])
     def __init__(
         self,
@@ -95,13 +99,10 @@ class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = MoonshotConfig().as_dict()
-        api_key = api_key or os.environ.get("MOONSHOT_API_KEY")
-        # Preserve default URL if not provided
-        if url is None:
-            url = (
-                os.environ.get("MOONSHOT_API_BASE_URL")
-                or "https://api.moonshot.ai/v1"
-            )
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
+        url = url or os.environ.get(
+            self._BASE_URL_ENV_VAR, self._DEFAULT_BASE_URL
+        )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
             model_type=model_type,

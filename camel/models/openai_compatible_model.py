@@ -93,6 +93,10 @@ class OpenAICompatibleModel(BaseModelBackend):
             Ignored if custom clients are provided.
     """
 
+    _API_KEY_ENV_VAR: str = "OPENAI_COMPATIBILITY_API_KEY"
+    _BASE_URL_ENV_VAR: str = "OPENAI_COMPATIBILITY_API_BASE_URL"
+    _DEFAULT_BASE_URL: Optional[str] = None
+
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -106,8 +110,10 @@ class OpenAICompatibleModel(BaseModelBackend):
         async_client: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
-        api_key = api_key or os.environ.get("OPENAI_COMPATIBILITY_API_KEY")
-        url = url or os.environ.get("OPENAI_COMPATIBILITY_API_BASE_URL")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
+        url = url or os.environ.get(
+            self._BASE_URL_ENV_VAR, self._DEFAULT_BASE_URL
+        )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
 
         super().__init__(
@@ -434,6 +440,44 @@ class OpenAICompatibleModel(BaseModelBackend):
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
+
+    @classmethod
+    def list_available_models(
+        cls,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        timeout: int = 30,
+    ) -> List[str]:
+        r"""List available model IDs from an OpenAI-compatible API.
+
+        Subclasses only need to set ``_API_KEY_ENV_VAR`` and
+        ``_DEFAULT_BASE_URL`` class attributes; this method derives the
+        base-URL environment variable by replacing ``_API_KEY`` with
+        ``_API_BASE_URL`` in the key env-var name.
+
+        Args:
+            api_key (Optional[str], optional): The API key for
+                authenticating. (default: :obj:`None`)
+            url (Optional[str], optional): The base URL to the service.
+                (default: :obj:`None`)
+            timeout (int, optional): Timeout in seconds. (default:
+                :obj:`30`)
+
+        Returns:
+            List[str]: A sorted list of available model ID strings.
+        """
+        api_key = api_key or os.environ.get(cls._API_KEY_ENV_VAR)
+        url = url or os.environ.get(
+            cls._BASE_URL_ENV_VAR, cls._DEFAULT_BASE_URL
+        )
+        client = OpenAI(
+            api_key=api_key,
+            base_url=url,
+            timeout=float(timeout),
+            max_retries=0,
+        )
+        models = client.models.list()
+        return sorted(m.id for m in models)
 
     @property
     def stream(self) -> bool:
