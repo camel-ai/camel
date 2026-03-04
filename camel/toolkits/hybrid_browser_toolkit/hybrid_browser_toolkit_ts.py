@@ -303,6 +303,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_console_exec",
         "browser_sheet_input",
         "browser_sheet_read",
+        "browser_set_trigger",
     ]
 
     def __init__(
@@ -2179,6 +2180,46 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_get_som_screenshot",
     ]
 
+    async def browser_set_trigger(
+        self,
+        *,
+        code: str,
+        description: str,
+    ) -> str:
+        r"""Sets a trigger that monitors a condition on the page.
+
+        The code should be a JavaScript arrow function that returns true
+        when the condition is met. The agent will be automatically notified
+        when the trigger fires, and can then proceed with the next action.
+
+        Args:
+            code (str): A JavaScript arrow function returning boolean.
+                IMPORTANT: Must be a plain arrow function, NOT an IIFE.
+                Do NOT wrap in (() => ...)() — just provide () => ...
+                Examples:
+                - "() => !document.querySelector('.buy-btn')?.disabled"
+                - "() => document.querySelector('.result') !== null"
+                - "() => new Date().getHours() === 12"
+                - "() => { const el = document.querySelector('#box'); return el && getComputedStyle(el).backgroundColor !== 'rgb(76, 175, 80)'; }"
+            description (str): Human-readable description of the trigger.
+
+        Returns:
+            str: Confirmation message.
+        """
+        import uuid
+
+        trigger_id = str(uuid.uuid4())[:8]
+        wrapper = self._extension_proxy_wrapper
+        if wrapper is None:
+            return "Error: trigger is only available in extension proxy mode."
+
+        await wrapper.set_trigger(code, trigger_id, description)
+        return (
+            f"Trigger '{description}' set (id={trigger_id}). "
+            f"You will be automatically notified when the condition is met. "
+            f"Do NOT call any other tools until the trigger fires."
+        )
+
     def _create_mode_wrapper(
         self,
         method: Callable[..., Any],
@@ -2460,6 +2501,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_console_exec": self.browser_console_exec,
             "browser_sheet_input": self.browser_sheet_input,
             "browser_sheet_read": self.browser_sheet_read,
+            "browser_set_trigger": self.browser_set_trigger,
         }
 
         # Tools that need mode-specific wrappers (different signatures)

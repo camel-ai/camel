@@ -189,6 +189,37 @@ class ExtensionProxyWrapper:
                 json.dumps(payload, ensure_ascii=False)
             )
 
+    async def set_trigger(
+        self,
+        code: str,
+        trigger_id: str,
+        description: str,
+        tab_id: Optional[int] = None,
+    ):
+        """Send SET_TRIGGER to the extension."""
+        if not self._client:
+            raise RuntimeError("Chrome extension not connected")
+        message = {
+            "type": "SET_TRIGGER",
+            "triggerId": trigger_id,
+            "code": code,
+            "description": description,
+        }
+        target = tab_id if tab_id is not None else self._default_tab_id
+        if target is not None:
+            message["tabId"] = target
+        await self._client.send(json.dumps(message, ensure_ascii=False))
+        self._log("info", f"[TRIGGER] Set: {description} (id={trigger_id})")
+
+    async def clear_trigger(self, trigger_id: str):
+        """Send CLEAR_TRIGGER to the extension."""
+        if self._client:
+            await self._client.send(
+                json.dumps(
+                    {"type": "CLEAR_TRIGGER", "triggerId": trigger_id}
+                )
+            )
+
     def _log(self, level: str, message: str):
         """Log a message and optionally call the callback."""
         if level == "info":
@@ -355,6 +386,7 @@ class ExtensionProxyWrapper:
                 "message": data.get("task", ""),
                 "tabId": data.get("tabId", 0),
                 "url": data.get("url", ""),
+                "pageTitle": data.get("pageTitle", ""),
                 "fullVisionMode": data.get("fullVisionMode", False),
             }
             await self._chat_queue.put(chat_data)
@@ -366,11 +398,12 @@ class ExtensionProxyWrapper:
             )
 
         elif msg_type == "CLEAR_CONTEXT":
-            # Signal to clear agent context
-            task_data = {
+            # Signal to clear agent context — route to chat queue
+            # so extension_chat_service can reset the agent
+            chat_data = {
                 "type": "CLEAR_CONTEXT",
             }
-            await self._task_queue.put(task_data)
+            await self._chat_queue.put(chat_data)
             self._log("info", "Context clear requested")
 
         elif msg_type == "CHAT_MESSAGE":
@@ -398,6 +431,20 @@ class ExtensionProxyWrapper:
             await self._task_queue.put(task_data)
             self._log(
                 "info", f"Debug command received: {task_data['command']}"
+            )
+
+        elif msg_type == "TRIGGER_FIRED":
+            # Trigger condition met → wake up agent
+            chat_data = {
+                "type": "TRIGGER_FIRED",
+                "triggerId": data.get("triggerId", ""),
+                "description": data.get("description", ""),
+                "tabId": data.get("tabId", 0),
+            }
+            await self._chat_queue.put(chat_data)
+            self._log(
+                "info",
+                f"[TRIGGER] Fired: {chat_data['description']}",
             )
 
         elif msg_type == "ATTACH_RESULT":
