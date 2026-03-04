@@ -118,9 +118,18 @@ class Worker(BaseNode, ABC):
             async def _on_chunk(chunk: "ChatAgentResponse") -> None:
                 if self._stream_callback is None:
                     return
-                maybe = self._stream_callback(chunk, self.node_id, task.id)
-                if asyncio.iscoroutine(maybe):
-                    await maybe
+                try:
+                    maybe = self._stream_callback(
+                        chunk, self.node_id, task.id
+                    )
+                    if asyncio.iscoroutine(maybe):
+                        await maybe
+                except Exception:
+                    logger.warning(
+                        "stream_callback failed while processing "
+                        "worker stream chunk",
+                        exc_info=True,
+                    )
 
             # Process the task
             task_state = await self._process_task(
