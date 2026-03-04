@@ -144,7 +144,7 @@ class AWSBedrockConverseModel(BaseModelBackend):
             # Otherwise: boto3 default credential chain
             # (env vars, ~/.aws/credentials, instance profile, etc.)
 
-            import boto3  # type: ignore[import-untyped]
+            import boto3
 
             self._bedrock_client = boto3.client(
                 "bedrock-runtime",

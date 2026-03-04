@@ -795,13 +795,13 @@ class GeminiModel(OpenAICompatibleModel):
         request_config = self._prepare_request_config(tools)
 
         try:
-            response = self._client.chat.completions.create(
+            response = self._call_client(
+                self._client.chat.completions.create,
                 messages=messages,
                 model=self.model_type,
                 **request_config,
             )
         except Exception as err:
-            print(err)
             if not self._is_stale_cached_content_error(err):
                 raise
             stale_cache = self._cached_content
@@ -812,7 +812,8 @@ class GeminiModel(OpenAICompatibleModel):
             )
             self._cached_content = None
             request_config = self._prepare_request_config(tools)
-            response = self._client.chat.completions.create(
+            response = self._call_client(
+                self._client.chat.completions.create,
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -829,7 +830,8 @@ class GeminiModel(OpenAICompatibleModel):
         request_config = self._prepare_request_config(tools)
 
         try:
-            response = await self._async_client.chat.completions.create(
+            response = await self._acall_client(
+                self._async_client.chat.completions.create,
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -845,7 +847,8 @@ class GeminiModel(OpenAICompatibleModel):
             )
             self._cached_content = None
             request_config = self._prepare_request_config(tools)
-            response = await self._async_client.chat.completions.create(
+            response = await self._acall_client(
+                self._async_client.chat.completions.create,
                 messages=messages,
                 model=self.model_type,
                 **request_config,

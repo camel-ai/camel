@@ -14,8 +14,8 @@
 import abc
 import inspect
 import os
-import re
 from abc import ABC, abstractmethod
+from contextvars import ContextVar
 from typing import (
     Any,
     AsyncGenerator,
@@ -100,7 +100,7 @@ class _StreamLogger:
         from datetime import datetime
 
         try:
-            with open(self._log_path, "r+") as f:
+            with open(self._log_path, "r+", encoding="utf-8") as f:
                 data = json.load(f)
                 data["response_timestamp"] = datetime.now().isoformat()
                 data["response"] = {
@@ -112,7 +112,7 @@ class _StreamLogger:
                     "streaming": True,
                 }
                 f.seek(0)
-                json.dump(data, f, indent=4)
+                json.dump(data, f, indent=4, ensure_ascii=False, default=str)
                 f.truncate()
         except Exception:
             pass
@@ -193,15 +193,17 @@ class _AsyncStreamWrapper(_StreamLogger):
 
 
 class ModelBackendMeta(abc.ABCMeta):
-    r"""Metaclass that automatically preprocesses messages in run method.
+    r"""Metaclass that automatically pre/post-processes the run method.
 
-    Automatically wraps the run method of any class inheriting from
-    BaseModelBackend to preprocess messages (remove <think> tags) before they
-    are sent to the model.
+    Automatically wraps the run and arun methods of any class inheriting from
+    BaseModelBackend to:
+    - Preprocess messages (remove <think> tags) before sending to the model.
+    - Postprocess responses (extract <think> tags into reasoning_content)
+      after receiving from the model.
     """
 
     def __new__(mcs, name, bases, namespace):
-        r"""Wraps run method with preprocessing if it exists in the class."""
+        r"""Wraps run/arun methods with pre/post-processing."""
         if 'run' in namespace:
             original_run = namespace['run']
 
@@ -209,9 +211,25 @@ class ModelBackendMeta(abc.ABCMeta):
                 self, messages: List[OpenAIMessage], *args, **kwargs
             ):
                 messages = self.preprocess_messages(messages)
-                return original_run(self, messages, *args, **kwargs)
+                result = original_run(self, messages, *args, **kwargs)
+                result = self.postprocess_response(result)
+                return result
 
             namespace['run'] = wrapped_run
+
+        if 'arun' in namespace:
+            original_arun = namespace['arun']
+
+            async def wrapped_arun(
+                self, messages: List[OpenAIMessage], *args, **kwargs
+            ):
+                messages = self.preprocess_messages(messages)
+                result = await original_arun(self, messages, *args, **kwargs)
+                result = self.postprocess_response(result)
+                return result
+
+            namespace['arun'] = wrapped_arun
+
         return super().__new__(mcs, name, bases, namespace)
 
 
@@ -235,6 +253,13 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             API calls. (default: :obj:`None`)
         max_retries (int, optional): Maximum number of retries
             for API calls. (default: :obj:`3`)
+        extract_thinking_from_response (bool, optional): Whether to
+            extract ``<think>`` tags from model response content into
+            the ``reasoning_content`` field. When enabled, if a model
+            embeds reasoning in ``<think>`` tags within the response
+            content (and ``reasoning_content`` is not already set),
+            the tags will be extracted into ``reasoning_content`` and
+            removed from ``content``. (default: :obj:`True`)
     """
 
     def __init__(
@@ -246,6 +271,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         max_retries: int = 3,
+        extract_thinking_from_response: bool = True,
     ) -> None:
         self.model_type: UnifiedModelType = UnifiedModelType(model_type)
         if model_config_dict is None:
@@ -256,12 +282,29 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         self._token_counter = token_counter
         self._timeout = timeout
         self._max_retries = max_retries
+        self._extract_thinking_from_response = extract_thinking_from_response
         # Initialize logging configuration
-        self._log_enabled = (
-            os.environ.get("CAMEL_MODEL_LOG_ENABLED", "False").lower()
-            == "true"
-        )
+        self._log_enabled = os.environ.get(
+            "CAMEL_MODEL_LOG_ENABLED", "False"
+        ).strip().lower() in {"1", "true", "yes", "on"}
+        default_model_config_log = "True" if self._log_enabled else "False"
+        self._log_model_config_dict_enabled = os.environ.get(
+            "CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED",
+            default_model_config_log,
+        ).strip().lower() in {"1", "true", "yes", "on"}
         self._log_dir = os.environ.get("CAMEL_LOG_DIR", "camel_logs")
+        self._log_path_context: ContextVar[Optional[str]] = ContextVar(
+            f"camel_model_log_path_{id(self)}",
+            default=None,
+        )
+        self._log_client_call_seen_context: ContextVar[bool] = ContextVar(
+            f"camel_model_log_client_call_seen_{id(self)}",
+            default=False,
+        )
+        self._log_request_synced_context: ContextVar[bool] = ContextVar(
+            f"camel_model_log_request_synced_{id(self)}",
+            default=False,
+        )
 
     @property
     @abstractmethod
@@ -304,6 +347,133 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
         return request_config
 
+    def _resolve_tools(
+        self,
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> Optional[List[Dict[str, Any]]]:
+        r"""Resolve tools for the current request."""
+        if tools is None:
+            default_tools = self.model_config_dict.get("tools", None)
+            return default_tools if isinstance(default_tools, list) else None
+        if not tools:
+            return None
+        return tools
+
+    def _normalize_client_call_kwargs(
+        self,
+        call: Any,
+        args: Any,
+        kwargs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        r"""Normalize client call arguments into a keyword dictionary."""
+        raw_payload = dict(kwargs)
+        if args:
+            raw_payload["__camel_client_args__"] = list(args)
+
+        if not args:
+            return kwargs
+        try:
+            signature = inspect.signature(call)
+            bound = signature.bind_partial(*args, **kwargs)
+            normalized_kwargs = dict(bound.arguments)
+            normalized_kwargs.pop("self", None)
+            return normalized_kwargs
+        except Exception:
+            return raw_payload
+
+    def _mark_request_log_client_call_seen(self) -> None:
+        r"""Mark that a model client call happened during this run."""
+        if not self._log_enabled:
+            return
+        if self._log_path_context.get() is None:
+            return
+        self._log_client_call_seen_context.set(True)
+
+    def _call_client(self, call: Any, *args: Any, **kwargs: Any) -> Any:
+        r"""Invoke a sync client call and sync request logs with payload."""
+        self._mark_request_log_client_call_seen()
+        normalized_kwargs = self._normalize_client_call_kwargs(
+            call, args, kwargs
+        )
+        if self._should_sync_request_log(normalized_kwargs):
+            self._sync_request_log_with_client_kwargs(normalized_kwargs)
+        return call(*args, **kwargs)
+
+    async def _acall_client(self, call: Any, *args: Any, **kwargs: Any) -> Any:
+        r"""Invoke an async client call and sync request logs with payload."""
+        self._mark_request_log_client_call_seen()
+        normalized_kwargs = self._normalize_client_call_kwargs(
+            call, args, kwargs
+        )
+        if self._should_sync_request_log(normalized_kwargs):
+            self._sync_request_log_with_client_kwargs(normalized_kwargs)
+        return await call(*args, **kwargs)
+
+    def _should_sync_request_log(self, kwargs: Dict[str, Any]) -> bool:
+        r"""Check whether a client call should sync request logs."""
+        return bool(kwargs)
+
+    def _extract_model_config_from_client_kwargs(
+        self, kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        r"""Extract model config payload from client call kwargs."""
+        import copy
+
+        model_config_dict: Dict[str, Any] = {}
+        for key, value in kwargs.items():
+            if key in {"messages", "model"}:
+                continue
+            try:
+                model_config_dict[key] = copy.deepcopy(value)
+            except Exception:
+                model_config_dict[key] = value
+        return model_config_dict
+
+    def _sync_request_log_with_client_kwargs(
+        self, kwargs: Dict[str, Any]
+    ) -> None:
+        r"""Sync request log with final payload passed to the model client."""
+        if not self._log_enabled:
+            return
+
+        log_path = self._log_path_context.get()
+        if not log_path:
+            return
+
+        import copy
+        import json
+
+        try:
+            with open(log_path, "r+", encoding="utf-8") as f:
+                log_data = json.load(f)
+                request_entry: Dict[str, Any] = log_data.get("request", {})
+                messages = kwargs.get("messages")
+                if isinstance(messages, list):
+                    try:
+                        logged_messages = copy.deepcopy(messages)
+                    except Exception:
+                        logged_messages = messages
+                    request_entry["messages"] = logged_messages
+                if self._log_model_config_dict_enabled:
+                    request_entry["model_config_dict"] = (
+                        self._extract_model_config_from_client_kwargs(kwargs)
+                    )
+                log_data["request"] = request_entry
+                f.seek(0)
+                json.dump(
+                    log_data,
+                    f,
+                    indent=4,
+                    ensure_ascii=False,
+                    default=str,
+                )
+                f.truncate()
+            self._log_request_synced_context.set(True)
+        except Exception as exc:
+            logger.warning(
+                "Failed to sync request log with client payload: %s", exc
+            )
+
     def preprocess_messages(
         self, messages: List[OpenAIMessage]
     ) -> List[OpenAIMessage]:
@@ -324,15 +494,18 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         tool_responses_buffer: Dict[str, OpenAIMessage] = {}
         has_tool_calls = False
 
+        from camel.models._utils import extract_thinking_from_content
+
         for msg in messages:
             # Remove thinking content if needed
             role = msg.get('role')
             content = msg.get('content')
-            if role in ['assistant', 'user'] and isinstance(content, str):
-                if '<think>' in content and '</think>' in content:
-                    content = re.sub(
-                        r'<think>.*?</think>', '', content, flags=re.DOTALL
-                    ).strip()
+            if (
+                self._extract_thinking_from_response
+                and role in ['assistant', 'user']
+                and isinstance(content, str)
+            ):
+                content, _ = extract_thinking_from_content(content)
                 processed_msg = dict(msg)
                 processed_msg['content'] = content
             else:
@@ -429,11 +602,70 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
         return formatted_messages
 
-    def _log_request(self, messages: List[OpenAIMessage]) -> Optional[str]:
+    def postprocess_response(self, response: Any) -> Any:
+        r"""Postprocess model response to extract ``<think>`` tags.
+
+        For non-streaming responses, if the model embeds reasoning in
+        ``<think>`` tags within the response content (and
+        ``reasoning_content`` is not already set), extracts the content
+        of the tags into ``reasoning_content`` and removes them from
+        ``content``.
+
+        Streaming responses and other non-ChatCompletion types are
+        returned as-is.
+
+        Args:
+            response: The model response. May be a
+                :obj:`ChatCompletion`, a streaming object, or other
+                types.
+
+        Returns:
+            The response, potentially with ``reasoning_content``
+            populated and ``content`` cleaned.
+        """
+        # Skip streaming responses — they are handled downstream
+        if (
+            isinstance(response, (Stream, AsyncStream))
+            or inspect.isgenerator(response)
+            or inspect.isasyncgen(response)
+        ):
+            return response
+
+        if not self._extract_thinking_from_response:
+            return response
+
+        if not hasattr(response, 'choices') or not response.choices:
+            return response
+
+        from camel.models._utils import extract_thinking_from_content
+
+        for choice in response.choices:
+            message = getattr(choice, 'message', None)
+            if message is None:
+                continue
+            content = getattr(message, 'content', None)
+            if not isinstance(content, str):
+                continue
+            existing = getattr(message, 'reasoning_content', None)
+            message.content, reasoning = extract_thinking_from_content(
+                content, existing
+            )
+            if reasoning is not None:
+                message.reasoning_content = reasoning
+
+        return response
+
+    def _log_request(
+        self,
+        messages: List[OpenAIMessage],
+        model_config_dict: Optional[Dict[str, Any]] = None,
+    ) -> Optional[str]:
         r"""Log the request messages to a JSON file if logging is enabled.
 
         Args:
             messages (List[OpenAIMessage]): The messages to log.
+            model_config_dict (Optional[Dict[str, Any]]): The effective
+                model configuration used for this request.
 
         Returns:
             Optional[str]: The path to the log file if logging is enabled,
@@ -464,15 +696,22 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
         log_file_path = os.path.join(log_subdir, f"conv_{timestamp}.json")
 
-        log_entry = {
+        request_entry: Dict[str, Any] = {"messages": messages}
+        if (
+            self._log_model_config_dict_enabled
+            and model_config_dict is not None
+        ):
+            request_entry["model_config_dict"] = model_config_dict
+
+        log_entry: Dict[str, Any] = {
             "request_timestamp": datetime.now().isoformat(),
             "model": str(self.model_type),
             "agent_id": agent_id,
-            "request": {"messages": messages},
+            "request": request_entry,
         }
 
-        with open(log_file_path, "w") as f:
-            json.dump(log_entry, f, indent=4)
+        with open(log_file_path, "w", encoding="utf-8") as f:
+            json.dump(log_entry, f, indent=4, ensure_ascii=False, default=str)
 
         return log_file_path
 
@@ -489,7 +728,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         import json
         from datetime import datetime
 
-        with open(log_path, "r+") as f:
+        with open(log_path, "r+", encoding="utf-8") as f:
             log_data = json.load(f)
 
             log_data["response_timestamp"] = datetime.now().isoformat()
@@ -503,7 +742,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                     log_data["response"] = str(response)
 
             f.seek(0)
-            json.dump(log_data, f, indent=4)
+            json.dump(log_data, f, indent=4, ensure_ascii=False, default=str)
             f.truncate()
 
     def _log_and_trace(self) -> None:
@@ -615,31 +854,49 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 `ChatCompletionStreamManager[BaseModel]` in the structured
                 stream mode.
         """
+        tools = self._resolve_tools(tools)
         # Log the request if logging is enabled
         log_path = self._log_request(messages)
-
-        # None -> use default tools
-        if tools is None:
-            tools = self.model_config_dict.get("tools", None)
-        # Empty -> use no tools
-        elif not tools:
-            tools = None
 
         logger.info("Running model: %s", self.model_type)
         logger.info("Messages: %s", messages)
         logger.info("Response format: %s", response_format)
         logger.info("Tools: %s", tools)
 
-        result = self._run(messages, response_format, tools)
+        final_log_path = log_path
+        log_path_token = self._log_path_context.set(log_path)
+        log_client_call_seen_token = self._log_client_call_seen_context.set(
+            False
+        )
+        log_request_synced_token = self._log_request_synced_context.set(False)
+        try:
+            result = self._run(messages, response_format, tools)
+            final_log_path = self._log_path_context.get() or final_log_path
+        finally:
+            if (
+                self._log_enabled
+                and self._log_model_config_dict_enabled
+                and self._log_client_call_seen_context.get()
+                and not self._log_request_synced_context.get()
+            ):
+                logger.warning(
+                    "Model client call detected, but request payload was not "
+                    "captured in logs."
+                )
+            self._log_path_context.reset(log_path_token)
+            self._log_client_call_seen_context.reset(
+                log_client_call_seen_token
+            )
+            self._log_request_synced_context.reset(log_request_synced_token)
         logger.info("Result: %s", result)
 
         # For streaming responses, wrap with logging; otherwise log immediately
         if isinstance(result, Stream) or inspect.isgenerator(result):
             return _SyncStreamWrapper(  # type: ignore[return-value]
-                result, log_path, self._log_enabled
+                result, final_log_path, self._log_enabled
             )
-        if log_path:
-            self._log_response(log_path, result)
+        if final_log_path:
+            self._log_response(final_log_path, result)
         return result
 
     @observe()
@@ -672,29 +929,49 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 `AsyncChatCompletionStreamManager[BaseModel]` in the structured
                 stream mode.
         """
+        tools = self._resolve_tools(tools)
         # Log the request if logging is enabled
         log_path = self._log_request(messages)
-
-        if tools is None:
-            tools = self.model_config_dict.get("tools", None)
-        elif not tools:
-            tools = None
 
         logger.info("Running model: %s", self.model_type)
         logger.info("Messages: %s", messages)
         logger.info("Response format: %s", response_format)
         logger.info("Tools: %s", tools)
 
-        result = await self._arun(messages, response_format, tools)
+        final_log_path = log_path
+        log_path_token = self._log_path_context.set(log_path)
+        log_client_call_seen_token = self._log_client_call_seen_context.set(
+            False
+        )
+        log_request_synced_token = self._log_request_synced_context.set(False)
+        try:
+            result = await self._arun(messages, response_format, tools)
+            final_log_path = self._log_path_context.get() or final_log_path
+        finally:
+            if (
+                self._log_enabled
+                and self._log_model_config_dict_enabled
+                and self._log_client_call_seen_context.get()
+                and not self._log_request_synced_context.get()
+            ):
+                logger.warning(
+                    "Model client call detected, but request payload was not "
+                    "captured in logs."
+                )
+            self._log_path_context.reset(log_path_token)
+            self._log_client_call_seen_context.reset(
+                log_client_call_seen_token
+            )
+            self._log_request_synced_context.reset(log_request_synced_token)
         logger.info("Result: %s", result)
 
         # For streaming responses, wrap with logging; otherwise log immediately
         if isinstance(result, AsyncStream) or inspect.isasyncgen(result):
             return _AsyncStreamWrapper(  # type: ignore[return-value]
-                result, log_path, self._log_enabled
+                result, final_log_path, self._log_enabled
             )
-        if log_path:
-            self._log_response(log_path, result)
+        if final_log_path:
+            self._log_response(final_log_path, result)
         return result
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
