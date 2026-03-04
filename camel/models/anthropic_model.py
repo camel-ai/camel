@@ -720,7 +720,7 @@ class AnthropicModel(BaseModelBackend):
         request_params: Dict[str, Any] = {
             "model": str(self.model_type),
             "messages": anthropic_messages,
-            "max_tokens": self.model_config_dict.get("max_tokens", 4096),
+            "max_tokens": self.model_config_dict.get("max_tokens", None),
         }
 
         if system_message:
@@ -849,7 +849,7 @@ class AnthropicModel(BaseModelBackend):
         request_params: Dict[str, Any] = {
             "model": str(self.model_type),
             "messages": anthropic_messages,
-            "max_tokens": self.model_config_dict.get("max_tokens", 4096),
+            "max_tokens": self.model_config_dict.get("max_tokens", None),
         }
 
         if system_message:
