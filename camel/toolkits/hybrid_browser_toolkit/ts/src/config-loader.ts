@@ -115,19 +115,23 @@ function getEnhancedStealthConfig(): StealthConfig {
   // Platform-aware Chrome UA (no "HeadlessChrome")
   const platform = process.platform;
   let uaPlatform: string;
+  let clientHintPlatform: string;
   let webglVendor: string;
   let webglRenderer: string;
   if (platform === 'win32') {
     uaPlatform = 'Windows NT 10.0; Win64; x64';
+    clientHintPlatform = 'Windows';
     webglVendor = 'Google Inc. (NVIDIA)';
     webglRenderer = 'ANGLE (NVIDIA, NVIDIA GeForce GTX 1650, OpenGL 4.5)';
   } else if (platform === 'linux') {
     uaPlatform = 'X11; Linux x86_64';
+    clientHintPlatform = 'Linux';
     webglVendor = 'Google Inc. (Mesa)';
     webglRenderer = 'ANGLE (Mesa, llvmpipe, OpenGL 4.5)';
   } else {
     // macOS / darwin
     uaPlatform = 'Macintosh; Intel Mac OS X 10_15_7';
+    clientHintPlatform = 'macOS';
     webglVendor = 'Google Inc. (Apple)';
     webglRenderer = 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)';
   }
@@ -277,8 +281,8 @@ function getEnhancedStealthConfig(): StealthConfig {
     if (typeof WebGL2RenderingContext !== 'undefined') {
       const getParameterProto2 = WebGL2RenderingContext.prototype.getParameter;
       WebGL2RenderingContext.prototype.getParameter = function(parameter) {
-        if (parameter === 0x9245) return 'Google Inc. (Apple)';
-        if (parameter === 0x9246) return 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)';
+        if (parameter === 0x9245) return '${webglVendor}';
+        if (parameter === 0x9246) return '${webglRenderer}';
         return getParameterProto2.call(this, parameter);
       };
     }
@@ -328,7 +332,7 @@ function getEnhancedStealthConfig(): StealthConfig {
       'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
       'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
       'sec-ch-ua-mobile': '?0',
-      'sec-ch-ua-platform': '"macOS"',
+      'sec-ch-ua-platform': `"${clientHintPlatform}"`,
     },
     initScripts: [stealthInitScript]
   };
