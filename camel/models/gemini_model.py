@@ -332,9 +332,10 @@ class GeminiModel(OpenAICompatibleModel):
         request_config.pop("cache_control", None)
         request_config.pop("cached_content", None)
 
-        # OpenAI Python client's `extra_body` is merged into the request root.
-        # Gemini expects extensions under the request's `extra_body` field, so
-        # we wrap once more: extra_body={"extra_body": {...}}.
+        # `**request_config` unpacking makes the SDK flatten `extra_body`
+        # keys into the request JSON root.  Gemini needs a literal
+        # `extra_body` field, so we double-wrap:
+        #   extra_body={"extra_body": {...}}
         raw_extra_body = request_config.get("extra_body")
         if isinstance(raw_extra_body, dict) and isinstance(
             raw_extra_body.get("extra_body"), dict
@@ -372,6 +373,18 @@ class GeminiModel(OpenAICompatibleModel):
             return False
 
         return "CachedContent not found" in str(err)
+
+    def _handle_stale_cache_error(self, err: Exception) -> None:
+        r"""If *err* is a stale-cached-content error, log a warning and clear
+        the cache so the caller can retry.  Otherwise re-raise *err*."""
+        if not self._is_stale_cached_content_error(err):
+            raise
+        logger.warning(
+            "Gemini cached_content %s is unavailable; "
+            "retrying without cache.",
+            self._cached_content,
+        )
+        self._cached_content = None
 
     def _process_messages(self, messages) -> List[OpenAIMessage]:
         r"""Process the messages for Gemini API to ensure no empty content,
@@ -806,15 +819,7 @@ class GeminiModel(OpenAICompatibleModel):
                 **request_config,
             )
         except Exception as err:
-            if not self._is_stale_cached_content_error(err):
-                raise
-            stale_cache = self._cached_content
-            logger.warning(
-                "Gemini cached_content %s is unavailable; "
-                "retrying without cache.",
-                stale_cache,
-            )
-            self._cached_content = None
+            self._handle_stale_cache_error(err)
             request_config = self._prepare_request_config(tools)
             response = self._call_client(
                 self._client.chat.completions.create,
@@ -841,15 +846,7 @@ class GeminiModel(OpenAICompatibleModel):
                 **request_config,
             )
         except Exception as err:
-            if not self._is_stale_cached_content_error(err):
-                raise
-            stale_cache = self._cached_content
-            logger.warning(
-                "Gemini cached_content %s is unavailable; "
-                "retrying without cache.",
-                stale_cache,
-            )
-            self._cached_content = None
+            self._handle_stale_cache_error(err)
             request_config = self._prepare_request_config(tools)
             response = await self._acall_client(
                 self._async_client.chat.completions.create,
@@ -870,15 +867,7 @@ class GeminiModel(OpenAICompatibleModel):
         try:
             return super()._request_parse(messages, response_format, tools)
         except Exception as err:
-            if not self._is_stale_cached_content_error(err):
-                raise
-            stale_cache = self._cached_content
-            logger.warning(
-                "Gemini cached_content %s is unavailable during parse; "
-                "retrying without cache.",
-                stale_cache,
-            )
-            self._cached_content = None
+            self._handle_stale_cache_error(err)
             return super()._request_parse(messages, response_format, tools)
 
     async def _arequest_parse(
@@ -892,15 +881,7 @@ class GeminiModel(OpenAICompatibleModel):
                 messages, response_format, tools
             )
         except Exception as err:
-            if not self._is_stale_cached_content_error(err):
-                raise
-            stale_cache = self._cached_content
-            logger.warning(
-                "Gemini cached_content %s is unavailable during parse; "
-                "retrying without cache.",
-                stale_cache,
-            )
-            self._cached_content = None
+            self._handle_stale_cache_error(err)
             return await super()._arequest_parse(
                 messages, response_format, tools
             )

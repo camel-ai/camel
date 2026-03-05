@@ -163,7 +163,10 @@ class AWSBedrockConverseModel(BaseModelBackend):
                 client_kwargs["region_name"] = self._region_name
 
             if self._api_key:
-                # Bearer Token authentication
+                # Bearer Token authentication via env var.
+                # boto3 does not support passing bearer tokens as a
+                # session/client parameter yet; env var is the only way.
+                # See: https://github.com/boto/boto3/issues/4723
                 os.environ["AWS_BEARER_TOKEN_BEDROCK"] = self._api_key
             elif self._aws_access_key_id and self._aws_secret_access_key:
                 # Explicit IAM credentials
