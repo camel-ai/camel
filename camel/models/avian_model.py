@@ -11,33 +11,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-
 import os
-import warnings
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import BedrockConfig
+from camel.configs import AvianConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
-from camel.types import (
-    ModelType,
+from camel.types import ModelType
+from camel.utils import (
+    BaseTokenCounter,
+    api_keys_required,
 )
-from camel.utils import BaseTokenCounter, api_keys_required
 
 
-class AWSBedrockModel(OpenAICompatibleModel):
-    r"""AWS Bedrock API in a unified OpenAICompatibleModel interface.
+class AvianModel(OpenAICompatibleModel):
+    r"""LLM API served by Avian in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
-            created.
-        model_config_dict (Dict[str, Any], optional): A dictionary
+            created, such as :obj:`ModelType.AVIAN_DEEPSEEK_V3_2` or a string
+            like :obj:`"deepseek/deepseek-v3.2"`.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`.
-            If:obj:`None`, :obj:`BedrockConfig().as_dict()` will be used.
+            If:obj:`None`, :obj:`AvianConfig().as_dict()` will be used.
             (default: :obj:`None`)
-        api_key (str, optional): The API key for authenticating with
-            the AWS Bedrock service. (default: :obj:`None`)
-        url (str, optional): The url to the AWS Bedrock service.
-        token_counter (BaseTokenCounter, optional): Token counter to
+        api_key (Optional[str], optional): The API key for authenticating
+            with the Avian service. (default: :obj:`None`).
+        url (Optional[str], optional): The url to the Avian service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
@@ -51,15 +52,10 @@ class AWSBedrockModel(OpenAICompatibleModel):
             initialization.
 
     References:
-        https://docs.aws.amazon.com/bedrock/latest/APIReference/welcome.html
+        https://avian.io/docs
     """
 
-    @api_keys_required(
-        [
-            ("url", "BEDROCK_API_BASE_URL"),
-            ("api_key", "BEDROCK_API_KEY"),
-        ]
-    )
+    @api_keys_required([("api_key", "AVIAN_API_KEY")])
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -72,20 +68,10 @@ class AWSBedrockModel(OpenAICompatibleModel):
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
-            model_config_dict = BedrockConfig().as_dict()
-        # Prompt-caching controls are for AWSBedrockConverseModel. Remove them
-        # to avoid passing unknown keys to the OpenAI-compatible endpoint.
-        cache_control = model_config_dict.pop("cache_control", None)
-        if cache_control is not None:
-            warnings.warn(
-                "Ignoring `cache_control` on AWSBedrockModel. "
-                "Use AWSBedrockConverseModel for Bedrock prompt caching.",
-                UserWarning,
-                stacklevel=2,
-            )
-        api_key = api_key or os.environ.get("BEDROCK_API_KEY")
+            model_config_dict = AvianConfig().as_dict()
+        api_key = api_key or os.environ.get("AVIAN_API_KEY")
         url = url or os.environ.get(
-            "BEDROCK_API_BASE_URL",
+            "AVIAN_API_BASE_URL", "https://api.avian.io/v1"
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(

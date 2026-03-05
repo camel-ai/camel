@@ -11,19 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-
 from __future__ import annotations
 
-from typing import Dict, Optional, Sequence, Type, Union
-
-from pydantic import BaseModel
+from typing import Dict, Optional, Sequence, Union
 
 from camel.configs.base_config import BaseConfig
 
 
-class GeminiConfig(BaseConfig):
+class AvianConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
-    Gemini API.
+    Avian API.
+
+    Reference: https://avian.io/docs
 
     Args:
         temperature (float, optional): Sampling temperature to use, between
@@ -35,21 +34,10 @@ class GeminiConfig(BaseConfig):
             the tokens with top_p probability mass. So :obj:`0.1` means only
             the tokens comprising the top 10% probability mass are considered.
             (default: :obj:`None`)
-        n (int, optional): How many chat completion choices to generate for
-            each input message. (default: :obj:`None`)
         response_format (object, optional): An object specifying the format
-            that the model must output. Compatible with GPT-4 Turbo and all
-            GPT-3.5 Turbo models newer than gpt-3.5-turbo-1106. Setting to
-            {"type": "json_object"} enables JSON mode, which guarantees the
-            message the model generates is valid JSON. Important: when using
-            JSON mode, you must also instruct the model to produce JSON
-            yourself via a system or user message. Without this, the model
-            may generate an unending stream of whitespace until the generation
-            reaches the token limit, resulting in a long-running and seemingly
-            "stuck" request. Also note that the message content may be
-            partially cut off if finish_reason="length", which indicates the
-            generation exceeded max_tokens or the conversation exceeded the
-            max context length.
+            that the model must output. Setting to {"type": "json_object"}
+            enables JSON mode, which guarantees the message the model
+            generates is valid JSON. (default: :obj:`None`)
         stream (bool, optional): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
             (default: :obj:`None`)
@@ -59,43 +47,27 @@ class GeminiConfig(BaseConfig):
             in the chat completion. The total length of input tokens and
             generated tokens is limited by the model's context length.
             (default: :obj:`None`)
-        tools (list[FunctionTool], optional): A list of tools the model may
-            call. Currently, only functions are supported as a tool. Use this
-            to provide a list of functions the model may generate JSON inputs
-            for. A max of 128 functions are supported.
         tool_choice (Union[dict[str, str], str], optional): Controls which (if
             any) tool is called by the model. :obj:`"none"` means the model
             will not call any tool and instead generates a message.
             :obj:`"auto"` means the model can pick between generating a
-            message or calling one or more tools.  :obj:`"required"` means the
+            message or calling one or more tools. :obj:`"required"` means the
             model must call one or more tools. Specifying a particular tool
             via {"type": "function", "function": {"name": "my_function"}}
             forces the model to call that tool. :obj:`"none"` is the default
             when no tools are present. :obj:`"auto"` is the default if tools
             are present.
-        cache_control (str, optional): Reserved cache TTL field for API
-            compatibility. Gemini explicit caches are created via
-            :obj:`GeminiModel.create_cache()`, and this field is not applied
-            automatically to requests. Format: "300s", "3600s", etc.
-            (default: :obj:`None`)
-        cached_content (str, optional): Reference to an existing cache to use.
-            Format: "cachedContents/{cache_id}". When set, the model will use
-            the cached content instead of re-processing the same context.
-            (default: :obj:`None`)
     """
 
-    temperature: Optional[float] = None  # openai default: 1.0
+    temperature: Optional[float] = None
     top_p: Optional[float] = None
-    n: Optional[int] = None
     stream: Optional[bool] = None
     stop: Optional[Union[str, Sequence[str]]] = None
     max_tokens: Optional[int] = None
-    response_format: Optional[Union[Type[BaseModel], dict]] = None
+    response_format: Optional[Dict] = None
     tool_choice: Optional[
         Union[Dict[str, Union[str, Dict[str, str]]], str]
     ] = None
-    cache_control: Optional[str] = None
-    cached_content: Optional[str] = None
 
 
-Gemini_API_PARAMS = {param for param in GeminiConfig.model_fields.keys()}
+AVIAN_API_PARAMS = {param for param in AvianConfig.model_fields.keys()}
