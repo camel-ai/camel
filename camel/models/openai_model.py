@@ -39,11 +39,6 @@ from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.models.openai_responses_adapter import (
-    aiter_response_events_to_chat_chunks,
-    iter_response_events_to_chat_chunks,
-    response_to_chat_completion,
-)
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -484,13 +479,15 @@ class OpenAIModel(BaseModelBackend):
         request_config.pop("stream_options", None)
         request_config["stream"] = stream
         # previous_response_id chaining requires stored responses.
-        if request_config.get("store") is False:
+        # Only force store=True when not explicitly set by the user.
+        if "store" not in request_config:
+            request_config["store"] = True
+        elif request_config.get("store") is False:
             warnings.warn(
-                "Overriding `store=False` to `store=True` because "
-                "`previous_response_id` chaining is enabled.",
+                "Setting `store=False` will disable "
+                "`previous_response_id` chaining.",
                 UserWarning,
             )
-        request_config["store"] = True
 
         if request_config.get("tools"):
             request_config["tools"] = self._normalize_tools_for_responses_api(
@@ -554,25 +551,41 @@ class OpenAIModel(BaseModelBackend):
     def _get_response_chain_session_key(self) -> str:
         return get_current_agent_session_id() or "__default__"
 
+    def _clear_response_chain_state(self, session_key: str) -> None:
+        self._responses_previous_response_id_by_session.pop(session_key, None)
+        self._responses_last_message_count_by_session.pop(session_key, None)
+
+    @staticmethod
+    def _responses_chain_enabled(request_config: Dict[str, Any]) -> bool:
+        return request_config.get("store") is not False
+
     def _prepare_responses_input_and_chain(
         self,
         messages: List[OpenAIMessage],
+        chain_enabled: bool = True,
     ) -> Dict[str, Any]:
         session_key = self._get_response_chain_session_key()
-        previous_response_id = (
-            self._responses_previous_response_id_by_session.get(session_key)
-        )
-        last_message_count = self._responses_last_message_count_by_session.get(
-            session_key, 0
-        )
+        if chain_enabled:
+            previous_response_id = (
+                self._responses_previous_response_id_by_session.get(
+                    session_key
+                )
+            )
+            last_message_count = (
+                self._responses_last_message_count_by_session.get(
+                    session_key, 0
+                )
+            )
+        else:
+            self._clear_response_chain_state(session_key)
+            previous_response_id = None
+            last_message_count = 0
 
         # If memory was reset/truncated, reset chain and send full context.
         if len(messages) < last_message_count:
             previous_response_id = None
             last_message_count = 0
-            self._responses_previous_response_id_by_session.pop(
-                session_key, None
-            )
+            self._clear_response_chain_state(session_key)
 
         if previous_response_id and last_message_count > 0:
             delta_messages = messages[last_message_count:]
@@ -685,11 +698,18 @@ class OpenAIModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        chain_state = self._prepare_responses_input_and_chain(messages)
+        from camel.models.openai_responses_adapter import (
+            response_to_chat_completion,
+        )
+
         request_config = self._prepare_responses_request_config(
             tools=tools, response_format=response_format, stream=False
         )
-        if chain_state["previous_response_id"]:
+        chain_enabled = self._responses_chain_enabled(request_config)
+        chain_state = self._prepare_responses_input_and_chain(
+            messages, chain_enabled=chain_enabled
+        )
+        if chain_enabled and chain_state["previous_response_id"]:
             request_config["previous_response_id"] = chain_state[
                 "previous_response_id"
             ]
@@ -698,13 +718,14 @@ class OpenAIModel(BaseModelBackend):
             model=self.model_type,
             **request_config,
         )
-        self._save_response_chain_state(
-            session_key=chain_state["session_key"],
-            response_id=getattr(response, "id", None)
-            if not isinstance(response, dict)
-            else response.get("id"),
-            message_count=chain_state["message_count"],
-        )
+        if chain_enabled:
+            self._save_response_chain_state(
+                session_key=chain_state["session_key"],
+                response_id=getattr(response, "id", None)
+                if not isinstance(response, dict)
+                else response.get("id"),
+                message_count=chain_state["message_count"],
+            )
         return response_to_chat_completion(
             response=response,
             model=str(self.model_type),
@@ -717,11 +738,18 @@ class OpenAIModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        chain_state = self._prepare_responses_input_and_chain(messages)
+        from camel.models.openai_responses_adapter import (
+            response_to_chat_completion,
+        )
+
         request_config = self._prepare_responses_request_config(
             tools=tools, response_format=response_format, stream=False
         )
-        if chain_state["previous_response_id"]:
+        chain_enabled = self._responses_chain_enabled(request_config)
+        chain_state = self._prepare_responses_input_and_chain(
+            messages, chain_enabled=chain_enabled
+        )
+        if chain_enabled and chain_state["previous_response_id"]:
             request_config["previous_response_id"] = chain_state[
                 "previous_response_id"
             ]
@@ -730,13 +758,14 @@ class OpenAIModel(BaseModelBackend):
             model=self.model_type,
             **request_config,
         )
-        self._save_response_chain_state(
-            session_key=chain_state["session_key"],
-            response_id=getattr(response, "id", None)
-            if not isinstance(response, dict)
-            else response.get("id"),
-            message_count=chain_state["message_count"],
-        )
+        if chain_enabled:
+            self._save_response_chain_state(
+                session_key=chain_state["session_key"],
+                response_id=getattr(response, "id", None)
+                if not isinstance(response, dict)
+                else response.get("id"),
+                message_count=chain_state["message_count"],
+            )
         return response_to_chat_completion(
             response=response,
             model=str(self.model_type),
@@ -749,11 +778,18 @@ class OpenAIModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Generator[ChatCompletionChunk, None, None]:
-        chain_state = self._prepare_responses_input_and_chain(messages)
+        from camel.models.openai_responses_adapter import (
+            iter_response_events_to_chat_chunks,
+        )
+
         request_config = self._prepare_responses_request_config(
             tools=tools, response_format=response_format, stream=True
         )
-        if chain_state["previous_response_id"]:
+        chain_enabled = self._responses_chain_enabled(request_config)
+        chain_state = self._prepare_responses_input_and_chain(
+            messages, chain_enabled=chain_enabled
+        )
+        if chain_enabled and chain_state["previous_response_id"]:
             request_config["previous_response_id"] = chain_state[
                 "previous_response_id"
             ]
@@ -764,11 +800,12 @@ class OpenAIModel(BaseModelBackend):
         )
 
         def _on_response_completed(response_id: str) -> None:
-            self._save_response_chain_state(
-                session_key=chain_state["session_key"],
-                response_id=response_id,
-                message_count=chain_state["message_count"],
-            )
+            if chain_enabled:
+                self._save_response_chain_state(
+                    session_key=chain_state["session_key"],
+                    response_id=response_id,
+                    message_count=chain_state["message_count"],
+                )
 
         return iter_response_events_to_chat_chunks(
             event_stream=event_stream,
@@ -782,11 +819,18 @@ class OpenAIModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> AsyncGenerator[ChatCompletionChunk, None]:
-        chain_state = self._prepare_responses_input_and_chain(messages)
+        from camel.models.openai_responses_adapter import (
+            aiter_response_events_to_chat_chunks,
+        )
+
         request_config = self._prepare_responses_request_config(
             tools=tools, response_format=response_format, stream=True
         )
-        if chain_state["previous_response_id"]:
+        chain_enabled = self._responses_chain_enabled(request_config)
+        chain_state = self._prepare_responses_input_and_chain(
+            messages, chain_enabled=chain_enabled
+        )
+        if chain_enabled and chain_state["previous_response_id"]:
             request_config["previous_response_id"] = chain_state[
                 "previous_response_id"
             ]
@@ -797,11 +841,12 @@ class OpenAIModel(BaseModelBackend):
         )
 
         def _on_response_completed(response_id: str) -> None:
-            self._save_response_chain_state(
-                session_key=chain_state["session_key"],
-                response_id=response_id,
-                message_count=chain_state["message_count"],
-            )
+            if chain_enabled:
+                self._save_response_chain_state(
+                    session_key=chain_state["session_key"],
+                    response_id=response_id,
+                    message_count=chain_state["message_count"],
+                )
 
         return aiter_response_events_to_chat_chunks(
             event_stream=event_stream,
