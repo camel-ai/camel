@@ -129,9 +129,7 @@ class PrintCallback(WorkforceCallback):
             merged_text = "".join(chunks).strip()
             if merged_text:
                 content = _extract_structured_content(merged_text)
-                print(
-                    f"\n[StreamMerged][{event.worker_id}][{event.task_id}]"
-                )
+                print(f"\n[StreamMerged][{event.worker_id}][{event.task_id}]")
                 print(content)
 
     def log_task_failed(self, event: TaskFailedEvent) -> None:
