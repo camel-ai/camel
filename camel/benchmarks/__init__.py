@@ -19,7 +19,7 @@ from .browsecomp import BrowseCompBenchmark
 from .gaia import DefaultGAIARetriever, GAIABenchmark
 from .nexus import NexusBenchmark
 from .ragbench import RAGBenchBenchmark
-from .st_webagent_benchmark import STWebAgentBenchmark, STWebAgentBenchConfig
+from .st_webagent_benchmark import STWebAgentBenchConfig, STWebAgentBenchmark
 
 __all__ = [
     "BaseBenchmark",
@@ -33,4 +33,3 @@ __all__ = [
     "STWebAgentBenchmark",
     "STWebAgentBenchConfig",
 ]
-

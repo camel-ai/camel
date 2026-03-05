@@ -230,6 +230,13 @@ storage = [
     "chromadb>=0.6.0,<1.0.0",
     "duckdb>=1.4.3",
 ]
+st_webagentbench = [
+    "gymnasium>=1.0.0",
+    "browsergym>=0.13.0",
+    "playwright>=1.50.0",
+]
+# Note: stwebagentbench package (test.raw.json, policy_context) must be
+# installed from cloned repo: pip install -e external_deps/ST-WebAgentBench -e external_deps/ST-WebAgentBench/browsergym/stwebagentbench
 owl = [
     "numpy>=1.2,<=2.2",
     "chunkr-ai>=0.0.41",
@@ -709,9 +716,18 @@ module = [
     "markitdown",
     "httplib2",
     "serpapi.*",
+    "browsergym",
+    "browsergym.*",
+    "stwebagentbench",
+    "stwebagentbench.*",
+    "gymnasium",
 ]
 
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "camel.toolkits.hybrid_browser_toolkit_py.actions"
+disable_error_code = ["list-item"]
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file

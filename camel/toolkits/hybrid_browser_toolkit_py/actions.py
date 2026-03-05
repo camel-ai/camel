@@ -155,7 +155,9 @@ class ActionExecutor:
                 async with self.page.context.expect_page(
                     timeout=self.short_timeout
                 ) as new_page_info:
-                    await element.click(modifiers=["ControlOrMeta"])
+                    await element.click(
+                        modifiers=['Alt', 'Control', 'Meta', 'Shift']
+                    )
                 new_page = await new_page_info.value
                 await new_page.wait_for_load_state('domcontentloaded')
                 new_tab_index = await self.session.register_page(new_page)
@@ -175,7 +177,9 @@ class ActionExecutor:
                     "details": details,
                 }
             else:
-                await element.click(modifiers=["ControlOrMeta"])
+                await element.click(
+                    modifiers=['Alt', 'Control', 'Meta', 'Shift']
+                )
                 details["click_method"] = "ctrl_click_no_session"
                 return {
                     "message": f"Clicked element (ctrl click, no"
