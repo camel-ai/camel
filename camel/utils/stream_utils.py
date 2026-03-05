@@ -32,13 +32,15 @@ def _is_cumulative(contents: list[str]) -> bool:
 
     Streaming heuristic:
     - Gather non-empty ``chunk.msg.content`` pieces.
-    - If each later piece starts with the previous, treat as cumulative
-      (covers ``stream_accumulate=True``) and use the last piece.
+    - If each later piece strictly grows in length and starts with the
+      previous, treat as cumulative (covers ``stream_accumulate=True``) and
+      use the last piece.
     - Otherwise concatenate pieces in order (covers delta streaming).
     """
 
     return all(
-        contents[i + 1].startswith(contents[i])
+        len(contents[i + 1]) > len(contents[i])
+        and contents[i + 1].startswith(contents[i])
         for i in range(len(contents) - 1)
     )
 

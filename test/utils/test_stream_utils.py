@@ -110,6 +110,19 @@ def test_consume_response_content_delta_stream_concatenates():
     assert content == "Hello!"
 
 
+def test_consume_response_content_delta_stream_with_repeated_prefixes():
+    chunks = [
+        _make_chunk("Hello!"),
+        _make_chunk("Hello!"),
+        _make_chunk("Hello!"),
+    ]
+
+    final_response, content = consume_response_content(_sync_stream(chunks))
+
+    assert final_response.msg.content == "Hello!"
+    assert content == "Hello!Hello!Hello!"
+
+
 def test_consume_response_content_empty_stream_returns_placeholder():
     final_response, content = consume_response_content(_sync_stream([]))
 
