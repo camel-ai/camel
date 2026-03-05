@@ -59,7 +59,7 @@ def fetch_url(url: str) -> str:
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.AWS_BEDROCK_CONVERSE,
-    model_type="us.anthropic.claude-opus-4-1-20250805-v1:0",
+    model_type="us.anthropic.claude-sonnet-4-5-20250929-v1:0",
     model_config_dict=BedrockConfig(
         cache_control="5m",
     ).as_dict(),

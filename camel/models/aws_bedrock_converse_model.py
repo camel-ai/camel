@@ -56,7 +56,11 @@ else:
 
 
 class AWSBedrockConverseModel(BaseModelBackend):
-    r"""AWS Bedrock Converse API backend with prompt caching support."""
+    r"""AWS Bedrock Converse API backend with prompt caching support.
+
+    Reference:
+        https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html
+    """
 
     @api_keys_required(
         [
@@ -164,6 +168,10 @@ class AWSBedrockConverseModel(BaseModelBackend):
 
     @staticmethod
     def _new_cache_point(ttl: Optional[str] = None) -> Dict[str, Any]:
+        # The Bedrock default cache TTL is 5 minutes.  When a non-default
+        # TTL is requested (e.g. "1h") we must include it explicitly in
+        # the cache point; otherwise the "ttl" key is omitted and the
+        # service uses its 5-minute default.
         cp: Dict[str, Any] = {"type": "default"}
         if ttl and ttl != "5m":
             cp["ttl"] = ttl
@@ -206,7 +214,8 @@ class AWSBedrockConverseModel(BaseModelBackend):
 
     @staticmethod
     def _parse_data_image(url: str) -> Optional[Dict[str, Any]]:
-        # Bedrock image blocks support bytes; convert data URLs only.
+        # Bedrock Converse supports jpeg, png, gif, and webp image formats.
+        # Only base64-encoded data URLs are converted here.
         m = re.match(r"^data:image/([a-zA-Z0-9+.-]+);base64,(.+)$", url)
         if not m:
             return None
