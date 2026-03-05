@@ -313,6 +313,7 @@
               "reference/camel.models.anthropic_model",
               "reference/camel.models.atlascloud_model",
               "reference/camel.models.avian_model",
+              "reference/camel.models.aws_bedrock_converse_model",
               "reference/camel.models.aws_bedrock_model",
               "reference/camel.models.azure_openai_model",
               "reference/camel.models.base_audio_model",
