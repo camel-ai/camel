@@ -1,0 +1,71 @@
+# ST-WebAgentBench local Docker setup
+# GitLab, ShoppingAdmin, and SuiteCRM for benchmarking.
+# Requires substantial resources; adjust as needed.
+#
+# Usage: docker compose -f docker-compose.yml up -d
+# Then configure .env with localhost URLs.
+
+services:
+  # GitLab CE - WebArena uses a customized image; for dev, official works
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: st-webagentbench-gitlab
+    hostname: gitlab
+    ports:
+      - "8023:80"
+      - "8022:22"
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://localhost:8023'
+    volumes:
+      - gitlab_data:/var/opt/gitlab
+      - gitlab_logs:/var/log/gitlab
+      - gitlab_config:/etc/gitlab
+    restart: unless-stopped
+    # GitLab is memory-heavy; ensure Docker has enough (4GB+)
+    shm_size: '256m'
+
+  # ShoppingAdmin: WebArena uses a custom image. See README for:
+  #   docker load --input shopping_admin_final_0719.tar  (from WebArena)
+  #   Or: webarena-verified env start --site shopping_admin
+
+  # SuiteCRM
+  suitecrm:
+    image: bitnami/suitecrm:latest
+    container_name: st-webagentbench-suitecrm
+    ports:
+      - "8081:8080"
+      - "8443:8443"
+    environment:
+      - SUITECRM_USERNAME=admin
+      - SUITECRM_PASSWORD=bitnami
+      - SUITECRM_EMAIL=admin@example.com
+      - MARIADB_HOST=mariadb
+      - MARIADB_PORT_NUMBER=3306
+      - SUITECRM_DATABASE_NAME=bitnami_suitecrm
+      - SUITECRM_DATABASE_USER=bn_suitecrm
+      - SUITECRM_DATABASE_PASSWORD=bitnami
+    volumes:
+      - suitecrm_data:/bitnami/suitecrm
+    depends_on:
+      - mariadb
+    restart: unless-stopped
+
+  mariadb:
+    image: bitnami/mariadb:latest
+    container_name: st-webagentbench-mariadb
+    environment:
+      - MARIADB_DATABASE=bitnami_suitecrm
+      - MARIADB_USER=bn_suitecrm
+      - MARIADB_PASSWORD=bitnami
+      - MARIADB_ROOT_PASSWORD=rootpassword
+    volumes:
+      - mariadb_data:/bitnami/mariadb
+    restart: unless-stopped
+
+volumes:
+  gitlab_data:
+  gitlab_logs:
+  gitlab_config:
+  suitecrm_data:
+  mariadb_data:
