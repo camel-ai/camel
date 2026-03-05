@@ -568,6 +568,7 @@ include_namespace_packages = true
 exclude = [
     '\.venv/.*',        # exclude .venv directory
     'site-packages/.*', # exclude site-packages
+    'external_deps/.*', # exclude external_deps directory
 ]
 
 [[tool.mypy.overrides]]
