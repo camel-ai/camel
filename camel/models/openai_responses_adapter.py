@@ -218,10 +218,10 @@ def _process_response_stream_event(
             out_idx, len(state.tool_idx_map)
         )
         state.tool_args_delta_seen[out_idx] = True
-        delta = _get(event, "delta", "") or ""
+        arguments_delta = _get(event, "delta", "") or ""
         tc = {
             "index": mapped_idx,
-            "function": {"arguments": delta},
+            "function": {"arguments": arguments_delta},
         }
         chunk_id = _get(event, "item_id", state.response_id)
         return [
