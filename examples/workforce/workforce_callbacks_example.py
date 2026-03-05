@@ -20,6 +20,8 @@ Includes:
   `Workforce`.
 """
 
+import json
+
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
@@ -48,8 +50,37 @@ from camel.types import ModelPlatformType, ModelType
 logger = get_logger(__name__)
 
 
+def _extract_structured_content(raw_text: str) -> str:
+    r"""Extract ``content`` from structured-output JSON when possible."""
+    text = raw_text.strip()
+    if not text:
+        return ""
+
+    candidates = [text]
+    if text.startswith("```"):
+        lines = text.splitlines()
+        if len(lines) >= 3 and lines[-1].strip() == "```":
+            body = "\n".join(lines[1:-1]).strip()
+            if body.startswith("json"):
+                body = body[4:].lstrip()
+            candidates.insert(0, body)
+
+    for candidate in candidates:
+        try:
+            data = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(data, dict) and isinstance(data.get("content"), str):
+            return data["content"]
+
+    return text
+
+
 class PrintCallback(WorkforceCallback):
     r"""Simple callback printing events to logs to observe ordering."""
+
+    def __init__(self, stream_buffers: dict[tuple[str, str], list[str]]):
+        self._stream_buffers = stream_buffers
 
     def log_message(self, event: LogEvent) -> None:
         print(
@@ -92,6 +123,16 @@ class PrintCallback(WorkforceCallback):
             f"[PrintCallback] task_completed: task={event.task_id}, "
             f"worker={event.worker_id}, took={event.processing_time_seconds}s"
         )
+        key = (event.worker_id, event.task_id)
+        chunks = self._stream_buffers.pop(key, [])
+        if chunks:
+            merged_text = "".join(chunks).strip()
+            if merged_text:
+                content = _extract_structured_content(merged_text)
+                print(
+                    f"\n[StreamMerged][{event.worker_id}][{event.task_id}]"
+                )
+                print(content)
 
     def log_task_failed(self, event: TaskFailedEvent) -> None:
         logger.warning(
@@ -151,18 +192,23 @@ def main() -> None:
         model=model,
     )
 
-    # Real-time streaming callback from worker execution.
-    # You can filter by worker_id/task_id to only consume selected streams.
+    # Buffer stream chunks per worker/task and print once when task completes.
+    stream_buffers: dict[tuple[str, str], list[str]] = {}
+
     def on_worker_stream(
-        worker_id: str, task_id: str, text: str, mode: str
+        worker_id: str, task_id: str, text: str, _mode: str
     ) -> None:
-        if not text.strip():
+        if not text:
             return
-        print(f"[Stream][{worker_id}][{task_id}][{mode}] {text}", end="")
+        key = (worker_id, task_id)
+        stream_buffers.setdefault(key, []).append(text)
 
     workforce = Workforce(
         "Workforce Callbacks Demo",
-        callbacks=[WorkforceLogger('demo-logger'), PrintCallback()],
+        callbacks=[
+            WorkforceLogger('demo-logger'),
+            PrintCallback(stream_buffers),
+        ],
         stream_callback=on_worker_stream,
         use_structured_output_handler=True,
         failure_handling_config=FailureHandlingConfig(enabled_strategies=[]),
