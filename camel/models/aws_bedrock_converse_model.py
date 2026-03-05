@@ -58,7 +58,37 @@ else:
 class AWSBedrockConverseModel(BaseModelBackend):
     r"""AWS Bedrock Converse API backend with prompt caching support.
 
-    Reference:
+    Args:
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created.
+        model_config_dict (Dict[str, Any], optional): A dictionary that will
+            be fed into the backend constructor. If :obj:`None`,
+            :obj:`BedrockConfig().as_dict()` will be used.
+            (default: :obj:`None`)
+        api_key (str, optional): The API key for authenticating with the
+            AWS Bedrock service. (default: :obj:`None`)
+        region_name (str, optional): The AWS region name, e.g.
+            ``"us-east-1"``. (default: :obj:`None`)
+        aws_access_key_id (str, optional): Explicit IAM access key ID.
+            (default: :obj:`None`)
+        aws_secret_access_key (str, optional): Explicit IAM secret access
+            key. (default: :obj:`None`)
+        aws_session_token (str, optional): Temporary session token for STS
+            credentials. (default: :obj:`None`)
+        token_counter (BaseTokenCounter, optional): Token counter to use
+            for the model. If not provided, :obj:`OpenAITokenCounter(
+            ModelType.GPT_4O_MINI)` will be used.
+            (default: :obj:`None`)
+        timeout (float, optional): The timeout value in seconds for API
+            calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API
+            calls. (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
+
+    References:
         https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html
     """
 
