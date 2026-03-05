@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import itertools
 import os
 import platform
 import re
@@ -34,8 +35,12 @@ _CMD_PATTERN = re.compile(
 _QUOTED_STRING_PATTERN = re.compile(r'''["'][^"']*["']''')
 # Match cd command with optional quoted or unquoted path
 # Handles: cd path, cd "path with spaces", cd 'path with spaces'
-_CD_PATTERN = re.compile(r'\bcd\s+(["\'][^"\']*["\']|[^\s;|&]+)')
+_CD_PATTERN = re.compile(r'\bcd\s+(?:--\s+)?(["\'][^"\']*["\']|[^\s;|&]+)')
+_PUSHD_PATTERN = re.compile(
+    r'\bpushd\s+(?:--\s+)?(["\'][^"\']*["\']|[^\s;|&]+)'
+)
 _SHELL_SUBSTITUTION_PATTERN = re.compile(r'`|(?<!\\)\$\(')
+_CONTROL_FLOW_PATTERN = re.compile(r';|&&|\|\||[|&]')
 _SHELL_COMMANDS = {'bash', 'sh', 'zsh', 'dash', 'ksh', 'ash'}
 _SEPARATORS = {';', '&&', '||', '|', '&'}
 _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE = (
@@ -43,6 +48,14 @@ _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE = (
     "Allowed root: '{working_dir}'. "
     "To modify files there, copy them (for example with `cp`) "
     "into '{working_dir}' first."
+)
+_MULTIPLE_CD_IN_CHAIN_MESSAGE = (
+    "Multiple 'cd'/'pushd' commands chained with shell operators "
+    "(;, &&, ||, |, &) are not allowed in safe mode, because the "
+    "runtime execution flow cannot be determined statically. "
+    "Please run each directory change as a separate command. "
+    "For example, instead of 'cd subdir && cd ..', run 'cd subdir' "
+    "first, then run subsequent commands separately."
 )
 
 # Public list for downstream customization/import.
@@ -235,18 +248,69 @@ def sanitize_command(
     if not is_safe:
         return False, reason
 
-    # Additional check for local backend: prevent cd outside working directory
-    if not use_docker_backend and working_dir and 'cd ' in command:
-        # Extract cd commands and check their targets
-        # Normalize working_dir to ensure consistent comparison
+    # Additional check for local backend: prevent cd/pushd outside working
+    # directory
+    if (
+        not use_docker_backend
+        and working_dir
+        and (
+            'cd ' in command
+            or 'cd\t' in command
+            or 'pushd ' in command
+            or 'pushd\t' in command
+        )
+    ):
         normalized_working_dir = os.path.normpath(os.path.abspath(working_dir))
-        current_dir = normalized_working_dir
-        for match in _CD_PATTERN.finditer(command):
+
+        quoted_ranges = [
+            (m.start(), m.end())
+            for m in _QUOTED_STRING_PATTERN.finditer(command)
+        ]
+
+        def _inside_quotes(pos: int) -> bool:
+            return any(s <= pos < e for s, e in quoted_ranges)
+
+        # Collect all cd/pushd matches, keeping only those whose keyword
+        # is NOT inside a quoted string.
+        cd_matches = [
+            (name, m)
+            for name, m in itertools.chain(
+                (('cd', m) for m in _CD_PATTERN.finditer(command)),
+                (('pushd', m) for m in _PUSHD_PATTERN.finditer(command)),
+            )
+            if not _inside_quotes(m.start())
+        ]
+
+        if not cd_matches:
+            return True, command
+
+        # Detect control-flow operators outside of quoted strings.
+        unquoted_command = _QUOTED_STRING_PATTERN.sub(' ', command)
+        has_control_flow = bool(_CONTROL_FLOW_PATTERN.search(unquoted_command))
+
+        # If there are multiple cd/pushd AND the command contains
+        # control flow operators, reject.
+        if len(cd_matches) > 1 and has_control_flow:
+            return False, _MULTIPLE_CD_IN_CHAIN_MESSAGE
+
+        # Exactly one cd/pushd, or multiple without operators
+        for cmd_name, match in cd_matches:
             target_path = match.group(1).strip('\'"')
+
+            # Block 'cd -' since $OLDPWD may point outside workdir
+            if target_path == '-':
+                return (
+                    False,
+                    _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE.format(
+                        working_dir=normalized_working_dir
+                    ),
+                )
+
             if _SHELL_SUBSTITUTION_PATTERN.search(target_path):
                 return (
                     False,
-                    "Command substitution is not allowed in 'cd' paths.",
+                    "Command substitution is not allowed in "
+                    f"'{cmd_name}' paths.",
                 )
 
             expanded_target = os.path.expanduser(
@@ -255,7 +319,9 @@ def sanitize_command(
             if os.path.isabs(expanded_target):
                 resolved_target = expanded_target
             else:
-                resolved_target = os.path.join(current_dir, expanded_target)
+                resolved_target = os.path.join(
+                    normalized_working_dir, expanded_target
+                )
 
             target_dir = os.path.normpath(os.path.abspath(resolved_target))
             # Use os.path.commonpath for safe path comparison
@@ -270,7 +336,6 @@ def sanitize_command(
                             working_dir=normalized_working_dir
                         ),
                     )
-                current_dir = target_dir
             except ValueError:
                 # Different drives on Windows or other path issues
                 return (

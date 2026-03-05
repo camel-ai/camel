@@ -245,6 +245,111 @@ def test_sanitize_command_allows_expanded_cd_inside_workdir(
     assert message == "cd $CAMEL_INSIDE_DIR"
 
 
+def test_sanitize_command_blocks_cd_dash(temp_dir):
+    """'cd -' goes to $OLDPWD which may be outside workdir; must be blocked."""
+    is_safe, message = sanitize_command("cd -", working_dir=str(temp_dir))
+    assert not is_safe
+    assert "outside" in message.lower()
+
+
+def test_sanitize_command_blocks_cd_double_dash_outside(temp_dir):
+    """'cd -- /etc' should block since /etc is outside workdir."""
+    is_safe, message = sanitize_command(
+        "cd -- /etc", working_dir=str(temp_dir)
+    )
+    assert not is_safe
+    assert "outside" in message.lower()
+
+
+def test_sanitize_command_allows_cd_double_dash_inside(temp_dir):
+    """'cd -- subdir' should be allowed when subdir is inside workdir."""
+    subdir = temp_dir / "inner"
+    subdir.mkdir()
+    is_safe, message = sanitize_command(
+        "cd -- inner", working_dir=str(temp_dir)
+    )
+    assert is_safe
+
+
+def test_sanitize_command_blocks_pushd_outside_workdir(temp_dir):
+    """pushd to a path outside workdir must be blocked like cd."""
+    is_safe, message = sanitize_command(
+        "pushd /etc", working_dir=str(temp_dir)
+    )
+    assert not is_safe
+    assert "outside" in message.lower()
+
+
+def test_sanitize_command_allows_pushd_inside_workdir(temp_dir):
+    """pushd to a path inside workdir should be allowed."""
+    subdir = temp_dir / "inner"
+    subdir.mkdir()
+    is_safe, message = sanitize_command(
+        "pushd inner", working_dir=str(temp_dir)
+    )
+    assert is_safe
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "cd sub && cd ..",
+        "cd sub; cd ..",
+        "cd sub || cd ..",
+        "false && cd sub; cd ..",
+        "cd sub & cd ..",
+    ],
+)
+def test_sanitize_command_blocks_multiple_cd_in_chain(temp_dir, command):
+    """Multiple cd/pushd with shell operators must be rejected."""
+    subdir = temp_dir / "sub"
+    subdir.mkdir()
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe
+    assert "multiple" in message.lower()
+    assert "separate command" in message.lower()
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "cd sub && ls",
+        "cd sub && echo hello",
+        "ls && cd sub",
+        "echo hello; cd sub",
+    ],
+)
+def test_sanitize_command_allows_single_cd_in_chain(temp_dir, command):
+    """A single cd combined with non-cd commands should be allowed."""
+    subdir = temp_dir / "sub"
+    subdir.mkdir()
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert is_safe
+    assert message == command
+
+
+def test_sanitize_command_blocks_pushd_chain(temp_dir):
+    """Multiple pushd in a chain must also be rejected."""
+    subdir = temp_dir / "sub"
+    subdir.mkdir()
+    is_safe, message = sanitize_command(
+        "pushd sub && pushd .", working_dir=str(temp_dir)
+    )
+    assert not is_safe
+    assert "multiple" in message.lower()
+
+
+def test_sanitize_command_blocks_mixed_cd_pushd_chain(temp_dir):
+    """cd mixed with pushd in a chain must be rejected."""
+    subdir = temp_dir / "sub"
+    subdir.mkdir()
+    is_safe, message = sanitize_command(
+        "cd sub && pushd .", working_dir=str(temp_dir)
+    )
+    assert not is_safe
+    assert "multiple" in message.lower()
+
+
 def test_sanitize_command_respects_customized_dangerous_commands(
     temp_dir, monkeypatch
 ):
