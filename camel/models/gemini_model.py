@@ -366,9 +366,12 @@ class GeminiModel(OpenAICompatibleModel):
         if not isinstance(err, ClientError):
             return False
 
-        # Deleted / expired cached content returns 404 NOT_FOUND or
-        # 403 PERMISSION_DENIED
-        return err.code in (403, 404)
+        # Expired / deleted cached content returns 403 PERMISSION_DENIED
+        # with message "CachedContent not found (or permission denied)".
+        if err.code != 403:
+            return False
+
+        return "CachedContent not found" in str(err)
 
     def _process_messages(self, messages) -> List[OpenAIMessage]:
         r"""Process the messages for Gemini API to ensure no empty content,

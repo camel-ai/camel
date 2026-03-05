@@ -12,131 +12,81 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-"""OpenAI prompt caching demo."""
+"""
+OpenAI prompt caching example — let the agent fetch and analyse a blog.
 
-import json
-import os
-from typing import Any, Optional
+OpenAI caching is automatic for prompts with 1024+ tokens.  The agent uses
+a ``fetch_url`` tool to retrieve a web page, then answers follow-up questions.
+Cached tokens appear in usage on subsequent requests.
+
+Required environment variable:
+  export OPENAI_API_KEY="sk-..."
+"""
+
+import httpx
 
 from camel.agents import ChatAgent
-from camel.agents._utils import safe_model_dump
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
+from camel.toolkits import FunctionTool
 from camel.types import ModelPlatformType, ModelType
-from examples.models.prompt_caching_common import (
-    ask_with_agent,
-    build_long_shared_context,
-    get_questions,
-    get_system_message,
+
+BLOG_URL = (
+    "https://www.camel-ai.org/blogs/"
+    "seta-scaling-environments-for-terminal-agents"
 )
 
 
-class RawChatAgent(ChatAgent):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.last_raw_response: Optional[Any] = None
+def fetch_url(url: str) -> str:
+    """Fetch the text content of a web page.
 
-    def _get_model_response(self, *args: Any, **kwargs: Any):  # type: ignore[override]
-        model_response = super()._get_model_response(*args, **kwargs)
-        self.last_raw_response = model_response.response
-        return model_response
+    Args:
+        url: The URL to fetch.
 
-
-def _print_raw_response(agent: RawChatAgent) -> None:
-    raw = agent.last_raw_response
-    if raw is None:
-        print("Raw response: <empty>")
-        return
-
-    try:
-        raw_dict = safe_model_dump(raw)
-    except Exception:
-        raw_dict = str(raw)
-
-    _print_cached_tokens(raw_dict)
-    print("Raw response:")
-    print(json.dumps(raw_dict, indent=2, ensure_ascii=False))
+    Returns:
+        The page content as plain text.
+    """
+    resp = httpx.get(url, follow_redirects=True, timeout=30)
+    resp.raise_for_status()
+    return resp.text
 
 
-def _print_cached_tokens(raw_dict: Any) -> None:
-    if not isinstance(raw_dict, dict):
-        print("cached_tokens: N/A")
-        return
+# ── Create model ───────────────────────────────────────────────────────────
 
-    usage = raw_dict.get("usage", {})
-    prompt_details = usage.get("prompt_tokens_details", {})
-    cached_tokens = prompt_details.get("cached_tokens")
-    if cached_tokens is None:
-        print("cached_tokens: 0 (or not returned by model)")
-        return
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_5,
+    model_config_dict=ChatGPTConfig(
+        prompt_cache_key="blog_analysis_cache",  # optional
+    ).as_dict(),
+)
 
-    print(f"cached_tokens: {cached_tokens}")
+agent = ChatAgent(
+    system_message="You are a helpful assistant.",
+    model=model,
+    tools=[FunctionTool(fetch_url)],
+)
 
+# ── First question: agent fetches the article itself ──────────────────────
 
-def run_openai_demo(shared_context: str, questions: list) -> None:
-    r"""Demonstrate OpenAI prompt caching."""
-    if not os.getenv("OPENAI_API_KEY"):
-        print("Skipping OpenAI demo: OPENAI_API_KEY not set")
-        return
+response = agent.step(
+    f"Please read this blog post and summarise it in 2-3 sentences: {BLOG_URL}"
+)
+print("[Question 1] Summarise the blog post.")
+print(f"  Usage: {response.info.get('usage', {})}")
+print(f"  Answer: {response.msgs[0].content[:200]}...")
+print()
 
-    print("\n" + "=" * 70)
-    print("OPENAI - Prompt Caching Demo")
-    print("=" * 70)
-    print("OpenAI caching is automatic for prompts with 1024+ tokens")
-    print("Using prompt_cache_key for optimized cache routing")
+# ── Follow-up questions — caching kicks in automatically ─────────────────
+
+follow_ups = [
+    "What success rate did Claude Sonnet 4.5 achieve on Terminal-Bench 2.0?",
+    "What are the main failure categories mentioned in the article?",
+]
+
+for i, question in enumerate(follow_ups, 2):
+    response = agent.step(question)
+    print(f"[Question {i}] {question}")
+    print(f"  Usage: {response.info.get('usage', {})}")
+    print(f"  Answer: {response.msgs[0].content[:200]}...")
     print()
-
-    system_message = get_system_message()
-
-    # Without prompt_cache_key (automatic caching still works)
-    print(">>> Without prompt_cache_key (automatic):")
-    model_auto = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O,
-        model_config_dict=ChatGPTConfig(
-            temperature=0.2,
-            max_tokens=256,
-        ).as_dict(),
-    )
-    agent_auto = RawChatAgent(system_message=system_message, model=model_auto)
-
-    for i, q in enumerate(questions[:2], 1):
-        agent_auto.reset()
-        ask_with_agent(agent_auto, shared_context, q, i)
-        _print_raw_response(agent_auto)
-
-    # With prompt_cache_key
-    print("\n>>> With prompt_cache_key='camel-docs-v1':")
-    model_with_key = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O,
-        model_config_dict=ChatGPTConfig(
-            temperature=0.2,
-            max_tokens=256,
-            prompt_cache_key="camel-docs-v1",
-        ).as_dict(),
-    )
-    agent_with_key = RawChatAgent(
-        system_message=system_message, model=model_with_key
-    )
-
-    for i, q in enumerate(questions, 1):
-        agent_with_key.reset()
-        ask_with_agent(agent_with_key, shared_context, q, i)
-        _print_raw_response(agent_with_key)
-
-
-def main() -> None:
-    shared_context = build_long_shared_context()
-    questions = get_questions()
-
-    print("=" * 70)
-    print("PROMPT CACHING DEMO")
-    print("=" * 70)
-    print(f"Context size: ~{len(shared_context.split())} words")
-
-    run_openai_demo(shared_context, questions)
-
-
-if __name__ == "__main__":
-    main()

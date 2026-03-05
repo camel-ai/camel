@@ -12,142 +12,88 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-"""Azure OpenAI prompt caching demo."""
+"""
+Azure OpenAI prompt caching example — let the agent fetch and analyse a blog.
 
-import json
+Azure OpenAI caching is automatic for GPT-4o+ models with 1024+ tokens.
+
+Required environment variables:
+  export AZURE_OPENAI_API_KEY="..."
+  export AZURE_OPENAI_BASE_URL="https://your-resource.openai.azure.com/"
+  export AZURE_DEPLOYMENT_NAME="gpt-4o"       # optional, defaults to gpt-4o
+  export AZURE_API_VERSION="2024-12-01-preview"  # optional
+"""
+
 import os
-from typing import Any, Optional
+
+import httpx
 
 from camel.agents import ChatAgent
-from camel.agents._utils import safe_model_dump
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
+from camel.toolkits import FunctionTool
 from camel.types import ModelPlatformType
-from examples.models.prompt_caching_common import (
-    ask_with_agent,
-    build_long_shared_context,
-    get_questions,
-    get_system_message,
+
+BLOG_URL = (
+    "https://www.camel-ai.org/blogs/"
+    "seta-scaling-environments-for-terminal-agents"
 )
 
 
-class RawChatAgent(ChatAgent):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.last_raw_response: Optional[Any] = None
+def fetch_url(url: str) -> str:
+    """Fetch the text content of a web page.
 
-    def _get_model_response(self, *args: Any, **kwargs: Any):  # type: ignore[override]
-        model_response = super()._get_model_response(*args, **kwargs)
-        self.last_raw_response = model_response.response
-        return model_response
+    Args:
+        url: The URL to fetch.
 
-
-def _print_raw_response(agent: RawChatAgent) -> None:
-    raw = agent.last_raw_response
-    if raw is None:
-        print("Raw response: <empty>")
-        return
-
-    try:
-        raw_dict = safe_model_dump(raw)
-    except Exception:
-        raw_dict = str(raw)
-
-    _print_cached_tokens(raw_dict)
-    print("Raw response:")
-    print(json.dumps(raw_dict, indent=2, ensure_ascii=False))
+    Returns:
+        The page content as plain text.
+    """
+    resp = httpx.get(url, follow_redirects=True, timeout=30)
+    resp.raise_for_status()
+    return resp.text
 
 
-def _print_cached_tokens(raw_dict: Any) -> None:
-    if not isinstance(raw_dict, dict):
-        print("cached_tokens: N/A")
-        return
+# ── Create model ───────────────────────────────────────────────────────────
 
-    usage = raw_dict.get("usage", {})
-    prompt_details = usage.get("prompt_tokens_details", {})
-    cached_tokens = prompt_details.get("cached_tokens")
-    if cached_tokens is None:
-        print("cached_tokens: 0 (or not returned by model)")
-        return
+deployment_name = os.getenv("AZURE_DEPLOYMENT_NAME", "gpt-4o")
+api_version = os.getenv("AZURE_API_VERSION", "2024-12-01-preview")
 
-    print(f"cached_tokens: {cached_tokens}")
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.AZURE,
+    model_type=deployment_name,
+    api_version=api_version,
+    model_config_dict=ChatGPTConfig(
+        prompt_cache_key="blog_analysis_cache",  # optional
+    ).as_dict(),
+)
 
+agent = ChatAgent(
+    system_message="You are a helpful assistant.",
+    model=model,
+    tools=[FunctionTool(fetch_url)],
+)
 
-def run_azure_demo(shared_context: str, questions: list) -> None:
-    r"""Demonstrate Azure OpenAI prompt caching."""
-    required = ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_BASE_URL"]
-    missing = [v for v in required if not os.getenv(v)]
-    if missing:
-        print(f"Skipping Azure demo: {missing} not set")
-        return
+# ── First question: agent fetches the article itself ──────────────────────
 
-    print("\n" + "=" * 70)
-    print("AZURE OPENAI - Prompt Caching Demo")
-    print("=" * 70)
-    print("Azure OpenAI caching is automatic for GPT-4o+ models")
-    print("Using prompt_cache_key for optimized cache routing")
+response = agent.step(
+    f"Please read this blog post and summarise it in 2-3 sentences: {BLOG_URL}"
+)
+print("[Question 1] Summarise the blog post.")
+print(f"  Usage: {response.info.get('usage', {})}")
+print(f"  Answer: {response.msgs[0].content[:200]}...")
+print()
+
+# ── Follow-up questions — caching kicks in automatically ─────────────────
+
+follow_ups = [
+    "What success rate did Claude Sonnet 4.5 achieve on Terminal-Bench 2.0?",
+    "What are the main failure categories mentioned in the article?",
+]
+
+for i, question in enumerate(follow_ups, 2):
+    response = agent.step(question)
+    print(f"[Question {i}] {question}")
+    print(f"  Usage: {response.info.get('usage', {})}")
+    print(f"  Answer: {response.msgs[0].content[:200]}...")
     print()
-
-    system_message = get_system_message()
-
-    deployment_name = os.getenv("AZURE_DEPLOYMENT_NAME", "gpt-4o")
-    api_version = os.getenv("AZURE_API_VERSION", "2024-12-01-preview")
-
-    # Without prompt_cache_key
-    print(">>> Without prompt_cache_key (automatic):")
-    model_auto = ModelFactory.create(
-        model_platform=ModelPlatformType.AZURE,
-        model_type=deployment_name,
-        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-        url=os.getenv("AZURE_OPENAI_BASE_URL"),
-        api_version=api_version,
-        model_config_dict=ChatGPTConfig(
-            temperature=0.2,
-            max_tokens=256,
-        ).as_dict(),
-    )
-    agent_auto = RawChatAgent(system_message=system_message, model=model_auto)
-
-    for i, q in enumerate(questions[:2], 1):
-        agent_auto.reset()
-        ask_with_agent(agent_auto, shared_context, q, i)
-        _print_raw_response(agent_auto)
-
-    # With prompt_cache_key
-    print("\n>>> With prompt_cache_key='camel-docs-v1':")
-    model_with_key = ModelFactory.create(
-        model_platform=ModelPlatformType.AZURE,
-        model_type=deployment_name,
-        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-        url=os.getenv("AZURE_OPENAI_BASE_URL"),
-        api_version=api_version,
-        model_config_dict=ChatGPTConfig(
-            temperature=0.2,
-            max_tokens=256,
-            prompt_cache_key="camel-docs-v1",
-        ).as_dict(),
-    )
-    agent_with_key = RawChatAgent(
-        system_message=system_message, model=model_with_key
-    )
-
-    for i, q in enumerate(questions, 1):
-        agent_with_key.reset()
-        ask_with_agent(agent_with_key, shared_context, q, i)
-        _print_raw_response(agent_with_key)
-
-
-def main() -> None:
-    shared_context = build_long_shared_context()
-    questions = get_questions()
-
-    print("=" * 70)
-    print("PROMPT CACHING DEMO")
-    print("=" * 70)
-    print(f"Context size: ~{len(shared_context.split())} words")
-
-    run_azure_demo(shared_context, questions)
-
-
-if __name__ == "__main__":
-    main()

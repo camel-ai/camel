@@ -35,6 +35,9 @@ class BedrockConfig(BaseConfig):
             the tokens comprising the top 10% probability mass are considered.
             (default: :obj:`None`)
         top_k (int, optional): The number of top tokens to consider.
+        stop (list[str], optional): Up to 4 sequences where the API will
+            stop generating further tokens. The returned text will not contain
+            the stop sequence. (default: :obj:`None`)
         stream (bool, optional): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
             (default: :obj:`None`)
@@ -70,6 +73,7 @@ class BedrockConfig(BaseConfig):
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     top_k: Optional[int] = None
+    stop: Optional[list] = None
     stream: Optional[bool] = None
     tool_choice: Optional[
         Union[Dict[str, Union[str, Dict[str, str]]], str]

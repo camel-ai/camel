@@ -12,85 +12,83 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-"""Anthropic prompt caching demo."""
+"""
+Anthropic prompt caching example — let the agent fetch and analyse a blog.
 
-import os
+The agent is given a ``fetch_url`` tool so it can retrieve a web page on its
+own.  We then ask follow-up questions about the same article.  With
+``cache_control="5m"`` the long conversation context is cached after the
+first request, making follow-up questions faster and cheaper.
+
+Required environment variable:
+  export ANTHROPIC_API_KEY="sk-..."
+"""
+
+import httpx
 
 from camel.agents import ChatAgent
 from camel.configs import AnthropicConfig
 from camel.models import ModelFactory
+from camel.toolkits import FunctionTool
 from camel.types import ModelPlatformType, ModelType
-from examples.models.prompt_caching_common import (
-    ask_with_agent,
-    build_long_shared_context,
-    get_questions,
-    get_system_message,
+
+BLOG_URL = (
+    "https://www.camel-ai.org/blogs/"
+    "seta-scaling-environments-for-terminal-agents"
 )
 
 
-def run_anthropic_demo(shared_context: str, questions: list) -> None:
-    r"""Demonstrate Anthropic Claude prompt caching."""
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        print("Skipping Anthropic demo: ANTHROPIC_API_KEY not set")
-        return
+def fetch_url(url: str) -> str:
+    """Fetch the text content of a web page.
 
-    print("\n" + "=" * 70)
-    print("ANTHROPIC CLAUDE - Prompt Caching Demo")
-    print("=" * 70)
-    print("Using cache_control='5m' for 5-minute cache TTL")
+    Args:
+        url: The URL to fetch.
+
+    Returns:
+        The page content as plain text.
+    """
+    resp = httpx.get(url, follow_redirects=True, timeout=30)
+    resp.raise_for_status()
+    return resp.text
+
+
+# ── Create model with prompt caching ──────────────────────────────────────
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.ANTHROPIC,
+    model_type=ModelType.CLAUDE_SONNET_4_5,
+    model_config_dict=AnthropicConfig(
+        max_tokens=64000,
+        cache_control="5m",
+    ).as_dict(),
+)
+
+agent = ChatAgent(
+    system_message="You are a helpful assistant.",
+    model=model,
+    tools=[FunctionTool(fetch_url)],
+)
+
+# ── First question: agent fetches the article itself ──────────────────────
+
+response = agent.step(
+    f"Please read this blog post and summarise it in 2-3 sentences: {BLOG_URL}"
+)
+print("[Question 1] Summarise the blog post.")
+print(f"  Usage: {response.info.get('usage', {})}")
+print(f"  Answer: {response.msgs[0].content[:200]}...")
+print()
+
+# ── Follow-up questions reuse the cached context ─────────────────────────
+
+follow_ups = [
+    "What success rate did Claude Sonnet 4.5 achieve on Terminal-Bench 2.0?",
+    "What are the main failure categories mentioned in the article?",
+]
+
+for i, question in enumerate(follow_ups, 2):
+    response = agent.step(question)
+    print(f"[Question {i}] {question}")
+    print(f"  Usage: {response.info.get('usage', {})}")
+    print(f"  Answer: {response.msgs[0].content[:200]}...")
     print()
-
-    system_message = get_system_message()
-
-    # Without cache_control
-    print(">>> Without cache_control:")
-    model_no_cache = ModelFactory.create(
-        model_platform=ModelPlatformType.ANTHROPIC,
-        model_type=ModelType.CLAUDE_SONNET_4_5,
-        model_config_dict=AnthropicConfig(
-            temperature=0.2,
-            max_tokens=256,
-        ).as_dict(),
-    )
-    agent_no_cache = ChatAgent(
-        system_message=system_message, model=model_no_cache
-    )
-
-    for i, q in enumerate(questions[:2], 1):
-        agent_no_cache.reset()
-        ask_with_agent(agent_no_cache, shared_context, q, i)
-
-    # With cache_control
-    print("\n>>> With cache_control='5m':")
-    model_with_cache = ModelFactory.create(
-        model_platform=ModelPlatformType.ANTHROPIC,
-        model_type=ModelType.CLAUDE_SONNET_4_5,
-        model_config_dict=AnthropicConfig(
-            temperature=0.2,
-            max_tokens=256,
-            cache_control="5m",
-        ).as_dict(),
-    )
-    agent_with_cache = ChatAgent(
-        system_message=system_message, model=model_with_cache
-    )
-
-    for i, q in enumerate(questions, 1):
-        agent_with_cache.reset()
-        ask_with_agent(agent_with_cache, shared_context, q, i)
-
-
-def main() -> None:
-    shared_context = build_long_shared_context()
-    questions = get_questions()
-
-    print("=" * 70)
-    print("PROMPT CACHING DEMO")
-    print("=" * 70)
-    print(f"Context size: ~{len(shared_context.split())} words")
-
-    run_anthropic_demo(shared_context, questions)
-
-
-if __name__ == "__main__":
-    main()

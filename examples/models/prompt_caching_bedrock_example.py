@@ -12,72 +12,85 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-"""AWS Bedrock prompt caching demo (Converse API)."""
+"""
+AWS Bedrock Converse prompt caching example — let the agent fetch and
+analyse a blog.
+
+AWSBedrockConverseModel supports implicit prompt caching via the Converse API.
+Set ``cache_control`` in BedrockConfig to enable it.
+
+Required environment variables:
+  export AWS_REGION="us-east-1"
+  export AWS_ACCESS_KEY_ID="..."
+  export AWS_SECRET_ACCESS_KEY="..."
+  # Or use bearer token auth:
+  export BEDROCK_API_KEY="..."
+"""
+
+import httpx
 
 from camel.agents import ChatAgent
 from camel.configs import BedrockConfig
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
-from examples.models.prompt_caching_common import (
-    ask_with_agent,
-    build_long_shared_context,
-    get_questions,
-    get_system_message,
+from camel.toolkits import FunctionTool
+from camel.types import ModelPlatformType
+
+BLOG_URL = (
+    "https://www.camel-ai.org/blogs/"
+    "seta-scaling-environments-for-terminal-agents"
 )
 
 
-def run_bedrock_demo(shared_context: str, questions: list) -> None:
-    print("\n" + "=" * 70)
-    print("AWS BEDROCK - Prompt Caching Demo (Converse API)")
-    print("=" * 70)
-    print("Using cache_control='5m' with cache checkpoints on system + user")
+def fetch_url(url: str) -> str:
+    """Fetch the text content of a web page.
+
+    Args:
+        url: The URL to fetch.
+
+    Returns:
+        The page content as plain text.
+    """
+    resp = httpx.get(url, follow_redirects=True, timeout=30)
+    resp.raise_for_status()
+    return resp.text
+
+
+# ── Create model with prompt caching ──────────────────────────────────────
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.AWS_BEDROCK_CONVERSE,
+    model_type="us.anthropic.claude-opus-4-1-20250805-v1:0",
+    model_config_dict=BedrockConfig(
+        cache_control="5m",
+    ).as_dict(),
+)
+
+agent = ChatAgent(
+    system_message="You are a helpful assistant.",
+    model=model,
+    tools=[FunctionTool(fetch_url)],
+)
+
+# ── First question: agent fetches the article itself ──────────────────────
+
+response = agent.step(
+    f"Please read this blog post and summarise it in 2-3 sentences: {BLOG_URL}"
+)
+print("[Question 1] Summarise the blog post.")
+print(f"  Usage: {response.info.get('usage', {})}")
+print(f"  Answer: {response.msgs[0].content[:200]}...")
+print()
+
+# ── Follow-up questions reuse the cached context ─────────────────────────
+
+follow_ups = [
+    "What success rate did Claude Sonnet 4.5 achieve on Terminal-Bench 2.0?",
+    "What are the main failure categories mentioned in the article?",
+]
+
+for i, question in enumerate(follow_ups, 2):
+    response = agent.step(question)
+    print(f"[Question {i}] {question}")
+    print(f"  Usage: {response.info.get('usage', {})}")
+    print(f"  Answer: {response.msgs[0].content[:200]}...")
     print()
-
-    system_message = get_system_message()
-
-    # Option 1: Bearer Token authentication
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.AWS_BEDROCK_CONVERSE,
-        model_type=ModelType.AWS_CLAUDE_3_7_SONNET,
-        model_config_dict=BedrockConfig(
-            temperature=0.2,
-            max_tokens=256,
-            cache_control="5m",
-        ).as_dict(),
-        api_key="xxx",  # Replace with your actual Bearer Token
-        region_name="us-west-2",
-    )
-
-    # Option 2: IAM credentials (or default credential chain):
-    # model = ModelFactory.create(
-    #     model_platform=ModelPlatformType.AWS_BEDROCK_CONVERSE,
-    #     model_type=ModelType.AWS_CLAUDE_3_7_SONNET,
-    #     model_config_dict=BedrockConfig(
-    #         temperature=0.2,
-    #         max_tokens=256,
-    #         cache_control="5m",
-    #     ).as_dict(),
-    #     region_name="us-west-2",
-    #     # No api_key needed — uses ~/.aws/credentials or IAM role
-    # )
-
-    agent = ChatAgent(system_message=system_message, model=model)
-    for i, q in enumerate(questions, 1):
-        agent.reset()
-        ask_with_agent(agent, shared_context, q, i)
-
-
-def main() -> None:
-    shared_context = build_long_shared_context()
-    questions = get_questions()
-
-    print("=" * 70)
-    print("PROMPT CACHING DEMO")
-    print("=" * 70)
-    print(f"Context size: ~{len(shared_context.split())} words")
-
-    run_bedrock_demo(shared_context, questions)
-
-
-if __name__ == "__main__":
-    main()
