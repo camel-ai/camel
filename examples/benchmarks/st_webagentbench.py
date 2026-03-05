@@ -11,6 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 # ST-WebAgentBench example runner.
 #
@@ -19,8 +30,8 @@
 #      scripts/st_webagentbench/provision.sh
 #   2. Install: pip install "camel-ai[st_webagentbench]"
 #   3. Install stwebagentbench:
-#      pip install -e external_deps/ST-WebAgentBench -e \
-#       external_deps/ST-WebAgentBench/browsergym/stwebagentbench
+#      pip install -e external_deps/ST-WebAgentBench \
+#        -e external_deps/ST-WebAgentBench/browsergym/stwebagentbench
 #   4. Configure .env with LLM API keys and service URLs
 #
 # Usage:
@@ -61,7 +72,7 @@ def main() -> None:
         "--subset",
         type=int,
         default=19,
-        help=("Max tasks to run (default 19 = ~5%% of 375, " "use 0 for all)"),
+        help="Max tasks to run (default 19 = ~5%% of 375, use 0 for all)",
     )
     parser.add_argument(
         "--randomize",
