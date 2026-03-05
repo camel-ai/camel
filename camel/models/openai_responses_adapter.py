@@ -34,6 +34,7 @@ from camel.types import ChatCompletion, ChatCompletionChunk
 class _ResponsesStreamState:
     has_tool_call: bool = False
     has_finish_reason: bool = False
+    role_emitted: bool = False
     response_id: str = ""
     usage: Optional[Dict[str, int]] = None
     tool_idx_map: Dict[int, int] = field(default_factory=dict)
@@ -180,15 +181,19 @@ def _process_response_stream_event(
         return []
 
     if event_type == "response.output_text.delta":
-        delta = _get(event, "delta", "") or ""
-        if not delta:
+        delta_text = _get(event, "delta", "") or ""
+        if not delta_text:
             return []
         chunk_id = _get(event, "item_id", state.response_id)
+        delta: Dict[str, Any] = {"content": delta_text}
+        if not state.role_emitted:
+            delta["role"] = "assistant"
+            state.role_emitted = True
         return [
             _build_chat_completion_chunk(
                 chunk_id=chunk_id,
                 model=model,
-                delta={"content": delta},
+                delta=delta,
             )
         ]
 
@@ -213,10 +218,10 @@ def _process_response_stream_event(
             out_idx, len(state.tool_idx_map)
         )
         state.tool_args_delta_seen[out_idx] = True
-        delta = _get(event, "delta", "") or ""
+        arguments_delta = _get(event, "delta", "") or ""
         tc = {
             "index": mapped_idx,
-            "function": {"arguments": delta},
+            "function": {"arguments": arguments_delta},
         }
         chunk_id = _get(event, "item_id", state.response_id)
         return [
