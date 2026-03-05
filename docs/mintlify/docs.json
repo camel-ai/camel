@@ -527,6 +527,7 @@
               "reference/camel.toolkits.google_drive_mcp_toolkit",
               "reference/camel.toolkits.google_maps_toolkit",
               "reference/camel.toolkits.google_scholar_toolkit",
+              "reference/camel.toolkits.headless_browser_search_toolkit",
               "reference/camel.toolkits.human_toolkit",
               "reference/camel.toolkits.image_analysis_toolkit",
               "reference/camel.toolkits.image_generation_toolkit",
