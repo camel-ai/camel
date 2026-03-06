@@ -16,6 +16,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, PropertyMock
 
+from camel.messages import FunctionCallingMessage
 from camel.toolkits.tool_output_offload_toolkit import (
     OffloadedOutput,
     ToolOutputOffloadToolkit,
@@ -223,9 +224,8 @@ class TestToolOutputOffloadToolkit:
         with tempfile.TemporaryDirectory() as tmp_dir:
             toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
 
-            # Create mock message that looks like FunctionCallingMessage
-            mock_message = MagicMock()
-            mock_message.__class__.__name__ = "FunctionCallingMessage"
+            # Create mock message that is recognized as FunctionCallingMessage
+            mock_message = MagicMock(spec=FunctionCallingMessage)
             mock_message.func_name = "browse_url"
             mock_message.tool_call_id = "call-123"
             mock_message.result = "A" * 10000  # Large content
@@ -297,8 +297,7 @@ class TestToolOutputOffloadToolkit:
             )
 
             # Create mock message that matches the tool_call_id
-            mock_message = MagicMock()
-            mock_message.__class__.__name__ = "FunctionCallingMessage"
+            mock_message = MagicMock(spec=FunctionCallingMessage)
             mock_message.func_name = "browse_url"
             mock_message.tool_call_id = "call-123"
             mock_message.result = "Some content"

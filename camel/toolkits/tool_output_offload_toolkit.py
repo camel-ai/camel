@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from camel.agents import ChatAgent
 
 from camel.logger import get_logger
+from camel.messages import FunctionCallingMessage
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 
@@ -115,8 +116,9 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
             else:
                 base_dir = Path("tool_output_offload")
 
-        # Create session directory with timestamp
-        session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Create session directory with timestamp (include microseconds
+        # to avoid collisions when multiple toolkits are created quickly)
+        session_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         self.session_dir = base_dir / f"session_{session_id}"
         self.outputs_dir = self.session_dir / "outputs"
 
@@ -193,15 +195,6 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
                 f"(threshold: {self.hint_threshold:,})"
             )
 
-            # Track pending offload for potential follow-up queries
-            if not hasattr(self, "_pending_offloads"):
-                self._pending_offloads: Dict[str, Dict[str, Any]] = {}
-            self._pending_offloads[tool_call_id] = {
-                "tool_name": tool_name,
-                "output_length": output_length,
-                "detected_at": datetime.now().isoformat(),
-            }
-
             hint = (
                 f"[OFFLOAD REQUIRED: The preceding tool call "
                 f"'{tool_name}' (tool_call_id=\"{tool_call_id}\") "
@@ -243,8 +236,7 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
             for idx, record in enumerate(records):
                 msg = getattr(record, "message", None)
                 if (
-                    msg is not None
-                    and msg.__class__.__name__ == "FunctionCallingMessage"
+                    isinstance(msg, FunctionCallingMessage)
                     and getattr(msg, "result", None) is not None
                 ):
                     result = msg.result

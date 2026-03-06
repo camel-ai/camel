@@ -4251,6 +4251,9 @@ class ChatAgent(BaseAgent):
             extra_content (Optional[Dict[str, Any]], optional): Additional
                 content associated with the tool call.
                 (default: :obj:`None`)
+            extra_assistant_message (Optional[str], optional): An additional
+                assistant message (e.g. offload hint) to be enqueued after
+                recording this tool result. (default: :obj:`None`)
 
         Returns:
             ToolCallingRecord: A struct containing information about
