@@ -59,7 +59,7 @@ class AWSBedrockModel(OpenAICompatibleModel):
 
     @api_keys_required(
         [
-            ("url", "BEDROCK_API_BASE_URL"),
+            ("url", _BASE_URL_ENV_VAR),
             ("api_key", _API_KEY_ENV_VAR),
         ]
     )
