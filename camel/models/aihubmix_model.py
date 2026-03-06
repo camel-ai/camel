@@ -55,7 +55,7 @@ class AihubMixModel(OpenAICompatibleModel):
     _BASE_URL_ENV_VAR: str = "AIHUBMIX_API_BASE_URL"
     _DEFAULT_BASE_URL: str = "https://aihubmix.com/v1"
 
-    @api_keys_required([("api_key", "AIHUBMIX_API_KEY")])
+    @api_keys_required([("api_key", _API_KEY_ENV_VAR)])
     def __init__(
         self,
         model_type: Union[ModelType, str],

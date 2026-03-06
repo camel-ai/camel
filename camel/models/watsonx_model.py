@@ -74,7 +74,7 @@ class WatsonXModel(BaseModelBackend):
 
     @api_keys_required(
         [
-            ("api_key", 'WATSONX_API_KEY'),
+            ("api_key", _API_KEY_ENV_VAR),
             ("project_id", 'WATSONX_PROJECT_ID'),
         ]
     )

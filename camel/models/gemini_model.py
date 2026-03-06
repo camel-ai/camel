@@ -101,7 +101,7 @@ class GeminiModel(OpenAICompatibleModel):
 
     @api_keys_required(
         [
-            ("api_key", 'GEMINI_API_KEY'),
+            ("api_key", _API_KEY_ENV_VAR),
         ]
     )
     def __init__(

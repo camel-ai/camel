@@ -60,7 +60,7 @@ class MinimaxModel(InterleavedThinkingMixin, OpenAICompatibleModel):
     # Minimax uses "reasoning_details" instead of "reasoning_content"
     _reasoning_field = "reasoning_details"
 
-    @api_keys_required([("api_key", "MINIMAX_API_KEY")])
+    @api_keys_required([("api_key", _API_KEY_ENV_VAR)])
     def __init__(
         self,
         model_type: Union[ModelType, str],

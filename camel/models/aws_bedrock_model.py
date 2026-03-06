@@ -60,7 +60,7 @@ class AWSBedrockModel(OpenAICompatibleModel):
     @api_keys_required(
         [
             ("url", "BEDROCK_API_BASE_URL"),
-            ("api_key", "BEDROCK_API_KEY"),
+            ("api_key", _API_KEY_ENV_VAR),
         ]
     )
     def __init__(

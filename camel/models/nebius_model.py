@@ -56,7 +56,7 @@ class NebiusModel(OpenAICompatibleModel):
     _BASE_URL_ENV_VAR: str = "NEBIUS_API_BASE_URL"
     _DEFAULT_BASE_URL: str = "https://api.studio.nebius.com/v1"
 
-    @api_keys_required([("api_key", "NEBIUS_API_KEY")])
+    @api_keys_required([("api_key", _API_KEY_ENV_VAR)])
     def __init__(
         self,
         model_type: Union[ModelType, str],
