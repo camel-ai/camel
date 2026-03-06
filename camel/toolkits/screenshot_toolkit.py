@@ -109,15 +109,23 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
             # Load the image from the path
             img = Image.open(image_path)
 
-            # Create a message with the screenshot image
+            # Use the agent's model backend directly to analyze the image
+            # instead of calling agent.step(), which would cause a re-entrant
+            # call when this tool is invoked by the same agent, corrupting the
+            # tool-call message sequence. See #3869.
+            from camel.agents import ChatAgent
+
+            vision_agent = ChatAgent(
+                system_message="You are a helpful assistant that analyzes "
+                "images and answers questions about them.",
+                model=self.agent.model_backend,
+            )
             message = BaseMessage.make_user_message(
                 role_name="User",
-                content=instruction,
+                content=instruction or "Describe what you see in this image.",
                 image_list=[img],
             )
-
-            # Record the message in agent's memory
-            response = self.agent.step(message)
+            response = vision_agent.step(message)
             return response.msgs[0].content
 
         except Exception as e:
