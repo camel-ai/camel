@@ -50,7 +50,8 @@ class ModelType(UnifiedModelType, Enum):
     O3 = "o3"
     O3_PRO = "o3-pro"
     GPT_5_1 = "gpt-5.1"
-    GPT_5_2 = ("gpt-5.2",)
+    GPT_5_2 = "gpt-5.2"
+    GPT_5_4 = "gpt-5.4"
     GPT_5 = "gpt-5"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
@@ -630,6 +631,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O3,
             ModelType.GPT_5_1,
             ModelType.GPT_5_2,
+            ModelType.GPT_5_4,
         }
 
     @property
@@ -1631,6 +1633,7 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.GPT_5_1,
             ModelType.GPT_5_2,
+            ModelType.GPT_5_4,
             ModelType.GPT_5_MINI,
             ModelType.GPT_5_NANO,
             ModelType.GPT_5,
@@ -1877,6 +1880,7 @@ class ModelPlatformType(Enum):
 
     OPENAI = "openai"
     AWS_BEDROCK = "aws-bedrock"
+    AWS_BEDROCK_CONVERSE = "aws-bedrock-converse"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
@@ -1937,7 +1941,10 @@ class ModelPlatformType(Enum):
     @property
     def is_aws_bedrock(self) -> bool:
         r"""Returns whether this platform is aws-bedrock."""
-        return self is ModelPlatformType.AWS_BEDROCK
+        return self in (
+            ModelPlatformType.AWS_BEDROCK,
+            ModelPlatformType.AWS_BEDROCK_CONVERSE,
+        )
 
     @property
     def is_azure(self) -> bool:

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Dict, Optional, Union
+from typing import Dict, Literal, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -35,6 +35,9 @@ class BedrockConfig(BaseConfig):
             the tokens comprising the top 10% probability mass are considered.
             (default: :obj:`None`)
         top_k (int, optional): The number of top tokens to consider.
+        stop (list[str], optional): Up to 4 sequences where the API will
+            stop generating further tokens. The returned text will not contain
+            the stop sequence. (default: :obj:`None`)
         stream (bool, optional): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
             (default: :obj:`None`)
@@ -59,17 +62,24 @@ class BedrockConfig(BaseConfig):
             :obj:`o1mini`, :obj:`o1preview`, :obj:`o3mini`). If not provided
             or if the model type does not support it, this parameter is
             ignored. (default: :obj:`None`)
+        cache_control (Optional[Literal["5m", "1h"]], optional): Cache TTL
+            for Bedrock prompt caching. Set to :obj:`"5m"` for 5-minute or
+            :obj:`"1h"` for 1-hour TTL (only supported by some models).
+            Cache checkpoints are inserted on both the system message and
+            the last user message. (default: :obj:`None`)
     """
 
     max_tokens: Optional[int] = None
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     top_k: Optional[int] = None
+    stop: Optional[list] = None
     stream: Optional[bool] = None
     tool_choice: Optional[
         Union[Dict[str, Union[str, Dict[str, str]]], str]
     ] = None
     reasoning_effort: Optional[str] = None
+    cache_control: Optional[Literal["5m", "1h"]] = None
 
 
 BEDROCK_API_PARAMS = {param for param in BedrockConfig.model_fields.keys()}
