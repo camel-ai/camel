@@ -17,6 +17,7 @@ from .amd_model import AMDModel
 from .anthropic_model import AnthropicModel
 from .atlascloud_model import AtlasCloudModel
 from .avian_model import AvianModel
+from .aws_bedrock_converse_model import AWSBedrockConverseModel
 from .aws_bedrock_model import AWSBedrockModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
@@ -99,6 +100,7 @@ __all__ = [
     'YiModel',
     'QwenModel',
     'AWSBedrockModel',
+    'AWSBedrockConverseModel',
     'ModelProcessingError',
     'NebiusModel',
     'DeepSeekModel',
