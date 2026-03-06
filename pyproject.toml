@@ -637,6 +637,8 @@ module = [
     "agentops",
     "boto3",
     "boto3.*",
+    "botocore",
+    "botocore.*",
     "arxiv",
     "arxiv2text",
     "praw",
