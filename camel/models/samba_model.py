@@ -26,6 +26,7 @@ from camel.configs import (
 )
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models._utils import list_openai_model_ids
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -184,14 +185,11 @@ class SambaModel(BaseModelBackend):
             "SAMBA_API_BASE_URL",
             "https://api.sambanova.ai/v1",
         )
-        client = OpenAI(
+        return list_openai_model_ids(
             api_key=api_key,
-            base_url=url,
-            timeout=float(timeout),
-            max_retries=0,
+            url=url,
+            timeout=timeout,
         )
-        models = client.models.list()
-        return sorted(m.id for m in models)
 
     @observe(as_type="generation")
     async def _arun(  # type: ignore[misc]

@@ -25,7 +25,10 @@ from pydantic import BaseModel, ValidationError
 
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
-from camel.models._utils import try_modify_message_with_format
+from camel.models._utils import (
+    list_openai_model_ids,
+    try_modify_message_with_format,
+)
 from camel.models.base_model import BaseModelBackend
 from camel.types import (
     ChatCompletion,
@@ -470,14 +473,11 @@ class OpenAICompatibleModel(BaseModelBackend):
         url = url or os.environ.get(
             cls._BASE_URL_ENV_VAR, cls._DEFAULT_BASE_URL
         )
-        client = OpenAI(
+        return list_openai_model_ids(
             api_key=api_key,
-            base_url=url,
-            timeout=float(timeout),
-            max_retries=0,
+            url=url,
+            timeout=timeout,
         )
-        models = client.models.list()
-        return sorted(m.id for m in models)
 
     @property
     def stream(self) -> bool:

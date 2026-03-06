@@ -39,6 +39,7 @@ from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models._utils import list_openai_model_ids
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -999,14 +1000,11 @@ class OpenAIModel(BaseModelBackend):
         """
         api_key = api_key or os.environ.get(cls._API_KEY_ENV_VAR)
         url = url or os.environ.get(cls._BASE_URL_ENV_VAR)
-        client = OpenAI(
+        return list_openai_model_ids(
             api_key=api_key,
-            base_url=url,
-            timeout=float(timeout),
-            max_retries=0,
+            url=url,
+            timeout=timeout,
         )
-        models = client.models.list()
-        return sorted(m.id for m in models)
 
     @property
     def stream(self) -> bool:
