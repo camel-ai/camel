@@ -4819,6 +4819,7 @@ class ChatAgent(BaseAgent):
         from camel.models.openai_model import OpenAIModel
 
         backend = self.model_backend
+        model_backend: BaseModelBackend
         if isinstance(backend, ModelManager):
             model_backend = backend.current_model
         else:
