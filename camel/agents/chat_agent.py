@@ -4819,12 +4819,9 @@ class ChatAgent(BaseAgent):
         from camel.models.openai_model import OpenAIModel
 
         backend = self.model_backend
-        model_backend: BaseModelBackend
         if isinstance(backend, ModelManager):
-            model_backend = backend.current_model
-        else:
-            model_backend = backend
-        return isinstance(model_backend, OpenAIModel)
+            backend = backend.current_model  # type: ignore[assignment]
+        return isinstance(backend, OpenAIModel)
 
     def _accumulate_tool_calls(
         self,
