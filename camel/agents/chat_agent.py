@@ -4820,8 +4820,7 @@ class ChatAgent(BaseAgent):
 
         backend = self.model_backend
         if isinstance(backend, ModelManager):
-            model = backend.current_model
-            return isinstance(model, OpenAIModel)
+            return isinstance(backend.current_model, OpenAIModel)
         return isinstance(backend, OpenAIModel)
 
     def _accumulate_tool_calls(
