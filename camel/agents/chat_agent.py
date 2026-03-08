@@ -4426,7 +4426,7 @@ class ChatAgent(BaseAgent):
             ):
                 request_token_usage = self._create_token_usage_tracker()
                 (
-                    stream_completed,
+                    _stream_completed,
                     tool_calls_complete,
                     request_response_id,
                 ) = yield from self._process_stream_chunks_with_accumulator(
@@ -5425,7 +5425,6 @@ class ChatAgent(BaseAgent):
                 )
             ):
                 request_token_usage = self._create_token_usage_tracker()
-                stream_completed = False
                 tool_calls_complete = False
                 request_response_id = ""
 
@@ -5445,7 +5444,7 @@ class ChatAgent(BaseAgent):
                         # This is the final return value
                         # (stream_completed, tool_calls_complete, response_id)
                         (
-                            stream_completed,
+                            _stream_completed,
                             tool_calls_complete,
                             request_response_id,
                         ) = item
