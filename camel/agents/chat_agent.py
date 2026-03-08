@@ -4818,9 +4818,7 @@ class ChatAgent(BaseAgent):
         r"""Check if the current model backend is OpenAI."""
         from camel.models.openai_model import OpenAIModel
 
-        if isinstance(self.model_backend, ModelManager):
-            return isinstance(self.model_backend.current_model, OpenAIModel)
-        return isinstance(self.model_backend, OpenAIModel)
+        return isinstance(self.model_backend.current_model, OpenAIModel)
 
     def _accumulate_tool_calls(
         self,

@@ -41,8 +41,15 @@ def _make_openai_agent() -> ChatAgent:
     mock_model.model_config_dict = {}
     mock_model.model_type.is_openai = True
 
+    # Wrap in a ModelManager since model_backend is always a ModelManager
+    manager = MagicMock(spec=ModelManager)
+    manager.current_model = mock_model
+    manager.model_type = mock_model.model_type
+    manager.token_limit = mock_model.token_limit
+    manager.token_counter = mock_model.token_counter
+
     agent = ChatAgent.__new__(ChatAgent)
-    agent.model_backend = mock_model
+    agent.model_backend = manager
     agent._internal_tools = {}
     agent.role_name = "assistant"
     agent.role_type = RoleType.ASSISTANT
@@ -58,8 +65,15 @@ def _make_non_openai_agent() -> ChatAgent:
     mock_model.model_config_dict = {}
     mock_model.token_counter = MagicMock(return_value=0)
 
+    # Wrap in a ModelManager since model_backend is always a ModelManager
+    manager = MagicMock(spec=ModelManager)
+    manager.current_model = mock_model
+    manager.model_type = mock_model.model_type
+    manager.token_limit = mock_model.token_limit
+    manager.token_counter = mock_model.token_counter
+
     agent = ChatAgent.__new__(ChatAgent)
-    agent.model_backend = mock_model
+    agent.model_backend = manager
     agent._internal_tools = {}
     agent.role_name = "assistant"
     agent.role_type = RoleType.ASSISTANT
