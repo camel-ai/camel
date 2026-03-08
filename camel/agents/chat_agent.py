@@ -522,7 +522,7 @@ class ChatAgent(BaseAgent):
         summary_window_ratio: float = 0.6,
     ) -> None:
         if isinstance(model, ModelManager):
-            self.model_backend: ModelManager = model
+            self.model_backend = model
         else:
             # Resolve model backends and set up model manager
             resolved_models = self._resolve_models(model)
