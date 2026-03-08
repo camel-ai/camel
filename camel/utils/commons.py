@@ -314,57 +314,36 @@ def api_keys_required(
                 if not value or value.strip() == "":
                     missing_keys.append(env_var_name)
 
-            key_way = "the official website"
-            if env_var_name == 'ANTHROPIC_API_KEY':
-                key_way = "https://platform.claude.com/docs/en/api/overview"
-            elif env_var_name == 'AIML_API_KEY':
-                key_way = "https://aimlapi.com/"
-            elif env_var_name == 'COHERE_API_KEY':
-                key_way = "https://cohere.com/"
-            elif env_var_name == 'COMETAPI_KEY':
-                key_way = "https://api.cometapi.com/console/token"
-            elif env_var_name == 'DEEPSEEK_API_KEY':
-                key_way = "https://www.deepseek.com/"
-            elif env_var_name == 'AZURE_OPENAI_API_KEY':
-                key_way = "https://portal.azure.com/"
-            elif env_var_name == 'OPENAI_API_KEY':
-                key_way = "https://platform.openai.com/docs/overview"
-            elif env_var_name == 'FISHAUDIO_API_KEY':
-                key_way = "https://fish.audio/"
-            elif env_var_name == 'GEMINI_API_KEY':
-                key_way = "https://gemini.google.com/"
-            elif env_var_name == 'INTERNLM_API_KEY':
-                key_way = "https://internlm.intern-ai.org.cn/api/tokens"
-            elif env_var_name == 'GROQ_API_KEY':
-                key_way = "https://console.groq.com/keys"
-            elif env_var_name == 'MISTRAL_API_KEY':
-                key_way = "https://mistral.ai/"
-            elif env_var_name == 'MOONSHOT_API_KEY':
-                key_way = "platform.moonshot.ai/console"
-            elif env_var_name == 'NVIDIA_API_KEY':
-                key_way = "https://build.nvidia.com/settings/api-keys"
-            elif env_var_name == 'OPENAI_COMPATIBILITY_API_KEY':
-                key_way = "https://platform.openai.com/docs/overview"
-            elif env_var_name == 'QWEN_API_KEY':
-                key_way = "https://tongyi.aliyun.com/"
-            elif env_var_name == 'REKA_API_KEY':
-                key_way = "https://docs.reka.ai/quick-start"
-            elif env_var_name == 'SAMBA_API_KEY':
-                key_way = "cloud.sambanova.ai/apis"
-            elif env_var_name == 'TOGETHER_API_KEY':
-                key_way = "https://docs.together.ai/docs/quickstart"
-            elif env_var_name == 'YI_API_KEY':
-                key_way = "https://platform.lingyiwanwu.com/docs"
-            elif env_var_name == 'ZHIPUAI_API_KEY':
-                key_way = "https://www.zhipuai.cn/"
-            elif env_var_name == 'KLAVIS_API_KEY':
-                key_way = "https://www.klavis.ai/docs"
-            elif env_var_name == 'XAI_API_KEY':
-                key_way = "https://docs.x.ai/docs/overview"
-            elif env_var_name == 'AVIAN_API_KEY':
-                key_way = "https://avian.io"
-
             if missing_keys:
+                env_key_urls = {
+                    'ANTHROPIC_API_KEY': "https://platform.claude.com/docs/en/api/overview",
+                    'AIML_API_KEY': "https://aimlapi.com/",
+                    'COHERE_API_KEY': "https://cohere.com/",
+                    'COMETAPI_KEY': "https://api.cometapi.com/console/token",
+                    'DEEPSEEK_API_KEY': "https://www.deepseek.com/",
+                    'AZURE_OPENAI_API_KEY': "https://portal.azure.com/",
+                    'OPENAI_API_KEY': "https://platform.openai.com/docs/overview",
+                    'FISHAUDIO_API_KEY': "https://fish.audio/",
+                    'GEMINI_API_KEY': "https://gemini.google.com/",
+                    'INTERNLM_API_KEY': "https://internlm.intern-ai.org.cn/api/tokens",
+                    'GROQ_API_KEY': "https://console.groq.com/keys",
+                    'MISTRAL_API_KEY': "https://mistral.ai/",
+                    'MOONSHOT_API_KEY': "platform.moonshot.ai/console",
+                    'NVIDIA_API_KEY': "https://build.nvidia.com/settings/api-keys",
+                    'OPENAI_COMPATIBILITY_API_KEY': "https://platform.openai.com/docs/overview",
+                    'QWEN_API_KEY': "https://tongyi.aliyun.com/",
+                    'REKA_API_KEY': "https://docs.reka.ai/quick-start",
+                    'SAMBA_API_KEY': "cloud.sambanova.ai/apis",
+                    'TOGETHER_API_KEY': "https://docs.together.ai/docs/quickstart",
+                    'YI_API_KEY': "https://platform.lingyiwanwu.com/docs",
+                    'ZHIPUAI_API_KEY': "https://www.zhipuai.cn/",
+                    'KLAVIS_API_KEY': "https://www.klavis.ai/docs",
+                    'XAI_API_KEY': "https://docs.x.ai/docs/overview",
+                    'AVIAN_API_KEY': "https://avian.io",
+                }
+                key_way = env_key_urls.get(
+                    missing_keys[0], "the official website"
+                )
                 raise ValueError(
                     "Missing or empty required API keys in "
                     f"environment variables: {', '.join(missing_keys)}.\n"
