@@ -56,11 +56,6 @@ from openai import (
 )
 from pydantic import BaseModel, ValidationError
 
-from camel.agents._middleware import (
-    MessageMiddleware,
-    MiddlewareContext,
-    MiddlewareError,
-)
 from camel.agents._types import ModelResponse, ToolCallRequest
 from camel.agents._utils import (
     build_default_summary_prompt,
@@ -71,6 +66,11 @@ from camel.agents._utils import (
     safe_model_dump,
 )
 from camel.agents.base import BaseAgent
+from camel.agents.middleware import (
+    MessageMiddleware,
+    MiddlewareContext,
+    MiddlewareError,
+)
 from camel.logger import get_logger
 from camel.memories import (
     AgentMemory,
@@ -3621,8 +3621,13 @@ class ChatAgent(BaseAgent):
         response: ChatCompletion,
         ctx: MiddlewareContext,
     ) -> ChatCompletion:
-        r"""Apply all registered middlewares to the model response."""
-        for middleware in self._middlewares:
+        r"""Apply all registered middlewares to the model response.
+
+        Middlewares are applied in reverse order (LIFO) so that the
+        first middleware registered is the outermost wrapper (onion
+        model)
+        """
+        for middleware in reversed(self._middlewares):
             try:
                 response = middleware.process_response(response, ctx)
             except MiddlewareError:
@@ -3634,6 +3639,57 @@ class ChatAgent(BaseAgent):
                     f"process_response: {e}",
                     middleware_name=middleware_name,
                     phase="process_response",
+                ) from e
+        return response
+
+    async def _apply_request_middlewares_async(
+        self,
+        messages: List[OpenAIMessage],
+        ctx: MiddlewareContext,
+    ) -> List[OpenAIMessage]:
+        r"""Apply all registered middlewares to request messages (async)."""
+        for middleware in self._middlewares:
+            try:
+                messages = await middleware.async_process_request(
+                    messages, ctx
+                )
+            except MiddlewareError:
+                raise
+            except Exception as e:
+                middleware_name = type(middleware).__name__
+                raise MiddlewareError(
+                    f"Middleware '{middleware_name}' failed in "
+                    f"async_process_request: {e}",
+                    middleware_name=middleware_name,
+                    phase="async_process_request",
+                ) from e
+        return messages
+
+    async def _apply_response_middlewares_async(
+        self,
+        response: ChatCompletion,
+        ctx: MiddlewareContext,
+    ) -> ChatCompletion:
+        r"""Apply all registered middlewares to the model response (async).
+
+        Middlewares are applied in reverse order (LIFO) so that the
+        first middleware registered is the outermost wrapper (onion
+        model)
+        """
+        for middleware in reversed(self._middlewares):
+            try:
+                response = await middleware.async_process_response(
+                    response, ctx
+                )
+            except MiddlewareError:
+                raise
+            except Exception as e:
+                middleware_name = type(middleware).__name__
+                raise MiddlewareError(
+                    f"Middleware '{middleware_name}' failed in "
+                    f"async_process_response: {e}",
+                    middleware_name=middleware_name,
+                    phase="async_process_response",
                 ) from e
         return response
 
@@ -3715,7 +3771,9 @@ class ChatAgent(BaseAgent):
     ) -> ModelResponse:
         r"""Internal function for agent async step model response."""
         ctx = self._build_middleware_context(current_iteration)
-        openai_messages = self._apply_request_middlewares(openai_messages, ctx)
+        openai_messages = await self._apply_request_middlewares_async(
+            openai_messages, ctx
+        )
 
         last_error = None
 
@@ -3769,7 +3827,7 @@ class ChatAgent(BaseAgent):
                 f"Expected ChatCompletion, got {type(response).__name__}"
             )
 
-        response = self._apply_response_middlewares(response, ctx)
+        response = await self._apply_response_middlewares_async(response, ctx)
 
         return self._handle_batch_response(response)
 
@@ -4443,7 +4501,14 @@ class ChatAgent(BaseAgent):
         num_tokens: int,
         response_format: Optional[Type[BaseModel]] = None,
     ) -> Generator[ChatAgentResponse, None, None]:
-        r"""Internal method to handle streaming responses with tool calls."""
+        r"""Internal method to handle streaming responses with tool calls.
+
+        Note:
+            Request middlewares are applied before the model call.
+            Response middlewares are **not** applied in streaming mode
+            because individual chunks are not complete
+            ``ChatCompletion`` objects.
+        """
 
         self._warn_stream_accumulate_deprecation()
 
@@ -4464,6 +4529,12 @@ class ChatAgent(BaseAgent):
                     num_tokens, tool_call_records, "termination_triggered"
                 )
                 return
+
+            # Apply request middlewares before each model call
+            ctx = self._build_middleware_context(iteration_count)
+            openai_messages = self._apply_request_middlewares(
+                openai_messages, ctx
+            )
 
             # Get streaming response from model
             try:
@@ -4654,6 +4725,10 @@ class ChatAgent(BaseAgent):
                         return
             else:
                 # Handle non-streaming response (fallback)
+                # Apply response middlewares since we have a complete
+                # ChatCompletion object.
+                if isinstance(response, ChatCompletion):
+                    response = self._apply_response_middlewares(response, ctx)
                 model_response = self._handle_batch_response(
                     response  # type: ignore[arg-type]
                 )
@@ -5430,7 +5505,14 @@ class ChatAgent(BaseAgent):
         num_tokens: int,
         response_format: Optional[Type[BaseModel]] = None,
     ) -> AsyncGenerator[ChatAgentResponse, None]:
-        r"""Async method to handle streaming responses with tool calls."""
+        r"""Async method to handle streaming responses with tool calls.
+
+        Note:
+            Request middlewares are applied before the model call.
+            Response middlewares are **not** applied in streaming mode
+            because individual chunks are not complete
+            ``ChatCompletion`` objects.
+        """
 
         self._warn_stream_accumulate_deprecation()
 
@@ -5451,6 +5533,12 @@ class ChatAgent(BaseAgent):
                     num_tokens, tool_call_records, "termination_triggered"
                 )
                 return
+
+            # Apply request middlewares before each model call
+            ctx = self._build_middleware_context(iteration_count)
+            openai_messages = await self._apply_request_middlewares_async(
+                openai_messages, ctx
+            )
 
             # Get async streaming response from model
             try:
@@ -5660,6 +5748,12 @@ class ChatAgent(BaseAgent):
                         return
             else:
                 # Handle non-streaming response (fallback)
+                # Apply response middlewares since we have a complete
+                # ChatCompletion object.
+                if isinstance(response, ChatCompletion):
+                    response = await self._apply_response_middlewares_async(
+                        response, ctx
+                    )
                 model_response = self._handle_batch_response(
                     response  # type: ignore[arg-type]
                 )

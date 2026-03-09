@@ -149,7 +149,7 @@ def test_response_middleware_modifies_content():
     assert response.msg.content == "Original [REVIEWED]"
 
 
-def test_multiple_middlewares_execute_in_order():
+def test_multiple_response_middlewares_execute_in_reverse_order():
     model = _make_model()
     model.run = MagicMock(return_value=_make_mock_response("Base"))
 
@@ -162,8 +162,9 @@ def test_multiple_middlewares_execute_in_order():
         ],
     )
 
+    # Response middlewares run in reverse (onion/LIFO): M2 first, then M1
     response = agent.step("Hello!")
-    assert response.msg.content == "Base [M1] [M2]"
+    assert response.msg.content == "Base [M2] [M1]"
 
 
 @pytest.mark.asyncio
@@ -185,6 +186,266 @@ async def test_middleware_async_path():
 
     response = await agent.astep("Hello!")
     assert response.msg.content == "Async response [ASYNC]"
+
+
+class AsyncInjectMiddleware(MessageMiddleware):
+    """Async middleware that injects a system message."""
+
+    def __init__(self, context_text: str):
+        self.context_text = context_text
+
+    async def async_process_request(
+        self,
+        messages: List[OpenAIMessage],
+        context: MiddlewareContext,
+    ) -> List[OpenAIMessage]:
+        injected: OpenAIMessage = {
+            "role": "system",
+            "content": self.context_text,
+        }
+        return [injected, *list(messages)]
+
+
+class AsyncResponseModifierMiddleware(MessageMiddleware):
+    """Async middleware that appends a suffix to response content."""
+
+    def __init__(self, suffix: str):
+        self.suffix = suffix
+
+    async def async_process_response(
+        self,
+        response: ChatCompletion,
+        context: MiddlewareContext,
+    ) -> ChatCompletion:
+        modified = deepcopy(response)
+        for choice in modified.choices:
+            if choice.message.content:
+                choice.message.content += self.suffix
+        return modified
+
+
+@pytest.mark.asyncio
+async def test_async_middleware_request():
+    model = _make_model()
+    mock_response = _make_mock_response("Hello")
+
+    async def mock_arun(*args, **kwargs):
+        return mock_response
+
+    model.arun = mock_arun
+
+    middleware = AsyncInjectMiddleware("Async injected context")
+    agent = ChatAgent(
+        system_message="You are helpful.",
+        model=model,
+        middlewares=[middleware],
+    )
+
+    response = await agent.astep("Hello!")
+    assert response.msgs is not None
+    assert len(response.msgs) > 0
+
+
+@pytest.mark.asyncio
+async def test_async_middleware_response():
+    model = _make_model()
+    mock_response = _make_mock_response("Original")
+
+    async def mock_arun(*args, **kwargs):
+        return mock_response
+
+    model.arun = mock_arun
+
+    agent = ChatAgent(
+        system_message="You are helpful.",
+        model=model,
+        middlewares=[AsyncResponseModifierMiddleware(" [ASYNC_MOD]")],
+    )
+
+    response = await agent.astep("Hello!")
+    assert response.msg.content == "Original [ASYNC_MOD]"
+
+
+@pytest.mark.asyncio
+async def test_async_middleware_fallback_to_sync():
+    """Sync-only middleware should still work in the async path
+    via the default fallback."""
+    model = _make_model()
+    mock_response = _make_mock_response("Base")
+
+    async def mock_arun(*args, **kwargs):
+        return mock_response
+
+    model.arun = mock_arun
+
+    agent = ChatAgent(
+        system_message="You are helpful.",
+        model=model,
+        middlewares=[ResponseModifierMiddleware(" [SYNC_FALLBACK]")],
+    )
+
+    response = await agent.astep("Hello!")
+    assert response.msg.content == "Base [SYNC_FALLBACK]"
+
+
+@pytest.mark.asyncio
+async def test_async_middleware_error_wrapping():
+    class AsyncFailingMiddleware(MessageMiddleware):
+        async def async_process_request(self, messages, context):
+            raise ValueError("async boom")
+
+    model = _make_model()
+
+    async def mock_arun(*args, **kwargs):
+        return _make_mock_response()
+
+    model.arun = mock_arun
+
+    agent = ChatAgent(
+        system_message="You are helpful.",
+        model=model,
+        middlewares=[AsyncFailingMiddleware()],
+    )
+
+    with pytest.raises(MiddlewareError) as exc_info:
+        await agent.astep("Hello!")
+
+    err = exc_info.value
+    assert err.middleware_name == "AsyncFailingMiddleware"
+    assert err.phase == "async_process_request"
+    assert "async boom" in str(err)
+
+
+# --------------- Streaming path tests ---------------
+
+
+def _make_stream_model():
+    """Create a model with stream=True in config."""
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.DEFAULT,
+    )
+    model.model_config_dict["stream"] = True
+    return model
+
+
+def test_stream_request_middleware_applied():
+    """Request middleware should be applied in the sync streaming path."""
+    model = _make_stream_model()
+    mock_response = _make_mock_response("Streamed")
+    # Backend returns a complete ChatCompletion (non-stream fallback)
+    model.run = MagicMock(return_value=mock_response)
+
+    middleware = InjectContextMiddleware("stream-injected")
+    agent = ChatAgent(
+        system_message="You are helpful.",
+        model=model,
+        middlewares=[middleware],
+    )
+
+    streaming_resp = agent.step("Hello!")
+    # Consume the streaming response to trigger execution
+    final = streaming_resp.msg
+
+    # Verify request middleware was invoked
+    messages_sent = model.run.call_args[0][0]
+    assert any(
+        msg.get("content") == "stream-injected" for msg in messages_sent
+    )
+    assert final is not None
+
+    # Verify context iteration starts at 0
+    assert middleware.last_context is not None
+    assert middleware.last_context.iteration == 0
+
+
+def test_stream_response_middleware_applied_on_non_stream_fallback():
+    """When backend ignores stream=True and returns a complete
+    ChatCompletion, response middleware should still be applied."""
+    model = _make_stream_model()
+    mock_response = _make_mock_response("Fallback")
+    model.run = MagicMock(return_value=mock_response)
+
+    agent = ChatAgent(
+        system_message="You are helpful.",
+        model=model,
+        middlewares=[ResponseModifierMiddleware(" [STREAM_RESP]")],
+    )
+
+    streaming_resp = agent.step("Hello!")
+    assert streaming_resp.msg.content == "Fallback [STREAM_RESP]"
+
+
+def test_stream_request_middleware_context_has_correct_iteration():
+    """MiddlewareContext.iteration should reflect the current iteration
+    count within the streaming loop."""
+    model = _make_stream_model()
+    mock_response = _make_mock_response("OK")
+    model.run = MagicMock(return_value=mock_response)
+
+    middleware = InjectContextMiddleware("ctx-check")
+    agent = ChatAgent(
+        system_message="You are helpful.",
+        model=model,
+        middlewares=[middleware],
+    )
+
+    streaming_resp = agent.step("Hello!")
+    _ = streaming_resp.msg
+
+    assert middleware.last_context is not None
+    assert middleware.last_context.iteration == 0
+
+
+@pytest.mark.asyncio
+async def test_astream_request_middleware_applied():
+    """Request middleware should be applied in the async streaming path."""
+    model = _make_stream_model()
+    mock_response = _make_mock_response("Async streamed")
+
+    async def mock_arun(*args, **kwargs):
+        return mock_response
+
+    model.arun = mock_arun
+
+    middleware = InjectContextMiddleware("async-stream-injected")
+    agent = ChatAgent(
+        system_message="You are helpful.",
+        model=model,
+        middlewares=[middleware],
+    )
+
+    # AsyncStreamingChatAgentResponse is awaitable to get final response
+    final = await (await agent.astep("Hello!"))
+
+    assert final.msg is not None
+    assert middleware.last_context is not None
+    assert middleware.last_context.iteration == 0
+
+
+@pytest.mark.asyncio
+async def test_astream_response_middleware_applied_on_non_stream_fallback():
+    """When backend ignores stream=True and returns a complete
+    ChatCompletion in async path, response middleware should be applied."""
+    model = _make_stream_model()
+    mock_response = _make_mock_response("Async fallback")
+
+    async def mock_arun(*args, **kwargs):
+        return mock_response
+
+    model.arun = mock_arun
+
+    agent = ChatAgent(
+        system_message="You are helpful.",
+        model=model,
+        middlewares=[ResponseModifierMiddleware(" [ASTREAM_RESP]")],
+    )
+
+    final = await (await agent.astep("Hello!"))
+    assert final.msg.content == "Async fallback [ASTREAM_RESP]"
+
+
+# --------------- Error wrapping tests ---------------
 
 
 @pytest.mark.parametrize(

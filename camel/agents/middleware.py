@@ -57,6 +57,11 @@ class MessageMiddleware:
     (pre-invocation) and responses after they are received
     (post-invocation).
 
+    Note:
+        In streaming mode, only request middlewares are applied.
+        Response middlewares are skipped because streaming yields
+        individual chunks rather than complete ``ChatCompletion``
+        objects.
     """
 
     def process_request(
@@ -93,3 +98,46 @@ class MessageMiddleware:
             ChatCompletion: The processed response.
         """
         return response
+
+    async def async_process_request(
+        self,
+        messages: List[OpenAIMessage],
+        context: MiddlewareContext,
+    ) -> List[OpenAIMessage]:
+        r"""Async version of process_request.
+
+        Override this method to implement middleware that requires async
+        operations. By default, falls back to the synchronous
+        :meth:`process_request`.
+
+        Args:
+            messages (List[OpenAIMessage]): The messages to be sent to
+                the model.
+            context (MiddlewareContext): Context about the current
+                invocation.
+
+        Returns:
+            List[OpenAIMessage]: The processed messages.
+        """
+        return self.process_request(messages, context)
+
+    async def async_process_response(
+        self,
+        response: ChatCompletion,
+        context: MiddlewareContext,
+    ) -> ChatCompletion:
+        r"""Async version of process_response.
+
+        Override this method to implement middleware that requires async
+        operations. By default, falls back to the synchronous
+        :meth:`process_response`.
+
+        Args:
+            response (ChatCompletion): The model response.
+            context (MiddlewareContext): Context about the current
+                invocation.
+
+        Returns:
+            ChatCompletion: The processed response.
+        """
+        return self.process_response(response, context)

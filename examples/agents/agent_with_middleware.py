@@ -56,7 +56,7 @@ class UserProfileInjectionMiddleware(MessageMiddleware):
 
     The injected message is only present in the transient message list
     passed to the model backend; it is **not** persisted in the agent's
-    memory, so it will not appear in conversation history or logs.
+    memory, so it will not appear in conversation history.
     """
 
     def __init__(self, profile: UserProfile) -> None:
