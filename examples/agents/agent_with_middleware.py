@@ -253,3 +253,49 @@ async def async_example():
 
 
 asyncio.run(async_example())
+
+
+# ── Response middleware onion-model (LIFO) ordering ──────────────────
+# Response middlewares run in reverse registration order.  The first
+# middleware registered is the outermost layer (processes response last).
+
+
+class TagMiddleware(MessageMiddleware):
+    r"""Appends a tag to the assistant's response content."""
+
+    def __init__(self, tag: str) -> None:
+        self.tag = tag
+
+    def process_response(
+        self,
+        response: ChatCompletion,
+        context: MiddlewareContext,
+    ) -> ChatCompletion:
+        modified = deepcopy(response)
+        for choice in modified.choices:
+            if choice.message.content:
+                choice.message.content += f" [{self.tag}]"
+        return modified
+
+
+onion_model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_5_MINI,
+)
+
+onion_agent = ChatAgent(
+    system_message="You are helpful.",
+    model=onion_model,
+    # Registration order: AUDIT → REVIEW
+    # Response execution order (LIFO): REVIEW first, then AUDIT
+    # So the final output will be: "<content> [REVIEW] [AUDIT]"
+    middlewares=[
+        TagMiddleware("AUDIT"),
+        TagMiddleware("REVIEW"),
+    ],
+)
+
+onion_response = onion_agent.step("Say hello.")
+print("\n── Onion-model ordering result ──")
+print(onion_response.msg.content)
+# The response ends with " [REVIEW] [AUDIT]", confirming reverse order.
