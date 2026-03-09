@@ -475,9 +475,11 @@ class ChatAgent(BaseAgent):
             summarization results. (default: :obj:`0.6`)
         middlewares (Optional[List[MessageMiddleware]], optional): List of
             :obj:`MessageMiddleware` instances to apply before and after
-            model invocations. Middlewares are executed in order for
-            requests and in the same order for responses. (default:
-            :obj:`None`)
+            model invocations. Request middlewares execute in registration
+            order; response middlewares execute in reverse order (onion /
+            LIFO model). In async paths the ``async_process_request`` /
+            ``async_process_response`` hooks are used. In streaming mode
+            only request middlewares are applied. (default: :obj:`None`)
     """
 
     def __init__(
