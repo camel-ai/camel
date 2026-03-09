@@ -4503,14 +4503,7 @@ class ChatAgent(BaseAgent):
         num_tokens: int,
         response_format: Optional[Type[BaseModel]] = None,
     ) -> Generator[ChatAgentResponse, None, None]:
-        r"""Internal method to handle streaming responses with tool calls.
-
-        Note:
-            Request middlewares are applied before the model call.
-            Response middlewares are **not** applied in streaming mode
-            because individual chunks are not complete
-            ``ChatCompletion`` objects.
-        """
+        r"""Internal method to handle streaming responses with tool calls."""
 
         self._warn_stream_accumulate_deprecation()
 
@@ -5507,14 +5500,7 @@ class ChatAgent(BaseAgent):
         num_tokens: int,
         response_format: Optional[Type[BaseModel]] = None,
     ) -> AsyncGenerator[ChatAgentResponse, None]:
-        r"""Async method to handle streaming responses with tool calls.
-
-        Note:
-            Request middlewares are applied before the model call.
-            Response middlewares are **not** applied in streaming mode
-            because individual chunks are not complete
-            ``ChatCompletion`` objects.
-        """
+        r"""Async method to handle streaming responses with tool calls."""
 
         self._warn_stream_accumulate_deprecation()
 

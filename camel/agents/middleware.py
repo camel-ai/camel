@@ -66,6 +66,15 @@ class MessageMiddleware:
         Response middlewares are skipped because streaming yields
         individual chunks rather than complete ``ChatCompletion``
         objects.
+
+    Warning:
+        The sync path (``step``) calls ``process_request`` /
+        ``process_response``; the async path (``astep``) calls
+        ``async_process_request`` / ``async_process_response``.
+        If you only override the async hooks, the sync path will
+        silently use the base-class no-op implementation. Override
+        both pairs if your middleware must work with both ``step``
+        and ``astep``.
     """
 
     def process_request(
