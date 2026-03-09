@@ -11,8 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-"""Example: user profile injection and sensitive data scrubbing middleware."""
+"""Example: user profile injection and sensitive data scrubbing middleware.
 
+Demonstrates:
+- Sync middleware (process_request / process_response)
+- Async middleware (async_process_request / async_process_response)
+- Response middleware onion-model (LIFO) ordering
+"""
+
+import asyncio
 import re
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -160,3 +167,89 @@ for msg in memory_messages:
     assert "User Profile" not in content, "Profile should NOT be in memory!"
 
 print("\nNo user profile found in memory - sensitive data stays private.")
+
+
+# ── Async middleware example ──────────────────────────────────────────
+# Middleware that needs I/O (database, HTTP) should override the async
+# hooks so it won't block the event loop.
+
+
+class AsyncUserProfileInjectionMiddleware(MessageMiddleware):
+    r"""Async version of UserProfileInjectionMiddleware.
+
+    In a real application, the profile could be fetched from a remote
+    database or API using ``await``.
+    """
+
+    def __init__(self, profile: UserProfile) -> None:
+        self.profile = profile
+
+    async def async_process_request(
+        self,
+        messages: List[OpenAIMessage],
+        context: MiddlewareContext,
+    ) -> List[OpenAIMessage]:
+        # Simulate an async I/O operation (e.g. DB lookup)
+        await asyncio.sleep(0)
+        profile_message: OpenAIMessage = {
+            "role": "system",
+            "content": self.profile.to_prompt(),
+        }
+        insert_idx = 1 if messages and messages[0]["role"] == "system" else 0
+        return (
+            messages[:insert_idx] + [profile_message] + messages[insert_idx:]
+        )
+
+
+class AsyncSensitiveDataScrubMiddleware(MessageMiddleware):
+    r"""Async version of SensitiveDataScrubMiddleware."""
+
+    def __init__(self, profile: UserProfile) -> None:
+        self.profile = profile
+
+    async def async_process_response(
+        self,
+        response: ChatCompletion,
+        context: MiddlewareContext,
+    ) -> ChatCompletion:
+        if not self.profile.sensitive_fields:
+            return response
+
+        pattern = "|".join(re.escape(v) for v in self.profile.sensitive_fields)
+        modified = deepcopy(response)
+        for choice in modified.choices:
+            if choice.message.content:
+                choice.message.content = re.sub(
+                    pattern, "[REDACTED]", choice.message.content
+                )
+        return modified
+
+
+async def async_example():
+    r"""Run the same scenario using async middleware and ``astep``."""
+    async_model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+
+    async_agent = ChatAgent(
+        system_message=(
+            "You are an intelligent support assistant for operations "
+            "engineers. You must answer queries strictly based on the "
+            "user's authorized device scope."
+        ),
+        model=async_model,
+        middlewares=[
+            AsyncUserProfileInjectionMiddleware(current_user),
+            AsyncSensitiveDataScrubMiddleware(current_user),
+        ],
+    )
+
+    async_response = await async_agent.astep(
+        "Show the health report of the devices I'm responsible for."
+    )
+    print("\n── Async middleware result ──")
+    print(async_response.msg.content)
+
+
+asyncio.run(async_example())
