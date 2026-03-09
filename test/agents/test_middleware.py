@@ -445,6 +445,70 @@ async def test_astream_response_middleware_applied_on_non_stream_fallback():
     assert final.msg.content == "Async fallback [ASTREAM_RESP]"
 
 
+# --------------- Ordering / edge case tests ---------------
+
+
+def test_multiple_request_middlewares_execute_in_forward_order():
+    """Request middlewares should execute in registration order."""
+    model = _make_model()
+    model.run = MagicMock(return_value=_make_mock_response())
+
+    call_order: List[str] = []
+
+    class OrderTracker(MessageMiddleware):
+        def __init__(self, name: str):
+            self.name = name
+
+        def process_request(self, messages, context):
+            call_order.append(self.name)
+            return messages
+
+    agent = ChatAgent(
+        system_message="You are helpful.",
+        model=model,
+        middlewares=[OrderTracker("A"), OrderTracker("B"), OrderTracker("C")],
+    )
+
+    agent.step("Hello!")
+    assert call_order == ["A", "B", "C"]
+
+
+def test_no_middlewares():
+    """Agent with no middlewares should work normally."""
+    model = _make_model()
+    model.run = MagicMock(return_value=_make_mock_response("No middleware"))
+
+    agent = ChatAgent(
+        system_message="You are helpful.",
+        model=model,
+        middlewares=[],
+    )
+
+    response = agent.step("Hello!")
+    assert response.msg.content == "No middleware"
+
+
+def test_clone_preserves_middlewares():
+    """Cloned agent should retain the same middleware instances."""
+    model = _make_model()
+    model.run = MagicMock(return_value=_make_mock_response("Cloned"))
+
+    middleware = ResponseModifierMiddleware(" [CLONED]")
+    agent = ChatAgent(
+        system_message="You are helpful.",
+        model=model,
+        middlewares=[middleware],
+    )
+
+    cloned = agent.clone()
+    cloned.model_backend.models[0].run = MagicMock(
+        return_value=_make_mock_response("Cloned")
+    )
+
+    response = cloned.step("Hello!")
+    assert response.msg.content == "Cloned [CLONED]"
+
+
 # --------------- Error wrapping tests ---------------
 
 
