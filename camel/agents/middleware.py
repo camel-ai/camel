@@ -40,7 +40,9 @@ class MiddlewareError(Exception):
     Attributes:
         middleware_name (str): The class name of the middleware that failed.
         phase (str): The phase in which the error occurred
-            (``"process_request"`` or ``"process_response"``).
+            (``"process_request"``, ``"process_response"``,
+            ``"async_process_request"``, or
+            ``"async_process_response"``).
     """
 
     def __init__(self, message: str, middleware_name: str, phase: str) -> None:
@@ -58,6 +60,8 @@ class MessageMiddleware:
     (post-invocation).
 
     Note:
+        Request middlewares execute in registration order; response
+        middlewares execute in reverse order (onion / LIFO model).
         In streaming mode, only request middlewares are applied.
         Response middlewares are skipped because streaming yields
         individual chunks rather than complete ``ChatCompletion``
@@ -106,10 +110,6 @@ class MessageMiddleware:
     ) -> List[OpenAIMessage]:
         r"""Async version of process_request.
 
-        Override this method to implement middleware that requires async
-        operations. By default, falls back to the synchronous
-        :meth:`process_request`.
-
         Args:
             messages (List[OpenAIMessage]): The messages to be sent to
                 the model.
@@ -127,10 +127,6 @@ class MessageMiddleware:
         context: MiddlewareContext,
     ) -> ChatCompletion:
         r"""Async version of process_response.
-
-        Override this method to implement middleware that requires async
-        operations. By default, falls back to the synchronous
-        :meth:`process_response`.
 
         Args:
             response (ChatCompletion): The model response.
