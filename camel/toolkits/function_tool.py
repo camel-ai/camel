@@ -130,9 +130,9 @@ def _coerce_arguments(
     # --- keyword args ---
     new_kwargs: Dict[str, Any] = {}
     for key, val in kwargs.items():
-        p = params.get(key)
-        if p is not None and p.annotation is not Parameter.empty:
-            val = _coerce_arg(val, p.annotation)
+        kw_param = params.get(key)
+        if kw_param is not None and kw_param.annotation is not Parameter.empty:
+            val = _coerce_arg(val, kw_param.annotation)
         new_kwargs[key] = val
 
     return tuple(new_args), new_kwargs
