@@ -21,7 +21,19 @@ import threading
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from inspect import Parameter, getsource, signature
-from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Type
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from docstring_parser import parse
 from jsonschema.exceptions import SchemaError
@@ -41,6 +53,89 @@ _SYNC_TOOL_EXECUTOR = ThreadPoolExecutor(max_workers=64)
 # Persistent event loop to avoid httpx connection pool issues
 _PERSISTENT_LOOP: Optional[asyncio.AbstractEventLoop] = None
 _PERSISTENT_LOOP_LOCK = threading.Lock()
+
+
+def _coerce_arg(value: Any, annotation: Any) -> Any:
+    r"""Coerce *value* so that plain dicts become Pydantic model instances
+    where the function signature expects them.
+
+    Handles ``Model``, ``List[Model]``, ``Dict[str, Model]``,
+    ``Optional[...]``, and ``Union[...]`` annotations recursively.
+    Non-model annotations are returned unchanged.
+    """
+    # --- Plain BaseModel subclass (e.g. ``param: TodoItem``) ---
+    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+        if isinstance(value, dict):
+            return annotation.model_validate(value)
+        return value
+
+    origin = get_origin(annotation)
+    args = get_args(annotation)
+
+    if origin is None or not args:
+        return value
+
+    # --- List[X] / list[X] ---
+    if origin is list:
+        if isinstance(value, list):
+            inner = args[0]
+            return [_coerce_arg(item, inner) for item in value]
+        return value
+
+    # --- Dict[K, V] / dict[K, V] — coerce values only ---
+    if origin is dict:
+        if isinstance(value, dict) and len(args) == 2:
+            val_ann = args[1]
+            return {k: _coerce_arg(v, val_ann) for k, v in value.items()}
+        return value
+
+    # --- Optional[X] / Union[X, Y, ...] — try each inner type ---
+    if origin is Union:
+        for inner in args:
+            if inner is type(None):
+                continue
+            coerced = _coerce_arg(value, inner)
+            if coerced is not value:
+                return coerced
+        return value
+
+    return value
+
+
+def _coerce_arguments(
+    func: Callable,
+    args: tuple,
+    kwargs: Dict[str, Any],
+) -> Tuple[tuple, Dict[str, Any]]:
+    r"""Coerce positional and keyword arguments to match Pydantic model
+    type annotations in *func*'s signature.
+
+    This bridges the gap between the JSON dicts that the LLM produces (via
+    ``json.loads``) and the Pydantic models that toolkit authors declare in
+    their function signatures.  Plain values and non-model parameters are
+    passed through unchanged.
+    """
+    params = signature(func).parameters
+    param_list = list(params.values())
+
+    # --- positional args ---
+    new_args: List[Any] = []
+    for i, val in enumerate(args):
+        if i < len(param_list):
+            p = param_list[i]
+            if p.annotation is not Parameter.empty:
+                val = _coerce_arg(val, p.annotation)
+        new_args.append(val)
+
+    # --- keyword args ---
+    new_kwargs: Dict[str, Any] = {}
+    for key, val in kwargs.items():
+        p = params.get(key)
+        if p is not None and p.annotation is not Parameter.empty:
+            val = _coerce_arg(val, p.annotation)
+        new_kwargs[key] = val
+
+    return tuple(new_args), new_kwargs
 
 
 def _remove_a_key(d: Dict, remove_key: Any) -> None:
@@ -488,7 +583,17 @@ class FunctionTool:
             result = self.synthesize_execution_output(args, kwargs)
             return result
 
-        # Call the function first
+        # Coerce dict arguments to Pydantic models where the function
+        # signature expects them (e.g. List[TodoItem]).
+        try:
+            args, kwargs = _coerce_arguments(self.func, args, kwargs)
+        except Exception as e:
+            raise ValueError(
+                f"Argument coercion for function {self.func.__name__} "
+                f"failed. Error: {e}"
+            )
+
+        # Call the function
         try:
             result = self.func(*args, **kwargs)
         except Exception as e:
@@ -565,6 +670,16 @@ class FunctionTool:
         if self.synthesize_output:
             result = self.synthesize_execution_output(args, kwargs)
             return result
+
+        # Coerce dict arguments to Pydantic models where the function
+        # signature expects them.
+        try:
+            args, kwargs = _coerce_arguments(self.func, args, kwargs)
+        except Exception as e:
+            raise ValueError(
+                f"Argument coercion for function {self.func.__name__} "
+                f"failed. Error: {e}"
+            )
 
         # Check if the function itself (not unwrapped) is a coroutine function
         if inspect.iscoroutinefunction(self.func):
