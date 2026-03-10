@@ -1097,6 +1097,7 @@ earth-science = [
 eigent = [
     { name = "anthropic" },
     { name = "av" },
+    { name = "boto3" },
     { name = "datasets" },
     { name = "docx" },
     { name = "exa-py" },
@@ -1321,6 +1322,7 @@ requires-dist = [
     { name = "beautifulsoup4", marker = "extra == 'owl'", specifier = ">=4,<5" },
     { name = "beautifulsoup4", marker = "extra == 'web-tools'", specifier = ">=4,<5" },
     { name = "boto3", marker = "extra == 'all'", specifier = ">=1.42.64" },
+    { name = "boto3", marker = "extra == 'eigent'", specifier = ">=1.42.64" },
     { name = "boto3", marker = "extra == 'model-platforms'", specifier = ">=1.42.64" },
     { name = "boto3", marker = "extra == 'storage'", specifier = ">=1.42.64" },
     { name = "chromadb", marker = "extra == 'all'", specifier = ">=0.6.0,<1.0.0" },
