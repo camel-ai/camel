@@ -13,9 +13,10 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import re
+import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -46,7 +47,7 @@ class FileToolkit(BaseToolkit):
         default_encoding: str = "utf-8",
         backup_enabled: bool = True,
     ) -> None:
-        r"""Initialize the FileWriteToolkit.
+        r"""Initialize the FileToolkit.
 
         Args:
             working_directory (str, optional): The default directory for
@@ -74,7 +75,7 @@ class FileToolkit(BaseToolkit):
         self.default_encoding = default_encoding
         self.backup_enabled = backup_enabled
         logger.info(
-            f"FileWriteToolkit initialized with output directory"
+            f"FileToolkit initialized with output directory"
             f": {self.working_directory}, encoding: {default_encoding}"
         )
 
@@ -100,6 +101,26 @@ class FileToolkit(BaseToolkit):
         path_obj = path_obj.parent / sanitized_filename
         return path_obj.resolve()
 
+    def _resolve_search_path(self, path: Optional[str] = None) -> Path:
+        r"""Resolve a search directory without sanitizing it."""
+        if path:
+            path_obj = Path(path)
+            if not path_obj.is_absolute():
+                return (self.working_directory / path_obj).resolve()
+            return path_obj.resolve()
+        return self.working_directory
+
+    def _resolve_existing_filepath(self, file_path: str) -> Path:
+        r"""Resolve a file path without sanitizing the filename."""
+        path_obj = Path(file_path)
+        if not path_obj.is_absolute():
+            path_obj = self.working_directory / path_obj
+        return path_obj.resolve()
+
+    def _tool_error(self, message: str) -> str:
+        logger.warning(message)
+        return f"Error: {message}"
+
     def _sanitize_filename(self, filename: str) -> str:
         r"""Sanitize a filename by replacing any character that is not
         alphanumeric, a dot (.), hyphen (-), or underscore (_) with an
@@ -115,6 +136,82 @@ class FileToolkit(BaseToolkit):
         """
         safe = re.sub(r'[^\w\-.]', '_', filename)
         return safe
+
+    def _iter_grep_candidate_files(
+        self,
+        root: Path,
+        glob_pattern: str,
+        file_type: Optional[str],
+    ) -> List[Path]:
+        suffix = None
+        if file_type:
+            suffix = f".{file_type.lstrip('.')}".lower()
+
+        candidates: List[Path] = []
+        for candidate in root.rglob(glob_pattern):
+            if not candidate.is_file():
+                continue
+            if suffix and candidate.suffix.lower() != suffix:
+                continue
+            candidates.append(candidate)
+        return sorted(candidates)
+
+    def _render_grep_context_block(
+        self,
+        file_path: Path,
+        lines: List[str],
+        match_index: int,
+        context_lines: int,
+    ) -> str:
+        start = max(0, match_index - context_lines)
+        end = min(len(lines), match_index + context_lines + 1)
+        rendered = []
+        for index in range(start, end):
+            marker = ">" if index == match_index else " "
+            rendered.append(
+                f"{file_path}:{index + 1}:{marker} " f"{lines[index].rstrip()}"
+            )
+        return "\n".join(rendered)
+
+    def _render_grep_multiline_block(
+        self,
+        file_path: Path,
+        lines: List[str],
+        start_line: int,
+        end_line: int,
+        context_lines: int,
+    ) -> str:
+        start = max(1, start_line - context_lines)
+        end = min(len(lines), end_line + context_lines)
+        rendered = []
+        for number in range(start, end + 1):
+            marker = ">" if start_line <= number <= end_line else " "
+            rendered.append(
+                f"{file_path}:{number}:{marker} "
+                f"{lines[number - 1].rstrip()}"
+            )
+        return "\n".join(rendered)
+
+    def _normalize_notebook_source(self, new_source: str) -> List[str]:
+        if not new_source:
+            return []
+        return new_source.splitlines(keepends=True)
+
+    def _build_notebook_cell(
+        self,
+        new_source: str,
+        cell_type: str,
+    ) -> Dict[str, Any]:
+        cell: Dict[str, Any] = {
+            "id": uuid.uuid4().hex[:8],
+            "cell_type": cell_type,
+            "metadata": {},
+            "source": self._normalize_notebook_source(new_source),
+        }
+        if cell_type == "code":
+            cell["execution_count"] = None
+            cell["outputs"] = []
+        return cell
 
     def _write_text_file(
         self, file_path: Path, content: str, encoding: str = "utf-8"
@@ -1201,6 +1298,294 @@ class FileToolkit(BaseToolkit):
         except Exception as e:
             return f"Error editing file: {e}"
 
+    def glob_files(
+        self,
+        pattern: str,
+        path: Optional[str] = None,
+    ) -> Union[List[str], str]:
+        r"""Find files by glob pattern and sort by modification time.
+
+        Args:
+            pattern (str): Glob pattern to match, for example
+                :obj:`**/*.js`.
+            path (Optional[str]): Optional directory to search from. If not
+                provided, the toolkit working directory is used.
+
+        Returns:
+            Union[List[str], str]: Matching absolute file paths sorted by most
+                recent modification time first, or an error message.
+        """
+        try:
+            root = self._resolve_search_path(path)
+            if not root.exists():
+                return self._tool_error(f"Search path does not exist: {root}")
+
+            matches = [item for item in root.glob(pattern) if item.is_file()]
+            matches.sort(
+                key=lambda item: (item.stat().st_mtime, str(item)),
+                reverse=True,
+            )
+            return [str(item.resolve()) for item in matches]
+        except Exception as exc:
+            return self._tool_error(f"Glob search failed: {exc}")
+
+    def grep_files(
+        self,
+        pattern: str,
+        path: str,
+        glob_pattern: str = "*",
+        file_type: Optional[str] = None,
+        output_mode: str = "content",
+        ignore_case: bool = False,
+        context_lines: int = 0,
+        head_limit: int = 20,
+        multiline: bool = False,
+    ) -> Any:
+        r"""Search file content with a regular expression.
+
+        Args:
+            pattern (str): Regular expression to search for.
+            path (str): Directory to search recursively.
+            glob_pattern (str): Glob filter for candidate files before
+                searching content. (default: :obj:`"*"`)
+            file_type (Optional[str]): Optional file extension filter without
+                requiring the leading dot. (default: :obj:`None`)
+            output_mode (str): One of :obj:`content`,
+                :obj:`files_with_matches`, or :obj:`count`. (default:
+                :obj:`"content"`)
+            ignore_case (bool): Whether to search case-insensitively.
+                (default: :obj:`False`)
+            context_lines (int): Number of surrounding lines to include when
+                :obj:`output_mode` is :obj:`content`. (default: :obj:`0`)
+            head_limit (int): Maximum number of blocks or file paths to return.
+                (default: :obj:`20`)
+            multiline (bool): Whether the regex may span multiple lines.
+                (default: :obj:`False`)
+
+        Returns:
+            Any: Matching content blocks, matching file paths, aggregate
+                counts, or an error string depending on :obj:`output_mode`.
+        """
+        valid_output_modes = {"content", "files_with_matches", "count"}
+        if output_mode not in valid_output_modes:
+            return self._tool_error(
+                f"output_mode must be one of {sorted(valid_output_modes)}."
+            )
+
+        try:
+            root = self._resolve_search_path(path)
+            if not root.exists():
+                return self._tool_error(f"Search path does not exist: {root}")
+
+            flags = re.MULTILINE
+            if ignore_case:
+                flags |= re.IGNORECASE
+            if multiline:
+                flags |= re.DOTALL
+            regex = re.compile(pattern, flags)
+
+            blocks: List[str] = []
+            files_with_matches: List[str] = []
+            total_matches = 0
+
+            for file_path in self._iter_grep_candidate_files(
+                root, glob_pattern, file_type
+            ):
+                try:
+                    if file_path.stat().st_size > 2_000_000:
+                        logger.info(
+                            f"Skipping large file during Grep: {file_path}"
+                        )
+                        continue
+                    text = file_path.read_text(
+                        encoding=self.default_encoding,
+                        errors="ignore",
+                    )
+                except OSError:
+                    continue
+
+                if multiline:
+                    lines = text.splitlines()
+                    file_match_count = 0
+                    for match in regex.finditer(text):
+                        file_match_count += 1
+                        total_matches += 1
+                        if (
+                            output_mode == "content"
+                            and len(blocks) < head_limit
+                        ):
+                            start_line = text.count("\n", 0, match.start()) + 1
+                            end_offset = max(match.end() - 1, match.start())
+                            end_line = text.count("\n", 0, end_offset) + 1
+                            blocks.append(
+                                self._render_grep_multiline_block(
+                                    file_path=file_path,
+                                    lines=lines,
+                                    start_line=start_line,
+                                    end_line=end_line,
+                                    context_lines=context_lines,
+                                )
+                            )
+                    if file_match_count:
+                        files_with_matches.append(str(file_path.resolve()))
+                    continue
+
+                lines = text.splitlines()
+                file_has_match = False
+                for index, line in enumerate(lines):
+                    if not regex.search(line):
+                        continue
+                    file_has_match = True
+                    total_matches += 1
+                    if output_mode == "content" and len(blocks) < head_limit:
+                        blocks.append(
+                            self._render_grep_context_block(
+                                file_path=file_path,
+                                lines=lines,
+                                match_index=index,
+                                context_lines=context_lines,
+                            )
+                        )
+                if file_has_match:
+                    files_with_matches.append(str(file_path.resolve()))
+
+            if output_mode == "files_with_matches":
+                return files_with_matches[:head_limit]
+            if output_mode == "count":
+                return {
+                    "files_with_matches": len(files_with_matches),
+                    "matches": total_matches,
+                }
+            if not blocks:
+                return "No matches found."
+            return "\n--\n".join(blocks[:head_limit])
+        except re.error as exc:
+            return self._tool_error(f"Invalid regex pattern: {exc}")
+        except Exception as exc:
+            return self._tool_error(f"Grep search failed: {exc}")
+
+    def notebook_edit_cell(
+        self,
+        notebook_path: str,
+        new_source: str = "",
+        cell_id: Optional[str] = None,
+        cell_type: Optional[str] = None,
+        edit_mode: str = "replace",
+    ) -> str:
+        r"""Edit, insert, or delete a cell in a Jupyter notebook.
+
+        Args:
+            notebook_path (str): Absolute or working-directory-relative path
+                to the notebook file.
+            new_source (str): New source for the cell when inserting or
+                replacing.
+            cell_id (Optional[str]): Target cell ID. Required for replace and
+                delete, and used as the insertion anchor when inserting.
+            cell_type (Optional[str]): Cell type for inserted cells, or
+                optional replacement cell type. Supported values are
+                :obj:`code` and :obj:`markdown`.
+            edit_mode (str): One of :obj:`replace`, :obj:`insert`, or
+                :obj:`delete`.
+
+        Returns:
+            str: Confirmation describing the notebook update, or an error
+                message.
+        """
+        import json
+
+        path = self._resolve_existing_filepath(notebook_path)
+        if not path.exists():
+            return self._tool_error(f"Notebook file not found: {path}")
+
+        try:
+            with path.open("r", encoding=self.default_encoding) as file:
+                notebook = json.load(file)
+        except json.JSONDecodeError:
+            return self._tool_error(f"Invalid notebook format: {path}")
+        except OSError as exc:
+            return self._tool_error(f"Failed to read notebook '{path}': {exc}")
+
+        cells = notebook.get("cells")
+        if not isinstance(cells, list):
+            return self._tool_error(f"Invalid notebook format: {path}")
+
+        if cell_type is not None and cell_type not in {"code", "markdown"}:
+            return self._tool_error(
+                "cell_type must be either 'code' or 'markdown'."
+            )
+        if edit_mode not in {"replace", "insert", "delete"}:
+            return self._tool_error(
+                "edit_mode must be one of 'replace', 'insert', or 'delete'."
+            )
+
+        target_index = None
+        if cell_id is not None:
+            for index, cell in enumerate(cells):
+                if cell.get("id") == cell_id:
+                    target_index = index
+                    break
+
+        if edit_mode == "replace":
+            if target_index is None:
+                return self._tool_error(
+                    "cell_id must refer to an existing cell for replace."
+                )
+            if not new_source:
+                return self._tool_error("new_source is required for replace.")
+            target_cell = cells[target_index]
+            target_cell["source"] = self._normalize_notebook_source(new_source)
+            if cell_type is not None:
+                target_cell["cell_type"] = cell_type
+                if cell_type == "code":
+                    target_cell.setdefault("outputs", [])
+                    target_cell.setdefault("execution_count", None)
+                else:
+                    target_cell.pop("outputs", None)
+                    target_cell.pop("execution_count", None)
+            result = (
+                f"Updated cell '{target_cell.get('id')}' in notebook "
+                f"'{path}'."
+            )
+        elif edit_mode == "insert":
+            if not new_source:
+                return self._tool_error("new_source is required for insert.")
+            target_cell_type = cell_type or "code"
+            new_cell = self._build_notebook_cell(
+                new_source=new_source,
+                cell_type=target_cell_type,
+            )
+            if target_index is None:
+                cells.append(new_cell)
+                location = "at the end"
+            else:
+                cells.insert(target_index + 1, new_cell)
+                location = f"after cell '{cell_id}'"
+            result = (
+                f"Inserted new cell '{new_cell['id']}' {location} in "
+                f"notebook '{path}'."
+            )
+        else:
+            if target_index is None:
+                return self._tool_error(
+                    "cell_id must refer to an existing cell for delete."
+                )
+            removed = cells.pop(target_index)
+            result = (
+                f"Deleted cell '{removed.get('id')}' from notebook "
+                f"'{path}'."
+            )
+
+        try:
+            with path.open("w", encoding=self.default_encoding) as file:
+                json.dump(notebook, file, indent=1, ensure_ascii=False)
+                file.write("\n")
+        except OSError as exc:
+            return self._tool_error(
+                f"Failed to write notebook '{path}': {exc}"
+            )
+
+        return result
+
     def search_files(
         self,
         pattern: str,
@@ -1255,15 +1640,7 @@ class FileToolkit(BaseToolkit):
         import json
 
         try:
-            # resolve search path
-            if path:
-                path_obj = Path(path)
-                if not path_obj.is_absolute():
-                    search_path = (self.working_directory / path_obj).resolve()
-                else:
-                    search_path = path_obj.resolve()
-            else:
-                search_path = self.working_directory
+            search_path = self._resolve_search_path(path)
 
             # validate that search path exists
             if not search_path.exists():
@@ -1379,24 +1756,7 @@ class FileToolkit(BaseToolkit):
             FunctionTool(self.read_file),
             FunctionTool(self.edit_file),
             FunctionTool(self.search_files),
+            FunctionTool(self.notebook_edit_cell),
+            FunctionTool(self.glob_files),
+            FunctionTool(self.grep_files),
         ]
-
-
-# Backward compatibility: FileWriteToolkit as deprecated alias
-class FileWriteToolkit(FileToolkit):
-    r"""Deprecated: Use FileToolkit instead.
-
-    This class is maintained for backward compatibility only.
-    Please use FileToolkit for new code.
-    """
-
-    def __init__(self, *args, **kwargs):
-        import warnings
-
-        warnings.warn(
-            "FileWriteToolkit is deprecated and will be removed in a "
-            "future version. Please use FileToolkit instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(*args, **kwargs)
