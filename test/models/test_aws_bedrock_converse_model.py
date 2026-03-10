@@ -158,6 +158,39 @@ def test_converse_supports_data_url_image_conversion():
 
 
 @pytest.mark.model_backend
+def test_converse_response_format_builds_output_config():
+    from pydantic import BaseModel as PydanticBaseModel
+
+    class MySchema(PydanticBaseModel):
+        """Extract structured data."""
+
+        title: str
+        summary: str
+
+    model = _make_model(bedrock_client=object())
+    request = model._build_converse_request(
+        messages=[{"role": "user", "content": "hello"}],
+        response_format=MySchema,
+    )
+    assert "outputConfig" in request
+    text_format = request["outputConfig"]["textFormat"]
+    assert text_format["type"] == "json_schema"
+    json_schema = text_format["structure"]["jsonSchema"]
+    assert json_schema["name"] == "MySchema"
+    assert '"title"' in json_schema["schema"]
+    assert '"summary"' in json_schema["schema"]
+
+
+@pytest.mark.model_backend
+def test_converse_no_response_format_no_output_config():
+    model = _make_model(bedrock_client=object())
+    request = model._build_converse_request(
+        messages=[{"role": "user", "content": "hello"}],
+    )
+    assert "outputConfig" not in request
+
+
+@pytest.mark.model_backend
 def test_parse_json_or_text_scalar_json_is_text():
     model = _make_model(bedrock_client=object())
     assert model._parse_json_or_text("42") == {"text": "42"}
@@ -196,10 +229,138 @@ def test_converse_stream_is_supported():
 
 @pytest.mark.model_backend
 @pytest.mark.asyncio
-async def test_converse_async_not_supported():
-    model = _make_model(bedrock_client=object())
-    with pytest.raises(NotImplementedError):
-        await model._arun([{"role": "user", "content": "hi"}])
+async def test_converse_async_non_stream():
+    """Test async non-stream converse with a mock aioboto3 session."""
+
+    class MockAsyncClient:
+        async def converse(self, **kwargs):
+            return {
+                "output": {
+                    "message": {
+                        "role": "assistant",
+                        "content": [{"text": "hello async"}],
+                    }
+                },
+                "stopReason": "end_turn",
+                "usage": {
+                    "inputTokens": 10,
+                    "outputTokens": 5,
+                },
+                "ResponseMetadata": {"RequestId": "req-async-123"},
+            }
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+    class MockSession:
+        def client(self, *args, **kwargs):
+            return MockAsyncClient()
+
+    # Patch aioboto3.Session to return our mock
+    import sys
+    import types as _types
+
+    mock_aioboto3 = _types.SimpleNamespace(Session=MockSession)
+    monkeypatch_token = sys.modules.get("aioboto3")
+    sys.modules["aioboto3"] = mock_aioboto3
+    try:
+        model = _make_model(bedrock_client=object())
+        result = await model._arun([{"role": "user", "content": "hi"}])
+        assert result.id == "req-async-123"
+        assert result.choices[0].message.content == "hello async"
+        assert result.usage.prompt_tokens == 10
+        assert result.usage.completion_tokens == 5
+    finally:
+        if monkeypatch_token is not None:
+            sys.modules["aioboto3"] = monkeypatch_token
+        else:
+            sys.modules.pop("aioboto3", None)
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_converse_async_stream():
+    """Test async stream converse with a mock aioboto3 session."""
+
+    class MockAsyncEventStream:
+        def __init__(self, events):
+            self._events = events
+            self._index = 0
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            if self._index >= len(self._events):
+                raise StopAsyncIteration
+            event = self._events[self._index]
+            self._index += 1
+            return event
+
+    class MockAsyncClient:
+        async def converse_stream(self, **kwargs):
+            return {
+                "stream": MockAsyncEventStream(
+                    [
+                        {"messageStart": {"role": "assistant"}},
+                        {"contentBlockDelta": {"delta": {"text": "hi async"}}},
+                        {"messageStop": {"stopReason": "end_turn"}},
+                    ]
+                )
+            }
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+    class MockSession:
+        def client(self, *args, **kwargs):
+            return MockAsyncClient()
+
+    import sys
+    import types as _types
+
+    mock_aioboto3 = _types.SimpleNamespace(Session=MockSession)
+    monkeypatch_token = sys.modules.get("aioboto3")
+    sys.modules["aioboto3"] = mock_aioboto3
+    try:
+        model = _make_model(
+            BedrockConfig(stream=True).as_dict(),
+            bedrock_client=object(),
+        )
+        result = await model._arun([{"role": "user", "content": "hi"}])
+        chunks = [chunk async for chunk in result]
+        assert len(chunks) >= 2
+        assert chunks[-1].choices[0].finish_reason == "stop"
+    finally:
+        if monkeypatch_token is not None:
+            sys.modules["aioboto3"] = monkeypatch_token
+        else:
+            sys.modules.pop("aioboto3", None)
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_converse_async_missing_aioboto3():
+    """Test that ImportError is raised when aioboto3 is not installed."""
+    import sys
+
+    monkeypatch_token = sys.modules.get("aioboto3")
+    sys.modules["aioboto3"] = None  # type: ignore[assignment]
+    try:
+        model = _make_model(bedrock_client=object())
+        with pytest.raises(ImportError, match="aioboto3"):
+            await model._arun([{"role": "user", "content": "hi"}])
+    finally:
+        if monkeypatch_token is not None:
+            sys.modules["aioboto3"] = monkeypatch_token
+        else:
+            sys.modules.pop("aioboto3", None)
 
 
 @pytest.mark.model_backend

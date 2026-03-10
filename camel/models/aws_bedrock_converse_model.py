@@ -20,6 +20,7 @@ import time
 import warnings
 from typing import (
     Any,
+    AsyncGenerator,
     Dict,
     Generator,
     List,
@@ -75,6 +76,10 @@ class AWSBedrockConverseModel(BaseModelBackend):
             key. (default: :obj:`None`)
         aws_session_token (str, optional): Temporary session token for STS
             credentials. (default: :obj:`None`)
+        url (str, optional): Custom endpoint URL for the Bedrock Runtime
+            service (e.g. VPC endpoint). If not provided, will fall back to
+            the ``BEDROCK_API_BASE_URL`` environment variable.
+            (default: :obj:`None`)
         token_counter (BaseTokenCounter, optional): Token counter to use
             for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
@@ -106,6 +111,7 @@ class AWSBedrockConverseModel(BaseModelBackend):
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
+        url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
@@ -132,11 +138,13 @@ class AWSBedrockConverseModel(BaseModelBackend):
                 "Must be either '5m' or '1h'."
             )
 
+        url = url or os.environ.get("BEDROCK_API_BASE_URL") or None
+
         super().__init__(
             model_type=model_type,
             model_config_dict=model_config_dict,
             api_key=api_key,
-            url=None,
+            url=url,
             token_counter=token_counter,
             timeout=timeout or float(os.environ.get("MODEL_TIMEOUT", 180)),
             max_retries=max_retries,
@@ -180,6 +188,9 @@ class AWSBedrockConverseModel(BaseModelBackend):
                     )
             # Otherwise: boto3 default credential chain
             # (env vars, ~/.aws/credentials, instance profile, etc.)
+
+            if self._url:
+                client_kwargs["endpoint_url"] = self._url
 
             import boto3
 
@@ -466,10 +477,33 @@ class AWSBedrockConverseModel(BaseModelBackend):
                 return {"tool": tool_choice["tool"]}
         return None
 
+    @staticmethod
+    def _convert_response_format_to_output_config(
+        response_format: Type[BaseModel],
+    ) -> Dict[str, Any]:
+        schema = response_format.model_json_schema()
+        return {
+            "textFormat": {
+                "type": "json_schema",
+                "structure": {
+                    "jsonSchema": {
+                        "schema": json.dumps(schema, ensure_ascii=False),
+                        "name": response_format.__name__,
+                        "description": schema.get(
+                            "description",
+                            "Structured output for "
+                            f"{response_format.__name__}",
+                        ),
+                    }
+                },
+            }
+        }
+
     def _build_converse_request(
         self,
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
+        response_format: Optional[Type[BaseModel]] = None,
     ) -> Dict[str, Any]:
         request: Dict[str, Any] = {"modelId": str(self.model_type)}
         system_blocks, bedrock_messages = (
@@ -504,6 +538,11 @@ class AWSBedrockConverseModel(BaseModelBackend):
             ]
         if additional_fields:
             request["additionalModelRequestFields"] = additional_fields
+
+        if response_format is not None:
+            request["outputConfig"] = (
+                self._convert_response_format_to_output_config(response_format)
+            )
 
         resolved_tools = tools
         if resolved_tools is None:
@@ -619,14 +658,138 @@ class AWSBedrockConverseModel(BaseModelBackend):
             usage=usage,
         )
 
+    def _process_stream_event(
+        self,
+        event: Dict[str, Any],
+        state: Dict[str, Any],
+        _make_chunk: Any,
+    ) -> Tuple[Optional[ChatCompletionChunk], bool]:
+        """Process a single Bedrock stream event and return a chunk if any.
+
+        Returns:
+            A tuple of (chunk_or_None, finish_reason_sent).
+        """
+        block_to_tool_idx = state["block_to_tool_idx"]
+
+        if "messageStart" in event:
+            return _make_chunk(
+                choices=[{"index": 0, "delta": {}, "finish_reason": None}]
+            ), False
+
+        if "contentBlockStart" in event:
+            start = event["contentBlockStart"].get("start", {})
+            block_idx = int(
+                event["contentBlockStart"].get("contentBlockIndex", 0)
+            )
+            tool_use = start.get("toolUse")
+            if isinstance(tool_use, dict):
+                block_to_tool_idx[block_idx] = state["next_tool_idx"]
+                tool_id = str(tool_use.get("toolUseId", ""))
+                tool_name = str(tool_use.get("name", ""))
+                chunk = _make_chunk(
+                    choices=[
+                        {
+                            "index": 0,
+                            "delta": {
+                                "tool_calls": [
+                                    {
+                                        "index": state["next_tool_idx"],
+                                        "id": tool_id,
+                                        "type": "function",
+                                        "function": {
+                                            "name": tool_name,
+                                            "arguments": "",
+                                        },
+                                    }
+                                ]
+                            },
+                            "finish_reason": None,
+                        }
+                    ]
+                )
+                state["next_tool_idx"] += 1
+                return chunk, False
+            return None, False
+
+        if "contentBlockDelta" in event:
+            delta_obj = event["contentBlockDelta"].get("delta", {})
+            block_idx = int(
+                event["contentBlockDelta"].get("contentBlockIndex", 0)
+            )
+
+            if isinstance(delta_obj.get("text"), str):
+                return _make_chunk(
+                    choices=[
+                        {
+                            "index": 0,
+                            "delta": {"content": delta_obj["text"]},
+                            "finish_reason": None,
+                        }
+                    ]
+                ), False
+
+            tool_use = delta_obj.get("toolUse")
+            if isinstance(tool_use, dict):
+                raw_input = tool_use.get("input", "")
+                argument_delta = (
+                    raw_input
+                    if isinstance(raw_input, str)
+                    else json.dumps(raw_input, ensure_ascii=False)
+                )
+                mapped_idx = block_to_tool_idx.get(block_idx, 0)
+                return _make_chunk(
+                    choices=[
+                        {
+                            "index": 0,
+                            "delta": {
+                                "tool_calls": [
+                                    {
+                                        "index": mapped_idx,
+                                        "function": {
+                                            "arguments": argument_delta
+                                        },
+                                    }
+                                ]
+                            },
+                            "finish_reason": None,
+                        }
+                    ]
+                ), False
+            return None, False
+
+        if "metadata" in event:
+            usage = self._parse_bedrock_usage(
+                event["metadata"].get("usage", {}) or {}
+            )
+            return _make_chunk(
+                choices=[{"index": 0, "delta": {}, "finish_reason": None}],
+                usage=usage,
+            ), False
+
+        if "messageStop" in event:
+            reason = event["messageStop"].get("stopReason")
+            return _make_chunk(
+                choices=[
+                    {
+                        "index": 0,
+                        "delta": {},
+                        "finish_reason": self._map_stop_reason(reason),
+                    }
+                ]
+            ), True
+
+        return None, False
+
     def _converse_stream_to_openai_chunks(
         self,
         stream_obj: Dict[str, Any],
         model: str,
     ) -> Generator[ChatCompletionChunk, None, None]:
         request_id = f"chatcmpl-bedrock-stream-{int(time.time())}"
-        block_to_tool_idx: Dict[int, int] = {}
-        next_tool_idx = 0
+        state: Dict[str, Any] = {
+            "block_to_tool_idx": {},
+            "next_tool_idx": 0,
+        }
         finish_reason_sent = False
 
         def _make_chunk(**kwargs: Any) -> ChatCompletionChunk:
@@ -639,115 +802,13 @@ class AWSBedrockConverseModel(BaseModelBackend):
             )
 
         for event in stream_obj.get("stream", []):
-            if "messageStart" in event:
-                yield _make_chunk(
-                    choices=[{"index": 0, "delta": {}, "finish_reason": None}]
-                )
-                continue
-
-            if "contentBlockStart" in event:
-                start = event["contentBlockStart"].get("start", {})
-                block_idx = int(
-                    event["contentBlockStart"].get("contentBlockIndex", 0)
-                )
-                tool_use = start.get("toolUse")
-                if isinstance(tool_use, dict):
-                    block_to_tool_idx[block_idx] = next_tool_idx
-                    tool_id = str(tool_use.get("toolUseId", ""))
-                    tool_name = str(tool_use.get("name", ""))
-                    yield _make_chunk(
-                        choices=[
-                            {
-                                "index": 0,
-                                "delta": {
-                                    "tool_calls": [
-                                        {
-                                            "index": next_tool_idx,
-                                            "id": tool_id,
-                                            "type": "function",
-                                            "function": {
-                                                "name": tool_name,
-                                                "arguments": "",
-                                            },
-                                        }
-                                    ]
-                                },
-                                "finish_reason": None,
-                            }
-                        ]
-                    )
-                    next_tool_idx += 1
-                continue
-
-            if "contentBlockDelta" in event:
-                delta_obj = event["contentBlockDelta"].get("delta", {})
-                block_idx = int(
-                    event["contentBlockDelta"].get("contentBlockIndex", 0)
-                )
-
-                if isinstance(delta_obj.get("text"), str):
-                    yield _make_chunk(
-                        choices=[
-                            {
-                                "index": 0,
-                                "delta": {"content": delta_obj["text"]},
-                                "finish_reason": None,
-                            }
-                        ]
-                    )
-                    continue
-
-                tool_use = delta_obj.get("toolUse")
-                if isinstance(tool_use, dict):
-                    raw_input = tool_use.get("input", "")
-                    argument_delta = (
-                        raw_input
-                        if isinstance(raw_input, str)
-                        else json.dumps(raw_input, ensure_ascii=False)
-                    )
-                    mapped_idx = block_to_tool_idx.get(block_idx, 0)
-                    yield _make_chunk(
-                        choices=[
-                            {
-                                "index": 0,
-                                "delta": {
-                                    "tool_calls": [
-                                        {
-                                            "index": mapped_idx,
-                                            "function": {
-                                                "arguments": argument_delta
-                                            },
-                                        }
-                                    ]
-                                },
-                                "finish_reason": None,
-                            }
-                        ]
-                    )
-                continue
-
-            if "metadata" in event:
-                usage = self._parse_bedrock_usage(
-                    event["metadata"].get("usage", {}) or {}
-                )
-                yield _make_chunk(
-                    choices=[{"index": 0, "delta": {}, "finish_reason": None}],
-                    usage=usage,
-                )
-                continue
-
-            if "messageStop" in event:
-                reason = event["messageStop"].get("stopReason")
+            chunk, is_finish = self._process_stream_event(
+                event, state, _make_chunk
+            )
+            if is_finish:
                 finish_reason_sent = True
-                yield _make_chunk(
-                    choices=[
-                        {
-                            "index": 0,
-                            "delta": {},
-                            "finish_reason": self._map_stop_reason(reason),
-                        }
-                    ]
-                )
+            if chunk is not None:
+                yield chunk
 
         if not finish_reason_sent:
             yield _make_chunk(
@@ -764,15 +825,9 @@ class AWSBedrockConverseModel(BaseModelBackend):
         ChatCompletion,
         Generator[ChatCompletionChunk, None, None],
     ]:
-        if response_format is not None:
-            warnings.warn(
-                "The 'response_format' parameter is not supported by "
-                "Bedrock Converse and will be ignored.",
-                UserWarning,
-                stacklevel=2,
-            )
-
-        request = self._build_converse_request(messages, tools=tools)
+        request = self._build_converse_request(
+            messages, tools=tools, response_format=response_format
+        )
         if self.model_config_dict.get("stream", False):
             stream_resp = self.bedrock_client.converse_stream(**request)
             return self._converse_stream_to_openai_chunks(
@@ -783,15 +838,118 @@ class AWSBedrockConverseModel(BaseModelBackend):
             response=response, model=str(self.model_type)
         )
 
+    async def _aconverse_stream_to_openai_chunks(
+        self,
+        stream_obj: Dict[str, Any],
+        model: str,
+    ) -> AsyncGenerator[ChatCompletionChunk, None]:
+        request_id = f"chatcmpl-bedrock-stream-{int(time.time())}"
+        state: Dict[str, Any] = {
+            "block_to_tool_idx": {},
+            "next_tool_idx": 0,
+        }
+        finish_reason_sent = False
+
+        def _make_chunk(**kwargs: Any) -> ChatCompletionChunk:
+            return ChatCompletionChunk.construct(
+                id=request_id,
+                created=int(time.time()),
+                model=model,
+                object="chat.completion.chunk",
+                **kwargs,
+            )
+
+        async for event in stream_obj.get("stream", []):
+            chunk, is_finish = self._process_stream_event(
+                event, state, _make_chunk
+            )
+            if is_finish:
+                finish_reason_sent = True
+            if chunk is not None:
+                yield chunk
+
+        if not finish_reason_sent:
+            yield _make_chunk(
+                choices=[{"index": 0, "delta": {}, "finish_reason": "stop"}]
+            )
+
+    def _get_async_client_kwargs(self) -> Dict[str, Any]:
+        client_kwargs: Dict[str, Any] = {}
+        if self._region_name is not None:
+            client_kwargs["region_name"] = self._region_name
+
+        if self._api_key:
+            os.environ["AWS_BEARER_TOKEN_BEDROCK"] = self._api_key
+        elif self._aws_access_key_id and self._aws_secret_access_key:
+            client_kwargs["aws_access_key_id"] = self._aws_access_key_id
+            client_kwargs["aws_secret_access_key"] = (
+                self._aws_secret_access_key
+            )
+            if self._aws_session_token:
+                client_kwargs["aws_session_token"] = self._aws_session_token
+
+        if self._url:
+            client_kwargs["endpoint_url"] = self._url
+
+        return client_kwargs
+
+    async def _arun_stream(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> AsyncGenerator[ChatCompletionChunk, None]:
+        import aioboto3
+
+        request = self._build_converse_request(
+            messages, tools=tools, response_format=response_format
+        )
+        client_kwargs = self._get_async_client_kwargs()
+
+        session = aioboto3.Session()
+        async with session.client(
+            "bedrock-runtime", **client_kwargs
+        ) as async_client:
+            stream_resp = await async_client.converse_stream(**request)
+            async for chunk in self._aconverse_stream_to_openai_chunks(
+                stream_obj=stream_resp, model=str(self.model_type)
+            ):
+                yield chunk
+
     @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> None:
-        raise NotImplementedError(
-            "Async inference is not supported for AWSBedrockConverseModel "
-            "because boto3 Bedrock Runtime client is synchronous. "
-            "Use `_run` instead."
+    ) -> Union[
+        ChatCompletion,
+        AsyncGenerator[ChatCompletionChunk, None],
+    ]:
+        try:
+            import aioboto3
+        except ImportError:
+            raise ImportError(
+                "The 'aioboto3' package is required for async inference "
+                "with AWSBedrockConverseModel. "
+                "Install it with: pip install aioboto3"
+            )
+
+        if self.model_config_dict.get("stream", False):
+            return self._arun_stream(
+                messages, tools=tools, response_format=response_format
+            )
+
+        request = self._build_converse_request(
+            messages, tools=tools, response_format=response_format
         )
+        client_kwargs = self._get_async_client_kwargs()
+
+        session = aioboto3.Session()
+        async with session.client(
+            "bedrock-runtime", **client_kwargs
+        ) as async_client:
+            response = await async_client.converse(**request)
+            return self._convert_converse_to_openai_response(
+                response=response, model=str(self.model_type)
+            )
