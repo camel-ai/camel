@@ -318,6 +318,7 @@ eigent = [
     "httplib2>=0.31.0",
     "av<16",
     "mistralai>=1.1.0,<2",
+    "boto3>=1.42.64",
 ]
 all = [
     "numpy>=1.2,<=2.2",
