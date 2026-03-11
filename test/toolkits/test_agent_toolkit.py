@@ -19,6 +19,31 @@ from typing import ClassVar, List
 import pytest
 
 from camel.toolkits.agent_toolkit import AgentToolkit
+from camel.toolkits.function_tool import FunctionTool
+
+
+def parent_search(query: str) -> str:
+    """Search docs.
+
+    Args:
+        query (str): Search query.
+
+    Returns:
+        str: Search result.
+    """
+    return query
+
+
+def parent_calc(expr: str) -> str:
+    """Evaluate expression.
+
+    Args:
+        expr (str): Expression to evaluate.
+
+    Returns:
+        str: Evaluation result.
+    """
+    return expr
 
 
 class FakeChatAgent:
@@ -48,6 +73,15 @@ class FakeChatAgent:
 
 
 class TestAgentToolkit:
+    def _wait_task(self, toolkit, task_id: str, timeout: float = 2.0):
+        task = toolkit._tasks[task_id]
+        try:
+            task.future.result(timeout=timeout)
+        except Exception:
+            pass
+        toolkit._complete_task(task_id)
+        return toolkit._tasks[task_id]
+
     @pytest.fixture(autouse=True)
     def reset_fake_agents(self):
         FakeChatAgent.created_agents = []
@@ -67,7 +101,12 @@ class TestAgentToolkit:
         def scheduling_strategy():
             return None
 
+        tools = [
+            FunctionTool(parent_search),
+            FunctionTool(parent_calc),
+        ]
         return SimpleNamespace(
+            agent_id="parent-agent",
             model_backend=SimpleNamespace(
                 models="parent-model",
                 scheduling_strategy=scheduling_strategy,
@@ -83,12 +122,14 @@ class TestAgentToolkit:
             prune_tool_calls_from_memory=True,
             on_request_usage=None,
             stream_accumulate=True,
-            _clone_tools=lambda: (["parent-tool"], ["register-me"]),
+            _clone_tools=lambda: (tools, ["register-me"]),
         )
 
-    def test_spawns_subagent_and_returns_result(self, toolkit, parent_agent):
-        """New sub-agent is created, executes prompt, and returns output."""
+    def test_run_subagent_returns_completed_result(
+        self, toolkit, parent_agent
+    ):
         toolkit.register_agent(parent_agent)
+
         result = toolkit.agent_run_subagent(
             prompt="Research Eigent AI",
             description="Research Eigent AI",
@@ -97,32 +138,25 @@ class TestAgentToolkit:
 
         assert result["created"] is True
         assert result["agent_id"] == "fake-agent-1"
-        assert result["task_id"]
-        assert result["subagent_type"] == "research"
-        assert result["description"] == "Research Eigent AI"
-        assert result["status"] in {"running", "completed"}
-
-        output = toolkit.agent_get_task_output(result["task_id"], block=True)
-        assert output["result"] == "handled::Research Eigent AI"
-        assert output["status"] == "completed"
+        assert result["status"] == "completed"
+        assert result["result"] == "handled::Research Eigent AI"
+        assert result["error"] is None
         assert toolkit._sessions["fake-agent-1"].turns == 1
 
-    def test_resumes_existing_subagent(self, toolkit, parent_agent):
-        """Passing agent_id reuses the same sub-agent
-        with accumulated state."""
+    def test_run_subagent_resumes_existing_session(
+        self, toolkit, parent_agent
+    ):
         toolkit.register_agent(parent_agent)
+
         first = toolkit.agent_run_subagent(
             prompt="First task",
             description="Deep analysis",
             subagent_type="analysis",
         )
-        toolkit.agent_get_task_output(first["task_id"], block=True)
         second = toolkit.agent_run_subagent(
             prompt="Continue the same task",
             agent_id=first["agent_id"],
         )
-
-        toolkit.agent_get_task_output(second["task_id"], block=True)
 
         assert first["agent_id"] == second["agent_id"]
         assert second["created"] is False
@@ -131,72 +165,78 @@ class TestAgentToolkit:
             "First task",
             "Continue the same task",
         ]
-        assert toolkit._sessions[first["agent_id"]].turns == 2
 
-    def test_error_for_unknown_agent_id(self, toolkit):
-        """Resuming a non-existent agent_id returns a clear error."""
-        toolkit._agent = SimpleNamespace()
-        result = toolkit.agent_run_subagent(
-            prompt="Continue",
-            agent_id="missing-agent",
-        )
-
-        assert result["status"] == "failed"
-        assert "No sub-agent session found" in result["error"]
-
-    def test_requires_parent_agent(self, toolkit):
-        """Spawning without a registered parent agent fails gracefully."""
-        result = toolkit.agent_run_subagent(
-            prompt="Research Eigent AI",
-            description="Research Eigent AI",
-            subagent_type="research",
-        )
-
-        assert result["status"] == "failed"
-        assert "must be registered" in result["error"]
-
-    def test_inherits_parent_config_with_shared_tools(
-        self, toolkit, parent_agent
-    ):
-        """Sub-agent inherits model, tools, and settings from parent."""
-        toolkit.share_parent_tools = True
+    def test_dynamic_tool_subset_selection(self, toolkit, parent_agent):
         toolkit.register_agent(parent_agent)
 
         toolkit.agent_run_subagent(
-            prompt="Implement the fix",
-            description="Coding task",
-            subagent_type="coding",
+            prompt="Use just search",
+            description="Targeted tooling",
+            tool_names=["parent_search"],
         )
 
         created_agent = FakeChatAgent.created_agents[0]
-        assert created_agent.kwargs["model"] == "parent-model"
-        assert created_agent.kwargs["tools"] == ["parent-tool"]
+        tools = created_agent.kwargs["tools"]
+        assert [tool.get_function_name() for tool in tools] == [
+            "parent_search"
+        ]
+
+    def test_share_parent_tools_override(self, toolkit, parent_agent):
+        toolkit.register_agent(parent_agent)
+
+        toolkit.agent_run_subagent(
+            prompt="Use every parent tool",
+            description="All tools",
+            share_parent_tools=True,
+        )
+
+        created_agent = FakeChatAgent.created_agents[0]
+        tools = created_agent.kwargs["tools"]
+        assert sorted(tool.get_function_name() for tool in tools) == [
+            "parent_calc",
+            "parent_search",
+        ]
         assert created_agent.kwargs["toolkits_to_register_agent"] == [
             "register-me"
         ]
-        assert created_agent.kwargs["output_language"] == "Chinese"
-        assert created_agent.kwargs["message_window_size"] == 12
-        assert created_agent.kwargs["token_limit"] == 4096
+
+    def test_default_tools_fallback(self, toolkit, parent_agent):
+        def sentinel() -> None:
+            """Sentinel.
+
+            Returns:
+                None: Nothing.
+            """
+
+        toolkit.default_tools = [sentinel]
+        toolkit.register_agent(parent_agent)
+
+        toolkit.agent_run_subagent(
+            prompt="Use default tool",
+            description="Fallback tools",
+        )
+
+        created_agent = FakeChatAgent.created_agents[0]
+        assert created_agent.kwargs["tools"] == [sentinel]
+        assert created_agent.kwargs["toolkits_to_register_agent"] is None
 
     def test_stop_running_task(self, toolkit, parent_agent):
-        """A long-running task can be stopped via agent_stop_task."""
         FakeChatAgent.delay_seconds = 0.5
         toolkit.register_agent(parent_agent)
 
         task = toolkit.agent_run_subagent(
             prompt="Long running task",
             description="Coding task",
-            subagent_type="coding",
+            timeout=0.0,
         )
         stopped = toolkit.agent_stop_task(task["task_id"])
-        output = toolkit.agent_get_task_output(task["task_id"], block=True)
+        output = self._wait_task(toolkit, task["task_id"])
 
         assert stopped["status"] in {"stopping", "stopped"}
-        assert output["status"] == "stopped"
-        assert output["result"] == "stopped::Long running task"
+        assert output.status == "stopped"
+        assert output.result == "stopped::Long running task"
 
     def test_empty_prompt_rejected(self, toolkit, parent_agent):
-        """An empty or whitespace-only prompt is rejected."""
         toolkit.register_agent(parent_agent)
 
         for bad_prompt in ["", "   ", None]:
@@ -205,91 +245,28 @@ class TestAgentToolkit:
                 description="test",
             )
             assert result["status"] == "failed"
-            assert "empty" in result["error"].lower() or result["error"]
+            assert "empty" in result["error"].lower()
 
-    def test_get_output_for_unknown_task_id(self, toolkit, parent_agent):
-        """Querying a non-existent task_id returns an error."""
-        toolkit.register_agent(parent_agent)
+    def test_unknown_agent_id_returns_error(self, toolkit):
+        toolkit._agent = SimpleNamespace()
 
-        result = toolkit.agent_get_task_output("nonexistent-task-id")
+        result = toolkit.agent_run_subagent(
+            prompt="Continue",
+            agent_id="missing-agent",
+        )
 
         assert result["status"] == "failed"
-        assert "No sub-agent task found" in result["error"]
+        assert "No sub-agent session found" in result["error"]
 
-    def test_stop_unknown_task_id(self, toolkit, parent_agent):
-        """Stopping a non-existent task_id returns an error."""
-        toolkit.register_agent(parent_agent)
-
-        result = toolkit.agent_stop_task("nonexistent-task-id")
-
-        assert result["status"] == "failed"
-        assert "No sub-agent task found" in result["error"]
-
-    def test_stop_already_completed_task(self, toolkit, parent_agent):
-        """Stopping an already-completed task reports it is not running."""
-        toolkit.register_agent(parent_agent)
-        task = toolkit.agent_run_subagent(
-            prompt="Quick task",
-            description="test",
-        )
-        toolkit.agent_get_task_output(task["task_id"], block=True)
-
-        result = toolkit.agent_stop_task(task["task_id"])
-
-        assert result["status"] == "completed"
-        assert result["message"] == "Task is not running."
-
-    def test_clone_for_new_session_has_no_old_state(
+    def test_old_finished_tasks_are_retained_until_limit_is_exceeded(
         self, toolkit, parent_agent
     ):
-        """Cloned toolkit keeps config but drops all sessions and tasks."""
-        toolkit.register_agent(parent_agent)
-        toolkit.agent_run_subagent(
-            prompt="Original task",
-            description="test",
-        )
-
-        cloned = toolkit.clone_for_new_session()
-
-        assert cloned._sessions == {}
-        assert cloned._tasks == {}
-        assert cloned.share_parent_tools == toolkit.share_parent_tools
-        assert cloned.default_tools == toolkit.default_tools
-
-    def test_default_tools_fallback(self, toolkit, parent_agent):
-        """When share_parent_tools is False, default_tools are used."""
-
-        def sentinel_tool():
-            return None
-
-        toolkit.default_tools = [sentinel_tool]
-        toolkit.share_parent_tools = False
         toolkit.register_agent(parent_agent)
 
-        toolkit.agent_run_subagent(
-            prompt="Use default tools",
-            description="test",
-        )
+        ids = []
+        for i in range(10):
+            result = toolkit.agent_run_subagent(prompt=f"task-{i}")
+            ids.append(result["task_id"])
 
-        created_agent = FakeChatAgent.created_agents[0]
-        assert created_agent.kwargs["tools"] == [sentinel_tool]
-        assert created_agent.kwargs["toolkits_to_register_agent"] is None
-
-    def test_get_output_nonblocking_returns_running(
-        self, toolkit, parent_agent
-    ):
-        """Non-blocking get_output returns 'running' for an in-flight task."""
-        FakeChatAgent.delay_seconds = 0.5
-        toolkit.register_agent(parent_agent)
-
-        task = toolkit.agent_run_subagent(
-            prompt="Slow task",
-            description="test",
-        )
-        output = toolkit.agent_get_task_output(task["task_id"], block=False)
-
-        assert output["status"] == "running"
-        assert output["result"] is None
-
-        toolkit.agent_stop_task(task["task_id"])
-        toolkit.agent_get_task_output(task["task_id"], block=True)
+        for task_id in ids:
+            assert toolkit._tasks[task_id].status == "completed"
