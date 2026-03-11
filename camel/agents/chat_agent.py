@@ -92,6 +92,7 @@ from camel.toolkits import FunctionTool, RegisteredAgentToolkit
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
+    ChatCompletionMessageFunctionToolCall,
     ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
@@ -2561,14 +2562,15 @@ class ChatAgent(BaseAgent):
 
     @staticmethod
     def _collect_tool_calls_from_completion(
-        tool_calls: List[Any],
+        tool_calls: List[ChatCompletionMessageFunctionToolCall],
         accumulated_tool_calls: Dict[str, Any],
     ) -> None:
         r"""Convert tool calls from a ChatCompletion into the accumulated
         tool-call dictionary format used by the streaming pipeline.
 
         Args:
-            tool_calls: Tool call objects from
+            tool_calls (List[ChatCompletionMessageFunctionToolCall]): Tool
+                call objects from
                 ``completion.choices[0].message.tool_calls``.
             accumulated_tool_calls: Mutable dict that will be populated with
                 the converted entries.
@@ -2586,7 +2588,7 @@ class ChatAgent(BaseAgent):
     def _record_and_build_display_message(
         self,
         final_content: str,
-        parsed_object: Any,
+        parsed_object: Optional[Union[BaseModel, Dict[str, Any]]],
         final_reasoning: Optional[str],
         response_format: Optional[Type[BaseModel]],
     ) -> BaseMessage:
@@ -2597,7 +2599,7 @@ class ChatAgent(BaseAgent):
         display message carries the full content.
 
         Args:
-            final_content: The full final content string.
+            final_content (str): The full final content string.
             parsed_object: The parsed object from structured output stream.
             final_reasoning: The reasoning content, if any.
             response_format: The (possibly modified) response format.
@@ -2605,15 +2607,13 @@ class ChatAgent(BaseAgent):
         Returns:
             BaseMessage: The display message to yield to the caller.
         """
-        parsed_cast = cast("BaseModel | dict[str, Any] | None", parsed_object)  # type: ignore[arg-type]
-
         # Record full content to memory
         record_msg = BaseMessage(
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict={},
             content=final_content,
-            parsed=parsed_cast,
+            parsed=parsed_object,
             reasoning_content=final_reasoning,
         )
         if response_format:
@@ -2706,7 +2706,7 @@ class ChatAgent(BaseAgent):
         self,
         final_completion: Any,
         final_content: str,
-        parsed_object: Any,
+        parsed_object: Optional[Union[BaseModel, Dict[str, Any]]],
         final_reasoning: Optional[str],
         response_format: Optional[Type[BaseModel]],
         tool_call_records: List[ToolCallingRecord],

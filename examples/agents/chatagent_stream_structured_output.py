@@ -98,6 +98,7 @@ async def async_example():
 
     content_parts = []
     async for chunk in await agent.astep(USER_MESSAGE, response_format=Result):
+        final_response = chunk
         if chunk.msgs[0].content:
             content_parts.append(chunk.msgs[0].content)
             print(chunk.msgs[0].content, end="", flush=True)
@@ -105,6 +106,18 @@ async def async_example():
     print()
     full_content = "".join(content_parts)
     print(f"\nFull content: {full_content}")
+
+    # Print tool call records
+    tool_calls = final_response.info.get("tool_calls", [])
+    if tool_calls:
+        print(f"\nTool calls made: {len(tool_calls)}")
+        for i, tc in enumerate(tool_calls, 1):
+            print(f"  {i}. {tc.tool_name}({tc.args}) = {tc.result}")
+
+    # Check parsed output
+    final_msg = final_response.msgs[0]
+    if final_msg.parsed:
+        print(f"\nParsed result: {final_msg.parsed}")
 
 
 if __name__ == "__main__":
