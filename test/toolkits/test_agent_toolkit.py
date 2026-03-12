@@ -166,6 +166,41 @@ class TestAgentToolkit:
             "Continue the same task",
         ]
 
+    def test_run_subagent_without_wait_returns_running_task(
+        self, toolkit, parent_agent
+    ):
+        FakeChatAgent.delay_seconds = 0.3
+        toolkit.register_agent(parent_agent)
+
+        task = toolkit.agent_run_subagent(
+            prompt="Slow task",
+            description="Background-style polling task",
+            wait=False,
+        )
+
+        assert task["created"] is True
+        assert task["status"] == "running"
+
+    def test_get_task_output_supports_polling_and_blocking(
+        self, toolkit, parent_agent
+    ):
+        FakeChatAgent.delay_seconds = 0.2
+        toolkit.register_agent(parent_agent)
+
+        task = toolkit.agent_run_subagent(
+            prompt="Poll later",
+            description="Polling task",
+            wait=False,
+        )
+        initial = toolkit.agent_get_task_output(task["task_id"], block=False)
+        final = toolkit.agent_get_task_output(
+            task["task_id"], block=True, timeout=1.0
+        )
+
+        assert initial["status"] == "running"
+        assert final["status"] == "completed"
+        assert final["result"] == "handled::Poll later"
+
     def test_dynamic_tool_subset_selection(self, toolkit, parent_agent):
         toolkit.register_agent(parent_agent)
 
@@ -270,3 +305,13 @@ class TestAgentToolkit:
 
         for task_id in ids:
             assert toolkit._tasks[task_id].status == "completed"
+
+    def test_get_output_unknown_task_id_returns_error(
+        self, toolkit, parent_agent
+    ):
+        toolkit.register_agent(parent_agent)
+
+        result = toolkit.agent_get_task_output("missing-task-id")
+
+        assert result["status"] == "failed"
+        assert "No sub-agent task found" in result["error"]

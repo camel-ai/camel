@@ -20,8 +20,9 @@ from camel.types import ModelPlatformType, ModelType
 # Define system message for the parent agent
 sys_msg = (
     "You are a manager agent that delegates tasks to sub-agents. "
-    "Use the agent_run_subagent tool when you need to wait for a "
-    "specialized sub-agent result."
+    "Use agent_run_subagent with wait=True when you need a sub-agent result "
+    "before you can continue. Use wait=False only if you intentionally want "
+    "to do other work first and then call agent_get_task_output later."
 )
 
 # Create model and AgentToolkit

@@ -66,8 +66,8 @@ class _AgentTask:
 class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
     r"""Toolkit for delegating a task to a persistent specialized sub-agent.
 
-    This toolkit exposes tools for running a blocking delegated task and
-    stopping a running sub-agent task.
+    This toolkit exposes tools for either waiting on a delegated task directly
+    or starting one and checking its result later.
     """
 
     _TYPE_INSTRUCTIONS = types.MappingProxyType(
@@ -354,7 +354,9 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         agent_id: Optional[str],
         share_parent_tools: Optional[bool],
         tool_names: Optional[List[str]],
-    ) -> Tuple[Optional[_AgentSession], Optional[bool], Optional[Dict[str, Any]]]:
+    ) -> Tuple[
+        Optional[_AgentSession], Optional[bool], Optional[Dict[str, Any]]
+    ]:
         err = self._validate_prompt(
             prompt=prompt,
             agent_id=agent_id,
@@ -364,15 +366,19 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         if err is not None:
             return None, None, err
         if self._require_parent_agent() is None:
-            return None, None, self._error_result(
-                "AgentToolkit must be registered to a parent ChatAgent via "
-                "'toolkits_to_register_agent' before it can spawn "
-                "sub-agents.",
-                agent_id=agent_id,
-                task_id=None,
-                created=False,
-                subagent_type=subagent_type,
-                description=description,
+            return (
+                None,
+                None,
+                self._error_result(
+                    "AgentToolkit must be registered to a parent ChatAgent "
+                    "via 'toolkits_to_register_agent' before it can spawn "
+                    "sub-agents.",
+                    agent_id=agent_id,
+                    task_id=None,
+                    created=False,
+                    subagent_type=subagent_type,
+                    description=description,
+                ),
             )
 
         created = False
@@ -385,24 +391,32 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
                     tool_names=tool_names,
                 )
             except Exception as exc:
-                return None, None, self._error_result(
-                    f"Failed to create sub-agent: {exc}",
-                    agent_id=None,
-                    task_id=None,
-                    created=False,
-                    subagent_type=subagent_type,
-                    description=description,
+                return (
+                    None,
+                    None,
+                    self._error_result(
+                        f"Failed to create sub-agent: {exc}",
+                        agent_id=None,
+                        task_id=None,
+                        created=False,
+                        subagent_type=subagent_type,
+                        description=description,
+                    ),
                 )
             if agent is None:
-                return None, None, self._error_result(
-                    "AgentToolkit must be registered to a parent ChatAgent "
-                    "via 'toolkits_to_register_agent' before it can spawn "
-                    "sub-agents.",
-                    agent_id=None,
-                    task_id=None,
-                    created=False,
-                    subagent_type=subagent_type,
-                    description=description,
+                return (
+                    None,
+                    None,
+                    self._error_result(
+                        "AgentToolkit must be registered to a parent ChatAgent"
+                        " via 'toolkits_to_register_agent' before it can "
+                        "spawn sub-agents.",
+                        agent_id=None,
+                        task_id=None,
+                        created=False,
+                        subagent_type=subagent_type,
+                        description=description,
+                    ),
                 )
             agent_id = agent.agent_id
             session = _AgentSession(
@@ -416,17 +430,21 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
             return session, created, None
 
         with self._lock:
-            session = self._sessions.get(agent_id)
-        if session is None:
-            return None, None, self._error_result(
-                f"No sub-agent session found for agent_id '{agent_id}'.",
-                agent_id=agent_id,
-                task_id=None,
-                created=False,
-                subagent_type=subagent_type,
-                description=description,
+            existing_session = self._sessions.get(agent_id)
+        if existing_session is None:
+            return (
+                None,
+                None,
+                self._error_result(
+                    f"No sub-agent session found for agent_id '{agent_id}'.",
+                    agent_id=agent_id,
+                    task_id=None,
+                    created=False,
+                    subagent_type=subagent_type,
+                    description=description,
+                ),
             )
-        return session, created, None
+        return existing_session, created, None
 
     def _start_task(
         self,
@@ -480,9 +498,10 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         agent_id: Optional[str] = None,
         tool_names: Optional[List[str]] = None,
         share_parent_tools: Optional[bool] = None,
+        wait: bool = False,
         timeout: Optional[float] = None,
     ) -> Dict[str, Any]:
-        r"""Run a specialized sub-agent and wait for its final result.
+        r"""Run a specialized sub-agent, optionally waiting for completion.
 
         Use this tool when the current task is complex enough to benefit from
         a focused child agent with its own conversation state. If
@@ -491,6 +510,11 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         :obj:`agent_id` is provided, the matching sub-agent instance is reused
         rather than recreated. This means the sub-agent keeps its existing
         memory and any state accumulated from previous turns in that session.
+
+        Prefer :obj:`wait=True` when the parent agent needs the sub-agent
+        result before it can continue. Use :obj:`wait=False` only when the
+        parent agent intentionally wants to do other work first and check the
+        task later with :obj:`agent_get_task_output`.
 
         Args:
             prompt (str): The task instructions to send to the sub-agent for
@@ -514,13 +538,18 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
                 controlled by :obj:`share_parent_tools` and toolkit defaults.
             share_parent_tools (Optional[bool]): Per-call override for whether
                 to inherit the parent agent's tools. (default: :obj:`None`)
+            wait (bool): Whether to wait for the sub-agent to finish before
+                returning. Set to :obj:`False` to start the task and check it
+                later with :obj:`agent_get_task_output`.
+                (default: :obj:`False`)
             timeout (Optional[float]): Maximum wait time in seconds for the
-                sub-agent to finish. If the timeout is reached, the task keeps
-                running and the current status is returned.
+                sub-agent to finish when :obj:`wait` is True. If the timeout is
+                reached, the task keeps running and the current status is
+                returned.
 
         Returns:
-            Dict[str, Any]: Final result for completed tasks, or the current
-                running status when a timeout is reached.
+            Dict[str, Any]: Final result for completed tasks, or current task
+                metadata if still running.
         """
         session, created, err = self._get_or_create_session(
             prompt=prompt,
@@ -539,7 +568,7 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         )
         if err is not None or task is None:
             return err or self._error_result("Failed to start sub-agent task.")
-        if not task.future.done():
+        if wait and not task.future.done():
             try:
                 task.future.result(timeout=timeout)
             except concurrent.futures.TimeoutError:
@@ -565,6 +594,51 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
             "status": current_task.status,
             "result": current_task.result,
             "error": current_task.error,
+        }
+
+    def agent_get_task_output(
+        self,
+        task_id: str,
+        block: bool = False,
+        timeout: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        r"""Get the latest result of a sub-agent task started earlier.
+
+        Use this after calling :obj:`agent_run_subagent(wait=False)`. When
+        :obj:`block` is False, the call returns immediately with the latest
+        known status. When :obj:`block` is True, the tool waits up to
+        :obj:`timeout` seconds for completion before returning.
+        """
+        task = self._get_task(task_id)
+        if task is None:
+            return self._error_result(
+                f"No sub-agent task found for task_id '{task_id}'.",
+                task_id=task_id,
+                agent_id=None,
+                result=None,
+            )
+        if block and not task.future.done():
+            try:
+                task.future.result(timeout=timeout)
+            except concurrent.futures.TimeoutError:
+                pass
+            except Exception:
+                pass
+            task = self._get_task(task_id)
+            if task is None:
+                return self._error_result(
+                    f"No sub-agent task found for task_id '{task_id}'.",
+                    task_id=task_id,
+                    agent_id=None,
+                    result=None,
+                )
+
+        return {
+            "task_id": task.task_id,
+            "agent_id": task.agent_id,
+            "status": task.status,
+            "result": task.result,
+            "error": task.error,
         }
 
     def agent_stop_task(self, task_id: str) -> Dict[str, Any]:
@@ -684,5 +758,6 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         r"""Return the tool list for this toolkit."""
         return [
             FunctionTool(self.agent_run_subagent),
+            FunctionTool(self.agent_get_task_output),
             FunctionTool(self.agent_stop_task),
         ]
