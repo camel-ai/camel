@@ -14,6 +14,7 @@
 import json
 import os
 import time
+import warnings
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from openai import AsyncStream, Stream
@@ -737,6 +738,15 @@ class AnthropicModel(BaseModelBackend):
             self._convert_openai_to_anthropic_messages(processed_messages)
         )
 
+        if "max_tokens" not in self.model_config_dict:
+            warnings.warn(
+                "AnthropicModel did not receive `max_tokens`; defaulting to "
+                "16384. Set `model_config_dict['max_tokens']` explicitly to "
+                "suppress this warning.",
+                UserWarning,
+                stacklevel=3,
+            )
+
         # Prepare request parameters
         request_params: Dict[str, Any] = {
             "model": str(self.model_type),
@@ -862,6 +872,15 @@ class AnthropicModel(BaseModelBackend):
         system_message, anthropic_messages = (
             self._convert_openai_to_anthropic_messages(processed_messages)
         )
+
+        if "max_tokens" not in self.model_config_dict:
+            warnings.warn(
+                "AnthropicModel did not receive `max_tokens`; defaulting to "
+                "16384. Set `model_config_dict['max_tokens']` explicitly to "
+                "suppress this warning.",
+                UserWarning,
+                stacklevel=3,
+            )
 
         # Prepare request parameters
         request_params: Dict[str, Any] = {
