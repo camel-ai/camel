@@ -15,6 +15,7 @@
 from types import SimpleNamespace
 
 import httpx
+import pytest
 
 from camel.toolkits.web_fetch_toolkit import WebFetchToolkit
 
@@ -32,6 +33,13 @@ class FakeChatAgent:
 
     def reset(self):
         FakeChatAgent.reset_count += 1
+
+
+@pytest.fixture(autouse=True)
+def _reset_fake_agent_state():
+    """Reset FakeChatAgent class-level state before each test."""
+    FakeChatAgent.last_prompt = None
+    FakeChatAgent.reset_count = 0
 
 
 def _fake_get(self, url):
@@ -65,7 +73,6 @@ def test_web_fetch_analyzes_page(monkeypatch):
 def test_web_fetch_reuses_agent_with_reset(monkeypatch):
     monkeypatch.setattr(httpx.Client, "get", _fake_get)
     monkeypatch.setattr("camel.agents.ChatAgent", FakeChatAgent, raising=False)
-    FakeChatAgent.reset_count = 0
 
     toolkit = WebFetchToolkit(default_model="test-model")
     toolkit.web_fetch_and_analyze(url="https://example.com/a", prompt="first")
@@ -142,3 +149,62 @@ def test_web_fetch_handles_plain_text(monkeypatch):
 
     assert result == "summary"
     assert "Hello world" in FakeChatAgent.last_prompt
+
+
+def test_web_fetch_max_chars_truncates(monkeypatch):
+    def fake_get_long(self, url):
+        request = httpx.Request("GET", url)
+        return httpx.Response(
+            200,
+            request=request,
+            headers={"content-type": "text/plain"},
+            text="A" * 1000,
+        )
+
+    monkeypatch.setattr(httpx.Client, "get", fake_get_long)
+    monkeypatch.setattr("camel.agents.ChatAgent", FakeChatAgent, raising=False)
+
+    toolkit = WebFetchToolkit(default_model="test-model")
+    toolkit.web_fetch_and_analyze(
+        url="https://example.com/long",
+        prompt="Summarize",
+        max_chars=100,
+    )
+
+    # Only the first 100 chars should appear in the prompt
+    assert "A" * 100 in FakeChatAgent.last_prompt
+    assert "A" * 101 not in FakeChatAgent.last_prompt
+
+
+def test_web_fetch_error_includes_char_count_on_failure(monkeypatch):
+    def fake_get_long(self, url):
+        request = httpx.Request("GET", url)
+        return httpx.Response(
+            200,
+            request=request,
+            headers={"content-type": "text/plain"},
+            text="A" * 500,
+        )
+
+    class FailingAgent:
+        def __init__(self, **kwargs):
+            pass
+
+        def step(self, prompt):
+            raise RuntimeError("context length exceeded")
+
+        def reset(self):
+            pass
+
+    monkeypatch.setattr(httpx.Client, "get", fake_get_long)
+    monkeypatch.setattr("camel.agents.ChatAgent", FailingAgent, raising=False)
+
+    toolkit = WebFetchToolkit(default_model="test-model")
+    result = toolkit.web_fetch_and_analyze(
+        url="https://example.com/big",
+        prompt="Summarize",
+    )
+
+    assert result.startswith("Error:")
+    assert "500 chars" in result
+    assert "max_chars" in result

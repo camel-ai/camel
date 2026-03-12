@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
-_ALLOWED_SCHEMES = {"http", "https"}
+_ALLOWED_SCHEMES = ("http", "https")
 
 
 class WebFetchToolkit(BaseToolkit, RegisteredAgentToolkit):
@@ -40,14 +40,16 @@ class WebFetchToolkit(BaseToolkit, RegisteredAgentToolkit):
         default_model: Optional[BaseModelBackend] = None,
         timeout: Optional[float] = None,
         request_timeout: float = 20.0,
-        max_content_chars: int = 15_000,
     ) -> None:
         super().__init__(timeout=timeout)
         RegisteredAgentToolkit.__init__(self)
         self.default_model = default_model
         self.request_timeout = request_timeout
-        self.max_content_chars = max_content_chars
         self._summary_agent: Optional["ChatAgent"] = None
+        self._summary_agent_model: Optional[
+            Union[BaseModelBackend, ModelManager]
+        ] = None
+        self._summary_agent_language: Optional[str] = None
 
     def _error_message(self, message: str) -> str:
         logger.warning(message)
@@ -83,13 +85,19 @@ class WebFetchToolkit(BaseToolkit, RegisteredAgentToolkit):
         if model is None:
             return None
 
-        if self._summary_agent is not None:
-            self._summary_agent.reset()
-            return self._summary_agent
-
         output_language = (
             self._agent.output_language if self._agent is not None else None
         )
+
+        # Reuse cached agent only if model and language haven't changed
+        if (
+            self._summary_agent is not None
+            and self._summary_agent_model is model
+            and self._summary_agent_language == output_language
+        ):
+            self._summary_agent.reset()
+            return self._summary_agent
+
         self._summary_agent = ChatAgent(
             system_message=(
                 "You analyze fetched web pages and answer the user's prompt "
@@ -98,15 +106,23 @@ class WebFetchToolkit(BaseToolkit, RegisteredAgentToolkit):
             model=model,
             output_language=output_language,
         )
+        self._summary_agent_model = model
+        self._summary_agent_language = output_language
         return self._summary_agent
 
-    def web_fetch_and_analyze(self, url: str, prompt: str) -> str:
+    def web_fetch_and_analyze(
+        self, url: str, prompt: str, max_chars: int = 0
+    ) -> str:
         r"""Fetch a URL and answer a prompt about its content.
 
         Args:
             url (str): URL to fetch.
             prompt (str): Instruction describing what to extract or analyze
                 from the fetched page.
+            max_chars (int): Maximum number of characters of page content to
+                use. When set to 0 (default) the full page is sent to the
+                summarizer. If the summarizer fails because the content is
+                too long, retry with a smaller value.
 
         Returns:
             str: AI-processed summary or answer derived from the page content.
@@ -145,9 +161,12 @@ class WebFetchToolkit(BaseToolkit, RegisteredAgentToolkit):
             http_response.headers.get("content-type", ""),
             http_response.text,
         )
-        page_text = page_text[: self.max_content_chars]
         if not page_text:
             return self._error_message(f"No readable content found at {url}")
+
+        total_chars = len(page_text)
+        if max_chars > 0:
+            page_text = page_text[:max_chars]
 
         try:
             summary_agent = self._get_summary_agent()
@@ -171,7 +190,10 @@ class WebFetchToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
         except Exception as exc:
             return self._error_message(
-                f"WebFetch summarizer failed for {url}: {exc}"
+                f"WebFetch summarizer failed for {url} "
+                f"(page has {total_chars} chars). "
+                f"You may retry with a smaller max_chars value. "
+                f"Original error: {exc}"
             )
         if not agent_response.msgs:
             return self._error_message(
