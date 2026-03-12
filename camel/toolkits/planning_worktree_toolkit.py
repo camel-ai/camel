@@ -23,10 +23,12 @@ from typing import Any, ClassVar, Dict, List, Optional
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class PlanningWorktreeToolkit(BaseToolkit):
     r"""Toolkit for plan-mode state and git worktree management.
 
@@ -34,6 +36,19 @@ class PlanningWorktreeToolkit(BaseToolkit):
     *working_directory* and *plan_file_name*.  A class-level lock registry
     ensures that concurrent agents sharing the same plan file do not
     corrupt each other's writes.
+
+    Args:
+        working_directory (Optional[str]): The directory to use as the
+            working root. Falls back to the ``CAMEL_WORKDIR`` environment
+            variable, then the current working directory.
+            (default: :obj:`None`)
+        timeout (Optional[float]): The timeout for the toolkit.
+            (default: :obj:`None`)
+        plan_file_name (str): Name of the Markdown plan file created inside
+            *working_directory*. (default: :obj:`".camel-plan.md"`)
+        switch_process_cwd (bool): If :obj:`True`, ``os.chdir`` will be
+            called when entering/leaving a worktree so the whole process
+            sees the new directory. (default: :obj:`False`)
     """
 
     _plan_locks: ClassVar[Dict[str, threading.Lock]] = {}
@@ -47,7 +62,7 @@ class PlanningWorktreeToolkit(BaseToolkit):
         switch_process_cwd: bool = False,
     ) -> None:
         super().__init__(timeout=timeout)
-        if working_directory:
+        if working_directory is not None:
             self.working_directory = Path(working_directory).resolve()
         else:
             camel_workdir = os.environ.get("CAMEL_WORKDIR")
@@ -180,6 +195,14 @@ class PlanningWorktreeToolkit(BaseToolkit):
             Dict[str, Any]: Created branch name, worktree path, and active
                 working directory.
         """
+        if self.current_worktree_path is not None:
+            return self._error_result(
+                "Already inside a worktree. Call "
+                "worktree_remove_worktree() first.",
+                working_directory=str(self.working_directory),
+                current_worktree=str(self.current_worktree_path),
+            )
+
         try:
             repo_root_result = self._run_git(
                 "rev-parse",
@@ -304,13 +327,12 @@ class PlanningWorktreeToolkit(BaseToolkit):
                 "--porcelain",
                 cwd=worktree_path,
             )
+            # The first "worktree ..." entry is always the main repo.
             main_repo_path: Optional[Path] = None
             for line in main_repo_result.stdout.splitlines():
                 if line.startswith("worktree "):
-                    candidate = Path(line.split(" ", 1)[1]).resolve()
-                    if candidate != worktree_path.resolve():
-                        main_repo_path = candidate
-                        break
+                    main_repo_path = Path(line.split(" ", 1)[1]).resolve()
+                    break
 
             if main_repo_path is None:
                 return self._error_result(

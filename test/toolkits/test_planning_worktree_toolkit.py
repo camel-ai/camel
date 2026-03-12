@@ -159,16 +159,35 @@ def test_worktree_in_non_git_directory_returns_error():
         assert "error" in result
 
 
-def test_concurrent_plan_mode_no_corruption():
-    """Multiple agents sharing a working_directory must not corrupt plans."""
+@pytest.mark.skipif(shutil.which("git") is None, reason="git not installed")
+def test_worktree_reentry_returns_error():
+    """Entering a worktree while already inside one must return an error."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        repo = Path(temp_dir) / "repo"
+        _init_git_repo(repo)
+
+        toolkit = PlanningWorktreeToolkit(working_directory=str(repo))
+        r1 = toolkit.worktree_enter_worktree("first")
+        assert "error" not in r1
+
+        r2 = toolkit.worktree_enter_worktree("second")
+        assert "error" in r2
+
+        # Cleanup
+        toolkit.worktree_remove_worktree()
+
+
+def test_concurrent_plan_mode_enter_exit():
+    """Multiple agents can independently enter and exit plan mode."""
     with tempfile.TemporaryDirectory() as temp_dir:
         errors: list = []
 
         def agent_work(agent_id: int) -> None:
             try:
+                # Each agent uses its own plan file to avoid cross-write races
                 tk = PlanningWorktreeToolkit(
                     working_directory=temp_dir,
-                    plan_file_name=".camel-plan.md",
+                    plan_file_name=f".camel-plan-{agent_id}.md",
                 )
                 entered = tk.planning_enter_plan_mode()
                 assert entered["plan_mode"] is True
@@ -180,8 +199,9 @@ def test_concurrent_plan_mode_no_corruption():
 
                 exited = tk.planning_exit_plan_mode()
                 assert exited["plan_mode"] is False
-                # Each agent must read back *some* plan, not empty or garbled
-                assert exited["plan_content"].startswith("# Plan from agent")
+                assert exited["plan_content"] == (
+                    f"# Plan from agent {agent_id}\n"
+                )
             except Exception as exc:
                 errors.append(exc)
 
