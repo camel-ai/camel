@@ -13,15 +13,16 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
+import threading
 from pathlib import Path
 from typing import List, Literal, Optional
 
-from filelock import FileLock
 from pydantic import BaseModel, ValidationError
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
@@ -37,16 +38,17 @@ class TodoItem(BaseModel):
 
     Attributes:
         content: A brief, actionable title for the task.
-        activeForm: Present-continuous label shown in a UI spinner while
+        active_form: Present-continuous label shown in a UI spinner while
             the task is in progress.
         status: Current status of the task.
     """
 
     content: str
-    activeForm: str
+    active_form: str
     status: Literal["pending", "in_progress", "completed"]
 
 
+@MCPServer()
 class TodoToolkit(BaseToolkit):
     r"""A toolkit for managing a todo list persisted to local files.
 
@@ -60,8 +62,8 @@ class TodoToolkit(BaseToolkit):
     - ``todo.md``  — a clean, human-readable Markdown checklist.
     - ``.todo.json`` — structured data used to reload state across sessions.
 
-    A file lock (``todo.md.lock``) prevents concurrent write conflicts
-    when multiple agents share the same directory.
+    A thread lock prevents concurrent write conflicts within the same
+    process.
 
     Args:
         working_dir (Optional[str]): Directory where files are stored.
@@ -79,8 +81,9 @@ class TodoToolkit(BaseToolkit):
         self._working_dir = Path(working_dir) if working_dir else Path.cwd()
         self._md_path = self._working_dir / "todo.md"
         self._json_path = self._working_dir / ".todo.json"
-        self._lock = FileLock(str(self._md_path) + ".lock")
-        self.todos: List[TodoItem] = self._load()
+        self._lock = threading.Lock()
+        with self._lock:
+            self.todos: List[TodoItem] = self._load()
 
     # ── persistence helpers ──────────────────────────────────────────
 
@@ -95,6 +98,14 @@ class TodoToolkit(BaseToolkit):
                 "Failed to read %s, starting with empty list: %s",
                 self._json_path,
                 exc,
+            )
+            return []
+        if not isinstance(data, list):
+            logger.warning(
+                "Expected a JSON array in %s, got %s; starting with empty "
+                "list.",
+                self._json_path,
+                type(data).__name__,
             )
             return []
         items: List[TodoItem] = []

@@ -29,12 +29,12 @@ def test_todo_write_with_raw_dicts(todo_toolkit):
     todos = [
         {
             "content": "Install pptxgenjs dependencies",
-            "activeForm": "Installing pptxgenjs dependencies",
+            "active_form": "Installing pptxgenjs dependencies",
             "status": "completed",
         },
         {
             "content": "Wire TodoWrite into toolkit exports",
-            "activeForm": "Wiring TodoWrite into toolkit exports",
+            "active_form": "Wiring TodoWrite into toolkit exports",
             "status": "in_progress",
         },
     ]
@@ -53,12 +53,12 @@ def test_todo_write_with_todoitem_instances(todo_toolkit):
     items = [
         TodoItem(
             content="First task",
-            activeForm="Working on first task",
+            active_form="Working on first task",
             status="pending",
         ),
         TodoItem(
             content="Second task",
-            activeForm="Working on second task",
+            active_form="Working on second task",
             status="completed",
         ),
     ]
@@ -77,7 +77,7 @@ def test_todo_write_empty_list_clears_todos(todo_toolkit):
         [
             {
                 "content": "Some task",
-                "activeForm": "Doing some task",
+                "active_form": "Doing some task",
                 "status": "pending",
             }
         ]
@@ -95,7 +95,7 @@ def test_todo_write_keeps_previous_state_on_validation_error(todo_toolkit):
     existing = [
         {
             "content": "Keep previous widget state",
-            "activeForm": "Keeping previous widget state",
+            "active_form": "Keeping previous widget state",
             "status": "pending",
         }
     ]
@@ -105,7 +105,7 @@ def test_todo_write_keeps_previous_state_on_validation_error(todo_toolkit):
         [
             {
                 "content": "Use an unsupported status",
-                "activeForm": "Using an unsupported status",
+                "active_form": "Using an unsupported status",
                 "status": "done",
             }
         ]
@@ -123,7 +123,7 @@ def test_persistence_creates_files(tmp_path):
         [
             {
                 "content": "Persisted task",
-                "activeForm": "Persisting task",
+                "active_form": "Persisting task",
                 "status": "pending",
             }
         ]
@@ -136,7 +136,7 @@ def test_persistence_creates_files(tmp_path):
     assert "# Todo" in md_content
     assert "Persisted task" in md_content
     assert "<!--" not in md_content
-    assert "activeForm" not in md_content
+    assert "active_form" not in md_content
 
     # JSON — structured data for reloading
     json_file = tmp_path / ".todo.json"
@@ -150,17 +150,17 @@ def test_persistence_survives_reload(tmp_path):
         [
             {
                 "content": "Task A",
-                "activeForm": "Working on A",
+                "active_form": "Working on A",
                 "status": "completed",
             },
             {
                 "content": "Task B",
-                "activeForm": "Working on B",
+                "active_form": "Working on B",
                 "status": "in_progress",
             },
             {
                 "content": "Task C",
-                "activeForm": "Working on C",
+                "active_form": "Working on C",
                 "status": "pending",
             },
         ]
@@ -205,7 +205,7 @@ def test_get_tools_exposes_todo_write_schema(todo_toolkit):
     assert todos_schema["type"] == "array"
     assert set(item_schema["properties"]) == {
         "content",
-        "activeForm",
+        "active_form",
         "status",
     }
     assert item_schema["additionalProperties"] is False
