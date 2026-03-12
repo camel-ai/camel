@@ -328,168 +328,6 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
             task = self._tasks.get(task_id)
         return task
 
-    def _validate_prompt(
-        self,
-        prompt: Optional[str],
-        agent_id: Optional[str],
-        description: str,
-        subagent_type: str,
-    ) -> Optional[Dict[str, Any]]:
-        if prompt and prompt.strip():
-            return None
-        return self._error_result(
-            "prompt cannot be empty",
-            agent_id=agent_id,
-            task_id=None,
-            created=False,
-            subagent_type=subagent_type,
-            description=description,
-        )
-
-    def _get_or_create_session(
-        self,
-        prompt: str,
-        description: str,
-        subagent_type: str,
-        agent_id: Optional[str],
-        share_parent_tools: Optional[bool],
-        tool_names: Optional[List[str]],
-    ) -> Tuple[
-        Optional[_AgentSession], Optional[bool], Optional[Dict[str, Any]]
-    ]:
-        err = self._validate_prompt(
-            prompt=prompt,
-            agent_id=agent_id,
-            description=description,
-            subagent_type=subagent_type,
-        )
-        if err is not None:
-            return None, None, err
-        if self._require_parent_agent() is None:
-            return (
-                None,
-                None,
-                self._error_result(
-                    "AgentToolkit must be registered to a parent ChatAgent "
-                    "via 'toolkits_to_register_agent' before it can spawn "
-                    "sub-agents.",
-                    agent_id=agent_id,
-                    task_id=None,
-                    created=False,
-                    subagent_type=subagent_type,
-                    description=description,
-                ),
-            )
-
-        created = False
-        if agent_id is None:
-            try:
-                agent = self._create_subagent(
-                    subagent_type=subagent_type,
-                    description=description,
-                    share_parent_tools=share_parent_tools,
-                    tool_names=tool_names,
-                )
-            except Exception as exc:
-                return (
-                    None,
-                    None,
-                    self._error_result(
-                        f"Failed to create sub-agent: {exc}",
-                        agent_id=None,
-                        task_id=None,
-                        created=False,
-                        subagent_type=subagent_type,
-                        description=description,
-                    ),
-                )
-            if agent is None:
-                return (
-                    None,
-                    None,
-                    self._error_result(
-                        "AgentToolkit must be registered to a parent ChatAgent"
-                        " via 'toolkits_to_register_agent' before it can "
-                        "spawn sub-agents.",
-                        agent_id=None,
-                        task_id=None,
-                        created=False,
-                        subagent_type=subagent_type,
-                        description=description,
-                    ),
-                )
-            agent_id = agent.agent_id
-            session = _AgentSession(
-                agent=agent,
-                subagent_type=subagent_type,
-                description=description,
-            )
-            with self._lock:
-                self._sessions[agent_id] = session
-            created = True
-            return session, created, None
-
-        with self._lock:
-            existing_session = self._sessions.get(agent_id)
-        if existing_session is None:
-            return (
-                None,
-                None,
-                self._error_result(
-                    f"No sub-agent session found for agent_id '{agent_id}'.",
-                    agent_id=agent_id,
-                    task_id=None,
-                    created=False,
-                    subagent_type=subagent_type,
-                    description=description,
-                ),
-            )
-        return existing_session, created, None
-
-    def _start_task(
-        self,
-        session: _AgentSession,
-        prompt: str,
-        created: bool,
-    ) -> Tuple[Optional[_AgentTask], Optional[Dict[str, Any]]]:
-        with self._lock:
-            active_task_id = session.active_task_id
-            active_task = (
-                self._tasks.get(active_task_id) if active_task_id else None
-            )
-            if active_task is not None and active_task_id is not None:
-                self._complete_task(active_task_id)
-                active_task = self._tasks.get(active_task_id)
-                if active_task is not None and active_task.status == "running":
-                    return None, self._error_result(
-                        f"Sub-agent '{session.agent.agent_id}' already has a "
-                        f"running task ('{active_task_id}'). Stop it before "
-                        f"starting another task.",
-                        agent_id=session.agent.agent_id,
-                        task_id=active_task_id,
-                        created=created,
-                        subagent_type=session.subagent_type,
-                        description=session.description,
-                    )
-
-            try:
-                task = self._submit_agent_task(
-                    agent_id=session.agent.agent_id,
-                    agent=session.agent,
-                    prompt=prompt,
-                )
-            except Exception as exc:
-                return None, self._error_result(
-                    f"Failed to start sub-agent task: {exc}",
-                    agent_id=session.agent.agent_id,
-                    task_id=None,
-                    created=created,
-                    subagent_type=session.subagent_type,
-                    description=session.description,
-                )
-        self._complete_task(task.task_id)
-        return task, None
-
     def agent_run_subagent(
         self,
         prompt: str,
@@ -498,7 +336,7 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         agent_id: Optional[str] = None,
         tool_names: Optional[List[str]] = None,
         share_parent_tools: Optional[bool] = None,
-        wait: bool = False,
+        wait: bool = True,
         timeout: Optional[float] = None,
     ) -> Dict[str, Any]:
         r"""Run a specialized sub-agent, optionally waiting for completion.
@@ -541,7 +379,7 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
             wait (bool): Whether to wait for the sub-agent to finish before
                 returning. Set to :obj:`False` to start the task and check it
                 later with :obj:`agent_get_task_output`.
-                (default: :obj:`False`)
+                (default: :obj:`True`)
             timeout (Optional[float]): Maximum wait time in seconds for the
                 sub-agent to finish when :obj:`wait` is True. If the timeout is
                 reached, the task keeps running and the current status is
@@ -551,23 +389,117 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
             Dict[str, Any]: Final result for completed tasks, or current task
                 metadata if still running.
         """
-        session, created, err = self._get_or_create_session(
-            prompt=prompt,
-            description=description,
-            subagent_type=subagent_type,
-            agent_id=agent_id,
-            share_parent_tools=share_parent_tools,
-            tool_names=tool_names,
-        )
-        if err is not None or session is None or created is None:
-            return err or self._error_result("Failed to create sub-agent.")
-        task, err = self._start_task(
-            session=session,
-            prompt=prompt,
-            created=created,
-        )
-        if err is not None or task is None:
-            return err or self._error_result("Failed to start sub-agent task.")
+        if self._require_parent_agent() is None:
+            return self._error_result(
+                "AgentToolkit must be registered to a parent ChatAgent via "
+                "'toolkits_to_register_agent' before it can spawn "
+                "sub-agents.",
+                agent_id=agent_id,
+                task_id=None,
+                created=False,
+                subagent_type=subagent_type,
+                description=description,
+            )
+        if not prompt or not prompt.strip():
+            return self._error_result(
+                "prompt cannot be empty",
+                agent_id=agent_id,
+                task_id=None,
+                created=False,
+                subagent_type=subagent_type,
+                description=description,
+            )
+
+        created = False
+        if agent_id is None:
+            try:
+                agent = self._create_subagent(
+                    subagent_type=subagent_type,
+                    description=description,
+                    share_parent_tools=share_parent_tools,
+                    tool_names=tool_names,
+                )
+            except Exception as exc:
+                return self._error_result(
+                    f"Failed to create sub-agent: {exc}",
+                    agent_id=None,
+                    task_id=None,
+                    created=False,
+                    subagent_type=subagent_type,
+                    description=description,
+                )
+            if agent is None:
+                return self._error_result(
+                    "AgentToolkit must be registered to a parent ChatAgent "
+                    "via 'toolkits_to_register_agent' before it can spawn "
+                    "sub-agents.",
+                    agent_id=None,
+                    task_id=None,
+                    created=False,
+                    subagent_type=subagent_type,
+                    description=description,
+                )
+            agent_id = agent.agent_id
+            session = _AgentSession(
+                agent=agent,
+                subagent_type=subagent_type,
+                description=description,
+            )
+            with self._lock:
+                self._sessions[agent_id] = session
+            created = True
+        else:
+            with self._lock:
+                existing_session = self._sessions.get(agent_id)
+            if existing_session is None:
+                return self._error_result(
+                    f"No sub-agent session found for agent_id '{agent_id}'.",
+                    agent_id=agent_id,
+                    task_id=None,
+                    created=False,
+                    subagent_type=subagent_type,
+                    description=description,
+                )
+            session = existing_session
+            agent = session.agent
+
+        with self._lock:
+            active_task_id = self._sessions[agent_id].active_task_id
+            active_task = (
+                self._tasks.get(active_task_id) if active_task_id else None
+            )
+            if active_task is not None and active_task_id is not None:
+                self._complete_task(active_task_id)
+                active_task = self._tasks.get(active_task_id)
+                if active_task is not None and active_task.status == "running":
+                    return self._error_result(
+                        f"Sub-agent '{agent_id}' already has a running task "
+                        f"('{active_task_id}'). Stop it before starting "
+                        f"another task.",
+                        agent_id=agent_id,
+                        task_id=active_task_id,
+                        created=created,
+                        subagent_type=session.subagent_type,
+                        description=session.description,
+                    )
+
+            try:
+                task = self._submit_agent_task(
+                    agent_id=agent_id,
+                    agent=agent,
+                    prompt=prompt,
+                )
+            except Exception as exc:
+                return self._error_result(
+                    f"Failed to start sub-agent task: {exc}",
+                    agent_id=agent_id,
+                    task_id=None,
+                    created=created,
+                    subagent_type=session.subagent_type,
+                    description=session.description,
+                )
+
+        self._complete_task(task.task_id)
         if wait and not task.future.done():
             try:
                 task.future.result(timeout=timeout)
