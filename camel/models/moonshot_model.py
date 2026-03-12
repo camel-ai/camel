@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from camel.configs import MoonshotConfig
 from camel.logger import get_logger
+from camel.models._interleaved_thinking_mixin import InterleavedThinkingMixin
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
     ModelType,
@@ -31,7 +32,7 @@ from camel.utils import (
 logger = get_logger(__name__)
 
 
-class MoonshotModel(OpenAICompatibleModel):
+class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
     r"""Moonshot API in a unified OpenAICompatibleModel interface.
 
     Args:
@@ -93,6 +94,8 @@ class MoonshotModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+        # Initialize interleaved thinking state
+        self._init_thinking_state()
 
     @property
     def structured_output_mode(self) -> StructuredOutputMode:
@@ -104,6 +107,9 @@ class MoonshotModel(OpenAICompatibleModel):
     ) -> Dict[str, Any]:
         r"""Prepare request config with Moonshot-specific tool cleaning."""
         request_config = super()._prepare_request_config(tools)
+
+        # Remove internal config params that are not part of the API
+        request_config.pop("interleaved_thinking", None)
 
         if tools:
             # Clean tools to remove null types (Moonshot API incompatibility)

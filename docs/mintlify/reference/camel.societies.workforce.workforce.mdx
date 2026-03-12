@@ -80,6 +80,7 @@ capabilities
 - **callbacks** (Optional[List[WorkforceCallback]], optional): A list of callback handlers to observe and record workforce lifecycle events and metrics (e.g., task creation/assignment/start/completion/ failure, worker creation/deletion, all-tasks-completed). All items must be instances of :class:`WorkforceCallback`, otherwise
 - **a**: class:`ValueError` is raised. If none of the provided callbacks implement :class:`WorkforceMetrics`, a built-in :class:`WorkforceLogger` (implements both callback and metrics) is added automatically. If at least one provided callback
 - **implements**: class:`WorkforceMetrics`, no default logger is added. (default: :obj:`None`)
+- **stream_callback** (Optional[Callable], optional): Real-time callback for worker streaming output chunks. Called as `__INLINE_CODE_0____INLINE_CODE_1__None`)
 - **mode** (WorkforceMode, optional): The execution mode for task processing. AUTO_DECOMPOSE mode uses intelligent recovery strategies (decompose, replan, etc.) when tasks fail. PIPELINE mode uses simple retry logic and allows failed tasks to continue the workflow, passing error information to dependent tasks. (default: :obj:`WorkforceMode.AUTO_DECOMPOSE`)
 - **failure_handling_config** (Optional[Union[FailureHandlingConfig, Dict]]): Configuration for customizing failure handling behavior. Can be a FailureHandlingConfig instance or a dict with the same fields. Allows fine-grained control over which recovery strategies are enabled, maximum retry attempts, and whether to halt on max retries. The `enabled_strategies` field accepts both enum values and string lists like `["retry", "replan"]`. If None, uses default configuration with all strategies enabled. (default: :obj:`None`)
 
@@ -111,6 +112,7 @@ def __init__(
     task_timeout_seconds: Optional[float] = None,
     mode: WorkforceMode = WorkforceMode.AUTO_DECOMPOSE,
     callbacks: Optional[List[WorkforceCallback]] = None,
+    stream_callback: Optional[Callable[[str, str, str, str], Optional[Awaitable[None]]]] = None,
     failure_handling_config: Optional[Union[FailureHandlingConfig, Dict[str, Any]]] = None
 ):
 ```
@@ -124,6 +126,35 @@ def _initialize_callbacks(self, callbacks: Optional[List[WorkforceCallback]]):
 ```
 
 Validate, register, and prime workforce callbacks.
+
+<a id="camel.societies.workforce.workforce.Workforce._sync_child_stream_callbacks"></a>
+
+### _sync_child_stream_callbacks
+
+```python
+def _sync_child_stream_callbacks(self):
+```
+
+Propagate stream callback settings to all child nodes.
+
+<a id="camel.societies.workforce.workforce.Workforce.set_stream_callback"></a>
+
+### set_stream_callback
+
+```python
+def set_stream_callback(
+    self,
+    stream_callback: Optional[Callable[[str, str, str, str], Optional[Awaitable[None]]]]
+):
+```
+
+Set callback for real-time worker streaming output chunks.
+
+Callback arguments:
+worker_id (str): ID of the worker emitting this chunk.
+task_id (str): ID of the task currently processed.
+text (str): Incremental text content for this chunk.
+mode (str): Chunk mode reported by model ("delta"/"accumulate").
 
 <a id="camel.societies.workforce.workforce.Workforce._notify_worker_created"></a>
 
@@ -452,6 +483,14 @@ def _collect_shared_memory(self):
   Dict[str, List]: A dictionary mapping agent types to their memory
 records. Contains entries for 'coordinator', 'task_agent',
 and 'workers'.
+
+<a id="camel.societies.workforce.workforce.Workforce._on_stream_callback"></a>
+
+### _on_stream_callback
+
+```python
+def _on_stream_callback(self, chunk: ChatAgentResponse):
+```
 
 <a id="camel.societies.workforce.workforce.Workforce._share_memory_with_agents"></a>
 
@@ -1173,6 +1212,16 @@ def _get_single_agent_toolkit_info(self, worker: 'SingleAgentWorker'):
 ```
 
 Get formatted information for a SingleAgentWorker node.
+
+<a id="camel.societies.workforce.workforce.Workforce._get_single_agent_skill_names"></a>
+
+### _get_single_agent_skill_names
+
+```python
+def _get_single_agent_skill_names(self, worker: 'SingleAgentWorker'):
+```
+
+Extract available skill names from SkillToolkit instances.
 
 <a id="camel.societies.workforce.workforce.Workforce._group_tools_by_toolkit"></a>
 

@@ -13,10 +13,11 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from camel.configs import ZhipuAIConfig
 from camel.logger import get_logger
+from camel.models._interleaved_thinking_mixin import InterleavedThinkingMixin
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
     ModelType,
@@ -30,7 +31,7 @@ from camel.utils import (
 logger = get_logger(__name__)
 
 
-class ZhipuAIModel(OpenAICompatibleModel):
+class ZhipuAIModel(InterleavedThinkingMixin, OpenAICompatibleModel):
     r"""ZhipuAI API in a unified OpenAICompatibleModel interface.
 
     Args:
@@ -91,6 +92,20 @@ class ZhipuAIModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+        # Initialize interleaved thinking state
+        self._init_thinking_state()
+
+    def _prepare_request_config(
+        self,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        r"""Prepare the request configuration dictionary.
+
+        Overrides the base method to remove interleaved_thinking parameter
+        which is only used internally.
+        """
+        request_config = super()._prepare_request_config(tools)
+        return self._prepare_thinking_config(request_config)
 
     @property
     def structured_output_mode(self) -> StructuredOutputMode:

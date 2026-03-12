@@ -19,8 +19,9 @@ OpenAI API in a unified BaseModelBackend interface.
 - **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
 - **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
 - **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
-- **client** (Optional[Any], optional): A custom synchronous OpenAI client instance. If provided, this client will be used instead of creating a new one. Useful for RL frameworks like AReaL or rLLM that provide OpenAI-compatible clients. The client should implement the OpenAI client interface with `.chat.completions.create()` and `.chat.completions.parse()` methods. (default: :obj:`None`)
-- **async_client** (Optional[Any], optional): A custom asynchronous OpenAI client instance. If provided, this client will be used instead of creating a new one. The client should implement the AsyncOpenAI client interface. (default: :obj:`None`) **kwargs (Any): Additional arguments to pass to the OpenAI client initialization. These can include parameters like 'organization', 'default_headers', 'http_client', etc. Ignored if custom clients are provided.
+- **client** (Optional[Any], optional): A custom synchronous OpenAI client instance. If provided, this client will be used instead of creating a new one. Useful for RL frameworks like AReaL or rLLM that provide OpenAI-compatible clients. The client should implement the OpenAI client interface with `.chat.completions.create()` and `.beta.chat.completions.parse()` methods. (default: :obj:`None`)
+- **async_client** (Optional[Any], optional): A custom asynchronous OpenAI client instance. If provided, this client will be used instead of creating a new one. The client should implement the AsyncOpenAI client interface. (default: :obj:`None`)
+- **api_mode** (`Literal["chat_completions", "responses"], optional`): OpenAI API mode to use. Supported values: `"chat_completions"` (default) and `"responses"`. **kwargs (Any): Additional arguments to pass to the OpenAI client initialization. These can include parameters like 'organization', 'default_headers', 'http_client', etc. Ignored if custom clients are provided.
 
 <a id="camel.models.openai_model.OpenAIModel.__init__"></a>
 
@@ -38,6 +39,7 @@ def __init__(
     max_retries: int = 3,
     client: Optional[Any] = None,
     async_client: Optional[Any] = None,
+    api_mode: Literal['chat_completions', 'responses'] = 'chat_completions',
     **kwargs: Any
 ):
 ```
@@ -114,6 +116,130 @@ ChatCompletionStreamManager[BaseModel]]:
 `Stream[ChatCompletionChunk]`in the stream mode,
 or `ChatCompletionStreamManager[BaseModel]` for
 structured output streaming.
+
+<a id="camel.models.openai_model.OpenAIModel._prepare_responses_request_config"></a>
+
+### _prepare_responses_request_config
+
+```python
+def _prepare_responses_request_config(
+    self,
+    tools: Optional[List[Dict[str, Any]]] = None,
+    response_format: Optional[Type[BaseModel]] = None,
+    stream: bool = False
+):
+```
+
+<a id="camel.models.openai_model.OpenAIModel._normalize_tools_for_responses_api"></a>
+
+### _normalize_tools_for_responses_api
+
+```python
+def _normalize_tools_for_responses_api(tools: List[Dict[str, Any]]):
+```
+
+Convert chat-completions style function tools to Responses style.
+
+Input:
+`{"type":"function","function":{"name":"foo",...}}`
+Output:
+`{"type":"function","name":"foo",...}`
+
+<a id="camel.models.openai_model.OpenAIModel._enforce_object_additional_properties_false"></a>
+
+### _enforce_object_additional_properties_false
+
+```python
+def _enforce_object_additional_properties_false(schema: Any):
+```
+
+Recursively enforce strict object schema for Responses API.
+
+<a id="camel.models.openai_model.OpenAIModel._get_response_chain_session_key"></a>
+
+### _get_response_chain_session_key
+
+```python
+def _get_response_chain_session_key(self):
+```
+
+<a id="camel.models.openai_model.OpenAIModel._clear_response_chain_state"></a>
+
+### _clear_response_chain_state
+
+```python
+def _clear_response_chain_state(self, session_key: str):
+```
+
+<a id="camel.models.openai_model.OpenAIModel._responses_chain_enabled"></a>
+
+### _responses_chain_enabled
+
+```python
+def _responses_chain_enabled(request_config: Dict[str, Any]):
+```
+
+<a id="camel.models.openai_model.OpenAIModel._prepare_responses_input_and_chain"></a>
+
+### _prepare_responses_input_and_chain
+
+```python
+def _prepare_responses_input_and_chain(self, messages: List[OpenAIMessage], chain_enabled: bool = True):
+```
+
+<a id="camel.models.openai_model.OpenAIModel._convert_messages_to_responses_input"></a>
+
+### _convert_messages_to_responses_input
+
+```python
+def _convert_messages_to_responses_input(messages: List[OpenAIMessage]):
+```
+
+Convert chat-completions style messages to Responses input items.
+
+This specifically rewrites tool-calling history:
+- assistant message with `tool_calls` -> one or more `function_call`
+items (+ optional assistant message when content exists)
+- tool message -> `function_call_output` item
+
+<a id="camel.models.openai_model.OpenAIModel._save_response_chain_state"></a>
+
+### _save_response_chain_state
+
+```python
+def _save_response_chain_state(
+    self,
+    session_key: str,
+    response_id: Optional[str],
+    message_count: int
+):
+```
+
+<a id="camel.models.openai_model.OpenAIModel._request_responses"></a>
+
+### _request_responses
+
+```python
+def _request_responses(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]],
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+<a id="camel.models.openai_model.OpenAIModel._request_responses_stream"></a>
+
+### _request_responses_stream
+
+```python
+def _request_responses_stream(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]],
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
 
 <a id="camel.models.openai_model.OpenAIModel._request_chat_completion"></a>
 
