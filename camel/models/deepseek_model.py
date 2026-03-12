@@ -13,39 +13,19 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional, Type, Union
-
-from openai import AsyncStream, Stream
-from pydantic import BaseModel
+from typing import Any, Dict, List, Optional, Union
 
 from camel.configs import DeepSeekConfig
 from camel.logger import get_logger
-from camel.messages import OpenAIMessage
-from camel.models._utils import try_modify_message_with_format
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
-    ChatCompletion,
-    ChatCompletionChunk,
     ModelType,
+    StructuredOutputMode,
 )
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
 )
-
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
-    try:
-        from traceroot import trace as observe  # type: ignore[import]
-    except ImportError:
-        from camel.utils import observe
-else:
-    from camel.utils import observe
-
 
 logger = get_logger(__name__)
 
@@ -125,103 +105,34 @@ class DeepSeekModel(OpenAICompatibleModel):
             **kwargs,
         )
 
-    def _prepare_request(
+    @property
+    def structured_output_mode(self) -> StructuredOutputMode:
+        return StructuredOutputMode.JSON_OBJECT
+
+    def _prepare_request_config(
         self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        request_config = self.model_config_dict.copy()
+        r"""Prepare request config with DeepSeek-specific adjustments.
 
-        if self.model_type in [
-            ModelType.DEEPSEEK_REASONER,
-        ]:
+        - For Reasoner models, removes unsupported parameters.
+        - Removes ``strict`` from tool function definitions (unsupported
+          by DeepSeek).
+        """
+        request_config = super()._prepare_request_config(tools)
+
+        if self.model_type in [ModelType.DEEPSEEK_REASONER]:
             logger.warning(
                 "Warning: You are using an DeepSeek Reasoner model, "
                 "which has certain limitations, reference: "
                 "`https://api-docs.deepseek.com/guides/reasoning_model"
                 "#api-parameters`.",
             )
-            request_config = {
-                key: value
-                for key, value in request_config.items()
-                if key not in REASONSER_UNSUPPORTED_PARAMS
-            }
-        import copy
+            for key in REASONSER_UNSUPPORTED_PARAMS:
+                request_config.pop(key, None)
 
-        request_config = copy.deepcopy(self.model_config_dict)
-        # Remove strict from each tool's function parameters since DeepSeek
-        # does not support them
         if tools:
-            for tool in tools:
-                function_dict = tool.get('function', {})
-                function_dict.pop("strict", None)
-            request_config["tools"] = tools
-        elif response_format:
-            try_modify_message_with_format(messages[-1], response_format)
-            request_config["response_format"] = {"type": "json_object"}
+            for tool in request_config.get("tools", []):
+                tool.get("function", {}).pop("strict", None)
 
         return request_config
-
-    @observe()
-    def _run(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of DeepSeek chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
-        """
-        self._log_and_trace()
-
-        request_config = self._prepare_request(
-            messages, response_format, tools
-        )
-
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
-        return response
-
-    @observe()
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        r"""Runs inference of DeepSeek chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
-        """
-        self._log_and_trace()
-
-        request_config = self._prepare_request(
-            messages, response_format, tools
-        )
-        response = await self._async_client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
-        return response

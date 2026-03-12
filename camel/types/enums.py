@@ -806,10 +806,11 @@ class ModelType(UnifiedModelType, Enum):
     def is_together(self) -> bool:
         r"""Returns whether this type of models is served by Together AI."""
         return self in {
+            ModelType.TOGETHER_LLAMA_3_1_8B,
             ModelType.TOGETHER_LLAMA_3_1_405B,
             ModelType.TOGETHER_LLAMA_3_1_70B,
             ModelType.TOGETHER_LLAMA_3_3_70B,
-            ModelType.TOGETHER_LLAMA_3_3_70B,
+            ModelType.TOGETHER_LLAMA_4_MAVERICK,
             ModelType.TOGETHER_MISTRAL_7B,
             ModelType.TOGETHER_MIXTRAL_8_7B,
         }
@@ -1172,6 +1173,14 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.AIML_MIXTRAL_8X7B,
             ModelType.AIML_MISTRAL_7B_INSTRUCT,
+        }
+
+    @property
+    def is_minimax(self) -> bool:
+        r"""Returns whether this type of models is served by MiniMax."""
+        return self in {
+            ModelType.MINIMAX_M2,
+            ModelType.MINIMAX_M2_STABLE,
         }
 
     @property
@@ -2133,6 +2142,32 @@ class JinaRerankerModelType(str, Enum):
 
     JINA_RERANKER_V3 = "jina-reranker-v3"
     r"""Latest multilingual reranker with 131K context window (0.6B params)."""
+
+
+class StructuredOutputMode(Enum):
+    r"""Declares structured output capability for
+    :class:`~camel.models.OpenAICompatibleModel` subclasses.
+
+    Used by ``OpenAICompatibleModel._run()`` / ``_arun()`` to choose the
+    right API path for structured output.  Models that do **not** inherit
+    from ``OpenAICompatibleModel`` (e.g. Anthropic, Gemini) handle
+    structured output in their own ``_run()`` and do not use this enum.
+
+    Attributes:
+        JSON_SCHEMA: The platform supports ``json_schema`` in
+            ``response_format``.  The dispatch first tries
+            ``chat.completions.parse()`` (strict); on failure it falls
+            back to ``chat.completions.create()`` with a json_schema dict.
+        JSON_OBJECT: The platform guarantees valid JSON output (e.g.
+            ``{"type": "json_object"}``) but does not validate against a
+            schema.  The schema is injected into the prompt.
+        PROMPT_ONLY: Inject the schema into the prompt; do **not** set any
+            ``response_format`` parameter.
+    """
+
+    JSON_SCHEMA = "json_schema"
+    JSON_OBJECT = "json_object"
+    PROMPT_ONLY = "prompt_only"
 
 
 class HuggingFaceRepoType(str, Enum):

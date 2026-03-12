@@ -17,7 +17,10 @@ from typing import Any, Dict, Optional, Union
 
 from camel.configs import QianfanConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
-from camel.types import ModelType
+from camel.types import (
+    ModelType,
+    StructuredOutputMode,
+)
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
@@ -87,3 +90,7 @@ class QianfanModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+
+    @property
+    def structured_output_mode(self) -> StructuredOutputMode:
+        return StructuredOutputMode.JSON_OBJECT

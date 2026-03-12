@@ -286,7 +286,11 @@ class CohereModel(BaseModelBackend):
             request_config["tools"] = tools
         elif response_format:
             try_modify_message_with_format(messages[-1], response_format)
-            request_config["response_format"] = {"type": "json_object"}
+            schema = response_format.model_json_schema()
+            request_config["response_format"] = {
+                "type": "json_object",
+                "schema": schema,
+            }
 
         return request_config
 
