@@ -1201,7 +1201,7 @@ class FileToolkit(BaseToolkit):
         try:
             # Handle single file path for backward compatibility
             if isinstance(file_paths, str):
-                resolved_path = self._resolve_filepath(file_paths)
+                resolved_path = self._resolve_existing_filepath(file_paths)
 
                 # Use MarkItDownLoader to convert the file
                 result = MarkItDownLoader().convert_files(
@@ -1216,7 +1216,8 @@ class FileToolkit(BaseToolkit):
             # Handle multiple file paths
             else:
                 resolved_paths = [
-                    str(self._resolve_filepath(fp)) for fp in file_paths
+                    str(self._resolve_existing_filepath(fp))
+                    for fp in file_paths
                 ]
 
                 # Use MarkItDownLoader to convert files in parallel
@@ -1260,7 +1261,7 @@ class FileToolkit(BaseToolkit):
                 error message if the content wasn't found or an error occurred.
         """
         try:
-            working_path = self._resolve_filepath(file_path)
+            working_path = self._resolve_existing_filepath(file_path)
 
             if not working_path.exists():
                 return f"Error: File {working_path} does not exist"
@@ -1377,6 +1378,9 @@ class FileToolkit(BaseToolkit):
             if not root.exists():
                 return self._tool_error(f"Search path does not exist: {root}")
 
+            # Treat head_limit <= 0 as unlimited
+            effective_limit = head_limit if head_limit > 0 else float("inf")
+
             flags = re.MULTILINE
             if ignore_case:
                 flags |= re.IGNORECASE
@@ -1412,7 +1416,7 @@ class FileToolkit(BaseToolkit):
                         total_matches += 1
                         if (
                             output_mode == "content"
-                            and len(blocks) < head_limit
+                            and len(blocks) < effective_limit
                         ):
                             start_line = text.count("\n", 0, match.start()) + 1
                             end_offset = max(match.end() - 1, match.start())
@@ -1437,7 +1441,10 @@ class FileToolkit(BaseToolkit):
                         continue
                     file_has_match = True
                     total_matches += 1
-                    if output_mode == "content" and len(blocks) < head_limit:
+                    if (
+                        output_mode == "content"
+                        and len(blocks) < effective_limit
+                    ):
                         blocks.append(
                             self._render_grep_context_block(
                                 file_path=file_path,
@@ -1450,7 +1457,9 @@ class FileToolkit(BaseToolkit):
                     files_with_matches.append(str(file_path.resolve()))
 
             if output_mode == "files_with_matches":
-                return files_with_matches[:head_limit]
+                if head_limit > 0:
+                    return files_with_matches[:head_limit]
+                return files_with_matches
             if output_mode == "count":
                 return {
                     "files_with_matches": len(files_with_matches),
@@ -1458,7 +1467,9 @@ class FileToolkit(BaseToolkit):
                 }
             if not blocks:
                 return "No matches found."
-            return "\n--\n".join(blocks[:head_limit])
+            if head_limit > 0:
+                return "\n--\n".join(blocks[:head_limit])
+            return "\n--\n".join(blocks)
         except re.error as exc:
             return self._tool_error(f"Invalid regex pattern: {exc}")
         except Exception as exc:
@@ -1658,8 +1669,7 @@ class FileToolkit(BaseToolkit):
 
             if file_pattern:
                 # use file_pattern if provided (overrides file_types)
-                pattern_glob = f"**/{file_pattern}"
-                matching_files.extend(search_path.rglob(pattern_glob))
+                matching_files.extend(search_path.rglob(file_pattern))
             else:
                 # use file_types if file_pattern not provided
                 if file_types is None:
@@ -1674,8 +1684,7 @@ class FileToolkit(BaseToolkit):
 
                 for file_type in normalized_types:
                     # use rglob for recursive search
-                    pattern_glob = f"**/*.{file_type}"
-                    matching_files.extend(search_path.rglob(pattern_glob))
+                    matching_files.extend(search_path.rglob(f"*.{file_type}"))
 
             # search through files (case-insensitive)
             matches = []
