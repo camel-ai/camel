@@ -21,12 +21,10 @@ from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Dict,
     List,
     Optional,
     Tuple,
-    Union,
 )
 
 from camel.logger import get_logger
@@ -97,27 +95,16 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
 
     def __init__(
         self,
-        default_tools: Optional[List[Union[FunctionTool, Callable]]] = None,
-        share_parent_tools: bool = False,
         timeout: Optional[float] = None,
     ) -> None:
         r"""Initialize the AgentToolkit.
 
         Args:
-            default_tools (Optional[List[Union[FunctionTool, Callable]]]):
-                Tools made available to spawned sub-agents when parent tools
-                are unavailable or disabled. This toolkit must be registered
-                to a parent ChatAgent before use. (default: :obj:`None`)
-            share_parent_tools (bool): Whether to clone tools from the parent
-                ChatAgent when this toolkit is registered via
-                :obj:`toolkits_to_register_agent`. (default: :obj:`False`)
             timeout (Optional[float]): Maximum execution time for toolkit
                 calls. (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
         RegisteredAgentToolkit.__init__(self)
-        self.default_tools = list(default_tools or [])
-        self.share_parent_tools = share_parent_tools
         self._sessions: Dict[str, _AgentSession] = {}
         self._tasks: Dict[str, _AgentTask] = {}
         self._lock = threading.RLock()
@@ -160,65 +147,30 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
     def _resolve_child_tools(
         self,
         parent: Optional["ChatAgent"],
-        share_parent_tools: Optional[bool] = None,
-        tool_names: Optional[List[str]] = None,
-    ) -> Tuple[
-        Optional[List[Union[FunctionTool, Callable]]],
-        Optional[List[RegisteredAgentToolkit]],
-    ]:
+    ) -> Tuple[Optional[List[FunctionTool]], Optional[List[RegisteredAgentToolkit]]]:
         if parent is None:
             return None, None
-        names = [name for name in (tool_names or []) if name]
-        share = (
-            self.share_parent_tools
-            if share_parent_tools is None
-            else share_parent_tools
-        )
-        if names:
-            cloned_tools, toolkits_to_register = parent._clone_tools()
-            tool_map = {
-                tool.get_function_name(): tool for tool in cloned_tools
-            }
-            missing = [name for name in names if name not in tool_map]
-            if missing:
-                raise ValueError(
-                    "Unknown parent tools requested for sub-agent: "
-                    + ", ".join(sorted(missing))
-                )
-            return [tool_map[name] for name in names], toolkits_to_register
-        if share:
-            try:
-                cloned_tools, toolkits_to_register = parent._clone_tools()
-                return (
-                    cloned_tools,  # type: ignore[return-value]
-                    toolkits_to_register,
-                )
-            except Exception as exc:
-                logger.warning(
-                    "Failed to clone parent agent tools for AgentToolkit: "
-                    f"{exc}"
-                )
-        if self.default_tools:
-            return list(self.default_tools), None
-        return None, None
+        cloned_tools, toolkits_to_register = parent._clone_tools()
+        return cloned_tools, toolkits_to_register
 
     def _create_subagent(
         self,
         subagent_type: str,
         description: str,
-        share_parent_tools: Optional[bool] = None,
-        tool_names: Optional[List[str]] = None,
     ) -> Optional["ChatAgent"]:
         from camel.agents import ChatAgent
 
         parent = self._require_parent_agent()
         if parent is None:
             return None
-        tools, toolkits_to_register = self._resolve_child_tools(
-            parent=parent,
-            share_parent_tools=share_parent_tools,
-            tool_names=tool_names,
-        )
+        try:
+            tools, toolkits_to_register = self._resolve_child_tools(parent=parent)
+        except Exception as exc:
+            logger.warning(
+                "Failed to clone parent agent tools for AgentToolkit: "
+                f"{exc}"
+            )
+            raise
 
         return ChatAgent(
             system_message=self._build_system_message(
@@ -334,8 +286,6 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         description: str = "Specialized sub-agent task",
         subagent_type: str = "general-purpose",
         agent_id: Optional[str] = None,
-        tool_names: Optional[List[str]] = None,
-        share_parent_tools: Optional[bool] = None,
         wait: bool = True,
         timeout: Optional[float] = None,
     ) -> Dict[str, Any]:
@@ -371,11 +321,6 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
                 :obj:`subagent_type` are ignored. The spawned sub-agent always
                 uses the calling parent agent's model. (default: :obj:`None`)
 
-            tool_names (Optional[List[str]]): Specific parent tool names to
-                clone into a new sub-agent. If omitted, tool inheritance is
-                controlled by :obj:`share_parent_tools` and toolkit defaults.
-            share_parent_tools (Optional[bool]): Per-call override for whether
-                to inherit the parent agent's tools. (default: :obj:`None`)
             wait (bool): Whether to wait for the sub-agent to finish before
                 returning. Set to :obj:`False` to start the task and check it
                 later with :obj:`agent_get_task_output`.
@@ -416,8 +361,6 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
                 agent = self._create_subagent(
                     subagent_type=subagent_type,
                     description=description,
-                    share_parent_tools=share_parent_tools,
-                    tool_names=tool_names,
                 )
             except Exception as exc:
                 return self._error_result(
@@ -646,8 +589,6 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         """
         del new_session_id
         return AgentToolkit(
-            default_tools=list(self.default_tools),
-            share_parent_tools=self.share_parent_tools,
             timeout=self.timeout,
         )
 

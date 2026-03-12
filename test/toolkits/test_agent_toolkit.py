@@ -201,28 +201,14 @@ class TestAgentToolkit:
         assert final["status"] == "completed"
         assert final["result"] == "handled::Poll later"
 
-    def test_dynamic_tool_subset_selection(self, toolkit, parent_agent):
-        toolkit.register_agent(parent_agent)
-
-        toolkit.agent_run_subagent(
-            prompt="Use just search",
-            description="Targeted tooling",
-            tool_names=["parent_search"],
-        )
-
-        created_agent = FakeChatAgent.created_agents[0]
-        tools = created_agent.kwargs["tools"]
-        assert [tool.get_function_name() for tool in tools] == [
-            "parent_search"
-        ]
-
-    def test_share_parent_tools_override(self, toolkit, parent_agent):
+    def test_inherits_all_parent_tools_by_default(
+        self, toolkit, parent_agent
+    ):
         toolkit.register_agent(parent_agent)
 
         toolkit.agent_run_subagent(
             prompt="Use every parent tool",
             description="All tools",
-            share_parent_tools=True,
         )
 
         created_agent = FakeChatAgent.created_agents[0]
@@ -234,26 +220,6 @@ class TestAgentToolkit:
         assert created_agent.kwargs["toolkits_to_register_agent"] == [
             "register-me"
         ]
-
-    def test_default_tools_fallback(self, toolkit, parent_agent):
-        def sentinel() -> None:
-            """Sentinel.
-
-            Returns:
-                None: Nothing.
-            """
-
-        toolkit.default_tools = [sentinel]
-        toolkit.register_agent(parent_agent)
-
-        toolkit.agent_run_subagent(
-            prompt="Use default tool",
-            description="Fallback tools",
-        )
-
-        created_agent = FakeChatAgent.created_agents[0]
-        assert created_agent.kwargs["tools"] == [sentinel]
-        assert created_agent.kwargs["toolkits_to_register_agent"] is None
 
     def test_stop_running_task(self, toolkit, parent_agent):
         FakeChatAgent.delay_seconds = 0.5
