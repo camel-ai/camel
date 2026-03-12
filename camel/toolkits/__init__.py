@@ -66,7 +66,7 @@ from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
 from .browser_toolkit import BrowserToolkit
 from .async_browser_toolkit import AsyncBrowserToolkit
-from .file_toolkit import FileToolkit, FileWriteToolkit
+from .file_toolkit import FileToolkit
 from .pptx_toolkit import PPTXToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
@@ -104,6 +104,7 @@ from .earth_science_toolkit import EarthScienceToolkit
 from .skill_toolkit import SkillToolkit
 from .headless_browser_search_toolkit import HeadlessBrowserSearchToolkit
 from .todo_toolkit import TodoItem, TodoToolkit
+from .web_fetch_toolkit import WebFetchToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -158,7 +159,6 @@ __all__ = [
     'BrowserToolkit',
     'AsyncBrowserToolkit',
     'FileToolkit',
-    'FileWriteToolkit',  # Deprecated, use FileToolkit instead
     'PPTXToolkit',
     'TerminalToolkit',
     'PubMedToolkit',
@@ -200,4 +200,5 @@ __all__ = [
     'HeadlessBrowserSearchToolkit',
     'TodoItem',
     'TodoToolkit',
+    'WebFetchToolkit',
 ]
