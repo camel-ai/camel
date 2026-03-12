@@ -18,6 +18,7 @@ import inspect
 import logging
 import textwrap
 import threading
+import types
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from inspect import Parameter, getsource, signature
@@ -55,6 +56,27 @@ _PERSISTENT_LOOP: Optional[asyncio.AbstractEventLoop] = None
 _PERSISTENT_LOOP_LOCK = threading.Lock()
 
 
+def _annotation_accepts(annotation: Any, value: Any) -> bool:
+    r"""Quick structural check: could *annotation* plausibly apply to *value*?
+
+    Used by the Union handler to skip branches that clearly don't match
+    before attempting (potentially failing) coercion.
+    """
+    # BaseModel annotation expects a dict (to coerce) or an instance
+    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+        return isinstance(value, (dict, annotation))
+
+    origin = get_origin(annotation)
+    if origin is list:
+        return isinstance(value, list)
+    if origin is dict:
+        return isinstance(value, dict)
+    if origin in (Union, types.UnionType):
+        return True  # handled recursively
+    # For unknown/primitive annotations we can't tell — be conservative
+    return False
+
+
 def _coerce_arg(value: Any, annotation: Any) -> Any:
     r"""Coerce *value* so that plain dicts become Pydantic model instances
     where the function signature expects them.
@@ -90,13 +112,23 @@ def _coerce_arg(value: Any, annotation: Any) -> Any:
         return value
 
     # --- Optional[X] / Union[X, Y, ...] — try each inner type ---
-    if origin is Union:
+    if origin in (Union, types.UnionType):
+        validation_error = None
         for inner in args:
             if inner is type(None):
+                if value is None:
+                    return value
                 continue
-            coerced = _coerce_arg(value, inner)
-            if coerced is not value:
-                return coerced
+            if not _annotation_accepts(inner, value):
+                continue
+            try:
+                coerced = _coerce_arg(value, inner)
+            except Exception as exc:
+                validation_error = exc
+                continue
+            return coerced
+        if validation_error is not None:
+            raise validation_error
         return value
 
     return value
