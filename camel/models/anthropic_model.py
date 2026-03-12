@@ -740,9 +740,8 @@ class AnthropicModel(BaseModelBackend):
 
         if "max_tokens" not in self.model_config_dict:
             warnings.warn(
-                "AnthropicModel did not receive `max_tokens`; defaulting to "
-                "16384. Set `model_config_dict['max_tokens']` explicitly to "
-                "suppress this warning.",
+                "Anthropic `max_tokens` is not set; using the default value "
+                "16384. Set `max_tokens` explicitly to suppress this warning.",
                 UserWarning,
                 stacklevel=3,
             )
@@ -875,9 +874,8 @@ class AnthropicModel(BaseModelBackend):
 
         if "max_tokens" not in self.model_config_dict:
             warnings.warn(
-                "AnthropicModel did not receive `max_tokens`; defaulting to "
-                "16384. Set `model_config_dict['max_tokens']` explicitly to "
-                "suppress this warning.",
+                "Anthropic `max_tokens` is not set; using the default value "
+                "16384. Set `max_tokens` explicitly to suppress this warning.",
                 UserWarning,
                 stacklevel=3,
             )
