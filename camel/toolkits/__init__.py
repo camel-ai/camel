@@ -103,6 +103,7 @@ from .microsoft_outlook_mail_toolkit import OutlookMailToolkit
 from .earth_science_toolkit import EarthScienceToolkit
 from .skill_toolkit import SkillToolkit
 from .headless_browser_search_toolkit import HeadlessBrowserSearchToolkit
+from .todo_toolkit import TodoItem, TodoToolkit
 from .web_fetch_toolkit import WebFetchToolkit
 
 __all__ = [
@@ -197,5 +198,7 @@ __all__ = [
     'EarthScienceToolkit',
     'SkillToolkit',
     'HeadlessBrowserSearchToolkit',
+    'TodoItem',
+    'TodoToolkit',
     'WebFetchToolkit',
 ]
