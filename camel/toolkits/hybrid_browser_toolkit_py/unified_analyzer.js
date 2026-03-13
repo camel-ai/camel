@@ -449,6 +449,42 @@
         }
     }
 
+    // Enhanced filtering: Check if element is a no-information label
+    function isNoInformationLabel(element, role, name) {
+        if (!element || !element.nodeType || element.nodeType !== Node.ELEMENT_NODE) return false;
+
+        try {
+            // Filter elements with interactive roles but no meaningful content
+            if (['button', 'link'].includes(role) && !name.trim()) {
+                return true;
+            }
+            
+            // Filter decorative cursor:pointer elements without content
+            if (hasPointerCursor(element) && !name.trim() && role === 'generic') {
+                return true;
+            }
+            
+            // Filter elements that only contain whitespace or non-meaningful symbols
+            if (name && name.trim()) {
+                const meaningfulText = name.trim().replace(/[^\w\s]/g, '').trim();
+                if (!meaningfulText) {
+                    return true;
+                }
+            }
+            
+            // Filter elements with cursor=pointer but no accessible name and no interactive role
+            if (hasPointerCursor(element) && !name.trim() && 
+                !['button', 'link', 'textbox', 'checkbox', 'radio', 'combobox', 'tab', 'menuitem'].includes(role)) {
+                return true;
+            }
+            
+            return false;
+        } catch (error) {
+            // If there's an error in evaluation, assume element is not a no-information label
+            return false;
+        }
+    }
+
     // Playwright-inspired function to get aria level
     function getAriaLevel(element) {
         if (!element || !element.tagName) return 0;
@@ -542,6 +578,22 @@
 
             const name = getAccessibleName(element);
 
+            // ENHANCEMENT 1: Complete occlusion filtering
+            // Filter out occluded elements entirely instead of just marking them
+            if (isOccluded(element)) {
+                console.log(`[CAMEL Filter] Occluded element filtered: ${role} "${name}" (tag: ${element.tagName})`);
+                if (window.__camelFilterStats) window.__camelFilterStats.occludedFiltered++;
+                return null; // Remove from snapshot completely
+            }
+
+            // ENHANCEMENT 2: No-information label filtering
+            // Filter out elements that provide no meaningful information to AI
+            if (isNoInformationLabel(element, role, name)) {
+                console.log(`[CAMEL Filter] No-information element filtered: ${role} "${name}" (tag: ${element.tagName})`);
+                if (window.__camelFilterStats) window.__camelFilterStats.noInfoFiltered++;
+                return null; // Remove meaningless interactive elements
+            }
+
             // Get persistent ref for this element
             const ref = getOrAssignRef(element);
 
@@ -556,11 +608,6 @@
 
             // Add states for interactive elements, similar to Playwright
             if (element.hasAttribute('disabled') || element.disabled) node.disabled = true;
-
-            // NEW: Check if element is occluded and mark with occluded tag
-            if (isOccluded(element)) {
-                node.occluded = true; // Mark as occluded but don't disable
-            }
 
             // Handle aria-checked and native checked
             const ariaChecked = element.getAttribute('aria-checked');
@@ -938,6 +985,12 @@
     }
 
     function analyzePageElements() {
+        // Initialize filtering statistics
+        window.__camelFilterStats = {
+            occludedFiltered: 0,
+            noInfoFiltered: 0
+        };
+        
         // Clean up stale refs before analysis
         const cleanedRefCount = cleanupStaleRefs();
 
@@ -1027,7 +1080,14 @@
                 },
                 // Performance information
                 cacheHit: false,
-                analysisTime: Date.now() - currentTime
+                analysisTime: Date.now() - currentTime,
+                
+                // Enhanced filtering information
+                filteringStats: {
+                    occludedElementsFiltered: window.__camelFilterStats?.occludedFiltered || 0,
+                    noInfoElementsFiltered: window.__camelFilterStats?.noInfoFiltered || 0,
+                    totalElementsFiltered: (window.__camelFilterStats?.occludedFiltered || 0) + (window.__camelFilterStats?.noInfoFiltered || 0)
+                }
             }
         };
 
