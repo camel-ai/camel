@@ -16,7 +16,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from camel.loaders import MinerU
+from camel.loaders import MinerULoader
 
 
 @pytest.fixture
@@ -56,12 +56,14 @@ def mock_batch_response():
 def test_initialization():
     # Test initialization with API key from environment
     with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
-        mineru = MinerU(
-            is_ocr=False,
-            enable_formula=True,
-            enable_table=False,
-            layout_model='layoutlmv3',
-            language='zh',
+        mineru = MinerULoader(
+            config={
+                "is_ocr": False,
+                "enable_formula": True,
+                "enable_table": False,
+                "layout_model": 'layoutlmv3',
+                "language": 'zh',
+            }
         )
         assert mineru._api_key == 'test_key'
         assert mineru._api_url == 'https://mineru.net/api/v4'
@@ -74,13 +76,13 @@ def test_initialization():
     # Test initialization with custom API URL
     with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
         custom_url = 'https://custom.mineru.net/api/v4'
-        mineru = MinerU(api_url=custom_url)
+        mineru = MinerULoader(config={"api_url": custom_url})
         assert mineru._api_url == custom_url
 
     # Test initialization without API key
     with patch.dict('os.environ', {}, clear=True):
         with pytest.raises(ValueError):
-            MinerU()
+            MinerULoader()
 
 
 @patch('requests.post')
@@ -89,15 +91,17 @@ def test_extract_url(mock_post, mock_response):
     mock_post.return_value.raise_for_status = Mock()
 
     with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
-        mineru = MinerU(
-            is_ocr=False,
-            enable_formula=False,
-            enable_table=False,
-            layout_model='layoutlmv3',
-            language='zh',
+        mineru = MinerULoader(
+            config={
+                "is_ocr": False,
+                "enable_formula": False,
+                "enable_table": False,
+                "layout_model": 'layoutlmv3',
+                "language": 'zh',
+            }
         )
-        result = mineru.extract_url(
-            url='https://arxiv.org/pdf/2311.10993.pdf',
+        result = mineru.load(
+            source='https://arxiv.org/pdf/2311.10993.pdf',
         )
 
     assert result == mock_response['data']
@@ -118,12 +122,14 @@ def test_batch_extract_urls(mock_post, mock_batch_response):
     mock_post.return_value.raise_for_status = Mock()
 
     with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
-        mineru = MinerU(
-            is_ocr=False,
-            enable_formula=False,
-            enable_table=False,
-            layout_model='layoutlmv3',
-            language='zh',
+        mineru = MinerULoader(
+            config={
+                "is_ocr": False,
+                "enable_formula": False,
+                "enable_table": False,
+                "layout_model": 'layoutlmv3',
+                "language": 'zh',
+            }
         )
         files = [
             {
@@ -137,7 +143,7 @@ def test_batch_extract_urls(mock_post, mock_batch_response):
                 'data_id': 'doc2',
             },
         ]
-        result = mineru.batch_extract_urls(
+        result = mineru.batch_load(
             files=files,
         )
 
@@ -159,7 +165,7 @@ def test_get_task_status(mock_get, mock_response):
     mock_get.return_value.raise_for_status = Mock()
 
     with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
-        mineru = MinerU()
+        mineru = MinerULoader()
         result = mineru.get_task_status('12345')
 
     assert result == mock_response['data']
@@ -172,7 +178,7 @@ def test_get_batch_status(mock_get, mock_batch_response):
     mock_get.return_value.raise_for_status = Mock()
 
     with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
-        mineru = MinerU()
+        mineru = MinerULoader()
         result = mineru.get_batch_status('batch_123')
 
     assert result == mock_batch_response['data']
@@ -182,7 +188,7 @@ def test_get_batch_status(mock_get, mock_batch_response):
 @patch('time.sleep', return_value=None)
 def test_wait_for_completion(mock_sleep, mock_response):
     with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
-        mineru = MinerU()
+        mineru = MinerULoader()
 
         # Mock get_task_status for single task
         mineru.get_task_status = Mock(return_value={'state': 'done'})

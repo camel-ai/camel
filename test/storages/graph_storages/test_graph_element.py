@@ -16,14 +16,14 @@
 import pytest
 from unstructured.documents.elements import Element
 
-from camel.loaders import UnstructuredIO
+from camel.loaders import UnstructuredIOLoader
 from camel.storages.graph_storages.graph_element import (
     GraphElement,
     Node,
     Relationship,
 )
 
-sample_element = UnstructuredIO().create_element_from_text("sample text")
+sample_element = UnstructuredIOLoader().create_element_from_text("sample text")
 
 
 @pytest.fixture
