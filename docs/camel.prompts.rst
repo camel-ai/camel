@@ -76,6 +76,14 @@ camel.prompts.object\_recognition module
    :undoc-members:
    :show-inheritance:
 
+camel.prompts.persona\_hub module
+---------------------------------
+
+.. automodule:: camel.prompts.persona_hub
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.prompts.prompt\_templates module
 --------------------------------------
 

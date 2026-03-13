@@ -28,6 +28,22 @@ camel.verifiers.python\_verifier module
    :undoc-members:
    :show-inheritance:
 
+camel.verifiers.math\_verifier module
+-------------------------------------
+
+.. automodule:: camel.verifiers.math_verifier
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.verifiers.physics\_verifier module
+----------------------------------------
+
+.. automodule:: camel.verifiers.physics_verifier
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

@@ -310,7 +310,8 @@ Here are practical usage patterns for each storage type—pick the ones you need
     <Tab title="Python Example">
       ```python
       import os
-      from camel.storages import SurrealStorage, VectorDBQuery, VectorRecord
+      from camel.storages.vectordb_storages import SurrealStorage
+      from camel.storages import VectorDBQuery, VectorRecord
 
       # Set environment variables for SurrealDB connection
       os.environ["SURREAL_URL"] = "ws://localhost:8000/rpc"

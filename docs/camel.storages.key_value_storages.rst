@@ -28,6 +28,14 @@ camel.storages.key\_value\_storages.json module
    :undoc-members:
    :show-inheritance:
 
+camel.storages.key\_value\_storages.mem0\_cloud module
+-----------------------------------------------------
+
+.. automodule:: camel.storages.key_value_storages.mem0_cloud
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.storages.key\_value\_storages.redis module
 ------------------------------------------------
 
