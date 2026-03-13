@@ -442,6 +442,22 @@ def evaluate_provider(
     )
 
 
+def _set_github_output(key: str, value: str) -> None:
+    """Write a key=value pair to ``$GITHUB_OUTPUT``."""
+    output_path = os.environ.get("GITHUB_OUTPUT")
+    if not output_path:
+        return
+    with open(output_path, "a", encoding="utf-8") as f:
+        # Use delimiter for multiline values
+        if "\n" in value:
+            import uuid
+
+            delimiter = f"ghadelimiter_{uuid.uuid4()}"
+            f.write(f"{key}<<{delimiter}\n{value}\n{delimiter}\n")
+        else:
+            f.write(f"{key}={value}\n")
+
+
 def main() -> None:
     print("Parsing ModelType enum...", file=sys.stderr)
     provider_models = parse_enum_models()
@@ -467,6 +483,13 @@ def main() -> None:
         with open(summary_path, "a", encoding="utf-8") as f:
             f.write(report)
             f.write("\n")
+
+    # Set GitHub Actions outputs for downstream steps
+    has_deprecated = any(r.possibly_deprecated for r in results)
+    has_new = any(r.new_in_api for r in results)
+    _set_github_output("has_deprecated", "true" if has_deprecated else "false")
+    _set_github_output("has_new", "true" if has_new else "false")
+    _set_github_output("report", report)
 
 
 if __name__ == "__main__":
