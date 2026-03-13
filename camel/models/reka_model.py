@@ -30,7 +30,7 @@ from camel.utils import (
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -213,7 +213,7 @@ class RekaModel(BaseModelBackend):
             )
         return self._token_counter
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -238,7 +238,6 @@ class RekaModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
@@ -271,7 +270,7 @@ class RekaModel(BaseModelBackend):
 
         return openai_response
 
-    @observe(as_type="generation")
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -297,7 +296,6 @@ class RekaModel(BaseModelBackend):
             model_parameters=self.model_config_dict,
         )
 
-        self._log_and_trace()
 
         reka_messages = self._convert_openai_to_reka_messages(messages)
 

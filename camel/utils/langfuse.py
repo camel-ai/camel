@@ -12,8 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
+from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, Generator, List, Optional
 
 from camel.logger import get_logger
 from camel.utils import dependencies_required
@@ -28,11 +29,36 @@ _agent_session_id_var: ContextVar[Optional[str]] = ContextVar(
 _langfuse_configured = False
 
 try:
-    from langfuse.decorators import langfuse_context
+    from langfuse import get_client, propagate_attributes as _langfuse_propagate_attributes
 
     LANGFUSE_AVAILABLE = True
 except ImportError:
     LANGFUSE_AVAILABLE = False
+    get_client: Optional[Callable[..., Any]] = None
+    _langfuse_propagate_attributes: Optional[Callable[..., Any]] = None
+
+
+def _convert_usage_to_details(usage: Any) -> Optional[Dict[str, Any]]:
+    r"""Convert various usage formats to Langfuse usage_details format."""
+    if usage is None:
+        return None
+    if isinstance(usage, dict):
+        return usage
+    if hasattr(usage, "model_dump"):
+        dumped = usage.model_dump(exclude_none=True)
+        if isinstance(dumped, dict):
+            return dumped
+    if hasattr(usage, "dict"):
+        dumped = usage.dict(exclude_none=True)
+        if isinstance(dumped, dict):
+            return dumped
+
+    usage_details: Dict[str, Any] = {}
+    for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+        value = getattr(usage, key, None)
+        if value is not None:
+            usage_details[key] = value
+    return usage_details or None
 
 
 @dependencies_required('langfuse')
@@ -58,8 +84,10 @@ def configure_langfuse(
             (default: :obj:`None`)
 
     Note:
-        This function configures the native langfuse_context which works with
-            @observe() decorators. Set enabled=False to disable all tracing.
+        In Langfuse v3+, the @observe() decorator automatically reads
+        configuration from environment variables. This function sets the
+        environment variables so that @observe() decorators work correctly.
+        Set enabled=False to disable all tracing.
     """  # noqa: E501
     global _langfuse_configured
 
@@ -83,36 +111,53 @@ def configure_langfuse(
         else:
             enabled = False  # Default to disabled
 
-    # If not enabled, don't configure anything and don't call langfuse function
+    # If not enabled, don't configure anything
     if not enabled:
         _langfuse_configured = False
         logger.info("Langfuse tracing disabled for CAMEL models")
+        os.environ["LANGFUSE_ENABLED"] = "false"
+        os.environ["LANGFUSE_TRACING_ENABLED"] = "false"
         return
+
+    # Set environment variables for Langfuse v3+ @observe() decorator
+    # The decorator automatically reads from these environment variables
+    if public_key:
+        os.environ["LANGFUSE_PUBLIC_KEY"] = public_key
+    if secret_key:
+        os.environ["LANGFUSE_SECRET_KEY"] = secret_key
+    if host:
+        os.environ["LANGFUSE_HOST"] = host
+        os.environ["LANGFUSE_BASE_URL"] = host
+    os.environ["LANGFUSE_DEBUG"] = "true" if debug else "false"
+    os.environ["LANGFUSE_ENABLED"] = "true"
+    os.environ["LANGFUSE_TRACING_ENABLED"] = "true"
 
     logger.debug(
         f"Configuring Langfuse - enabled: {enabled}, "
         f"public_key: {'***' + public_key[-4:] if public_key else None}, "
         f"host: {host}, debug: {debug}"
     )
+
+    # Check if Langfuse is available and properly configured
     if enabled and public_key and secret_key and LANGFUSE_AVAILABLE:
-        _langfuse_configured = True
+        try:
+            # Verify that Langfuse can be imported and get_client works
+            if get_client is not None:
+                get_client()
+                _langfuse_configured = True
+                logger.info("Langfuse tracing enabled for CAMEL models")
+            else:
+                _langfuse_configured = False
+                logger.warning("Langfuse is not available")
+        except Exception as e:
+            _langfuse_configured = False
+            logger.error(f"Failed to verify Langfuse configuration: {e}")
     else:
         _langfuse_configured = False
-
-    try:
-        # Configure langfuse_context with native method
-        langfuse_context.configure(
-            public_key=public_key,
-            secret_key=secret_key,
-            host=host,
-            debug=debug,
-            enabled=True,  # Always True here since we checked enabled above
-        )
-
-        logger.info("Langfuse tracing enabled for CAMEL models")
-
-    except Exception as e:
-        logger.error(f"Failed to configure Langfuse: {e}")
+        if not LANGFUSE_AVAILABLE:
+            logger.warning("Langfuse package is not installed")
+        elif not public_key or not secret_key:
+            logger.warning("Langfuse public_key or secret_key is missing")
 
 
 def is_langfuse_available() -> bool:
@@ -146,13 +191,20 @@ def get_current_agent_session_id() -> Optional[str]:
     return None
 
 
+@contextmanager
 def update_langfuse_trace(
     session_id: Optional[str] = None,
     user_id: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
     tags: Optional[List[str]] = None,
-) -> bool:
-    r"""Update the current Langfuse trace with session ID and metadata.
+) -> Generator[None, None, None]:
+    r"""Context manager that propagates trace-level attributes to all child
+    spans within the context.
+
+    Uses Langfuse's ``propagate_attributes()`` to set ``session_id``,
+    ``user_id``, ``metadata`` and ``tags`` on the current span and
+    automatically propagates them to all new child spans created within the
+    context — including spans auto-created by Langfuse's OpenAI integration.
 
     Args:
         session_id(Optional[str]): Optional session ID to use. If :obj:`None`
@@ -160,34 +212,61 @@ def update_langfuse_trace(
         user_id(Optional[str]): Optional user ID for the trace.
             (default: :obj:`None`)
         metadata(Optional[Dict[str, Any]]): Optional metadata dictionary.
-            (default: :obj:`None`)
+            Values are converted to strings truncated to 200 characters as
+            required by Langfuse. (default: :obj:`None`)
         tags(Optional[List[str]]): Optional list of tags.
             (default: :obj:`None`)
 
-    Returns:
-        bool: True if update was successful, False otherwise.
+    Yields:
+        None
+
+    Example:
+        .. code-block:: python
+
+            with update_langfuse_trace(
+                session_id="session_123",
+                user_id="user_1",
+                metadata={"source": "camel"},
+                tags=["CAMEL-AI"],
+            ):
+                response = model.run(messages)
     """
     if not is_langfuse_available():
-        return False
+        yield
+        return
 
-    # Use provided session_id or get from thread-local storage
     final_session_id = session_id or get_current_agent_session_id()
+    if not any([final_session_id, user_id, metadata, tags]):
+        yield
+        return
 
-    update_data: Dict[str, Any] = {}
-    if final_session_id:
-        update_data["session_id"] = final_session_id
-    if user_id:
-        update_data["user_id"] = user_id
-    if metadata:
-        update_data["metadata"] = metadata
-    if tags:
-        update_data["tags"] = tags
+    try:
+        if _langfuse_propagate_attributes is None:
+            yield
+            return
 
-    if update_data:
-        langfuse_context.update_current_trace(**update_data)
-        return True
+        # propagate_attributes() requires string values ≤200 characters
+        str_metadata: Optional[Dict[str, str]] = None
+        if metadata:
+            str_metadata = {k: str(v)[:200] for k, v in metadata.items()}
 
-    return False
+        str_tags: Optional[List[str]] = None
+        if tags:
+            str_tags = [str(tag) for tag in tags if tag is not None]
+
+        # Use the module-level propagate_attributes function from langfuse.
+        # NOTE: get_client() returns a Langfuse *instance* which does NOT have
+        # a propagate_attributes() method — that is a module-level function.
+        with _langfuse_propagate_attributes(
+            session_id=final_session_id,
+            user_id=user_id,
+            metadata=str_metadata,
+            tags=str_tags,
+        ):
+            yield
+
+    except Exception:
+        yield
 
 
 def update_current_observation(
@@ -210,22 +289,63 @@ def update_current_observation(
         model_parameters(Optional[Dict[str, Any]]): Optional model parameters
             dictionary. (default: :obj:`None`)
         usage_details(Optional[Dict[str, Any]]): Optional usage details
-            dictionary. (default: :obj:`None`)
-
-    Returns:
-        None
+            dictionary. Can also be passed as 'usage' keyword argument.
+            (default: :obj:`None`)
     """
     if not is_langfuse_available():
         return
 
-    langfuse_context.update_current_observation(
-        input=input,
-        output=output,
-        model=model,
-        model_parameters=model_parameters,
-        usage_details=usage_details,
-        **kwargs,
+    if get_client is None:
+        return
+
+    usage_details = usage_details or _convert_usage_to_details(
+        kwargs.pop("usage", None)
     )
+    client = get_client()
+
+    try:
+        if (
+            model is not None
+            or model_parameters is not None
+            or usage_details is not None
+        ):
+            client.update_current_generation(
+                name=kwargs.get("name"),
+                input=input,
+                output=output,
+                metadata=kwargs.get("metadata"),
+                version=kwargs.get("version"),
+                level=kwargs.get("level"),
+                status_message=kwargs.get("status_message"),
+                completion_start_time=kwargs.get("completion_start_time"),
+                model=model,
+                model_parameters=model_parameters,
+                usage_details=usage_details,
+                cost_details=kwargs.get("cost_details"),
+                prompt=kwargs.get("prompt"),
+            )
+            return
+
+        if (
+            input is not None
+            or output is not None
+            or kwargs.get("name") is not None
+            or kwargs.get("metadata") is not None
+            or kwargs.get("version") is not None
+            or kwargs.get("level") is not None
+            or kwargs.get("status_message") is not None
+        ):
+            client.update_current_span(
+                name=kwargs.get("name"),
+                input=input,
+                output=output,
+                metadata=kwargs.get("metadata"),
+                version=kwargs.get("version"),
+                level=kwargs.get("level"),
+                status_message=kwargs.get("status_message"),
+            )
+    except Exception as e:
+        logger.error(f"Failed to update Langfuse observation: {e}")
 
 
 def get_langfuse_status() -> Dict[str, Any]:
@@ -249,12 +369,13 @@ def get_langfuse_status() -> Dict[str, Any]:
         "current_session_id": get_current_agent_session_id(),
     }
 
-    if _langfuse_configured:
+    if _langfuse_configured and LANGFUSE_AVAILABLE:
         try:
-            # Try to get some context information
-            status["langfuse_context_available"] = True
+            # Try to verify Langfuse client is available
+            if get_client is not None:
+                status["langfuse_client_available"] = True
         except Exception as e:
-            status["langfuse_context_error"] = str(e)
+            status["langfuse_client_error"] = str(e)
 
     return status
 

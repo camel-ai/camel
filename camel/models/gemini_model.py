@@ -49,14 +49,14 @@ from camel.utils import (
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
-        from camel.utils import observe
+        from camel.utils import observe  # type: ignore[no-redef]
 elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
-        from traceroot import trace as observe  # type: ignore[import]
+        from traceroot import trace as observe  # type: ignore[import,no-redef]
     except ImportError:
-        from camel.utils import observe
+        from camel.utils import observe  # type: ignore[no-redef]
 else:
     from camel.utils import observe
 
@@ -742,7 +742,6 @@ class GeminiModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        self._log_and_trace()
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
@@ -784,7 +783,6 @@ class GeminiModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        self._log_and_trace()
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None

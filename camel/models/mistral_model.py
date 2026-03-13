@@ -50,7 +50,7 @@ except (ImportError, AttributeError):
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -256,7 +256,7 @@ class MistralModel(BaseModelBackend):
             )
         return self._token_counter
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -276,7 +276,6 @@ class MistralModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools
@@ -312,7 +311,7 @@ class MistralModel(BaseModelBackend):
 
         return openai_response
 
-    @observe(as_type="generation")
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -340,7 +339,6 @@ class MistralModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools
