@@ -65,34 +65,6 @@ in downstream processing.
 
   Path: A fully resolved (absolute) and sanitized Path object.
 
-<a id="camel.toolkits.file_toolkit.FileToolkit._resolve_search_path"></a>
-
-### _resolve_search_path
-
-```python
-def _resolve_search_path(self, path: Optional[str] = None):
-```
-
-Resolve a search directory without sanitizing it.
-
-<a id="camel.toolkits.file_toolkit.FileToolkit._resolve_existing_filepath"></a>
-
-### _resolve_existing_filepath
-
-```python
-def _resolve_existing_filepath(self, file_path: str):
-```
-
-Resolve a file path without sanitizing the filename.
-
-<a id="camel.toolkits.file_toolkit.FileToolkit._tool_error"></a>
-
-### _tool_error
-
-```python
-def _tool_error(self, message: str):
-```
-
 <a id="camel.toolkits.file_toolkit.FileToolkit._sanitize_filename"></a>
 
 ### _sanitize_filename
@@ -113,64 +85,6 @@ underscore (_).
 
   str: The sanitized filename with disallowed characters replaced by
 underscores.
-
-<a id="camel.toolkits.file_toolkit.FileToolkit._iter_grep_candidate_files"></a>
-
-### _iter_grep_candidate_files
-
-```python
-def _iter_grep_candidate_files(
-    self,
-    root: Path,
-    glob_pattern: str,
-    file_type: Optional[str]
-):
-```
-
-<a id="camel.toolkits.file_toolkit.FileToolkit._render_grep_context_block"></a>
-
-### _render_grep_context_block
-
-```python
-def _render_grep_context_block(
-    self,
-    file_path: Path,
-    lines: List[str],
-    match_index: int,
-    context_lines: int
-):
-```
-
-<a id="camel.toolkits.file_toolkit.FileToolkit._render_grep_multiline_block"></a>
-
-### _render_grep_multiline_block
-
-```python
-def _render_grep_multiline_block(
-    self,
-    file_path: Path,
-    lines: List[str],
-    start_line: int,
-    end_line: int,
-    context_lines: int
-):
-```
-
-<a id="camel.toolkits.file_toolkit.FileToolkit._normalize_notebook_source"></a>
-
-### _normalize_notebook_source
-
-```python
-def _normalize_notebook_source(self, new_source: str):
-```
-
-<a id="camel.toolkits.file_toolkit.FileToolkit._build_notebook_cell"></a>
-
-### _build_notebook_cell
-
-```python
-def _build_notebook_cell(self, new_source: str, cell_type: str):
-```
 
 <a id="camel.toolkits.file_toolkit.FileToolkit._write_text_file"></a>
 
@@ -595,94 +509,6 @@ and writes the result back.
   str: A success message if the edit was successful, or an
 error message if the content wasn't found or an error occurred.
 
-<a id="camel.toolkits.file_toolkit.FileToolkit.glob_files"></a>
-
-### glob_files
-
-```python
-def glob_files(self, pattern: str, path: Optional[str] = None):
-```
-
-Find files by glob pattern and sort by modification time.
-
-**Parameters:**
-
-- **pattern** (str): Glob pattern to match, for example :obj:`**/*.js`.
-- **path** (Optional[str]): Optional directory to search from. If not provided, the toolkit working directory is used.
-
-**Returns:**
-
-  Union[List[str], str]: Matching absolute file paths sorted by most
-recent modification time first, or an error message.
-
-<a id="camel.toolkits.file_toolkit.FileToolkit.grep_files"></a>
-
-### grep_files
-
-```python
-def grep_files(
-    self,
-    pattern: str,
-    path: str,
-    glob_pattern: str = '*',
-    file_type: Optional[str] = None,
-    output_mode: str = 'content',
-    ignore_case: bool = False,
-    context_lines: int = 0,
-    head_limit: int = 20,
-    multiline: bool = False
-):
-```
-
-Search file content with a regular expression.
-
-**Parameters:**
-
-- **pattern** (str): Regular expression to search for.
-- **path** (str): Directory to search recursively.
-- **glob_pattern** (str): Glob filter for candidate files before searching content. (default: :obj:`"*"`)
-- **file_type** (Optional[str]): Optional file extension filter without requiring the leading dot. (default: :obj:`None`)
-- **output_mode** (str): One of :obj:`content`, :obj:`files_with_matches`, or :obj:`count`. (default: :obj:`"content"`)
-- **ignore_case** (bool): Whether to search case-insensitively. (default: :obj:`False`)
-- **context_lines** (int): Number of surrounding lines to include when :obj:`output_mode` is :obj:`content`. (default: :obj:`0`)
-- **head_limit** (int): Maximum number of blocks or file paths to return. (default: :obj:`20`)
-- **multiline** (bool): Whether the regex may span multiple lines. (default: :obj:`False`)
-
-**Returns:**
-
-  Any: Matching content blocks, matching file paths, aggregate
-counts, or an error string depending on :obj:`output_mode`.
-
-<a id="camel.toolkits.file_toolkit.FileToolkit.notebook_edit_cell"></a>
-
-### notebook_edit_cell
-
-```python
-def notebook_edit_cell(
-    self,
-    notebook_path: str,
-    new_source: str = '',
-    cell_id: Optional[str] = None,
-    cell_type: Optional[str] = None,
-    edit_mode: str = 'replace'
-):
-```
-
-Edit, insert, or delete a cell in a Jupyter notebook.
-
-**Parameters:**
-
-- **notebook_path** (str): Absolute or working-directory-relative path to the notebook file.
-- **new_source** (str): New source for the cell when inserting or replacing.
-- **cell_id** (Optional[str]): Target cell ID. Required for replace and delete, and used as the insertion anchor when inserting.
-- **cell_type** (Optional[str]): Cell type for inserted cells, or optional replacement cell type. Supported values are :obj:`code` and :obj:`markdown`.
-- **edit_mode** (str): One of :obj:`replace`, :obj:`insert`, or :obj:`delete`.
-
-**Returns:**
-
-  str: Confirmation describing the notebook update, or an error
-message.
-
 <a id="camel.toolkits.file_toolkit.FileToolkit.search_files"></a>
 
 ### search_files
@@ -746,3 +572,4 @@ def get_tools(self):
 
   List[FunctionTool]: A list of FunctionTool objects representing
 the available functions in this toolkit.
+
