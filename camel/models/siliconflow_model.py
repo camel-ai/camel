@@ -18,6 +18,7 @@ from camel.configs import SiliconFlowConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
     ModelType,
+    StructuredOutputMode,
 )
 from camel.utils import (
     BaseTokenCounter,
@@ -88,3 +89,7 @@ class SiliconFlowModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+
+    @property
+    def structured_output_mode(self) -> StructuredOutputMode:
+        return StructuredOutputMode.JSON_OBJECT

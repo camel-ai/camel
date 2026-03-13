@@ -13,24 +13,27 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from json import JSONDecodeError
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from openai import AsyncOpenAI, AsyncStream, BadRequestError, OpenAI, Stream
 from openai.lib.streaming.chat import (
     AsyncChatCompletionStreamManager,
     ChatCompletionStreamManager,
 )
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
-from camel.models._utils import try_modify_message_with_format
+from camel.models._utils import (
+    pydantic_to_json_schema_response_format,
+    try_modify_message_with_format,
+)
 from camel.models.base_model import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     ModelType,
+    StructuredOutputMode,
 )
 from camel.utils import (
     BaseTokenCounter,
@@ -169,6 +172,18 @@ class OpenAICompatibleModel(BaseModelBackend):
                     **kwargs,
                 )
 
+    @property
+    def structured_output_mode(self) -> StructuredOutputMode:
+        r"""Declares the structured output capability of this model.
+
+        Subclasses should override to declare their platform's capability.
+        Default is :obj:`StructuredOutputMode.JSON_SCHEMA`.
+
+        Returns:
+            StructuredOutputMode: The structured output mode for this model.
+        """
+        return StructuredOutputMode.JSON_SCHEMA
+
     @observe()
     def _run(
         self,
@@ -191,11 +206,12 @@ class OpenAICompatibleModel(BaseModelBackend):
                 use for the request.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+            Union[ChatCompletion, Stream[ChatCompletionChunk],
+                ChatCompletionStreamManager[BaseModel]]:
                 `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
-                `ChatCompletionStreamManager[BaseModel]` for
-                structured output streaming.
+                `Stream[ChatCompletionChunk]` in the stream mode, or
+                `ChatCompletionStreamManager[BaseModel]` for structured
+                output streaming.
         """
         self._log_and_trace()
 
@@ -203,22 +219,61 @@ class OpenAICompatibleModel(BaseModelBackend):
             "response_format", None
         )
 
-        # Check if streaming is enabled
-        is_streaming = self.model_config_dict.get("stream", False)
-
         if response_format:
-            if is_streaming:
-                # Use streaming parse for structured output
-                return self._request_stream_parse(
-                    messages, response_format, tools
-                )
-            else:
-                # Use non-streaming parse for structured output
-                return self._request_parse(messages, response_format, tools)
-        else:
-            result = self._request_chat_completion(messages, tools)
+            mode = self.structured_output_mode
 
-        return result
+            # JSON_OBJECT / PROMPT_ONLY inject schema into the prompt, which
+            # conflicts with tool calling.  When tools are present, skip
+            # structured output and let tool_calls carry the structure.
+            if tools and mode in (
+                StructuredOutputMode.JSON_OBJECT,
+                StructuredOutputMode.PROMPT_ONLY,
+            ):
+                return self._request_chat_completion(messages, tools)
+
+            is_streaming = self.model_config_dict.get("stream", False)
+
+            def _prompt_no_inject(m, rf, t):
+                return self._request_prompt_only(m, rf, t, inject_schema=False)
+
+            attempts: List[Tuple[str, Callable[..., Any]]]
+
+            if mode == StructuredOutputMode.JSON_SCHEMA:
+                if is_streaming:
+                    return self._request_stream_parse(
+                        messages, response_format, tools
+                    )
+                attempts = [
+                    ("parse", self._request_parse),
+                    ("json_schema", self._request_json_schema),
+                    ("json_object", self._request_json_object),
+                    ("prompt_only", _prompt_no_inject),
+                ]
+            elif mode == StructuredOutputMode.JSON_OBJECT:
+                attempts = [
+                    ("json_object", self._request_json_object),
+                    ("prompt_only", _prompt_no_inject),
+                ]
+            else:
+                attempts = [
+                    ("prompt_only", self._request_prompt_only),
+                ]
+
+            for i, (name, fn) in enumerate(attempts):
+                try:
+                    return fn(messages, response_format, tools)
+                except BadRequestError as e:
+                    if i == len(attempts) - 1:
+                        raise
+                    logger.warning(
+                        "%s failed for model %s: %s. " "Falling back to %s.",
+                        name,
+                        self.model_type,
+                        e,
+                        attempts[i + 1][0],
+                    )
+
+        return self._request_chat_completion(messages, tools)
 
     @observe()
     async def _arun(
@@ -255,24 +310,60 @@ class OpenAICompatibleModel(BaseModelBackend):
             "response_format", None
         )
 
-        # Check if streaming is enabled
-        is_streaming = self.model_config_dict.get("stream", False)
-
         if response_format:
-            if is_streaming:
-                # Use streaming parse for structured output
-                return await self._arequest_stream_parse(
-                    messages, response_format, tools
-                )
-            else:
-                # Use non-streaming parse for structured output
-                return await self._arequest_parse(
-                    messages, response_format, tools
-                )
-        else:
-            result = await self._arequest_chat_completion(messages, tools)
+            mode = self.structured_output_mode
 
-        return result
+            if tools and mode in (
+                StructuredOutputMode.JSON_OBJECT,
+                StructuredOutputMode.PROMPT_ONLY,
+            ):
+                return await self._arequest_chat_completion(messages, tools)
+
+            is_streaming = self.model_config_dict.get("stream", False)
+
+            def _prompt_no_inject(m, rf, t):
+                return self._arequest_prompt_only(
+                    m, rf, t, inject_schema=False
+                )
+
+            attempts: List[Tuple[str, Callable[..., Any]]]
+
+            if mode == StructuredOutputMode.JSON_SCHEMA:
+                if is_streaming:
+                    return await self._arequest_stream_parse(
+                        messages, response_format, tools
+                    )
+                attempts = [
+                    ("parse", self._arequest_parse),
+                    ("json_schema", self._arequest_json_schema),
+                    ("json_object", self._arequest_json_object),
+                    ("prompt_only", _prompt_no_inject),
+                ]
+            elif mode == StructuredOutputMode.JSON_OBJECT:
+                attempts = [
+                    ("json_object", self._arequest_json_object),
+                    ("prompt_only", _prompt_no_inject),
+                ]
+            else:
+                attempts = [
+                    ("prompt_only", self._arequest_prompt_only),
+                ]
+
+            for i, (name, fn) in enumerate(attempts):
+                try:
+                    return await fn(messages, response_format, tools)
+                except BadRequestError as e:
+                    if i == len(attempts) - 1:
+                        raise
+                    logger.warning(
+                        "%s failed for model %s: %s. " "Falling back to %s.",
+                        name,
+                        self.model_type,
+                        e,
+                        attempts[i + 1][0],
+                    )
+
+        return await self._arequest_chat_completion(messages, tools)
 
     def _request_chat_completion(
         self,
@@ -308,36 +399,17 @@ class OpenAICompatibleModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
+        r"""Request structured output via ``chat.completions.parse()``"""
         request_config = self._prepare_request_config(tools)
-        # Remove stream from request_config since OpenAI does not support it
-        # when structured response is used
         request_config["response_format"] = response_format
         request_config.pop("stream", None)
 
-        try:
-            return self._call_client(
-                self._client.beta.chat.completions.parse,
-                messages=messages,
-                model=self.model_type,
-                **request_config,
-            )
-        except (ValidationError, JSONDecodeError, BadRequestError) as e:
-            logger.warning(
-                f"Format validation error: {e}. "
-                f"Attempting fallback with JSON format."
-            )
-            try_modify_message_with_format(messages[-1], response_format)
-            request_config["response_format"] = {"type": "json_object"}
-            try:
-                return self._call_client(
-                    self._client.beta.chat.completions.parse,
-                    messages=messages,
-                    model=self.model_type,
-                    **request_config,
-                )
-            except Exception as e:
-                logger.error(f"Fallback attempt also failed: {e}")
-                raise
+        return self._call_client(
+            self._client.chat.completions.parse,
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
 
     async def _arequest_parse(
         self,
@@ -345,36 +417,142 @@ class OpenAICompatibleModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
+        r"""Async variant of :meth:`_request_parse`."""
         request_config = self._prepare_request_config(tools)
-        # Remove stream from request_config since OpenAI does not support it
-        # when structured response is used
         request_config["response_format"] = response_format
         request_config.pop("stream", None)
 
-        try:
-            return await self._acall_client(
-                self._async_client.beta.chat.completions.parse,
-                messages=messages,
-                model=self.model_type,
-                **request_config,
-            )
-        except (ValidationError, JSONDecodeError, BadRequestError) as e:
-            logger.warning(
-                f"Format validation error: {e}. "
-                f"Attempting fallback with JSON format."
-            )
+        return await self._acall_client(
+            self._async_client.chat.completions.parse,
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    def _request_json_schema(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Request structured output via ``chat.completions.create()`` with a
+        ``json_schema`` response_format dict.
+        """
+        request_config = self._prepare_request_config(tools)
+        request_config["response_format"] = (
+            pydantic_to_json_schema_response_format(response_format)
+        )
+
+        return self._call_client(
+            self._client.chat.completions.create,
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    async def _arequest_json_schema(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Async variant of :meth:`_request_json_schema`."""
+        request_config = self._prepare_request_config(tools)
+        request_config["response_format"] = (
+            pydantic_to_json_schema_response_format(response_format)
+        )
+
+        return await self._acall_client(
+            self._async_client.chat.completions.create,
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    def _request_json_object(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Inject the schema into the prompt, then call
+        ``chat.completions.create()`` with ``{"type": "json_object"}``.
+        """
+        request_config = self._prepare_request_config(tools)
+
+        try_modify_message_with_format(messages[-1], response_format)
+        request_config["response_format"] = {"type": "json_object"}
+
+        return self._call_client(
+            self._client.chat.completions.create,
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    async def _arequest_json_object(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Async variant of :meth:`_request_json_object`."""
+        request_config = self._prepare_request_config(tools)
+
+        try_modify_message_with_format(messages[-1], response_format)
+        request_config["response_format"] = {"type": "json_object"}
+
+        return await self._acall_client(
+            self._async_client.chat.completions.create,
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    def _request_prompt_only(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        inject_schema: bool = True,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Call ``chat.completions.create()`` without ``response_format``.
+
+        Args:
+            inject_schema: If ``True`` (default), inject the JSON schema into
+                the last message via prompt.
+        """
+        request_config = self._prepare_request_config(tools)
+
+        if inject_schema:
             try_modify_message_with_format(messages[-1], response_format)
-            request_config["response_format"] = {"type": "json_object"}
-            try:
-                return await self._acall_client(
-                    self._async_client.beta.chat.completions.parse,
-                    messages=messages,
-                    model=self.model_type,
-                    **request_config,
-                )
-            except Exception as e:
-                logger.error(f"Fallback attempt also failed: {e}")
-                raise
+
+        return self._call_client(
+            self._client.chat.completions.create,
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    async def _arequest_prompt_only(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        inject_schema: bool = True,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Async variant of :meth:`_request_prompt_only`."""
+        request_config = self._prepare_request_config(tools)
+
+        if inject_schema:
+            try_modify_message_with_format(messages[-1], response_format)
+
+        return await self._acall_client(
+            self._async_client.chat.completions.create,
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
 
     def _request_stream_parse(
         self,
@@ -384,7 +562,7 @@ class OpenAICompatibleModel(BaseModelBackend):
     ) -> ChatCompletionStreamManager[BaseModel]:
         r"""Request streaming structured output parsing.
 
-        Note: This uses OpenAI's beta streaming API for structured outputs.
+        Note: This uses OpenAI's streaming API for structured outputs.
         """
         request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
@@ -407,14 +585,14 @@ class OpenAICompatibleModel(BaseModelBackend):
     ) -> AsyncChatCompletionStreamManager[BaseModel]:
         r"""Request async streaming structured output parsing.
 
-        Note: This uses OpenAI's beta streaming API for structured outputs.
+        Note: This uses OpenAI's streaming API for structured outputs.
         """
         request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
 
         # Use the beta streaming API for structured outputs
-        return self._call_client(
+        return await self._acall_client(
             self._async_client.beta.chat.completions.stream,
             messages=messages,
             model=self.model_type,

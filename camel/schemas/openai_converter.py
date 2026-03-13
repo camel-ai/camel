@@ -101,7 +101,7 @@ class OpenAISchemaConverter(BaseConverter):
             )
 
         self.model_config_dict["response_format"] = output_schema
-        response = self._client.beta.chat.completions.parse(
+        response = self._client.chat.completions.parse(
             messages=[
                 {'role': 'system', 'content': prompt},
                 {'role': 'user', 'content': content},

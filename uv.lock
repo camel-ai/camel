@@ -1494,7 +1494,7 @@ requires-dist = [
     { name = "onnxruntime", marker = "extra == 'document-tools'", specifier = "<=1.19.2" },
     { name = "onnxruntime", marker = "extra == 'eigent'", specifier = "<=1.19.2" },
     { name = "onnxruntime", marker = "extra == 'owl'", specifier = "<=1.19.2" },
-    { name = "openai", specifier = ">=1.86.0" },
+    { name = "openai", specifier = ">=1.92.0" },
     { name = "openapi-spec-validator", marker = "extra == 'all'", specifier = ">=0.7.1,<0.8" },
     { name = "openapi-spec-validator", marker = "extra == 'document-tools'", specifier = ">=0.7.1,<0.8" },
     { name = "openapi-spec-validator", marker = "extra == 'owl'", specifier = ">=0.7.1,<0.8" },
