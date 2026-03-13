@@ -93,7 +93,7 @@ jobs:
             echo "OPENAI_API_KEY is required for auto doc sync."
             exit 1
           fi
-          python docs/scripts/docs_sync/auto_sync_docs_with_chatagent.py \
+          python .camel/skills/docs-incremental-update/scripts/auto_sync_docs_with_chatagent.py \
             --docs-file impacted_docs.txt \
             --model-platform "${{ steps.refs.outputs.model_platform }}" \
             --model-type "${{ steps.refs.outputs.model_type }}"

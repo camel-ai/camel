@@ -70,7 +70,14 @@ def _collect_doc_maps(roots: Iterable[Path]) -> list[DocMap]:
 
 def _run_git_diff(base_ref: str, head_ref: str) -> list[str]:
     cmd = ["git", "diff", "--name-only", f"{base_ref}..{head_ref}"]
-    out = subprocess.check_output(cmd, text=True)
+    try:
+        out = subprocess.check_output(cmd, text=True, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as exc:
+        print(f"git diff failed (exit {exc.returncode}): {exc.stderr.strip()}")
+        raise SystemExit(1) from exc
+    except FileNotFoundError as exc:
+        print("git is not available on PATH. Please install git.")
+        raise SystemExit(1) from exc
     return [line.strip() for line in out.splitlines() if line.strip()]
 
 
