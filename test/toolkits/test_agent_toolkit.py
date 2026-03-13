@@ -201,9 +201,7 @@ class TestAgentToolkit:
         assert final["status"] == "completed"
         assert final["result"] == "handled::Poll later"
 
-    def test_inherits_all_parent_tools_by_default(
-        self, toolkit, parent_agent
-    ):
+    def test_inherits_all_parent_tools_by_default(self, toolkit, parent_agent):
         toolkit.register_agent(parent_agent)
 
         toolkit.agent_run_subagent(

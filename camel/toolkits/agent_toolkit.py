@@ -147,7 +147,9 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
     def _resolve_child_tools(
         self,
         parent: Optional["ChatAgent"],
-    ) -> Tuple[Optional[List[FunctionTool]], Optional[List[RegisteredAgentToolkit]]]:
+    ) -> Tuple[
+        Optional[List[FunctionTool]], Optional[List[RegisteredAgentToolkit]]
+    ]:
         if parent is None:
             return None, None
         cloned_tools, toolkits_to_register = parent._clone_tools()
@@ -410,8 +412,8 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
                 if active_task is not None and active_task.status == "running":
                     return self._error_result(
                         f"Sub-agent '{agent_id}' already has a running task "
-                        f"('{active_task_id}'). Stop it before starting "
-                        f"another task.",
+                        f"('{active_task_id}'). Query it or stop it before "
+                        f"starting another task.",
                         agent_id=agent_id,
                         task_id=active_task_id,
                         created=False,
