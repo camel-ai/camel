@@ -42,12 +42,6 @@ The `ChatAgent` is the primary implementation that handles conversations with la
   **`CriticAgent`**
   Specialized agent for evaluating and critiquing responses or solutions. Used in scenarios requiring quality assessment or validation.
 
-  **`DeductiveReasonerAgent`**
-  Focused on logical reasoning and deduction. Breaks down complex problems into smaller, manageable steps.
-
-  **`EmbodiedAgent`**
-  Designed for embodied AI scenarios, capable of understanding and responding to physical world contexts.
-
   **`KnowledgeGraphAgent`**
   Specialized in building and utilizing knowledge graphs for enhanced reasoning and information management.
 
