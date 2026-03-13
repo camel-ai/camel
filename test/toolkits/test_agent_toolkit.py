@@ -259,18 +259,48 @@ class TestAgentToolkit:
         assert result["status"] == "failed"
         assert "No sub-agent session found" in result["error"]
 
-    def test_old_finished_tasks_are_retained_until_limit_is_exceeded(
+    def test_purge_evicts_oldest_finished_tasks_when_limit_exceeded(
         self, toolkit, parent_agent
     ):
         toolkit.register_agent(parent_agent)
+        toolkit._MAX_FINISHED_TASKS = 4
 
         ids = []
-        for i in range(10):
+        for i in range(6):
             result = toolkit.agent_run_subagent(prompt=f"task-{i}")
             ids.append(result["task_id"])
 
-        for task_id in ids:
+        # oldest tasks should have been purged
+        for task_id in ids[:2]:
+            assert task_id not in toolkit._tasks
+        # recent tasks should still exist
+        for task_id in ids[2:]:
             assert toolkit._tasks[task_id].status == "completed"
+
+    def test_requires_parent_agent(self, toolkit):
+        result = toolkit.agent_run_subagent(
+            prompt="Research Eigent AI",
+            description="Research Eigent AI",
+            subagent_type="research",
+        )
+
+        assert result["status"] == "failed"
+        assert "must be registered" in result["error"]
+
+    def test_wait_with_timeout_returns_running_on_expiry(
+        self, toolkit, parent_agent
+    ):
+        FakeChatAgent.delay_seconds = 1.0
+        toolkit.register_agent(parent_agent)
+
+        result = toolkit.agent_run_subagent(
+            prompt="Slow task",
+            description="Timeout test",
+            wait=True,
+            timeout=0.05,
+        )
+
+        assert result["status"] == "running"
 
     def test_get_output_unknown_task_id_returns_error(
         self, toolkit, parent_agent

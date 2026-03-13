@@ -163,14 +163,7 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         parent = self._require_parent_agent()
         if parent is None:
             return None
-        try:
-            tools, toolkits_to_register = self._resolve_child_tools(parent=parent)
-        except Exception as exc:
-            logger.warning(
-                "Failed to clone parent agent tools for AgentToolkit: "
-                f"{exc}"
-            )
-            raise
+        tools, toolkits_to_register = self._resolve_child_tools(parent=parent)
 
         return ChatAgent(
             system_message=self._build_system_message(
@@ -421,7 +414,7 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
                         f"another task.",
                         agent_id=agent_id,
                         task_id=active_task_id,
-                        created=created,
+                        created=False,
                         subagent_type=session.subagent_type,
                         description=session.description,
                     )
@@ -447,9 +440,16 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
             try:
                 task.future.result(timeout=timeout)
             except concurrent.futures.TimeoutError:
-                pass
-            except Exception:
-                pass
+                logger.debug(
+                    "Timed out waiting for sub-agent task '%s'.",
+                    task.task_id,
+                )
+            except Exception as exc:
+                logger.debug(
+                    "Sub-agent task '%s' raised while waiting: %s",
+                    task.task_id,
+                    exc,
+                )
         current_task = self._get_task(task.task_id)
         if current_task is None:
             return self._error_result(
@@ -483,6 +483,18 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         :obj:`block` is False, the call returns immediately with the latest
         known status. When :obj:`block` is True, the tool waits up to
         :obj:`timeout` seconds for completion before returning.
+
+        Args:
+            task_id (str): Sub-agent task ID returned by
+                :obj:`agent_run_subagent`.
+            block (bool): Whether to wait for the task to finish before
+                returning status and output. (default: :obj:`False`)
+            timeout (Optional[float]): Maximum wait time in seconds when
+                :obj:`block` is True. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: Task status, associated :obj:`agent_id`, and any
+                available result or error output.
         """
         task = self._get_task(task_id)
         if task is None:
@@ -600,7 +612,7 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
                 for tid, t in self._tasks.items()
                 if t.status in {"completed", "failed", "stopped"}
             ]
-            excess = len(self._tasks) - self._MAX_FINISHED_TASKS + 1
+            excess = len(finished) - self._MAX_FINISHED_TASKS + 1
             if excess <= 0:
                 return
             finished.sort(
