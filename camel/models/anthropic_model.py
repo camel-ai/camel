@@ -636,6 +636,37 @@ class AnthropicModel(BaseModelBackend):
             usage=usage,
         )
 
+    @staticmethod
+    def _add_additional_properties_false(schema: Dict[str, Any]) -> None:
+        r"""Recursively add additionalProperties: false to all object types."""
+        if schema.get("type") == "object":
+            schema["additionalProperties"] = False
+        for value in schema.values():
+            if isinstance(value, dict):
+                AnthropicModel._add_additional_properties_false(value)
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        AnthropicModel._add_additional_properties_false(item)
+
+    @staticmethod
+    def _build_output_config(
+        response_format: Type[BaseModel],
+    ) -> Dict[str, Any]:
+        r"""Convert a Pydantic model to Anthropic's output_config format."""
+        schema = response_format.model_json_schema()
+        # Remove unsupported fields
+        schema.pop("$defs", None)
+        schema.pop("definitions", None)
+        # Anthropic requires additionalProperties: false on all object types
+        AnthropicModel._add_additional_properties_false(schema)
+        return {
+            "format": {
+                "type": "json_schema",
+                "schema": schema,
+            }
+        }
+
     def _convert_openai_tools_to_anthropic(
         self, tools: Optional[List[Dict[str, Any]]]
     ) -> Optional[List[Dict[str, Any]]]:
@@ -678,7 +709,7 @@ class AnthropicModel(BaseModelBackend):
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
             response_format (Optional[Type[BaseModel]]): The format of the
-                response. (Not supported by Anthropic API directly)
+                response.
             tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
                 use for the request.
 
@@ -687,15 +718,6 @@ class AnthropicModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        if response_format is not None:
-            warnings.warn(
-                "The 'response_format' parameter is not supported by the "
-                "Anthropic API and will be ignored. Consider using tools "
-                "for structured output instead.",
-                UserWarning,
-                stacklevel=2,
-            )
-
         # Update Langfuse trace with current agent session and metadata
         agent_session_id = get_current_agent_session_id()
         if agent_session_id:
@@ -716,11 +738,19 @@ class AnthropicModel(BaseModelBackend):
             self._convert_openai_to_anthropic_messages(processed_messages)
         )
 
+        if "max_tokens" not in self.model_config_dict:
+            warnings.warn(
+                "Anthropic `max_tokens` is not set; using the default value "
+                "16384. Set `max_tokens` explicitly to suppress this warning.",
+                UserWarning,
+                stacklevel=3,
+            )
+
         # Prepare request parameters
         request_params: Dict[str, Any] = {
             "model": str(self.model_type),
             "messages": anthropic_messages,
-            "max_tokens": self.model_config_dict.get("max_tokens", None),
+            "max_tokens": self.model_config_dict.get("max_tokens", 16384),
         }
 
         if system_message:
@@ -763,6 +793,12 @@ class AnthropicModel(BaseModelBackend):
         for key in ["temperature", "top_p", "top_k", "stop_sequences"]:
             if key in self.model_config_dict:
                 request_params[key] = self.model_config_dict[key]
+
+        # Add structured output via output_config
+        if response_format is not None:
+            request_params["output_config"] = self._build_output_config(
+                response_format
+            )
 
         # Convert tools
         anthropic_tools = self._convert_openai_tools_to_anthropic(tools)
@@ -807,7 +843,7 @@ class AnthropicModel(BaseModelBackend):
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
             response_format (Optional[Type[BaseModel]]): The format of the
-                response. (Not supported by Anthropic API directly)
+                response.
             tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
                 use for the request.
 
@@ -816,15 +852,6 @@ class AnthropicModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        if response_format is not None:
-            warnings.warn(
-                "The 'response_format' parameter is not supported by the "
-                "Anthropic API and will be ignored. Consider using tools "
-                "for structured output instead.",
-                UserWarning,
-                stacklevel=2,
-            )
-
         # Update Langfuse trace with current agent session and metadata
         agent_session_id = get_current_agent_session_id()
         if agent_session_id:
@@ -845,11 +872,19 @@ class AnthropicModel(BaseModelBackend):
             self._convert_openai_to_anthropic_messages(processed_messages)
         )
 
+        if "max_tokens" not in self.model_config_dict:
+            warnings.warn(
+                "Anthropic `max_tokens` is not set; using the default value "
+                "16384. Set `max_tokens` explicitly to suppress this warning.",
+                UserWarning,
+                stacklevel=3,
+            )
+
         # Prepare request parameters
         request_params: Dict[str, Any] = {
             "model": str(self.model_type),
             "messages": anthropic_messages,
-            "max_tokens": self.model_config_dict.get("max_tokens", None),
+            "max_tokens": self.model_config_dict.get("max_tokens", 16384),
         }
 
         if system_message:
@@ -892,6 +927,12 @@ class AnthropicModel(BaseModelBackend):
         for key in ["temperature", "top_p", "top_k", "stop_sequences"]:
             if key in self.model_config_dict:
                 request_params[key] = self.model_config_dict[key]
+
+        # Add structured output via output_config
+        if response_format is not None:
+            request_params["output_config"] = self._build_output_config(
+                response_format
+            )
 
         # Convert tools
         anthropic_tools = self._convert_openai_tools_to_anthropic(tools)

@@ -2183,6 +2183,355 @@ async def test_chat_agent_async_stream_with_async_generator_tool_calls():
 
 
 @pytest.mark.model_backend
+def test_stream_structured_output_with_tool_calls():
+    r"""Test sync streaming when model triggers tool calls via the
+    ChatCompletionStreamManager path (structured output + tool call).
+    """
+
+    class TravelPlan(BaseModel):
+        destination: str = Field(description="Travel destination")
+        recommendation: str = Field(description="Travel recommendation")
+
+    def get_weather(city: str) -> str:
+        r"""Get weather for a city.
+
+        Args:
+            city (str): The city name.
+
+        Returns:
+            str: Weather description.
+        """
+        return f"Sunny in {city}"
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+    agent = ChatAgent(
+        system_message="You are a travel assistant.",
+        model=model,
+        tools=[FunctionTool(get_weather)],
+        stream_accumulate=False,
+    )
+
+    # --- Helper classes to simulate ChatCompletionStreamManager ---
+    class _MockEvent:
+        def __init__(self, type_, delta=None, parsed=None):
+            self.type = type_
+            self.delta = delta
+            self.parsed = parsed
+
+    class _SyncStreamInner:
+        def __init__(self, events, final_completion):
+            self._events = events
+            self._final_completion = final_completion
+
+        def __iter__(self):
+            return iter(self._events)
+
+        def get_final_completion(self):
+            return self._final_completion
+
+    class _SyncStreamManager:
+        """Has __enter__ but NOT __iter__ — matches the elif branch."""
+
+        def __init__(self, events, final_completion):
+            self._inner = _SyncStreamInner(events, final_completion)
+
+        def __enter__(self):
+            return self._inner
+
+        def __exit__(self, *args):
+            return False
+
+    # First call: model wants to call get_weather
+    tool_completion = ChatCompletion(
+        id="chatcmpl-tool",
+        choices=[
+            Choice(
+                finish_reason="tool_calls",
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content="",
+                    role="assistant",
+                    function_call=None,
+                    tool_calls=[
+                        ChatCompletionMessageFunctionToolCall(
+                            id="call_weather_sync",
+                            type="function",
+                            function=Function(
+                                name="get_weather",
+                                arguments='{"city": "Paris"}',
+                            ),
+                        )
+                    ],
+                ),
+            )
+        ],
+        created=123456789,
+        model="gpt-5-mini",
+        object="chat.completion",
+        usage=CompletionUsage(
+            completion_tokens=10, prompt_tokens=20, total_tokens=30
+        ),
+    )
+    first_manager = _SyncStreamManager(
+        events=[_MockEvent("content.done", parsed=None)],
+        final_completion=tool_completion,
+    )
+
+    # Second call: model returns structured travel plan
+    travel_plan = TravelPlan(
+        destination="Paris",
+        recommendation="Visit the Eiffel Tower!",
+    )
+    final_completion = ChatCompletion(
+        id="chatcmpl-final",
+        choices=[
+            Choice(
+                finish_reason="stop",
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content='{"destination":"Paris",'
+                    '"recommendation":"Visit the Eiffel Tower!"}',
+                    role="assistant",
+                    function_call=None,
+                    tool_calls=None,
+                ),
+            )
+        ],
+        created=123456790,
+        model="gpt-5-mini",
+        object="chat.completion",
+        usage=CompletionUsage(
+            completion_tokens=20, prompt_tokens=40, total_tokens=60
+        ),
+    )
+    second_manager = _SyncStreamManager(
+        events=[
+            _MockEvent("content.delta", delta='{"destination":"Paris"'),
+            _MockEvent("content.done", parsed=travel_plan),
+        ],
+        final_completion=final_completion,
+    )
+
+    call_count = 0
+
+    def mock_run(*args, **kwargs):
+        nonlocal call_count
+        result = first_manager if call_count == 0 else second_manager
+        call_count += 1
+        return result
+
+    agent.model_backend.run = mock_run
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Plan a trip to Paris",
+    )
+
+    responses = list(agent.step(user_msg, response_format=TravelPlan))
+
+    assert len(responses) > 0, "Should receive at least one response"
+    assert call_count == 2, "Model should be called twice (tool call + final)"
+
+    tool_call_found = any(
+        tc.tool_name == "get_weather" and tc.result == "Sunny in Paris"
+        for response in responses
+        for tc in (response.info.get("tool_calls") or [])
+    )
+    assert tool_call_found, "get_weather tool should have been called"
+
+    final_response = responses[-1]
+    assert final_response.msg.parsed is not None
+    assert final_response.msg.parsed.destination == "Paris"
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_async_stream_structured_output_with_tool_calls():
+    r"""Test async streaming when model triggers tool calls via the
+    AsyncChatCompletionStreamManager path (structured output + tool call).
+    """
+
+    class TravelPlan(BaseModel):
+        destination: str = Field(description="Travel destination")
+        recommendation: str = Field(description="Travel recommendation")
+
+    def get_weather(city: str) -> str:
+        r"""Get weather for a city.
+
+        Args:
+            city (str): The city name.
+
+        Returns:
+            str: Weather description.
+        """
+        return f"Sunny in {city}"
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+    agent = ChatAgent(
+        system_message="You are a travel assistant.",
+        model=model,
+        tools=[FunctionTool(get_weather)],
+        stream_accumulate=False,
+    )
+
+    # --- Helper classes to simulate AsyncChatCompletionStreamManager ---
+    class _MockEvent:
+        def __init__(self, type_, delta=None, parsed=None):
+            self.type = type_
+            self.delta = delta
+            self.parsed = parsed
+
+    class _AsyncStreamInner:
+        def __init__(self, events, final_completion):
+            self._events = events
+            self._final_completion = final_completion
+
+        def __aiter__(self):
+            return self._gen()
+
+        async def _gen(self):
+            for event in self._events:
+                yield event
+
+        async def get_final_completion(self):
+            return self._final_completion
+
+    class _AsyncStreamManager:
+        """Has __aenter__ but NOT __aiter__ — matches the async elif branch."""
+
+        def __init__(self, events, final_completion):
+            self._inner = _AsyncStreamInner(events, final_completion)
+
+        async def __aenter__(self):
+            return self._inner
+
+        async def __aexit__(self, *args):
+            return False
+
+    # First call: model wants to call get_weather
+    tool_completion = ChatCompletion(
+        id="chatcmpl-tool-async",
+        choices=[
+            Choice(
+                finish_reason="tool_calls",
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content="",
+                    role="assistant",
+                    function_call=None,
+                    tool_calls=[
+                        ChatCompletionMessageFunctionToolCall(
+                            id="call_weather_async",
+                            type="function",
+                            function=Function(
+                                name="get_weather",
+                                arguments='{"city": "Tokyo"}',
+                            ),
+                        )
+                    ],
+                ),
+            )
+        ],
+        created=123456789,
+        model="gpt-5-mini",
+        object="chat.completion",
+        usage=CompletionUsage(
+            completion_tokens=10, prompt_tokens=20, total_tokens=30
+        ),
+    )
+    first_manager = _AsyncStreamManager(
+        events=[_MockEvent("content.done", parsed=None)],
+        final_completion=tool_completion,
+    )
+
+    # Second call: model returns structured travel plan
+    travel_plan = TravelPlan(
+        destination="Tokyo",
+        recommendation="Visit Shibuya Crossing!",
+    )
+    final_completion = ChatCompletion(
+        id="chatcmpl-final-async",
+        choices=[
+            Choice(
+                finish_reason="stop",
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content='{"destination":"Tokyo",'
+                    '"recommendation":"Visit Shibuya Crossing!"}',
+                    role="assistant",
+                    function_call=None,
+                    tool_calls=None,
+                ),
+            )
+        ],
+        created=123456790,
+        model="gpt-5-mini",
+        object="chat.completion",
+        usage=CompletionUsage(
+            completion_tokens=20, prompt_tokens=40, total_tokens=60
+        ),
+    )
+    second_manager = _AsyncStreamManager(
+        events=[
+            _MockEvent("content.delta", delta='{"destination":"Tokyo"'),
+            _MockEvent("content.done", parsed=travel_plan),
+        ],
+        final_completion=final_completion,
+    )
+
+    call_count = 0
+
+    async def mock_arun(*args, **kwargs):
+        nonlocal call_count
+        result = first_manager if call_count == 0 else second_manager
+        call_count += 1
+        return result
+
+    agent.model_backend.arun = mock_arun
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Plan a trip to Tokyo",
+    )
+
+    responses = []
+    async for response in await agent.astep(
+        user_msg, response_format=TravelPlan
+    ):
+        responses.append(response)
+
+    assert len(responses) > 0, "Should receive at least one response"
+    assert call_count == 2, "Model should be called twice (tool call + final)"
+
+    tool_call_found = any(
+        tc.tool_name == "get_weather" and tc.result == "Sunny in Tokyo"
+        for response in responses
+        for tc in (response.info.get("tool_calls") or [])
+    )
+    assert tool_call_found, "get_weather tool should have been called"
+
+    final_response = responses[-1]
+    assert final_response.msg.parsed is not None
+    assert final_response.msg.parsed.destination == "Tokyo"
+
+
+@pytest.mark.model_backend
 def test_chat_agent_stream_with_structured_output():
     r"""Test streaming with structured output (response_format).
 
