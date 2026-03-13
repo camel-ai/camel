@@ -965,7 +965,7 @@ class OpenAIModel(BaseModelBackend):
         request_config = self._sanitize_config(request_config)
 
         # Use the beta streaming API for structured outputs
-        return self._call_client(
+        return await self._acall_client(
             self._async_client.beta.chat.completions.stream,
             messages=messages,
             model=self.model_type,

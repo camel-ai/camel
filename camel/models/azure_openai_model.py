@@ -443,7 +443,7 @@ class AzureOpenAIModel(BaseModelBackend):
         request_config.pop("stream", None)
 
         # Use the beta streaming API for structured outputs
-        return self._call_client(
+        return await self._acall_client(
             self._async_client.beta.chat.completions.stream,
             messages=messages,
             model=str(self.model_type),
