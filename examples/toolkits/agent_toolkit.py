@@ -20,8 +20,9 @@ from camel.types import ModelPlatformType, ModelType
 # Define system message for the parent agent
 sys_msg = (
     "You are a manager agent that delegates tasks to sub-agents. "
-    "Use the agent_run_subagent tool to spawn specialized sub-agents, "
-    "then use agent_get_task_output to retrieve results."
+    "Use agent_run_subagent with wait=True when you need a sub-agent result "
+    "before you can continue. Use wait=False only if you intentionally want "
+    "to do other work first and then call agent_get_task_output later."
 )
 
 # Create model and AgentToolkit
@@ -42,14 +43,13 @@ parent_agent = ChatAgent(
 
 # Ask the parent agent to delegate a research task to a sub-agent
 usr_msg = (
-    "Spawn a research sub-agent to summarize the key differences "
+    "Run a research sub-agent to summarize the key differences "
     "between Python asyncio and threading. "
     "Wait for the result and report it back to me."
 )
 
 response = parent_agent.step(usr_msg)
 print(response.msgs[0].content)
-
 """
 ===============================================================================
 Here is a summary of the key differences between Python's asyncio and
