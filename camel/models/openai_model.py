@@ -898,7 +898,7 @@ class OpenAIModel(BaseModelBackend):
         request_config = self._sanitize_config(request_config)
 
         return self._call_client(
-            self._client.beta.chat.completions.parse,
+            self._client.chat.completions.parse,
             messages=messages,
             model=self.model_type,
             **request_config,
@@ -918,7 +918,7 @@ class OpenAIModel(BaseModelBackend):
         request_config = self._sanitize_config(request_config)
 
         return await self._acall_client(
-            self._async_client.beta.chat.completions.parse,
+            self._async_client.chat.completions.parse,
             messages=messages,
             model=self.model_type,
             **request_config,
