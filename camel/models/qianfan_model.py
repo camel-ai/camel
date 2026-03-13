@@ -12,8 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import os
 import copy
+import os
 from typing import Any, Dict, Optional, Union
 
 from camel.configs import QianfanConfig
