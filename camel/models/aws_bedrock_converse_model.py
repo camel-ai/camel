@@ -479,10 +479,41 @@ class AWSBedrockConverseModel(BaseModelBackend):
         return None
 
     @staticmethod
+    def _ensure_additional_properties_false(
+        schema: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Recursively set ``additionalProperties: false`` on all object
+        types in *schema*.  AWS Bedrock requires this or it raises a
+        ``ValidationException``."""
+        if schema.get("type") == "object":
+            schema.setdefault("additionalProperties", False)
+        for key in ("properties", "$defs", "definitions"):
+            container = schema.get(key)
+            if isinstance(container, dict):
+                for v in container.values():
+                    if isinstance(v, dict):
+                        AWSBedrockConverseModel._ensure_additional_properties_false(
+                            v
+                        )
+        for key in ("allOf", "anyOf", "oneOf"):
+            variants = schema.get(key)
+            if isinstance(variants, list):
+                for v in variants:
+                    if isinstance(v, dict):
+                        AWSBedrockConverseModel._ensure_additional_properties_false(
+                            v
+                        )
+        items = schema.get("items")
+        if isinstance(items, dict):
+            AWSBedrockConverseModel._ensure_additional_properties_false(items)
+        return schema
+
+    @staticmethod
     def _convert_response_format_to_output_config(
         response_format: Type[BaseModel],
     ) -> Dict[str, Any]:
         schema = response_format.model_json_schema()
+        AWSBedrockConverseModel._ensure_additional_properties_false(schema)
         return {
             "textFormat": {
                 "type": "json_schema",
@@ -826,8 +857,10 @@ class AWSBedrockConverseModel(BaseModelBackend):
         stream_resp = await asyncio.to_thread(
             self.bedrock_client.converse_stream, **request
         )
-        # Collect all chunks synchronously in a thread,
-        # then yield them asynchronously.
+        # boto3 streams are synchronous iterators; collect in a thread
+        # then yield asynchronously.  True incremental bridging would
+        # require a thread-safe queue, which adds complexity for little
+        # gain given that the underlying I/O is already synchronous.
         chunks = await asyncio.to_thread(
             lambda: list(
                 self._converse_stream_to_openai_chunks(
