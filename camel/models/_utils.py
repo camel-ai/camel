@@ -125,6 +125,7 @@ def pydantic_to_json_schema_response_format(
         Dict[str, Any]: The response_format dict for the API call.
     """
     schema = response_format.model_json_schema()
+    _enforce_object_additional_properties_false(schema)
     return {
         "type": "json_schema",
         "json_schema": {
@@ -132,6 +133,28 @@ def pydantic_to_json_schema_response_format(
             "schema": schema,
         },
     }
+
+
+def _enforce_object_additional_properties_false(schema: Any) -> None:
+    r"""Recursively enforce strict object schemas.
+
+    OpenAI-compatible structured-output backends frequently reject object
+    schemas that omit ``additionalProperties``. Mirror the stricter OpenAI
+    Responses handling so the json_schema fallback remains usable for nested
+    Pydantic models.
+    """
+    if isinstance(schema, dict):
+        if (
+            schema.get("type") == "object"
+            and "additionalProperties" not in schema
+        ):
+            schema["additionalProperties"] = False
+
+        for value in schema.values():
+            _enforce_object_additional_properties_false(value)
+    elif isinstance(schema, list):
+        for item in schema:
+            _enforce_object_additional_properties_false(item)
 
 
 def parse_json_response_to_pydantic(
