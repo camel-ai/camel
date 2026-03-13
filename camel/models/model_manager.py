@@ -60,7 +60,7 @@ class ModelManager:
             model backend or list of model backends
             (e.g., model instances, APIs)
         scheduling_strategy (str): name of function that defines how
-            to select the next model. (default: :str:`round_robin`)
+            to select the next model. (default: :obj:`round_robin`)
     """
 
     def __init__(
