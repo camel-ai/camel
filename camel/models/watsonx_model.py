@@ -68,6 +68,10 @@ class WatsonXModel(BaseModelBackend):
             initialization.
     """
 
+    _API_KEY_ENV_VAR: str = "WATSONX_API_KEY"
+    _URL_ENV_VAR: str = "WATSONX_URL"
+    _DEFAULT_URL: str = "https://jp-tok.ml.cloud.ibm.com"
+
     @api_keys_required(
         [
             ("api_key", 'WATSONX_API_KEY'),
@@ -91,10 +95,8 @@ class WatsonXModel(BaseModelBackend):
         if model_config_dict is None:
             model_config_dict = WatsonXConfig().as_dict()
 
-        api_key = api_key or os.environ.get("WATSONX_API_KEY")
-        url = url or os.environ.get(
-            "WATSONX_URL", "https://jp-tok.ml.cloud.ibm.com"
-        )
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
+        url = url or os.environ.get(self._URL_ENV_VAR, self._DEFAULT_URL)
         project_id = project_id or os.environ.get("WATSONX_PROJECT_ID")
 
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
@@ -110,6 +112,35 @@ class WatsonXModel(BaseModelBackend):
             model_id=self.model_type,
             api_client=client,
             params=model_config_dict,
+        )
+
+    @classmethod
+    def list_available_models(
+        cls,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        timeout: int = 30,
+    ) -> List[str]:
+        r"""List available foundation model IDs from WatsonX."""
+        from ibm_watsonx_ai import APIClient, Credentials
+
+        api_key = api_key or os.environ.get(cls._API_KEY_ENV_VAR)
+        url = url or os.environ.get(cls._URL_ENV_VAR, cls._DEFAULT_URL)
+        if not api_key:
+            raise ValueError(
+                "Missing `WATSONX_API_KEY` for WatsonX model listing."
+            )
+
+        client = APIClient(Credentials(api_key=api_key, url=url))
+        specs = client.foundation_models.get_model_specs(
+            get_all=True,
+        )
+        return sorted(
+            {
+                res["model_id"]
+                for res in specs.get("resources", [])
+                if res.get("model_id")
+            }
         )
 
     def _to_openai_response(self, response: Dict[str, Any]) -> ChatCompletion:
