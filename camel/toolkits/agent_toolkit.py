@@ -21,10 +21,12 @@ from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     Optional,
     Tuple,
+    Union,
 )
 
 from camel.logger import get_logger
@@ -148,12 +150,13 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         self,
         parent: Optional["ChatAgent"],
     ) -> Tuple[
-        Optional[List[FunctionTool]], Optional[List[RegisteredAgentToolkit]]
+        Optional[List[Union[FunctionTool, Callable]]],
+        Optional[List[RegisteredAgentToolkit]],
     ]:
         if parent is None:
             return None, None
         cloned_tools, toolkits_to_register = parent._clone_tools()
-        return cloned_tools, toolkits_to_register
+        return list(cloned_tools), toolkits_to_register
 
     def _create_subagent(
         self,
@@ -227,7 +230,7 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         with self._lock:
             current = self._tasks.get(task_id)
-            if current is None:
+            if current is None or current.status != "running":
                 return
             current.status = status
             current.result = result
@@ -249,7 +252,12 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         prompt: str,
     ) -> _AgentTask:
         """Submit a new task. Caller MUST hold ``self._lock``."""
-        if len(self._tasks) >= self._MAX_FINISHED_TASKS:
+        finished_count = sum(
+            1
+            for t in self._tasks.values()
+            if t.status in {"completed", "failed", "stopped"}
+        )
+        if finished_count >= self._MAX_FINISHED_TASKS:
             self._purge_completed_tasks()
         stop_event = threading.Event()
         agent.stop_event = stop_event
@@ -437,7 +445,6 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
                     description=session.description,
                 )
 
-        self._complete_task(task.task_id)
         if wait and not task.future.done():
             try:
                 task.future.result(timeout=timeout)
