@@ -286,16 +286,42 @@ res = ",".join(l)"""
     assert execution_res == "2,3,5,7,11"
 
 
-def test_expression_not_support(interpreter: InternalPythonInterpreter):
-    code = """x = 1
-x += 1"""
-    with pytest.raises(InterpreterError) as e:
-        interpreter.execute(code, keep_state=False)
-    exec_msg = e.value.args[0]
-    assert exec_msg == (
-        "Evaluation of the code stopped at node 1. See:"
-        "\nAugAssign is not supported."
-    )
+def test_augassign_operations(interpreter: InternalPythonInterpreter):
+    # Test various augmented assignment operations
+    code = """x = 10
+x += 5"""
+    execution_res = interpreter.execute(code, keep_state=False)
+    assert execution_res == 15
+
+    code = """x = 10
+x -= 3"""
+    execution_res = interpreter.execute(code, keep_state=False)
+    assert execution_res == 7
+
+    code = """x = 4
+x *= 3"""
+    execution_res = interpreter.execute(code, keep_state=False)
+    assert execution_res == 12
+
+    code = """x = 20
+x /= 4"""
+    execution_res = interpreter.execute(code, keep_state=False)
+    assert execution_res == 5.0
+
+    code = """x = 17
+x //= 5"""
+    execution_res = interpreter.execute(code, keep_state=False)
+    assert execution_res == 3
+
+    code = """x = 17
+x %= 5"""
+    execution_res = interpreter.execute(code, keep_state=False)
+    assert execution_res == 2
+
+    code = """x = 2
+x **= 3"""
+    execution_res = interpreter.execute(code, keep_state=False)
+    assert execution_res == 8
 
 
 def test_allow_builtins(interpreter: InternalPythonInterpreter):
