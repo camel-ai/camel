@@ -18,10 +18,6 @@ import random
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional
 
-import tree_sitter_python as tspython
-from tqdm import tqdm
-from tree_sitter import Language, Parser
-
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
 from camel.utils import download_github_subdirectory
@@ -278,6 +274,8 @@ class APIBenchBenchmark(BaseBenchmark):
         self._results = []
 
         with open(self.save_to, "w") as f:
+            from tqdm import tqdm
+
             for question in tqdm(datas, desc="Running"):
                 prompt = encode_question(question["text"], dataset_name)
                 try:
@@ -376,6 +374,9 @@ def get_all_sub_trees(root_node):
 
 # Parse the program into AST trees
 def ast_parse(candidate):
+    import tree_sitter_python as tspython
+    from tree_sitter import Language, Parser
+
     PY_LANGUAGE = Language(tspython.language())
     parser = Parser(PY_LANGUAGE)
 

@@ -20,7 +20,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Union
 
 from pydantic import ValidationError
-from torch.utils.data import IterableDataset
+
+try:
+    from torch.utils.data import IterableDataset
+except ImportError:
+
+    class IterableDataset:  # type: ignore[no-redef]
+        r"""Fallback when PyTorch is not installed."""
+        pass
 
 from camel.logger import get_logger
 
