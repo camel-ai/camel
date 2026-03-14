@@ -459,9 +459,10 @@ class MCPToolkit(BaseToolkit):
 
         Returns True on success, raises on final failure.
         """
-        last_exc: Optional[Exception] = None
+        last_exc: Optional[BaseException] = None
         for attempt in range(1, self._max_retries + 1):
             try:
+                assert self._exit_stack is not None
                 await asyncio.wait_for(
                     self._exit_stack.enter_async_context(client),
                     timeout=self._per_client_timeout,

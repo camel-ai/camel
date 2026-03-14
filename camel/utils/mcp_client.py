@@ -270,7 +270,7 @@ class MCPClient:
 
         self._session: Optional[ClientSession] = None
         self._tools: List[types.Tool] = []
-        self._connection_context = None
+        self._connection_context: Optional[Any] = None
 
     @property
     def transport_type(self) -> TransportType:
