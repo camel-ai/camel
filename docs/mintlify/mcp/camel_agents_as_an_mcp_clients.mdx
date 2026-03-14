@@ -1,6 +1,11 @@
 ---
 title: "CAMEL Agents as an MCP Client"
 icon: plug
+
+doc_code_map:
+  - "camel/agents/mcp_agent.py"
+  - "camel/toolkits/mcp_toolkit.py"
+  - "camel/utils/mcp_client.py"
 ---
 
 This guide walks you through turning your CAMEL AI agent into an MCP client, letting your agent easily use tools from multiple MCP servers.
@@ -51,6 +56,7 @@ This guide walks you through turning your CAMEL AI agent into an MCP client, let
       }
       ```
       </Tab>
+
   <Tab title="ACI.dev Server (configurable transport)">
     ```json
     {
@@ -77,8 +83,8 @@ You can use <code>sse</code> or <code>streamable-http</code> for ACI.dev, pick w
 </Note>
   </Tab>
 
-
     </Tabs>
+
   </Step>
 
   <Step title="Step 2: Connect & Build the Agent">
@@ -97,6 +103,7 @@ You can use <code>sse</code> or <code>streamable-http</code> for ACI.dev, pick w
 
     asyncio.run(main())
     ```
+
   </Step>
 
   <Step title="Step 3: Add More Tools & Debug">
@@ -109,14 +116,20 @@ You can use <code>sse</code> or <code>streamable-http</code> for ACI.dev, pick w
 
     Try plugging in servers like GitHub, Notion, or ArXiv and see your CAMEL agent in action.
     </Note>
+
   </Step>
 
 </Steps>
 
 ## How It Works – System Diagram
 
-<Card title="CAMEL Agent as an MCP Client" img="/images/camel_toolks_as_mcp_server.png">
-This diagram illustrates how CAMEL agents use MCPToolkit to seamlessly connect with MCP servers. Servers provide external tools from platforms like GitHub, Gmail, Notion, and more.
+<Card
+  title="CAMEL Agent as an MCP Client"
+  img="/images/camel_toolks_as_mcp_server.png"
+>
+  This diagram illustrates how CAMEL agents use MCPToolkit to seamlessly connect
+  with MCP servers. Servers provide external tools from platforms like GitHub,
+  Gmail, Notion, and more.
 </Card>
 
 <Card title="Advanced: Register with MCP Hubs & Registries">
@@ -126,22 +139,24 @@ Want your MCP agent discoverable by thousands of clients?
 Register it with a hub like <a href="https://aci.dev/" target="_blank">ACI.dev</a> or similar.
 ```python Register with ACI Registry lines icon="python"
 from camel.agents import MCPAgent
-from camel.types import ACIRegistryConfig, ModelFactory, ModelPlatformType, ModelType
+from camel.models import ModelFactory
+from camel.types import ACIRegistryConfig, ModelPlatformType, ModelType
 import os
 
 aci_config = ACIRegistryConfig(
-    api_key=os.getenv("ACI_API_KEY"),
-    linked_account_owner_id=os.getenv("ACI_LINKED_ACCOUNT_OWNER_ID"),
+api_key=os.getenv("ACI_API_KEY"),
+linked_account_owner_id=os.getenv("ACI_LINKED_ACCOUNT_OWNER_ID"),
 )
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
+model_platform=ModelPlatformType.OPENAI,
+model_type=ModelType.GPT_4O,
 )
 
 agent = MCPAgent(
-    model=model,
-    registry_configs=[aci_config],
+model=model,
+registry_configs=[aci_config],
 )
+
 ```
 Your agent is now connected to the <a href="https://aci.dev/" target="_blank">ACI.dev</a> registry and visible in the ecosystem.
 </Card>
@@ -160,7 +175,7 @@ You can visit [PulseMCP.com](https://pulsemcp.com) to browse all available MCP s
 If you prefer to search programmatically inside your CAMEL code, just use:
 
 <CodeBlock language="python" title="pulse_mcp_search.py">
-from camel.toolkits.mcp import PulseMCPSearchToolkit
+from camel.toolkits import PulseMCPSearchToolkit
 
 search_toolkit = PulseMCPSearchToolkit()
 results = search_toolkit.search_mcp_servers(query="Slack", top_k=1)
@@ -192,3 +207,4 @@ See <a href="https://github.com/camel-ai/camel/blob/master/examples/agents/mcp_a
 ## Give It a Go
 
 Try setting up a config file for an MCP server (like [GitHub](https://github.com/github/github-mcp-server) or [Notion](https://github.com/makenotion/notion-mcp-server)) and see your CAMEL agent use the new tools right away!
+```

@@ -1,15 +1,22 @@
 ---
 title: "Storages"
 icon: database
+
+doc_code_map:
+  - "camel/storages/**/*.py"
 ---
 
 ## What Are Storages in CAMEL-AI?
 
 <Card icon="database">
-The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving, searching, and managing your data** from simple key-value records to high-performance vector databases and modern graph engines. It’s your plug-and-play toolkit for building robust, AI-ready storage layers.
+  The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for
+  saving, searching, and managing your data** from simple key-value records to
+  high-performance vector databases and modern graph engines. It’s your
+  plug-and-play toolkit for building robust, AI-ready storage layers.
 </Card>
 
 ---
+
 ## Types of Storages
 
 <AccordionGroup>
@@ -32,6 +39,7 @@ The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving
     - Human-readable, portable JSON file storage
     - Supports custom JSON encoder (for Enums, etc)
     - Good for configs, small persistent datasets, export/import flows
+
   </Accordion>
 
   <Accordion title="VectorDB Storages" icon="file-vector">
@@ -71,6 +79,7 @@ The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving
     **PgVectorStorage**
     - For [PostgreSQL with pgvector](https://github.com/pgvector/pgvector) (open-source vector engine)
     - Leverages PostgreSQL for vector search
+
   </Accordion>
 
   <Accordion title="Graph Storages" icon="chart-waterfall">
@@ -87,10 +96,10 @@ The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving
     **Neo4jGraph**
     - For [Neo4jGraph](https://neo4j.com/) (most popular enterprise graph DB)
     - Widely used for graph analytics, recommendations
+
   </Accordion>
 
 </AccordionGroup>
-
 
 ## Get Started
 
@@ -119,6 +128,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
       >>> [{'key1': 'value1'}, {'key2': 'value2'}]
       ```
     </Tab>
+
   </Tabs>
 </Card>
 
@@ -146,6 +156,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
       >>> [{'key1': 'value1'}, {'key2': 'value2'}]
       ```
     </Tab>
+
   </Tabs>
 </Card>
 
@@ -181,6 +192,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
       >>> {'key2': 'value2'} 0.5669466853141785
       ```
     </Tab>
+
   </Tabs>
 </Card>
 
@@ -218,9 +230,9 @@ Here are practical usage patterns for each storage type—pick the ones you need
       >>> {'key2': 'value2'} 0.5669466755703252
       ```
     </Tab>
+
   </Tabs>
 </Card>
-
 
 <Card title="Qdrant Vector Storage" icon="square-q">
   <b>Use for:</b> Fast, scalable open-source vector search.
@@ -254,6 +266,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
       >>> {'key2': 'value2'} 0.5669467095138407
       ```
     </Tab>
+
   </Tabs>
 </Card>
 
@@ -297,6 +310,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
       >>> {'key2': 'value2'} 0.7834733426570892
       ```
     </Tab>
+
   </Tabs>
 </Card>
 
@@ -310,8 +324,9 @@ Here are practical usage patterns for each storage type—pick the ones you need
     <Tab title="Python Example">
       ```python
       import os
-      from camel.storages import SurrealStorage, VectorDBQuery, VectorRecord
-
+      from camel.storages.vectordb_storages import SurrealStorage
+      from camel.storages import VectorDBQuery, VectorRecord
+      
       # Set environment variables for SurrealDB connection
       os.environ["SURREAL_URL"] = "ws://localhost:8000/rpc"
       os.environ["SURREAL_PASSWORD"] = "your_password"
@@ -347,6 +362,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
       >>> {'key2': 'value2'} 0.5669467095138407
       ```
     </Tab>
+
   </Tabs>
 </Card>
 
@@ -443,6 +459,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
       '''
       ```
     </Tab>
+
   </Tabs>
 </Card>
 
@@ -485,6 +502,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
       >>> {'key2': 'value2'} 0.7834733128547668
       ```
     </Tab>
+
   </Tabs>
 </Card>
 
@@ -504,6 +522,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
       query = 'SHOW TAGS;'
       print(nebula_graph.query(query))
       ```
+
   </CodeGroup>
 </Card>
 
@@ -526,6 +545,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
       print(neo4j_graph.query(query))
       ```
       </CodeGroup>
+
 </Card>
 
 ---
@@ -575,5 +595,6 @@ Here are practical usage patterns for each storage type—pick the ones you need
       >>> {'key2': 'value2'} 0.5669467
       ```
     </Tab>
+
   </Tabs>
 </Card>

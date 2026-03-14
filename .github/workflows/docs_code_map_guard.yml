@@ -1,0 +1,74 @@
+name: docs-code-map-guard
+
+on:
+  pull_request:
+    paths:
+      - "camel/**"
+      - "services/**"
+      - "docs/mintlify/key_modules/**"
+      - "docs/mintlify/mcp/**"
+      - "docs/scripts/docs_sync/**"
+  workflow_dispatch:
+
+jobs:
+  validate-and-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify doc_code_map
+        run: python docs/scripts/docs_sync/doc_code_map.py verify
+
+      - name: Compute impacted docs
+        id: impacted
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python docs/scripts/docs_sync/doc_code_map.py impacted --base-ref "$BASE_SHA" --head-ref "$HEAD_SHA" > impacted_docs.txt || true
+          cat impacted_docs.txt
+          echo "count=$(wc -l < impacted_docs.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+
+      - name: Guard docs updates
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff --name-only "$BASE_SHA..$HEAD_SHA" > changed_files.txt
+          grep -E '^docs/mintlify/(key_modules|mcp)/.*\.mdx$' changed_files.txt > changed_docs.txt || true
+
+          if [ ! -s impacted_docs.txt ]; then
+            echo "No mapped docs impacted by code changes."
+            exit 0
+          fi
+
+          if [ ! -s changed_docs.txt ]; then
+            echo "Mapped code changed, but no docs were updated."
+            echo "Impacted docs:"
+            cat impacted_docs.txt
+            exit 1
+          fi
+
+          missing=0
+          while IFS= read -r doc; do
+            if ! grep -Fxq "$doc" changed_docs.txt; then
+              echo "Missing doc update: $doc"
+              missing=1
+            fi
+          done < impacted_docs.txt
+
+          if [ "$missing" -ne 0 ]; then
+            echo "Some impacted docs were not updated."
+            exit 1
+          fi
+
+          echo "All impacted docs have updates."
