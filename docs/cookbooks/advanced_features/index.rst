@@ -20,6 +20,7 @@ Advanced Features
    agents_with_graph_rag
    agents_with_MCP
    agents_tracking
+   benchmark_running
    critic_agents_and_tree_search
    embodied_agents
    agent_generate_structured_output
