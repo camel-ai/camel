@@ -64,10 +64,18 @@ def ensure_java_available(
     """
     # Check if Java is already available on PATH
     existing_java = shutil.which("java")
-    if existing_java is not None:
+    existing_javac = shutil.which("javac")
+    if existing_java is not None and existing_javac is not None:
         try:
             result = subprocess.run(
                 ["java", "-version"],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            javac_result = subprocess.run(
+                ["javac", "-version"],
                 check=False,
                 capture_output=True,
                 text=True,
@@ -77,7 +85,10 @@ def ensure_java_available(
             version_output = (
                 result.stderr.strip() or result.stdout.strip()
             )
-            if result.returncode == 0:
+            if (
+                result.returncode == 0
+                and javac_result.returncode == 0
+            ):
                 info = (
                     f"Java is already available: "
                     f"{version_output}"

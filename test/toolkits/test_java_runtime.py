@@ -28,19 +28,64 @@ from camel.toolkits.terminal_toolkit.java_runtime import (
     ".shutil.which"
 )
 def test_java_already_installed(mock_which, mock_run):
-    """Should return path without downloading if java is on PATH."""
-    mock_which.return_value = "/usr/lib/jvm/jdk-21/bin/java"
-    mock_run.return_value = MagicMock(
-        returncode=0,
-        stderr='openjdk version "21.0.2"',
-        stdout="",
+    """Should return path without downloading if java and javac are on PATH."""
+    mock_which.side_effect = lambda cmd: (
+        "/usr/lib/jvm/jdk-21/bin/java"
+        if cmd == "java"
+        else "/usr/lib/jvm/jdk-21/bin/javac"
     )
+    mock_run.side_effect = [
+        MagicMock(
+            returncode=0,
+            stderr='openjdk version "21.0.2"',
+            stdout="",
+        ),
+        MagicMock(returncode=0, stderr="", stdout="javac 21.0.2"),
+    ]
 
     callback = MagicMock()
     path = ensure_java_available(update_callback=callback)
 
     assert path == "/usr/lib/jvm/jdk-21"
     callback.assert_called()
+
+
+@patch(
+    "camel.toolkits.terminal_toolkit.java_runtime"
+    ".download_and_extract_runtime"
+)
+@patch(
+    "camel.toolkits.terminal_toolkit.java_runtime"
+    "._find_java_home"
+)
+@patch(
+    "camel.toolkits.terminal_toolkit.java_runtime"
+    ".get_platform_info"
+)
+@patch(
+    "camel.toolkits.terminal_toolkit.java_runtime"
+    ".shutil.which"
+)
+def test_java_without_javac_downloads(
+    mock_which,
+    mock_platform,
+    mock_find,
+    mock_download,
+):
+    """Should attempt download when java exists but javac does not."""
+    # java is found but javac is not
+    mock_which.side_effect = lambda cmd: (
+        "/usr/bin/java" if cmd == "java" else None
+    )
+    mock_platform.return_value = ("linux", "amd64")
+    java_path = "/home/user/.camel/runtimes/java/jdk-21"
+    mock_find.side_effect = [None, java_path]
+
+    callback = MagicMock()
+    path = ensure_java_available(update_callback=callback)
+
+    assert path == java_path
+    mock_download.assert_called_once()
 
 
 @patch(

@@ -146,3 +146,90 @@ def test_both_enabled_calls_both(
         mock_java.assert_called_once()
     finally:
         toolkit.cleanup()
+
+
+@patch(
+    "camel.toolkits.terminal_toolkit.terminal_toolkit"
+    ".ensure_java_available"
+)
+@patch(
+    "camel.toolkits.terminal_toolkit.terminal_toolkit"
+    ".ensure_go_available"
+)
+@patch(
+    "camel.toolkits.terminal_toolkit.terminal_toolkit"
+    ".clone_current_environment"
+)
+def test_cloned_env_also_sets_up_runtimes(
+    mock_clone,
+    mock_go,
+    mock_java,
+    tmp_path,
+):
+    """clone_current_env=True with enable_other_runtimes should call Go."""
+    mock_clone.return_value = True
+    mock_go.return_value = "/usr/local/go/bin"
+
+    toolkit = TerminalToolkit(
+        working_directory=str(tmp_path),
+        clone_current_env=True,
+        enable_other_runtimes=[Runtime.GO],
+    )
+    try:
+        mock_go.assert_called_once()
+        mock_java.assert_not_called()
+    finally:
+        toolkit.cleanup()
+
+
+@patch(
+    "camel.toolkits.terminal_toolkit.terminal_toolkit"
+    ".ensure_java_available"
+)
+@patch(
+    "camel.toolkits.terminal_toolkit.terminal_toolkit"
+    ".ensure_go_available"
+)
+@patch(
+    "camel.toolkits.terminal_toolkit.terminal_toolkit"
+    ".check_nodejs_availability"
+)
+@patch(
+    "camel.toolkits.terminal_toolkit.terminal_toolkit"
+    ".setup_initial_env_with_uv"
+)
+@patch(
+    "camel.toolkits.terminal_toolkit.terminal_toolkit"
+    ".ensure_uv_available"
+)
+def test_runtime_env_vars_not_in_os_environ(
+    mock_uv,
+    mock_setup,
+    mock_node,
+    mock_go,
+    mock_java,
+    tmp_path,
+):
+    """Runtime paths should be on the instance, not in os.environ."""
+    import os
+
+    mock_uv.return_value = (True, "/usr/bin/uv")
+    mock_setup.return_value = True
+    mock_go.return_value = "/custom/go/bin"
+
+    original_path = os.environ.get("PATH", "")
+
+    toolkit = TerminalToolkit(
+        working_directory=str(tmp_path),
+        enable_other_runtimes=[Runtime.GO],
+    )
+    try:
+        # Process-level PATH should remain unchanged
+        assert os.environ.get("PATH", "") == original_path
+        # Instance should have Go path stored
+        assert "/custom/go/bin" in toolkit._runtime_env_vars.get(
+            "PATH", ""
+        )
+    finally:
+        toolkit.cleanup()
+
