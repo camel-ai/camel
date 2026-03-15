@@ -708,6 +708,33 @@ class TestSSEFallback:
         assert call_log == [TransportType.STREAMABLE_HTTP]
 
     @pytest.mark.asyncio
+    async def test_explicit_streamablehttp_disables_sse_fallback(self):
+        """Explicit StreamableHTTP config should not fall back to SSE."""
+        from unittest.mock import patch
+
+        client = MCPClient(
+            {
+                "url": "http://localhost:8000/mcp",
+                "type": "streamable_http",
+                "timeout": 5.0,
+            }
+        )
+
+        call_log = []
+
+        async def fake_try_connect(transport_type):
+            call_log.append(transport_type)
+            raise ConnectionError("streamablehttp timed out")
+
+        with patch.object(
+            client, "_try_connect", side_effect=fake_try_connect
+        ):
+            with pytest.raises(ConnectionError):
+                await client._establish_connection()
+
+        assert call_log == [TransportType.STREAMABLE_HTTP]
+
+    @pytest.mark.asyncio
     async def test_cancelled_streamablehttp_falls_back_to_sse(self):
         """Child-task cancellation should still allow SSE fallback."""
         from unittest.mock import MagicMock, patch

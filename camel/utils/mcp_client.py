@@ -302,16 +302,21 @@ class MCPClient:
     async def _establish_connection(self):
         r"""Establish connection to the MCP server.
 
-        For HTTP/HTTPS URLs, first tries StreamableHTTP transport (MCP 2025
-        spec). If that fails or times out, automatically falls back to SSE
-        transport (MCP 2024 / supergateway-compatible).
+        For auto-detected HTTP/HTTPS URLs, first tries StreamableHTTP
+        transport (MCP 2025 spec). If that fails or times out, automatically
+        falls back to SSE transport (MCP 2024 / supergateway-compatible).
+        Explicitly configured transport types are honored without fallback.
         """
         transport_type = self.config.transport_type
         transports_to_try = [transport_type]
 
-        # HTTP URLs: fall back to SSE if StreamableHTTP fails.
-        # supergateway and many older HTTP MCP servers only support SSE.
-        if transport_type == TransportType.STREAMABLE_HTTP:
+        # Only auto-detected HTTP transports fall back to SSE. If the user
+        # explicitly selected a transport type, keep connection behavior
+        # deterministic and honor that choice.
+        if (
+            transport_type == TransportType.STREAMABLE_HTTP
+            and self.config.type is None
+        ):
             transports_to_try.append(TransportType.SSE)
 
         last_error: Optional[Exception] = None
