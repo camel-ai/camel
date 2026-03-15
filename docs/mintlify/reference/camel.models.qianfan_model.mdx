@@ -38,3 +38,28 @@ def __init__(
     **kwargs
 ):
 ```
+
+<a id="camel.models.qianfan_model.QianfanModel._sanitize_tools_for_qianfan"></a>
+
+### _sanitize_tools_for_qianfan
+
+```python
+def _sanitize_tools_for_qianfan(tools: list[dict[str, Any]]):
+```
+
+Sanitize tools for Qianfan models that do not support strict
+JSON Schema tool definitions.
+
+Qianfan's ERNIE 5.0 OpenAI-compatible endpoint rejects some strict
+schema features produced by CAMEL/OpenAI style tool schemas, such as
+`strict=True`, nullable union types, and `anyOf` for optional fields.
+This method downgrades those features into a more permissive schema
+while keeping the rest of the tool definition intact.
+
+<a id="camel.models.qianfan_model.QianfanModel._prepare_request_config"></a>
+
+### _prepare_request_config
+
+```python
+def _prepare_request_config(self, tools: Optional[list[dict[str, Any]]] = None):
+```

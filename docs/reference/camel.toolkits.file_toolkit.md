@@ -1,22 +1,25 @@
-<a id="camel.toolkits.file_write_toolkit"></a>
+<a id="camel.toolkits.file_toolkit"></a>
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit"></a>
 
-## FileWriteToolkit
+## FileToolkit
 
 ```python
-class FileWriteToolkit(BaseToolkit):
+class FileToolkit(BaseToolkit):
 ```
 
-A toolkit for creating, writing, and modifying text in files.
+A comprehensive toolkit for file operations including reading,
+writing, and editing files.
 
-This class provides cross-platform (macOS, Linux, Windows) support for
-writing to various file formats (Markdown, DOCX, PDF, and plaintext),
-replacing text in existing files, automatic filename uniquification to
-prevent overwrites, custom encoding and enhanced formatting options for
-specialized formats.
+This class provides cross-platform (macOS, Linux, Windows) support for:
+- Reading various file formats (text, JSON, YAML, PDF, DOCX)
+- Writing to multiple formats (Markdown, DOCX, PDF, plaintext, JSON,
+YAML, CSV, HTML)
+- Editing and modifying existing files with content replacement
+- Automatic backup creation before modifications
+- Custom encoding and enhanced formatting options
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit.__init__"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit.__init__"></a>
 
 ### __init__
 
@@ -30,7 +33,7 @@ def __init__(
 ):
 ```
 
-Initialize the FileWriteToolkit.
+Initialize the FileToolkit.
 
 **Parameters:**
 
@@ -39,7 +42,7 @@ Initialize the FileWriteToolkit.
 - **default_encoding** (str): Default character encoding for text operations. (default: :obj:`utf-8`)
 - **backup_enabled** (bool): Whether to create backups of existing files before overwriting. (default: :obj:`True`)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._resolve_filepath"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._resolve_filepath"></a>
 
 ### _resolve_filepath
 
@@ -62,7 +65,7 @@ in downstream processing.
 
   Path: A fully resolved (absolute) and sanitized Path object.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._sanitize_filename"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._sanitize_filename"></a>
 
 ### _sanitize_filename
 
@@ -83,7 +86,7 @@ underscore (_).
   str: The sanitized filename with disallowed characters replaced by
 underscores.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_text_file"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._write_text_file"></a>
 
 ### _write_text_file
 
@@ -104,25 +107,25 @@ Write text content to a plaintext file.
 - **content** (str): The text content to write.
 - **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._generate_unique_filename"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._create_backup"></a>
 
-### _generate_unique_filename
+### _create_backup
 
 ```python
-def _generate_unique_filename(self, file_path: Path):
+def _create_backup(self, file_path: Path):
 ```
 
-Generate a unique filename if the target file already exists.
+Create a backup of the file if it exists and backup is enabled.
 
 **Parameters:**
 
-- **file_path** (Path): The original file path.
+- **file_path** (Path): The file path to backup.
 
 **Returns:**
 
-  Path: A unique file path that doesn't exist yet.
+  Optional[Path]: Path to the backup file if created, None otherwise.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_docx_file"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._write_docx_file"></a>
 
 ### _write_docx_file
 
@@ -137,7 +140,7 @@ Write text content to a DOCX file with default formatting.
 - **file_path** (Path): The target file path.
 - **content** (str): The text content to write.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_pdf_file"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._write_pdf_file"></a>
 
 ### _write_pdf_file
 
@@ -161,7 +164,7 @@ Write text content to a PDF file with LaTeX and table support.
 - **be**: - String: Supports Markdown-style tables and LaTeX math expressions - List[List[str]]: Table data as list of rows for direct table rendering
 - **use_latex** (bool): Whether to use LaTeX for math rendering. (default: :obj:`False`)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._process_text_content"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._process_text_content"></a>
 
 ### _process_text_content
 
@@ -184,7 +187,7 @@ Process text content and add to story.
 - **heading_style**: Style for headings
 - **body_style**: Style for body text
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._find_table_line_ranges"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._find_table_line_ranges"></a>
 
 ### _find_table_line_ranges
 
@@ -203,7 +206,7 @@ Find line ranges that contain markdown tables.
   List[Tuple[int, int]]: List of (start_line, end_line) tuples
 for table ranges.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._register_chinese_font"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._register_chinese_font"></a>
 
 ### _register_chinese_font
 
@@ -215,7 +218,7 @@ def _register_chinese_font(self):
 
   str: The font name to use for Chinese text.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._parse_markdown_table"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._parse_markdown_table"></a>
 
 ### _parse_markdown_table
 
@@ -234,7 +237,7 @@ Parse markdown-style tables from a list of lines.
   List[List[List[str]]]: List of tables, where each table is a list
 of rows, and each row is a list of cells.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._is_table_row"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._is_table_row"></a>
 
 ### _is_table_row
 
@@ -252,7 +255,7 @@ Check if a line appears to be a table row.
 
   bool: True if the line looks like a table row.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._is_table_separator"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._is_table_separator"></a>
 
 ### _is_table_separator
 
@@ -270,7 +273,7 @@ Check if a line is a table separator (e.g., |---|---|).
 
   bool: True if the line is a table separator.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._parse_table_row"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._parse_table_row"></a>
 
 ### _parse_table_row
 
@@ -288,7 +291,7 @@ Parse a single table row into cells.
 
   List[str]: List of cell contents.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._create_pdf_table"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._create_pdf_table"></a>
 
 ### _create_pdf_table
 
@@ -306,7 +309,7 @@ Create a formatted table for PDF.
 
   Table: A formatted reportlab Table object.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._convert_markdown_to_html"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._convert_markdown_to_html"></a>
 
 ### _convert_markdown_to_html
 
@@ -324,7 +327,7 @@ Convert basic markdown formatting to HTML for PDF rendering.
 
   str: Text with HTML formatting.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._ensure_html_utf8_meta"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._ensure_html_utf8_meta"></a>
 
 ### _ensure_html_utf8_meta
 
@@ -342,7 +345,7 @@ Ensure HTML content has UTF-8 meta tag.
 
   str: HTML content with UTF-8 meta tag.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_csv_file"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._write_csv_file"></a>
 
 ### _write_csv_file
 
@@ -351,7 +354,7 @@ def _write_csv_file(
     self,
     file_path: Path,
     content: Union[str, List[List]],
-    encoding: str = 'utf-8'
+    encoding: str = 'utf-8-sig'
 ):
 ```
 
@@ -361,9 +364,9 @@ Write CSV content to a file.
 
 - **file_path** (Path): The target file path.
 - **content** (Union[str, List[List]]): The CSV content as a string or list of lists.
-- **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
+- **encoding** (str): Character encoding to use. (default: :obj:`utf-8-sig`)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_json_file"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._write_json_file"></a>
 
 ### _write_json_file
 
@@ -384,7 +387,7 @@ Write JSON content to a file.
 - **content** (str): The JSON content as a string.
 - **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_simple_text_file"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit._write_simple_text_file"></a>
 
 ### _write_simple_text_file
 
@@ -405,7 +408,7 @@ Write text content to a file (used for HTML, Markdown, YAML, etc.).
 - **content** (str): The content to write.
 - **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit.write_to_file"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit.write_to_file"></a>
 
 ### write_to_file
 
@@ -439,7 +442,125 @@ and HTML (.html, .htm).
 
   str: A message indicating success or error details.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit.get_tools"></a>
+<a id="camel.toolkits.file_toolkit.FileToolkit.read_file"></a>
+
+### read_file
+
+```python
+def read_file(self, file_paths: Union[str, List[str]]):
+```
+
+Read and return content of one or more files using MarkItDown
+for better format support.
+
+This method uses MarkItDownLoader to convert various file formats
+to Markdown. It supports a wide range of formats including:
+- PDF (.pdf)
+- Microsoft Office: Word (.doc, .docx), Excel (.xls, .xlsx),
+PowerPoint (.ppt, .pptx)
+- EPUB (.epub)
+- HTML (.html, .htm)
+- Images (.jpg, .jpeg, .png) for OCR
+- Audio (.mp3, .wav) for transcription
+- Text-based formats (.csv, .json, .xml, .txt, .md)
+- ZIP archives (.zip)
+
+**Parameters:**
+
+- **file_paths** (Union[str, List[str]]): A single file path or a list of file paths to read. Paths can be relative or absolute. If relative, they will be resolved relative to the working directory.
+
+**Returns:**
+
+  Union[str, Dict[str, str]]:
+- If a single file path is provided: Returns the content as
+a string.
+- If multiple file paths are provided: Returns a dictionary
+where keys are file paths and values are the corresponding
+content in Markdown format.
+If conversion fails, returns an error message.
+
+<a id="camel.toolkits.file_toolkit.FileToolkit.edit_file"></a>
+
+### edit_file
+
+```python
+def edit_file(
+    self,
+    file_path: str,
+    old_content: str,
+    new_content: str
+):
+```
+
+Edit a file by replacing specified content.
+
+This method performs simple text replacement in files. It reads
+the file, replaces all occurrences of old_content with new_content,
+and writes the result back.
+
+**Parameters:**
+
+- **file_path** (str): The path to the file to edit. Can be relative or absolute. If relative, it will be resolved relative to the working directory.
+- **old_content** (str): The exact text to find and replace.
+- **new_content** (str): The text to replace old_content with.
+
+**Returns:**
+
+  str: A success message if the edit was successful, or an
+error message if the content wasn't found or an error occurred.
+
+<a id="camel.toolkits.file_toolkit.FileToolkit.search_files"></a>
+
+### search_files
+
+```python
+def search_files(
+    self,
+    pattern: str,
+    file_types: Optional[List[str]] = None,
+    file_pattern: Optional[str] = None,
+    path: Optional[str] = None
+):
+```
+
+Search for a text pattern in files with specified extensions or
+file patterns.
+
+This method searches for a text pattern (case-insensitive substring
+match) in files matching either the specified file types or a file
+pattern. It returns structured results showing which files contain
+the pattern, along with line numbers and matching content.
+
+**Parameters:**
+
+- **pattern** (str): The text pattern to search for (case-insensitive string match).
+- **file_types** (Optional[List[str]]): List of file extensions to search (e.g., ["md", "txt", "py"]). Do not include the dot. If not provided and file_pattern is also not provided, defaults to ["md"] (markdown files). Ignored if file_pattern is provided. (default: :obj:`None`)
+- **file_pattern** (Optional[str]): Glob pattern for matching files (e.g., "*_workflow.md", "test_*.py"). If provided, this overrides file_types. (default: :obj:`None`)
+- **path** (Optional[str]): Directory to search in. If not provided, uses the working_directory. Can be relative or absolute. (default: :obj:`None`)
+
+**Returns:**
+
+  str: JSON-formatted string containing search results with the
+structure:
+`\{
+"pattern": "search_pattern",
+"searched_path": "/absolute/path",
+"file_types": ["md", "txt"],
+"file_pattern": "*_workflow.md",
+"matches": [
+\{
+"file": "relative/path/to/file.md",
+"line": 42,
+"content": "matching line content"
+\},
+...
+],
+"total_matches": 10,
+"files_searched": 5
+\}`
+If an error occurs, returns a JSON string with an "error" key.
+
+<a id="camel.toolkits.file_toolkit.FileToolkit.get_tools"></a>
 
 ### get_tools
 
@@ -451,3 +572,4 @@ def get_tools(self):
 
   List[FunctionTool]: A list of FunctionTool objects representing
 the available functions in this toolkit.
+

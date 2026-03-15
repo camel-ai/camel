@@ -441,6 +441,13 @@ export class HybridBrowserSession {
       }
     }
 
+    // Inject stealth init scripts into context (runs before every page load)
+    if (stealthConfig.enabled && stealthConfig.initScripts) {
+      for (const script of stealthConfig.initScripts) {
+        await this.context!.addInitScript(script);
+      }
+    }
+
     // Set timeouts
     for (const page of this.pages.values()) {
       page.setDefaultNavigationTimeout(browserConfig.navigationTimeout);

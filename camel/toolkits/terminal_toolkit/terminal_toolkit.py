@@ -683,7 +683,10 @@ class TerminalToolkit(BaseToolkit):
         if self.safe_mode:
             is_safe, message = self._sanitize_command(command)
             if not is_safe:
-                return f"Error: {message}"
+                return (
+                    "Error: Command rejected by TerminalToolkit safe mode. "
+                    f"{message}"
+                )
             command = message
 
         if self.use_docker_backend:

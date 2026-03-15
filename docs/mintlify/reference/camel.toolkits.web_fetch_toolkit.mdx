@@ -1,0 +1,89 @@
+<a id="camel.toolkits.web_fetch_toolkit"></a>
+
+<a id="camel.toolkits.web_fetch_toolkit.WebFetchToolkit"></a>
+
+## WebFetchToolkit
+
+```python
+class WebFetchToolkit(BaseToolkit, RegisteredAgentToolkit):
+```
+
+Toolkit for fetching a web page and summarizing it for a prompt.
+
+<a id="camel.toolkits.web_fetch_toolkit.WebFetchToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    default_model: Optional[BaseModelBackend] = None,
+    timeout: Optional[float] = None,
+    request_timeout: float = 20.0
+):
+```
+
+<a id="camel.toolkits.web_fetch_toolkit.WebFetchToolkit._error_message"></a>
+
+### _error_message
+
+```python
+def _error_message(self, message: str):
+```
+
+<a id="camel.toolkits.web_fetch_toolkit.WebFetchToolkit._resolve_model"></a>
+
+### _resolve_model
+
+```python
+def _resolve_model(self):
+```
+
+<a id="camel.toolkits.web_fetch_toolkit.WebFetchToolkit._extract_text"></a>
+
+### _extract_text
+
+```python
+def _extract_text(self, content_type: str, body: str):
+```
+
+<a id="camel.toolkits.web_fetch_toolkit.WebFetchToolkit._get_summary_agent"></a>
+
+### _get_summary_agent
+
+```python
+def _get_summary_agent(self):
+```
+
+<a id="camel.toolkits.web_fetch_toolkit.WebFetchToolkit.web_fetch_and_analyze"></a>
+
+### web_fetch_and_analyze
+
+```python
+def web_fetch_and_analyze(
+    self,
+    url: str,
+    prompt: str,
+    max_chars: int = 0
+):
+```
+
+Fetch a URL and answer a prompt about its content.
+
+**Parameters:**
+
+- **url** (str): URL to fetch.
+- **prompt** (str): Instruction describing what to extract or analyze from the fetched page.
+- **max_chars** (int): Maximum number of characters of page content to use. When set to 0 (default) the full page is sent to the summarizer. If the summarizer fails because the content is too long, retry with a smaller value.
+
+**Returns:**
+
+  str: AI-processed summary or answer derived from the page content.
+
+<a id="camel.toolkits.web_fetch_toolkit.WebFetchToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
