@@ -54,10 +54,13 @@ class AWSBedrockModel(OpenAICompatibleModel):
         https://docs.aws.amazon.com/bedrock/latest/APIReference/welcome.html
     """
 
+    _API_KEY_ENV_VAR: str = "BEDROCK_API_KEY"
+    _BASE_URL_ENV_VAR: str = "BEDROCK_API_BASE_URL"
+
     @api_keys_required(
         [
-            ("url", "BEDROCK_API_BASE_URL"),
-            ("api_key", "BEDROCK_API_KEY"),
+            ("url", _BASE_URL_ENV_VAR),
+            ("api_key", _API_KEY_ENV_VAR),
         ]
     )
     def __init__(
@@ -83,10 +86,8 @@ class AWSBedrockModel(OpenAICompatibleModel):
                 UserWarning,
                 stacklevel=2,
             )
-        api_key = api_key or os.environ.get("BEDROCK_API_KEY")
-        url = url or os.environ.get(
-            "BEDROCK_API_BASE_URL",
-        )
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
+        url = url or os.environ.get(self._BASE_URL_ENV_VAR)
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
             model_type=model_type,

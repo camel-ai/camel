@@ -52,9 +52,13 @@ class CrynuxModel(OpenAICompatibleModel):
             initialization.
     """
 
+    _API_KEY_ENV_VAR: str = "CRYNUX_API_KEY"
+    _BASE_URL_ENV_VAR: str = "CRYNUX_API_BASE_URL"
+    _DEFAULT_BASE_URL: str = "https://bridge.crynux.ai/v1/llm"
+
     @api_keys_required(
         [
-            ("api_key", 'CRYNUX_API_KEY'),
+            ("api_key", _API_KEY_ENV_VAR),
         ]
     )
     def __init__(
@@ -70,9 +74,9 @@ class CrynuxModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = CrynuxConfig().as_dict()
-        api_key = api_key or os.environ.get("CRYNUX_API_KEY")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
         url = url or os.environ.get(
-            "CRYNUX_API_BASE_URL", "https://bridge.crynux.ai/v1/llm"
+            self._BASE_URL_ENV_VAR, self._DEFAULT_BASE_URL
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
