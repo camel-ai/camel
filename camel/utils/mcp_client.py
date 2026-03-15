@@ -19,8 +19,9 @@ using different transport protocols (stdio, sse, streamable-http, websocket).
 The client can automatically detect the transport type based on configuration.
 """
 
+import asyncio
 import inspect
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import timedelta
 from enum import Enum
 from pathlib import Path
@@ -254,7 +255,7 @@ class MCPClient:
         self,
         config: Union[ServerConfig, Dict[str, Any]],
         client_info: Optional[types.Implementation] = None,
-        timeout: Optional[float] = 10.0,
+        timeout: Optional[float] = None,
     ):
         # Convert dict config to ServerConfig if needed
         if isinstance(config, dict):
@@ -267,6 +268,9 @@ class MCPClient:
 
         self.client_info = client_info
         self.read_timeout_seconds = timedelta(seconds=timeout or 10.0)
+        self._handshake_timeout_seconds = (
+            timeout if timeout is not None else self.config.timeout
+        )
 
         self._session: Optional[ClientSession] = None
         self._tools: List[types.Tool] = []
@@ -312,9 +316,22 @@ class MCPClient:
 
         last_error: Optional[Exception] = None
         for attempt_transport in transports_to_try:
+            connect_task = asyncio.create_task(
+                self._try_connect(attempt_transport)
+            )
             try:
-                await self._try_connect(attempt_transport)
+                await asyncio.shield(connect_task)
                 return  # success
+            except asyncio.CancelledError:
+                if not connect_task.done():
+                    connect_task.cancel()
+                    with suppress(BaseException):
+                        await connect_task
+                    await self._cleanup_connection()
+                    raise
+                last_error = ConnectionError(
+                    f"{attempt_transport} connection attempt was cancelled"
+                )
             except Exception as e:
                 last_error = e
                 if attempt_transport != transports_to_try[-1]:
@@ -326,7 +343,6 @@ class MCPClient:
                         f"({type(e).__name__}: {str(e)[:80]}). "
                         f"Retrying with SSE transport..."
                     )
-                    await self._cleanup_connection()
 
         # All transports exhausted — raise simplified error
         await self._cleanup_connection()
@@ -339,37 +355,39 @@ class MCPClient:
 
     async def _try_connect(self, transport_type: "TransportType"):
         r"""Attempt connection with a specific transport type."""
-        import asyncio
+        try:
+            self._connection_context = self._create_transport(
+                override_transport=transport_type
+            )
+            streams = await self._connection_context.__aenter__()
 
-        self._connection_context = self._create_transport(
-            override_transport=transport_type
-        )
-        streams = await self._connection_context.__aenter__()
+            # Handle extra returns safely (streamable_http yields 3 values)
+            read_stream, write_stream = streams[:2]
 
-        # Handle extra returns safely (streamable_http yields 3 values)
-        read_stream, write_stream = streams[:2]
+            self._session = ClientSession(
+                read_stream=read_stream,
+                write_stream=write_stream,
+                client_info=self.client_info,
+                read_timeout_seconds=self.read_timeout_seconds,
+            )
 
-        self._session = ClientSession(
-            read_stream=read_stream,
-            write_stream=write_stream,
-            client_info=self.client_info,
-            read_timeout_seconds=self.read_timeout_seconds,
-        )
+            # Start the session's message processing loop
+            await self._session.__aenter__()
 
-        # Start the session's message processing loop
-        await self._session.__aenter__()
-
-        # Initialize the session and load tools — apply a hard timeout so
-        # a hung server (e.g., streamable_http vs supergateway mismatch)
-        # fails fast instead of blocking forever.
-        init_timeout = self.read_timeout_seconds.total_seconds()
-        await asyncio.wait_for(
-            self._session.initialize(), timeout=init_timeout
-        )
-        tools_response = await asyncio.wait_for(
-            self._session.list_tools(), timeout=init_timeout
-        )
-        self._tools = tools_response.tools if tools_response else []
+            # Initialize the session and load tools — apply a hard timeout so
+            # a hung server (e.g., streamable_http vs supergateway mismatch)
+            # fails fast instead of blocking forever.
+            init_timeout = self._handshake_timeout_seconds
+            await self._run_operation_with_timeout(
+                self._session.initialize(), timeout=init_timeout
+            )
+            tools_response = await self._run_operation_with_timeout(
+                self._session.list_tools(), timeout=init_timeout
+            )
+            self._tools = tools_response.tools if tools_response else []
+        except BaseException:
+            await self._cleanup_connection()
+            raise
 
     async def _cleanup_connection(self):
         r"""Clean up connection resources."""
@@ -402,7 +420,25 @@ class MCPClient:
             # Ensure state is reset
             self._tools = []
 
-    def _simplify_connection_error(self, error: Exception) -> str:
+    async def _run_operation_with_timeout(
+        self, operation: Any, timeout: float
+    ) -> Any:
+        r"""Run a session operation with deterministic timeout cleanup."""
+        task = asyncio.create_task(operation)
+        try:
+            return await asyncio.wait_for(task, timeout=timeout)
+        except asyncio.TimeoutError:
+            task.cancel()
+            with suppress(BaseException):
+                await task
+            raise
+        except asyncio.CancelledError:
+            task.cancel()
+            with suppress(BaseException):
+                await task
+            raise
+
+    def _simplify_connection_error(self, error: BaseException) -> str:
         r"""Convert complex MCP connection errors to simple, understandable
         messages.
         """
