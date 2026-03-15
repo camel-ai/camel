@@ -11,9 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import copy
+import json
 import os
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Literal,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 from openai import AsyncAzureOpenAI, AsyncStream, AzureOpenAI, Stream
 from openai.lib.streaming.chat import (
@@ -33,6 +47,7 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
+    get_current_agent_session_id,
     is_langfuse_available,
 )
 
@@ -100,6 +115,12 @@ class AzureOpenAIModel(BaseModelBackend):
             Use `model_type` parameter instead. This parameter is kept for
             backward compatibility and will be removed in a future version.
             (default: :obj:`None`)
+        api_mode (Literal["chat_completions", "responses"], optional):
+            Azure OpenAI API mode to use. Supported values:
+            `"chat_completions"` (default) and `"responses"`. The
+            `"responses"` mode uses the Azure OpenAI Responses API, which
+            supports stateful response chaining via
+            `previous_response_id`. (default: :obj:`"chat_completions"`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization. Ignored if custom clients are provided.
 
@@ -122,6 +143,9 @@ class AzureOpenAIModel(BaseModelBackend):
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,
         azure_deployment_name: Optional[str] = None,
+        api_mode: Literal["chat_completions", "responses"] = (
+            "chat_completions"
+        ),
         **kwargs: Any,
     ) -> None:
         # Handle deprecated azure_deployment_name parameter
@@ -144,6 +168,15 @@ class AzureOpenAIModel(BaseModelBackend):
                 DeprecationWarning,
                 stacklevel=2,
             )
+
+        if api_mode not in {"chat_completions", "responses"}:
+            raise ValueError(
+                "api_mode must be 'chat_completions' or 'responses', "
+                f"got: {api_mode}"
+            )
+        self._api_mode = api_mode
+        self._responses_previous_response_id_by_session: Dict[str, str] = {}
+        self._responses_last_message_count_by_session: Dict[str, int] = {}
 
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
@@ -280,13 +313,34 @@ class AzureOpenAIModel(BaseModelBackend):
         is_streaming = self.model_config_dict.get("stream", False)
         if response_format:
             if is_streaming:
+                if self._api_mode == "responses":
+                    return cast(
+                        Stream[ChatCompletionChunk],
+                        self._request_responses_stream(
+                            messages, response_format, tools
+                        ),
+                    )
                 return self._request_stream_parse(
                     messages, response_format, tools
                 )
             else:
+                if self._api_mode == "responses":
+                    return self._request_responses(
+                        messages, response_format, tools
+                    )
                 return self._request_parse(messages, response_format, tools)
         else:
-            result = self._request_chat_completion(messages, tools)
+            result: Union[ChatCompletion, Stream[ChatCompletionChunk]]
+            if self._api_mode == "responses":
+                if is_streaming:
+                    result = cast(
+                        Stream[ChatCompletionChunk],
+                        self._request_responses_stream(messages, None, tools),
+                    )
+                else:
+                    result = self._request_responses(messages, None, tools)
+            else:
+                result = self._request_chat_completion(messages, tools)
 
         return result
 
@@ -327,17 +381,47 @@ class AzureOpenAIModel(BaseModelBackend):
         is_streaming = self.model_config_dict.get("stream", False)
         if response_format:
             if is_streaming:
+                if self._api_mode == "responses":
+                    return cast(
+                        AsyncStream[ChatCompletionChunk],
+                        await self._arequest_responses_stream(
+                            messages, response_format, tools
+                        ),
+                    )
                 return await self._arequest_stream_parse(
                     messages, response_format, tools
                 )
             else:
+                if self._api_mode == "responses":
+                    return await self._arequest_responses(
+                        messages, response_format, tools
+                    )
                 return await self._arequest_parse(
                     messages, response_format, tools
                 )
         else:
-            result = await self._arequest_chat_completion(messages, tools)
+            async_result: Union[
+                ChatCompletion,
+                AsyncStream[ChatCompletionChunk],
+            ]
+            if self._api_mode == "responses":
+                if is_streaming:
+                    async_result = cast(
+                        AsyncStream[ChatCompletionChunk],
+                        await self._arequest_responses_stream(
+                            messages, None, tools
+                        ),
+                    )
+                else:
+                    async_result = await self._arequest_responses(
+                        messages, None, tools
+                    )
+            else:
+                async_result = await self._arequest_chat_completion(
+                    messages, tools
+                )
 
-        return result
+        return async_result
 
     def _request_chat_completion(
         self,
@@ -449,6 +533,495 @@ class AzureOpenAIModel(BaseModelBackend):
             model=str(self.model_type),
             response_format=response_format,
             **request_config,
+        )
+
+    def _prepare_responses_request_config(
+        self,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        response_format: Optional[Type[BaseModel]] = None,
+        stream: bool = False,
+    ) -> Dict[str, Any]:
+        r"""Prepare request configuration for the Azure Responses API.
+
+        Translates chat-completions style parameters to Responses API
+        style and adds structured-output schema.
+
+        Args:
+            tools (Optional[List[Dict[str, Any]]]): Tool schemas to include.
+                (default: :obj:`None`)
+            response_format (Optional[Type[BaseModel]]): Pydantic model for
+                structured output. (default: :obj:`None`)
+            stream (bool): Whether to enable streaming.
+                (default: :obj:`False`)
+
+        Returns:
+            Dict[str, Any]: Request configuration for the Responses API.
+        """
+        request_config = self._prepare_request_config(tools)
+
+        max_tokens = request_config.pop("max_tokens", None)
+        if (
+            max_tokens is not None
+            and "max_output_tokens" not in request_config
+        ):
+            request_config["max_output_tokens"] = max_tokens
+
+        if request_config.get("n") not in (None, 1):
+            warnings.warn(
+                "Azure OpenAI Responses API does not support `n`; "
+                "ignoring configured value.",
+                UserWarning,
+            )
+        request_config.pop("n", None)
+
+        request_config.pop("response_format", None)
+        request_config.pop("stream_options", None)
+        request_config["stream"] = stream
+        if "store" not in request_config:
+            request_config["store"] = True
+        elif request_config.get("store") is False:
+            warnings.warn(
+                "Setting `store=False` will disable "
+                "`previous_response_id` chaining.",
+                UserWarning,
+            )
+
+        if request_config.get("tools"):
+            request_config["tools"] = self._normalize_tools_for_responses_api(
+                request_config["tools"]
+            )
+
+        if response_format is not None:
+            schema = copy.deepcopy(response_format.model_json_schema())
+            self._enforce_object_additional_properties_false(schema)
+            request_config["text"] = {
+                "format": {
+                    "type": "json_schema",
+                    "name": response_format.__name__,
+                    "schema": schema,
+                }
+            }
+
+        return request_config
+
+    @staticmethod
+    def _normalize_tools_for_responses_api(
+        tools: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        r"""Convert chat-completions style function tools to Responses style.
+
+        Input:
+            {"type":"function","function":{"name":"foo",...}}
+        Output:
+            {"type":"function","name":"foo",...}
+        """
+        normalized_tools: List[Dict[str, Any]] = []
+        for tool in tools:
+            if (
+                isinstance(tool, dict)
+                and tool.get("type") == "function"
+                and isinstance(tool.get("function"), dict)
+            ):
+                normalized_tools.append(
+                    {"type": "function", **tool["function"]}
+                )
+            else:
+                normalized_tools.append(tool)
+        return normalized_tools
+
+    @staticmethod
+    def _enforce_object_additional_properties_false(schema: Any) -> None:
+        r"""Recursively enforce strict object schema for Responses API."""
+        if isinstance(schema, dict):
+            if (
+                schema.get("type") == "object"
+                and "additionalProperties" not in schema
+            ):
+                schema["additionalProperties"] = False
+
+            for value in schema.values():
+                AzureOpenAIModel._enforce_object_additional_properties_false(
+                    value
+                )
+        elif isinstance(schema, list):
+            for item in schema:
+                AzureOpenAIModel._enforce_object_additional_properties_false(
+                    item
+                )
+
+    def _get_response_chain_session_key(self) -> str:
+        return get_current_agent_session_id() or "__default__"
+
+    def _clear_response_chain_state(self, session_key: str) -> None:
+        self._responses_previous_response_id_by_session.pop(session_key, None)
+        self._responses_last_message_count_by_session.pop(session_key, None)
+
+    @staticmethod
+    def _responses_chain_enabled(request_config: Dict[str, Any]) -> bool:
+        return request_config.get("store") is not False
+
+    def _prepare_responses_input_and_chain(
+        self,
+        messages: List[OpenAIMessage],
+        chain_enabled: bool = True,
+    ) -> Dict[str, Any]:
+        r"""Prepare input items and response-chain state for the Responses API.
+
+        Args:
+            messages (List[OpenAIMessage]): Full message history.
+            chain_enabled (bool): Whether to use response chaining via
+                `previous_response_id`. (default: :obj:`True`)
+
+        Returns:
+            Dict[str, Any]: Dict with keys ``session_key``,
+                ``previous_response_id``, ``input_messages``, and
+                ``message_count``.
+        """
+        session_key = self._get_response_chain_session_key()
+        if chain_enabled:
+            previous_response_id = (
+                self._responses_previous_response_id_by_session.get(
+                    session_key
+                )
+            )
+            last_message_count = (
+                self._responses_last_message_count_by_session.get(
+                    session_key, 0
+                )
+            )
+        else:
+            self._clear_response_chain_state(session_key)
+            previous_response_id = None
+            last_message_count = 0
+
+        if len(messages) < last_message_count:
+            previous_response_id = None
+            last_message_count = 0
+            self._clear_response_chain_state(session_key)
+
+        if previous_response_id and last_message_count > 0:
+            delta_messages = messages[last_message_count:]
+            input_messages = (
+                delta_messages if delta_messages else [messages[-1]]
+            )
+        else:
+            input_messages = messages
+
+        input_items = self._convert_messages_to_responses_input(input_messages)
+
+        return {
+            "session_key": session_key,
+            "previous_response_id": previous_response_id,
+            "input_messages": input_items,
+            "message_count": len(messages),
+        }
+
+    @staticmethod
+    def _convert_messages_to_responses_input(
+        messages: List[OpenAIMessage],
+    ) -> List[Dict[str, Any]]:
+        r"""Convert chat-completions style messages to Responses input items.
+
+        Rewrites tool-calling history so it is understood by the Responses API:
+
+        - An assistant message with ``tool_calls`` becomes one or more
+          ``function_call`` items (plus an optional assistant message when
+          ``content`` is non-empty).
+        - A tool message becomes a ``function_call_output`` item.
+
+        Args:
+            messages (List[OpenAIMessage]): Messages in OpenAI
+                chat-completions format.
+
+        Returns:
+            List[Dict[str, Any]]: Input items for the Responses API.
+        """
+        input_items: List[Dict[str, Any]] = []
+        for message in messages:
+            role = message.get("role")
+            content = message.get("content", "")
+
+            if role == "tool":
+                input_items.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": message.get("tool_call_id", "null"),
+                        "output": content
+                        if isinstance(content, str)
+                        else str(content),
+                    }
+                )
+                continue
+
+            if role == "assistant" and message.get("tool_calls"):
+                if content not in (None, "", []):
+                    input_items.append(
+                        {
+                            "role": "assistant",
+                            "content": content,
+                        }
+                    )
+
+                tool_calls = message.get("tool_calls", [])
+                if not isinstance(tool_calls, list):
+                    tool_calls = [tool_calls]
+                for tool_call in tool_calls:
+                    function_data = (
+                        tool_call.get("function", {})
+                        if isinstance(tool_call, dict)
+                        else {}
+                    )
+                    if not isinstance(function_data, dict):
+                        continue
+                    arguments = function_data.get("arguments", "{}")
+                    if not isinstance(arguments, str):
+                        arguments = json.dumps(arguments, ensure_ascii=False)
+                    input_items.append(
+                        {
+                            "type": "function_call",
+                            "call_id": (
+                                tool_call.get("id", "null")
+                                if isinstance(tool_call, dict)
+                                else "null"
+                            ),
+                            "name": function_data.get("name", ""),
+                            "arguments": arguments,
+                        }
+                    )
+                continue
+
+            input_items.append(
+                {
+                    "role": role,
+                    "content": content,
+                }
+            )
+
+        return input_items
+
+    def _save_response_chain_state(
+        self,
+        session_key: str,
+        response_id: Optional[str],
+        message_count: int,
+    ) -> None:
+        if response_id:
+            self._responses_previous_response_id_by_session[session_key] = (
+                response_id
+            )
+        self._responses_last_message_count_by_session[session_key] = (
+            message_count
+        )
+
+    def _request_responses(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        r"""Call the Azure OpenAI Responses API (non-streaming).
+
+        Args:
+            messages (List[OpenAIMessage]): Message history.
+            response_format (Optional[Type[BaseModel]]): Pydantic model for
+                structured output. (default: :obj:`None`)
+            tools (Optional[List[Dict[str, Any]]]): Tool schemas.
+                (default: :obj:`None`)
+
+        Returns:
+            ChatCompletion: The model response in chat-completions format.
+        """
+        from camel.models.openai_responses_adapter import (
+            response_to_chat_completion,
+        )
+
+        request_config = self._prepare_responses_request_config(
+            tools=tools, response_format=response_format, stream=False
+        )
+        chain_enabled = self._responses_chain_enabled(request_config)
+        chain_state = self._prepare_responses_input_and_chain(
+            messages, chain_enabled=chain_enabled
+        )
+        if chain_enabled and chain_state["previous_response_id"]:
+            request_config["previous_response_id"] = chain_state[
+                "previous_response_id"
+            ]
+        response = self._client.responses.create(
+            input=chain_state["input_messages"],
+            model=str(self.model_type),
+            **request_config,
+        )
+        if chain_enabled:
+            self._save_response_chain_state(
+                session_key=chain_state["session_key"],
+                response_id=getattr(response, "id", None)
+                if not isinstance(response, dict)
+                else response.get("id"),
+                message_count=chain_state["message_count"],
+            )
+        return response_to_chat_completion(
+            response=response,
+            model=str(self.model_type),
+            response_format=response_format,
+        )
+
+    async def _arequest_responses(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        r"""Call the Azure OpenAI Responses API asynchronously (non-streaming).
+
+        Args:
+            messages (List[OpenAIMessage]): Message history.
+            response_format (Optional[Type[BaseModel]]): Pydantic model for
+                structured output. (default: :obj:`None`)
+            tools (Optional[List[Dict[str, Any]]]): Tool schemas.
+                (default: :obj:`None`)
+
+        Returns:
+            ChatCompletion: The model response in chat-completions format.
+        """
+        from camel.models.openai_responses_adapter import (
+            response_to_chat_completion,
+        )
+
+        request_config = self._prepare_responses_request_config(
+            tools=tools, response_format=response_format, stream=False
+        )
+        chain_enabled = self._responses_chain_enabled(request_config)
+        chain_state = self._prepare_responses_input_and_chain(
+            messages, chain_enabled=chain_enabled
+        )
+        if chain_enabled and chain_state["previous_response_id"]:
+            request_config["previous_response_id"] = chain_state[
+                "previous_response_id"
+            ]
+        response = await self._async_client.responses.create(
+            input=chain_state["input_messages"],
+            model=str(self.model_type),
+            **request_config,
+        )
+        if chain_enabled:
+            self._save_response_chain_state(
+                session_key=chain_state["session_key"],
+                response_id=getattr(response, "id", None)
+                if not isinstance(response, dict)
+                else response.get("id"),
+                message_count=chain_state["message_count"],
+            )
+        return response_to_chat_completion(
+            response=response,
+            model=str(self.model_type),
+            response_format=response_format,
+        )
+
+    def _request_responses_stream(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Generator[ChatCompletionChunk, None, None]:
+        r"""Call the Azure OpenAI Responses API with streaming.
+
+        Args:
+            messages (List[OpenAIMessage]): Message history.
+            response_format (Optional[Type[BaseModel]]): Pydantic model for
+                structured output. (default: :obj:`None`)
+            tools (Optional[List[Dict[str, Any]]]): Tool schemas.
+                (default: :obj:`None`)
+
+        Yields:
+            ChatCompletionChunk: Streaming response chunks.
+        """
+        from camel.models.openai_responses_adapter import (
+            iter_response_events_to_chat_chunks,
+        )
+
+        request_config = self._prepare_responses_request_config(
+            tools=tools, response_format=response_format, stream=True
+        )
+        chain_enabled = self._responses_chain_enabled(request_config)
+        chain_state = self._prepare_responses_input_and_chain(
+            messages, chain_enabled=chain_enabled
+        )
+        if chain_enabled and chain_state["previous_response_id"]:
+            request_config["previous_response_id"] = chain_state[
+                "previous_response_id"
+            ]
+        event_stream = self._client.responses.create(
+            input=chain_state["input_messages"],
+            model=str(self.model_type),
+            **request_config,
+        )
+
+        def _on_response_completed(response_id: str) -> None:
+            if chain_enabled:
+                self._save_response_chain_state(
+                    session_key=chain_state["session_key"],
+                    response_id=response_id,
+                    message_count=chain_state["message_count"],
+                )
+
+        return iter_response_events_to_chat_chunks(
+            event_stream=event_stream,
+            model=str(self.model_type),
+            on_response_completed=_on_response_completed,
+        )
+
+    async def _arequest_responses_stream(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> AsyncGenerator[ChatCompletionChunk, None]:
+        r"""Call the Azure OpenAI Responses API asynchronously with streaming.
+
+        Args:
+            messages (List[OpenAIMessage]): Message history.
+            response_format (Optional[Type[BaseModel]]): Pydantic model for
+                structured output. (default: :obj:`None`)
+            tools (Optional[List[Dict[str, Any]]]): Tool schemas.
+                (default: :obj:`None`)
+
+        Returns:
+            AsyncGenerator[ChatCompletionChunk, None]: Async generator of
+                streaming response chunks.
+        """
+        from camel.models.openai_responses_adapter import (
+            aiter_response_events_to_chat_chunks,
+        )
+
+        request_config = self._prepare_responses_request_config(
+            tools=tools, response_format=response_format, stream=True
+        )
+        chain_enabled = self._responses_chain_enabled(request_config)
+        chain_state = self._prepare_responses_input_and_chain(
+            messages, chain_enabled=chain_enabled
+        )
+        if chain_enabled and chain_state["previous_response_id"]:
+            request_config["previous_response_id"] = chain_state[
+                "previous_response_id"
+            ]
+        event_stream = await self._async_client.responses.create(
+            input=chain_state["input_messages"],
+            model=str(self.model_type),
+            **request_config,
+        )
+
+        def _on_response_completed(response_id: str) -> None:
+            if chain_enabled:
+                self._save_response_chain_state(
+                    session_key=chain_state["session_key"],
+                    response_id=response_id,
+                    message_count=chain_state["message_count"],
+                )
+
+        return aiter_response_events_to_chat_chunks(
+            event_stream=event_stream,
+            model=str(self.model_type),
+            on_response_completed=_on_response_completed,
         )
 
     @property
