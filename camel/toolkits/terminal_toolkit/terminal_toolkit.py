@@ -293,7 +293,7 @@ class TerminalToolkit(BaseToolkit):
                 )
 
             # Set up other language runtimes if requested
-            self._setup_other_runtimes(update_callback)
+            self._setup_optional_runtimes(update_callback)
         else:
             logger.info(
                 "[ENV CLONE] Failed to create cloned environment, "
@@ -414,14 +414,14 @@ class TerminalToolkit(BaseToolkit):
             check_nodejs_availability(update_callback)
 
             # Set up other language runtimes if requested
-            self._setup_other_runtimes(update_callback)
+            self._setup_optional_runtimes(update_callback)
         else:
             logger.info(
                 "[ENV INIT] Failed to create initial environment, "
                 "using system Python"
             )
 
-    def _setup_other_runtimes(self, update_callback):
+    def _setup_optional_runtimes(self, update_callback):
         r"""Set up Go and/or Java runtimes if requested.
 
         Stores runtime paths in ``self._runtime_env_vars`` instead of
