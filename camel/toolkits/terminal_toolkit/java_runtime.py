@@ -82,22 +82,12 @@ def ensure_java_available(
                 timeout=10,
             )
             # java -version outputs to stderr
-            version_output = (
-                result.stderr.strip() or result.stdout.strip()
-            )
-            if (
-                result.returncode == 0
-                and javac_result.returncode == 0
-            ):
-                info = (
-                    f"Java is already available: "
-                    f"{version_output}"
-                )
+            version_output = result.stderr.strip() or result.stdout.strip()
+            if result.returncode == 0 and javac_result.returncode == 0:
+                info = f"Java is already available: " f"{version_output}"
                 if update_callback:
                     update_callback(f"{info}\n")
-                return os.path.dirname(
-                    os.path.dirname(existing_java)
-                )
+                return os.path.dirname(os.path.dirname(existing_java))
         except Exception:
             pass
 
@@ -112,9 +102,7 @@ def ensure_java_available(
         os_name, arch = get_platform_info()
     except RuntimeError as e:
         if update_callback:
-            update_callback(
-                f"Cannot auto-install Java: {e}\n"
-            )
+            update_callback(f"Cannot auto-install Java: {e}\n")
         return None
 
     # Map arch/OS names for Adoptium API
@@ -129,16 +117,12 @@ def ensure_java_available(
     )
 
     java_runtime_dir = os.path.join(RUNTIMES_DIR, "java")
-    archive_type: ArchiveType = (
-        "zip" if os_name == "windows" else "tar.gz"
-    )
+    archive_type: ArchiveType = "zip" if os_name == "windows" else "tar.gz"
 
     # Check if already downloaded
     java_home = _find_java_home(java_runtime_dir, os_name)
     if java_home:
-        info = (
-            f"Java JDK is already installed at {java_home}"
-        )
+        info = f"Java JDK is already installed at {java_home}"
         if update_callback:
             update_callback(f"{info}\n")
         return java_home
@@ -196,9 +180,7 @@ def _find_java_home(
     if not os.path.exists(java_runtime_dir):
         return None
 
-    java_executable = (
-        "java.exe" if os_name == "windows" else "java"
-    )
+    java_executable = "java.exe" if os_name == "windows" else "java"
 
     for entry in os.listdir(java_runtime_dir):
         entry_path = os.path.join(java_runtime_dir, entry)
@@ -216,14 +198,10 @@ def _find_java_home(
                 java_executable,
             )
             if os.path.exists(java_path):
-                return os.path.join(
-                    entry_path, "Contents", "Home"
-                )
+                return os.path.join(entry_path, "Contents", "Home")
 
         # On Linux/Windows, the structure is jdk-xxx/bin/java
-        java_path = os.path.join(
-            entry_path, "bin", java_executable
-        )
+        java_path = os.path.join(entry_path, "bin", java_executable)
         if os.path.exists(java_path):
             return entry_path
 

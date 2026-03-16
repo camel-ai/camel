@@ -150,7 +150,7 @@ The agent will:
 # Example 4: Default (no extra runtimes)
 # =====================================================================
 print("\n" + "=" * 60)
-print("Example 4: Default – Python only (no Go/Java)")
+print("Example 4: Default - Python only (no Go/Java)")
 print("=" * 60)
 
 tools = TerminalToolkit(
