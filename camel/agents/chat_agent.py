@@ -128,6 +128,10 @@ def _cleanup_temp_files():
 
 atexit.register(_cleanup_temp_files)
 
+# OpenAI enforces a maximum of 40 characters for tool_call IDs.
+# https://github.com/camel-ai/camel/issues/2215
+_OPENAI_MAX_TOOL_CALL_ID_LEN = 40
+
 # AgentOps decorator setting
 try:
     if os.getenv("AGENTOPS_API_KEY") is not None:
@@ -518,7 +522,7 @@ class ChatAgent(BaseAgent):
         summary_window_ratio: float = 0.6,
     ) -> None:
         if isinstance(model, ModelManager):
-            self.model_backend = model
+            self.model_backend: ModelManager = model
         else:
             # Resolve model backends and set up model manager
             resolved_models = self._resolve_models(model)
@@ -3955,9 +3959,12 @@ class ChatAgent(BaseAgent):
         tool_call_requests: Optional[List[ToolCallRequest]] = None
         if tool_calls := response.choices[0].message.tool_calls:
             tool_call_requests = []
+            is_openai_platform = self._is_openai_platform()
             for tool_call in tool_calls:
                 tool_name = tool_call.function.name  # type: ignore[union-attr]
                 tool_call_id = tool_call.id
+                if is_openai_platform and tool_call_id:
+                    tool_call_id = tool_call_id[:_OPENAI_MAX_TOOL_CALL_ID_LEN]
                 args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
                 extra_content = getattr(tool_call, 'extra_content', None)
 
@@ -4419,7 +4426,7 @@ class ChatAgent(BaseAgent):
             ):
                 request_token_usage = self._create_token_usage_tracker()
                 (
-                    stream_completed,
+                    _stream_completed,
                     tool_calls_complete,
                     request_response_id,
                 ) = yield from self._process_stream_chunks_with_accumulator(
@@ -4807,6 +4814,12 @@ class ChatAgent(BaseAgent):
 
         return stream_completed, tool_calls_complete, last_response_id
 
+    def _is_openai_platform(self) -> bool:
+        r"""Check if the current model backend is OpenAI."""
+        from camel.models.openai_model import OpenAIModel
+
+        return isinstance(self.model_backend.current_model, OpenAIModel)
+
     def _accumulate_tool_calls(
         self,
         tool_call_deltas: List[Any],
@@ -4881,9 +4894,9 @@ class ChatAgent(BaseAgent):
 
             # Accumulate tool call data
             if tool_call_id:
-                tool_call_entry['id'] = (
-                    tool_call_id  # Set full ID, don't append
-                )
+                if self._is_openai_platform():
+                    tool_call_id = tool_call_id[:_OPENAI_MAX_TOOL_CALL_ID_LEN]
+                tool_call_entry['id'] = tool_call_id
 
             if (
                 hasattr(delta_tool_call, 'function')
@@ -5412,7 +5425,6 @@ class ChatAgent(BaseAgent):
                 )
             ):
                 request_token_usage = self._create_token_usage_tracker()
-                stream_completed = False
                 tool_calls_complete = False
                 request_response_id = ""
 
@@ -5432,7 +5444,7 @@ class ChatAgent(BaseAgent):
                         # This is the final return value
                         # (stream_completed, tool_calls_complete, response_id)
                         (
-                            stream_completed,
+                            _stream_completed,
                             tool_calls_complete,
                             request_response_id,
                         ) = item
