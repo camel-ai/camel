@@ -19,6 +19,7 @@ AWS Bedrock Converse API backend with prompt caching support.
 - **aws_access_key_id** (str, optional): Explicit IAM access key ID. (default: :obj:`None`)
 - **aws_secret_access_key** (str, optional): Explicit IAM secret access key. (default: :obj:`None`)
 - **aws_session_token** (str, optional): Temporary session token for STS credentials. (default: :obj:`None`)
+- **url** (str, optional): Custom endpoint URL for the Bedrock Runtime service (e.g. VPC endpoint). Falls back to the `__INLINE_CODE_0____INLINE_CODE_1__None`)
 - **token_counter** (BaseTokenCounter, optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter( ModelType.GPT_4O_MINI)` will be used. (default: :obj:`None`)
 - **timeout** (float, optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
 - **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`) **kwargs (Any): Additional arguments to pass to the client initialization.
@@ -39,6 +40,7 @@ def __init__(
     aws_access_key_id: Optional[str] = None,
     aws_secret_access_key: Optional[str] = None,
     aws_session_token: Optional[str] = None,
+    url: Optional[str] = None,
     token_counter: Optional[BaseTokenCounter] = None,
     timeout: Optional[float] = None,
     max_retries: int = 3,
@@ -134,6 +136,26 @@ def _convert_openai_tools_to_bedrock(self, tools: Optional[List[Dict[str, Any]]]
 def _convert_tool_choice(self, tool_choice: Any):
 ```
 
+<a id="camel.models.aws_bedrock_converse_model.AWSBedrockConverseModel._ensure_additional_properties_false"></a>
+
+### _ensure_additional_properties_false
+
+```python
+def _ensure_additional_properties_false(schema: Dict[str, Any]):
+```
+
+Recursively set `__INLINE_CODE_0__` on all object
+types in *schema*.  AWS Bedrock requires this or it raises a
+`__INLINE_CODE_1__`.
+
+<a id="camel.models.aws_bedrock_converse_model.AWSBedrockConverseModel._convert_response_format_to_output_config"></a>
+
+### _convert_response_format_to_output_config
+
+```python
+def _convert_response_format_to_output_config(response_format: Type[BaseModel]):
+```
+
 <a id="camel.models.aws_bedrock_converse_model.AWSBedrockConverseModel._build_converse_request"></a>
 
 ### _build_converse_request
@@ -142,7 +164,8 @@ def _convert_tool_choice(self, tool_choice: Any):
 def _build_converse_request(
     self,
     messages: List[OpenAIMessage],
-    tools: Optional[List[Dict[str, Any]]] = None
+    tools: Optional[List[Dict[str, Any]]] = None,
+    response_format: Optional[Type[BaseModel]] = None
 ):
 ```
 
