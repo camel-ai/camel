@@ -45,16 +45,16 @@ UpdateCallback = Optional[Callable[[str], None]]
 
 class Runtime(str, Enum):
     r"""Supported language runtimes."""
+
     GO = "go"
     JAVA = "java"
+
 
 # ── Constants ────────────────────────────────────────────────────────
 
 GO_VERSION = "1.23.6"
 JAVA_VERSION = "21"
-RUNTIMES_DIR = os.path.join(
-    os.path.expanduser("~"), ".camel", "runtimes"
-)
+RUNTIMES_DIR = os.path.join(os.path.expanduser("~"), ".camel", "runtimes")
 
 # ── URL Templates ────────────────────────────────────────────────────
 
@@ -111,9 +111,7 @@ def get_platform_info() -> tuple[SupportedOS, SupportedArch]:
     """
     os_name = platform.system().lower()
     if os_name not in _SUPPORTED_OS_SET:
-        raise RuntimeError(
-            f"Unsupported operating system: {os_name}"
-        )
+        raise RuntimeError(f"Unsupported operating system: {os_name}")
 
     machine = platform.machine().lower()
     arch = _MACHINE_TO_ARCH.get(machine)
@@ -195,15 +193,11 @@ def download_and_extract_runtime(
             f"Failed to download from {url}: {e}"
         ) from e
     except (tarfile.TarError, zipfile.BadZipFile) as e:
-        raise RuntimeExtractionError(
-            f"Failed to extract archive: {e}"
-        ) from e
+        raise RuntimeExtractionError(f"Failed to extract archive: {e}") from e
     except (RuntimeDownloadError, RuntimeExtractionError):
         raise
     except Exception as e:
-        raise RuntimeInstallError(
-            f"Runtime installation failed: {e}"
-        ) from e
+        raise RuntimeInstallError(f"Runtime installation failed: {e}") from e
     finally:
         if tmp_file and os.path.exists(tmp_file):
             try:
@@ -245,8 +239,7 @@ def _verify_checksum(
 
         if actual_hash not in checksum_data:
             raise RuntimeDownloadError(
-                "Checksum verification failed! "
-                "Download may be corrupted."
+                "Checksum verification failed! " "Download may be corrupted."
             )
 
         if update_callback:
@@ -257,6 +250,5 @@ def _verify_checksum(
         logger.warning(f"Checksum verification skipped: {e}")
         if update_callback:
             update_callback(
-                f"Warning: Checksum verification skipped: "
-                f"{e}\n"
+                f"Warning: Checksum verification skipped: " f"{e}\n"
             )

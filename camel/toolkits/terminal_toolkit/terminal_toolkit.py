@@ -438,9 +438,7 @@ class TerminalToolkit(BaseToolkit):
                 current = self._runtime_env_vars.get(
                     "PATH", os.environ.get("PATH", "")
                 )
-                self._runtime_env_vars["PATH"] = (
-                    go_path + os.pathsep + current
-                )
+                self._runtime_env_vars["PATH"] = go_path + os.pathsep + current
 
         # Check Java availability if enabled
         if Runtime.JAVA in self.enable_other_runtimes:
