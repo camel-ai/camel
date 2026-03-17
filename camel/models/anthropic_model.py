@@ -319,7 +319,7 @@ class AnthropicModel(BaseModelBackend):
                     )
             elif role == "tool":
                 # Convert tool response message
-                tool_call_id = msg.get("tool_call_id", "")
+                tool_call_id = str(msg.get("tool_call_id", ""))
                 tool_content = (
                     content if isinstance(content, str) else str(content)
                 )
