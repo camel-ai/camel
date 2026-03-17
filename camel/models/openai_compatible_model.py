@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+from json import JSONDecodeError
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from openai import AsyncOpenAI, AsyncStream, BadRequestError, OpenAI, Stream
@@ -20,7 +21,7 @@ from openai.lib.streaming.chat import (
     AsyncChatCompletionStreamManager,
     ChatCompletionStreamManager,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
@@ -272,6 +273,16 @@ class OpenAICompatibleModel(BaseModelBackend):
                         e,
                         attempts[i + 1][0],
                     )
+                except (ValidationError, JSONDecodeError) as e:
+                    if name != "parse" or i == len(attempts) - 1:
+                        raise
+                    logger.warning(
+                        "%s failed for model %s: %s. " "Falling back to %s.",
+                        name,
+                        self.model_type,
+                        e,
+                        attempts[i + 1][0],
+                    )
 
         return self._request_chat_completion(messages, tools)
 
@@ -354,6 +365,16 @@ class OpenAICompatibleModel(BaseModelBackend):
                     return await fn(messages, response_format, tools)
                 except BadRequestError as e:
                     if i == len(attempts) - 1:
+                        raise
+                    logger.warning(
+                        "%s failed for model %s: %s. " "Falling back to %s.",
+                        name,
+                        self.model_type,
+                        e,
+                        attempts[i + 1][0],
+                    )
+                except (ValidationError, JSONDecodeError) as e:
+                    if name != "parse" or i == len(attempts) - 1:
                         raise
                     logger.warning(
                         "%s failed for model %s: %s. " "Falling back to %s.",
