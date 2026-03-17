@@ -92,6 +92,7 @@ from camel.toolkits import FunctionTool, RegisteredAgentToolkit
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
+    ChatCompletionMessageFunctionToolCall,
     ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
@@ -2559,122 +2560,199 @@ class ChatAgent(BaseAgent):
         except ValidationError:
             return False
 
-    def _check_tools_strict_compatibility(self) -> bool:
-        r"""Check if all tools are compatible with OpenAI strict mode.
-
-        Returns:
-            bool: True if all tools are strict mode compatible,
-                False otherwise.
-        """
-        tool_schemas = self._get_full_tool_schemas()
-        for schema in tool_schemas:
-            if not schema.get("function", {}).get("strict", True):
-                return False
-        return True
-
-    def _convert_response_format_to_prompt(
-        self, response_format: Type[BaseModel]
-    ) -> str:
-        r"""Convert a Pydantic response format to a prompt instruction.
+    @staticmethod
+    def _collect_tool_calls_from_completion(
+        tool_calls: List[ChatCompletionMessageFunctionToolCall],
+        accumulated_tool_calls: Dict[str, Any],
+    ) -> None:
+        r"""Convert tool calls from a ChatCompletion into the accumulated
+        tool-call dictionary format used by the streaming pipeline.
 
         Args:
-            response_format (Type[BaseModel]): The Pydantic model class.
-
-        Returns:
-            str: A prompt instruction requesting the specific format.
+            tool_calls (List[ChatCompletionMessageFunctionToolCall]): Tool
+                call objects from
+                ``completion.choices[0].message.tool_calls``.
+            accumulated_tool_calls: Mutable dict that will be populated with
+                the converted entries.
         """
-        try:
-            # Get the JSON schema from the Pydantic model
-            schema = response_format.model_json_schema()
+        for tc in tool_calls:
+            accumulated_tool_calls[tc.id] = {
+                'id': tc.id,
+                'function': {
+                    'name': tc.function.name,
+                    'arguments': tc.function.arguments,
+                },
+                'complete': True,
+            }
 
-            # Create a prompt based on the schema
-            format_instruction = (
-                "\n\nPlease respond in the following JSON format:\n{\n"
-            )
-
-            properties = schema.get("properties", {})
-            for field_name, field_info in properties.items():
-                field_type = field_info.get("type", "string")
-                description = field_info.get("description", "")
-
-                if field_type == "array":
-                    format_instruction += (
-                        f'    "{field_name}": ["array of values"]'
-                    )
-                elif field_type == "object":
-                    format_instruction += f'    "{field_name}": {{"object"}}'
-                elif field_type == "boolean":
-                    format_instruction += f'    "{field_name}": true'
-                elif field_type == "number":
-                    format_instruction += f'    "{field_name}": 0'
-                else:
-                    format_instruction += f'    "{field_name}": "string value"'
-
-                if description:
-                    format_instruction += f'  // {description}'
-
-                # Add comma if not the last item
-                if field_name != list(properties.keys())[-1]:
-                    format_instruction += ","
-                format_instruction += "\n"
-
-            format_instruction += "}"
-            return format_instruction
-
-        except Exception as e:
-            logger.warning(
-                f"Failed to convert response_format to prompt: {e}. "
-                f"Using generic format instruction."
-            )
-            return (
-                "\n\nPlease respond in a structured JSON format "
-                "that matches the requested schema."
-            )
-
-    def _handle_response_format_with_non_strict_tools(
+    def _record_and_build_display_message(
         self,
-        input_message: Union[BaseMessage, str],
-        response_format: Optional[Type[BaseModel]] = None,
-    ) -> Tuple[Union[BaseMessage, str], Optional[Type[BaseModel]], bool]:
-        r"""Handle response format when tools are not strict mode compatible.
+        final_content: str,
+        parsed_object: Optional[Union[BaseModel, Dict[str, Any]]],
+        final_reasoning: Optional[str],
+        response_format: Optional[Type[BaseModel]],
+    ) -> BaseMessage:
+        r"""Record the full message to memory and build a display message.
+
+        In delta mode the display message has empty content because all
+        content was already yielded incrementally.  In accumulate mode the
+        display message carries the full content.
 
         Args:
-            input_message: The original input message.
-            response_format: The requested response format.
+            final_content (str): The full final content string.
+            parsed_object: The parsed object from structured output stream.
+            final_reasoning: The reasoning content, if any.
+            response_format: The (possibly modified) response format.
 
         Returns:
-            Tuple: (modified_message, modified_response_format,
-                   used_prompt_formatting)
+            BaseMessage: The display message to yield to the caller.
         """
-        if response_format is None:
-            return input_message, response_format, False
-
-        # Check if tools are strict mode compatible
-        if self._check_tools_strict_compatibility():
-            return input_message, response_format, False
-
-        # Tools are not strict compatible, convert to prompt
-        logger.info(
-            "Non-strict tools detected. Converting response_format to "
-            "prompt-based formatting."
+        # Record full content to memory
+        record_msg = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={},
+            content=final_content,
+            parsed=parsed_object,
+            reasoning_content=final_reasoning,
         )
+        if response_format:
+            self._try_format_message(record_msg, response_format)
+        self.record_message(record_msg)
 
-        format_prompt = self._convert_response_format_to_prompt(
-            response_format
+        # Build display message (empty content in delta mode)
+        display_content = final_content if self.stream_accumulate else ""
+        display_reasoning = final_reasoning if self.stream_accumulate else None
+        display_msg = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={},
+            content=display_content,
+            parsed=record_msg.parsed,
+            reasoning_content=display_reasoning,
         )
+        return display_msg
 
-        # Modify the message to include format instruction
-        modified_message: Union[BaseMessage, str]
-        if isinstance(input_message, str):
-            modified_message = input_message + format_prompt
-        else:
-            modified_message = input_message.create_new_instance(
-                input_message.content + format_prompt
+    def _handle_structured_stream_tool_iteration(
+        self,
+        final_completion: Any,
+        accumulated_tool_calls: Dict[str, Any],
+        tool_call_records: List[ToolCallingRecord],
+        request_token_usage: Dict[str, int],
+        step_token_usage: Dict[str, int],
+        iteration_count: int,
+        content_accumulator: 'StreamContentAccumulator',
+    ) -> Tuple[
+        bool,
+        Optional[Tuple[List[OpenAIMessage], int]],
+        Optional['ChatAgentResponse'],
+    ]:
+        r"""Handle post-tool-execution logic for structured output streaming.
+
+        Updates token usage, clears accumulated tool calls, and determines
+        whether the streaming loop should continue or terminate.
+
+        Args:
+            final_completion: The final completion object from the model.
+            accumulated_tool_calls: Mutable dict of accumulated tool calls,
+                cleared in-place before returning.
+            tool_call_records: List of executed tool call records.
+            request_token_usage: Per-request token usage dict to update.
+            step_token_usage: Cumulative step token usage dict to update.
+            iteration_count: Current loop iteration number.
+            content_accumulator: Accumulator used to reset streaming content
+                when continuing to the next iteration.
+
+        Returns:
+            A tuple of ``(should_continue, new_context, error_response)``:
+            - ``should_continue=True``: caller should continue the loop with
+              the returned ``(openai_messages, num_tokens)`` context.
+            - ``should_continue=False, error_response=None``: caller should
+              break the loop.
+            - ``should_continue=False, error_response!=None``: caller should
+              yield the error response and return.
+        """
+        if tool_call_records:
+            logger.info("Sending back result to model")
+
+        if final_completion.usage:
+            request_usage = safe_model_dump(final_completion.usage)
+            self._update_token_usage_tracker(
+                request_token_usage, request_usage
             )
+            self._update_token_usage_tracker(step_token_usage, request_usage)
 
-        # Return None for response_format to avoid strict mode conflicts
-        # and True to indicate we used prompt formatting
-        return modified_message, None, True
+        accumulated_tool_calls.clear()
+
+        if tool_call_records and (
+            self.max_iteration is None or iteration_count < self.max_iteration
+        ):
+            try:
+                new_context = self.memory.get_context()
+            except RuntimeError as e:
+                return (
+                    False,
+                    None,
+                    self._step_terminate(
+                        e.args[1], tool_call_records, "max_tokens_exceeded"
+                    ),
+                )
+            content_accumulator.reset_streaming_content()
+            return True, new_context, None
+
+        return False, None, None
+
+    def _build_structured_completion_response(
+        self,
+        final_completion: Any,
+        final_content: str,
+        parsed_object: Optional[Union[BaseModel, Dict[str, Any]]],
+        final_reasoning: Optional[str],
+        response_format: Optional[Type[BaseModel]],
+        tool_call_records: List[ToolCallingRecord],
+        step_token_usage: Dict[str, int],
+    ) -> 'ChatAgentResponse':
+        r"""Build the final ChatAgentResponse for a structured output stream.
+
+        Args:
+            final_completion: The final completion object from the model.
+            final_content: The full final text content.
+            parsed_object: The parsed Pydantic object, if any.
+            final_reasoning: The reasoning content, if any.
+            response_format: The response format class used for parsing.
+            tool_call_records: List of executed tool call records.
+            step_token_usage: Cumulative step token usage (already updated
+                before this call) used for ``info["usage"]``.
+
+        Returns:
+            ChatAgentResponse: The final response to yield to the caller.
+        """
+        final_message = self._record_and_build_display_message(
+            final_content,
+            parsed_object,
+            final_reasoning,
+            response_format,
+        )
+        return ChatAgentResponse(
+            msgs=[final_message],
+            terminated=False,
+            info={
+                "id": final_completion.id or "",
+                "usage": step_token_usage.copy(),
+                "finish_reasons": [
+                    choice.finish_reason or "stop"
+                    for choice in final_completion.choices
+                ],
+                "num_tokens": self._get_token_count(final_content),
+                "tool_calls": tool_call_records,
+                "external_tool_requests": None,
+                "streaming": False,
+                "partial": False,
+                "stream_accumulate_mode": "accumulate"
+                if self.stream_accumulate
+                else "delta",
+            },
+        )
 
     def _is_called_from_registered_toolkit(self) -> bool:
         r"""Check if current step/astep call originates from a
@@ -2702,66 +2780,6 @@ class ChatAgent(BaseAgent):
             return False
 
         return False
-
-    def _apply_prompt_based_parsing(
-        self,
-        response: ModelResponse,
-        original_response_format: Type[BaseModel],
-    ) -> None:
-        r"""Apply manual parsing when using prompt-based formatting.
-
-        Args:
-            response: The model response to parse.
-            original_response_format: The original response format class.
-        """
-        for message in response.output_messages:
-            if message.content:
-                try:
-                    # Try to extract JSON from the response content
-                    import json
-
-                    from pydantic import ValidationError
-
-                    # Try to find JSON in the content
-                    content = message.content.strip()
-
-                    # Try direct parsing first
-                    try:
-                        parsed_json = json.loads(content)
-                        message.parsed = (
-                            original_response_format.model_validate(
-                                parsed_json
-                            )
-                        )
-                        continue
-                    except (json.JSONDecodeError, ValidationError):
-                        pass
-
-                    # Try to extract JSON from text
-                    json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
-                    json_matches = re.findall(json_pattern, content, re.DOTALL)
-
-                    for json_str in json_matches:
-                        try:
-                            parsed_json = json.loads(json_str)
-                            message.parsed = (
-                                original_response_format.model_validate(
-                                    parsed_json
-                                )
-                            )
-                            # Update content to just the JSON for consistency
-                            message.content = json.dumps(parsed_json)
-                            break
-                        except (json.JSONDecodeError, ValidationError):
-                            continue
-
-                    if not message.parsed:
-                        logger.warning(
-                            f"Failed to parse JSON from response: {content}"
-                        )
-
-                except Exception as e:
-                    logger.warning(f"Error during prompt-based parsing: {e}")
 
     def _format_response_if_needed(
         self,
@@ -2900,14 +2918,6 @@ class ChatAgent(BaseAgent):
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
         disable_tools = self._is_called_from_registered_toolkit()
-
-        # Handle response format compatibility with non-strict tools
-        original_response_format = response_format
-        input_message, response_format, used_prompt_formatting = (
-            self._handle_response_format_with_non_strict_tools(
-                input_message, response_format
-            )
-        )
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
@@ -3091,12 +3101,6 @@ class ChatAgent(BaseAgent):
 
         self._format_response_if_needed(response, response_format)
 
-        # Apply manual parsing if we used prompt-based formatting
-        if used_prompt_formatting and original_response_format:
-            self._apply_prompt_based_parsing(
-                response, original_response_format
-            )
-
         # Only record final output if we haven't already recorded tool calls
         # for this response (to avoid duplicate assistant messages)
         if not recorded_tool_calls:
@@ -3209,14 +3213,6 @@ class ChatAgent(BaseAgent):
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
         disable_tools = self._is_called_from_registered_toolkit()
-
-        # Handle response format compatibility with non-strict tools
-        original_response_format = response_format
-        input_message, response_format, used_prompt_formatting = (
-            self._handle_response_format_with_non_strict_tools(
-                input_message, response_format
-            )
-        )
 
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
@@ -3398,12 +3394,6 @@ class ChatAgent(BaseAgent):
             break
 
         await self._aformat_response_if_needed(response, response_format)
-
-        # Apply manual parsing if we used prompt-based formatting
-        if used_prompt_formatting and original_response_format:
-            self._apply_prompt_based_parsing(
-                response, original_response_format
-            )
 
         # Only record final output if we haven't already recorded tool calls
         # for this response (to avoid duplicate assistant messages)
@@ -4299,13 +4289,6 @@ class ChatAgent(BaseAgent):
                 content, tool calls, and other information as they become
                 available.
         """
-        # Handle response format compatibility with non-strict tools
-        input_message, response_format, _ = (
-            self._handle_response_format_with_non_strict_tools(
-                input_message, response_format
-            )
-        )
-
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
@@ -4326,7 +4309,9 @@ class ChatAgent(BaseAgent):
 
         # Start streaming response
         yield from self._stream_response(
-            openai_messages, num_tokens, response_format
+            openai_messages,
+            num_tokens,
+            response_format,
         )
 
     def _get_token_count(self, content: str) -> int:
@@ -4507,64 +4492,78 @@ class ChatAgent(BaseAgent):
                     # Get final completion and record final message
                     try:
                         final_completion = stream.get_final_completion()
-                        final_content = (
-                            final_completion.choices[0].message.content or ""
+
+                        # Check if the model wants to call tools
+                        final_choice = final_completion.choices[0]
+                        final_tool_calls = getattr(
+                            final_choice.message, 'tool_calls', None
                         )
+                        if final_tool_calls:
+                            self._collect_tool_calls_from_completion(
+                                final_tool_calls,
+                                accumulated_tool_calls,
+                            )
+
+                            # Execute tools
+                            for status_response in (
+                                self
+                            )._execute_tools_sync_with_status_accumulator(
+                                accumulated_tool_calls,
+                                tool_call_records,
+                            ):
+                                yield status_response
+
+                            should_continue, new_context, error_response = (
+                                self._handle_structured_stream_tool_iteration(
+                                    final_completion,
+                                    accumulated_tool_calls,
+                                    tool_call_records,
+                                    request_token_usage,
+                                    step_token_usage,
+                                    iteration_count,
+                                    content_accumulator,
+                                )
+                            )
+                            if error_response:
+                                yield error_response
+                                return
+                            self._emit_request_usage(
+                                usage_dict=request_token_usage,
+                                step_usage=step_token_usage.copy(),
+                                request_index=iteration_count,
+                                response_id=final_completion.id or "",
+                            )
+                            if should_continue:
+                                openai_messages, num_tokens = new_context  # type: ignore[misc]
+                                continue
+                            else:
+                                break
+
+                        final_content = final_choice.message.content or ""
                         final_reasoning = (
                             content_accumulator.get_full_reasoning_content()
                             or None
                         )
-
-                        final_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=final_content,
-                            parsed=cast(
-                                "BaseModel | dict[str, Any] | None",
+                        if final_completion.usage:
+                            request_usage = safe_model_dump(
+                                final_completion.usage
+                            )
+                            self._update_token_usage_tracker(
+                                request_token_usage, request_usage
+                            )
+                            self._update_token_usage_tracker(
+                                step_token_usage, request_usage
+                            )
+                        final_response = (
+                            self._build_structured_completion_response(
+                                final_completion,
+                                final_content,
                                 parsed_object,
-                            ),  # type: ignore[arg-type]
-                            reasoning_content=final_reasoning,
-                        )
-
-                        self.record_message(final_message)
-
-                        request_usage = (
-                            safe_model_dump(final_completion.usage)
-                            if final_completion.usage
-                            else {}
-                        )
-                        self._update_token_usage_tracker(
-                            request_token_usage,
-                            request_usage,
-                        )
-                        self._update_token_usage_tracker(
-                            step_token_usage,
-                            request_usage,
-                        )
-
-                        # Create final response with cumulative step usage.
-                        final_response = ChatAgentResponse(
-                            msgs=[final_message],
-                            terminated=False,
-                            info={
-                                "id": final_completion.id or "",
-                                "usage": step_token_usage.copy(),
-                                "finish_reasons": [
-                                    choice.finish_reason or "stop"
-                                    for choice in final_completion.choices
-                                ],
-                                "num_tokens": self._get_token_count(
-                                    final_content
-                                ),
-                                "tool_calls": tool_call_records,
-                                "external_tool_requests": None,
-                                "streaming": False,
-                                "partial": False,
-                                "stream_accumulate_mode": "accumulate"
-                                if self.stream_accumulate
-                                else "delta",
-                            },
+                                final_reasoning,
+                                response_format,
+                                tool_call_records,
+                                step_token_usage,
+                            )
                         )
                         self._emit_request_usage(
                             usage_dict=request_token_usage,
@@ -5344,7 +5343,9 @@ class ChatAgent(BaseAgent):
         # Start async streaming response
         last_response = None
         async for response in self._astream_response(
-            openai_messages, num_tokens, response_format
+            openai_messages,
+            num_tokens,
+            response_format,
         ):
             last_response = response
             yield response
@@ -5517,64 +5518,80 @@ class ChatAgent(BaseAgent):
                     # Get final completion and record final message
                     try:
                         final_completion = await stream.get_final_completion()
-                        final_content = (
-                            final_completion.choices[0].message.content or ""
+
+                        # Check if the model wants to call tools
+                        final_choice = final_completion.choices[0]
+                        final_tool_calls = getattr(
+                            final_choice.message, 'tool_calls', None
                         )
+                        if final_tool_calls:
+                            self._collect_tool_calls_from_completion(
+                                final_tool_calls,
+                                accumulated_tool_calls,
+                            )
+
+                            # Execute tools
+                            async for status_response in (
+                                self
+                            )._execute_tools_async_with_status_accumulator(
+                                accumulated_tool_calls,
+                                content_accumulator,
+                                step_token_usage,
+                                tool_call_records,
+                            ):
+                                yield status_response
+
+                            should_continue, new_context, error_response = (
+                                self._handle_structured_stream_tool_iteration(
+                                    final_completion,
+                                    accumulated_tool_calls,
+                                    tool_call_records,
+                                    request_token_usage,
+                                    step_token_usage,
+                                    iteration_count,
+                                    content_accumulator,
+                                )
+                            )
+                            if error_response:
+                                yield error_response
+                                return
+                            await self._aemit_request_usage(
+                                usage_dict=request_token_usage,
+                                step_usage=step_token_usage.copy(),
+                                request_index=iteration_count,
+                                response_id=final_completion.id or "",
+                            )
+                            if should_continue:
+                                openai_messages, num_tokens = new_context  # type: ignore[misc]
+                                continue
+                            else:
+                                break
+
+                        final_content = final_choice.message.content or ""
                         final_reasoning = (
                             content_accumulator.get_full_reasoning_content()
                             or None
                         )
-
-                        final_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=final_content,
-                            parsed=cast(
-                                "BaseModel | dict[str, Any] | None",
+                        if final_completion.usage:
+                            request_usage = safe_model_dump(
+                                final_completion.usage
+                            )
+                            self._update_token_usage_tracker(
+                                request_token_usage, request_usage
+                            )
+                            self._update_token_usage_tracker(
+                                step_token_usage, request_usage
+                            )
+                        final_response = (
+                            self._build_structured_completion_response(
+                                final_completion,
+                                final_content,
                                 parsed_object,
-                            ),  # type: ignore[arg-type]
-                            reasoning_content=final_reasoning,
-                        )
-
-                        self.record_message(final_message)
-
-                        request_usage = (
-                            safe_model_dump(final_completion.usage)
-                            if final_completion.usage
-                            else {}
-                        )
-                        self._update_token_usage_tracker(
-                            request_token_usage,
-                            request_usage,
-                        )
-                        self._update_token_usage_tracker(
-                            step_token_usage,
-                            request_usage,
-                        )
-
-                        # Create final response with cumulative step usage.
-                        final_response = ChatAgentResponse(
-                            msgs=[final_message],
-                            terminated=False,
-                            info={
-                                "id": final_completion.id or "",
-                                "usage": step_token_usage.copy(),
-                                "finish_reasons": [
-                                    choice.finish_reason or "stop"
-                                    for choice in final_completion.choices
-                                ],
-                                "num_tokens": self._get_token_count(
-                                    final_content
-                                ),
-                                "tool_calls": tool_call_records,
-                                "external_tool_requests": None,
-                                "streaming": False,
-                                "partial": False,
-                                "stream_accumulate_mode": "accumulate"
-                                if self.stream_accumulate
-                                else "delta",
-                            },
+                                final_reasoning,
+                                response_format,
+                                tool_call_records,
+                                step_token_usage,
+                            )
                         )
                         await self._aemit_request_usage(
                             usage_dict=request_token_usage,
