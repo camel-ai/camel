@@ -67,7 +67,7 @@ class SemanticScholarToolkit(BaseToolkit):
         url = f"{self.base_url}/paper/search"
         query_params = {"query": paper_title, "fields": ",".join(fields)}
         try:
-            response = requests.get(url, params=query_params)
+            response = requests.get(url, params=query_params, timeout=10.0)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -115,7 +115,7 @@ class SemanticScholarToolkit(BaseToolkit):
         url = f"{self.base_url}/paper/{paper_id}"
         query_params = {"fields": ",".join(fields)}
         try:
-            response = requests.get(url, params=query_params)
+            response = requests.get(url, params=query_params, timeout=10.0)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
