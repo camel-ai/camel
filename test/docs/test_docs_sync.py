@@ -74,7 +74,7 @@ def test_impacted_docs_detect_matching_source_changes(tmp_path):
 def test_read_path_list_file(tmp_path):
     path_list = tmp_path / "changed_files.txt"
     path_list.write_text(
-        "\ncamel/agents/chat_agent.py\n\nservices/doc_sync.py\n",
+        "\ncamel/agents/chat_agent.py\n\ncamel/models/base_model.py\n",
         encoding="utf-8",
     )
 
@@ -82,7 +82,7 @@ def test_read_path_list_file(tmp_path):
 
     assert changed_files == [
         "camel/agents/chat_agent.py",
-        "services/doc_sync.py",
+        "camel/models/base_model.py",
     ]
 
 
@@ -116,8 +116,9 @@ def test_resolve_code_respects_budget_after_truncation(tmp_path, monkeypatch):
 def test_filter_changed_python_files_keeps_only_supported_roots():
     changed_files = [
         "camel/agents/chat_agent.py",
-        "services/doc_sync.py",
+        "camel/models/base_model.py",
         "docs/mintlify/key_modules/agents.mdx",
+        "services/doc_sync.py",
         "tests/test_docs.py",
         "camel/agents/README.md",
     ]
@@ -126,7 +127,7 @@ def test_filter_changed_python_files_keeps_only_supported_roots():
 
     assert filtered == [
         "camel/agents/chat_agent.py",
-        "services/doc_sync.py",
+        "camel/models/base_model.py",
     ]
 
 

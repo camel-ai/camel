@@ -167,7 +167,7 @@ automatically on each release:
 
 1. Verifies `doc_code_map` patterns (`doc_code_map.py verify`).
 2. Writes `changed_python_files.txt` from the release diff, limited to
-   `camel/**.py` and `services/**.py`.
+   `camel/**.py`.
 3. Computes `impacted_docs.txt` from that changed Python file list.
 4. Runs `auto_sync_docs_with_chatagent.py` with both files so the agent knows:
    which Python files changed and which docs it may update.

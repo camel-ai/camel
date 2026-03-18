@@ -86,15 +86,13 @@ def _read_path_list(list_path: Path) -> list[str]:
 
 
 def _filter_changed_python_files(changed_files: list[str]) -> list[str]:
-    """Keep only Python files under camel/ or services/."""
+    """Keep only Python files under camel/."""
     filtered: set[str] = set()
     for path in changed_files:
         normalized = Path(path).as_posix()
         if not normalized.endswith(".py"):
             continue
-        if normalized.startswith("camel/") or normalized.startswith(
-            "services/"
-        ):
+        if normalized.startswith("camel/"):
             filtered.add(normalized)
     return sorted(filtered)
 
