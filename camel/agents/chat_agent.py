@@ -54,6 +54,23 @@ from openai import (
     RateLimitError,
     Stream,
 )
+
+
+def _is_rate_limit_error(error: Exception) -> bool:
+    """Check if an error is a rate limit error from any LLM provider.
+
+    Handles OpenAI, Anthropic, Google, and other providers that signal
+    rate limiting via HTTP 429 status codes or error messages.
+    """
+    if isinstance(error, RateLimitError):
+        return True
+    status_code = getattr(error, 'status_code', None) or getattr(error, 'code', None)
+    if status_code == 429:
+        return True
+    error_msg = str(error).lower()
+    if 'rate limit' in error_msg or 'too many requests' in error_msg:
+        return True
+    return False
 from pydantic import BaseModel, ValidationError
 
 from camel.agents._types import ModelResponse, ToolCallRequest
@@ -3592,7 +3609,12 @@ class ChatAgent(BaseAgent):
                 )
                 if response:
                     break
-            except RateLimitError as e:
+            except Exception as e:
+                if not _is_rate_limit_error(e):
+                    logger.error(
+                        f"Model error: {self.model_backend.model_type}",
+                    )
+                    raise
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
@@ -3607,11 +3629,6 @@ class ChatAgent(BaseAgent):
                         f"Rate limit exhausted after "
                         f"{self.retry_attempts} attempts"
                     )
-            except Exception:
-                logger.error(
-                    f"Model error: {self.model_backend.model_type}",
-                )
-                raise
         else:
             # Loop completed without success
             raise ModelProcessingError(
@@ -3654,7 +3671,12 @@ class ChatAgent(BaseAgent):
                 )
                 if response:
                     break
-            except RateLimitError as e:
+            except Exception as e:
+                if not _is_rate_limit_error(e):
+                    logger.error(
+                        f"Model error: {self.model_backend.model_type}",
+                    )
+                    raise
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
@@ -3670,12 +3692,6 @@ class ChatAgent(BaseAgent):
                         f"Rate limit exhausted after "
                         f"{self.retry_attempts} attempts"
                     )
-            except Exception:
-                logger.error(
-                    f"Model error: {self.model_backend.model_type}",
-                    exc_info=True,
-                )
-                raise
         else:
             # Loop completed without success
             raise ModelProcessingError(
