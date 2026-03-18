@@ -71,8 +71,11 @@ def _resolve_code(doc_path: Path, repo_root: Path) -> str:
             if total + len(chunk) > MAX_CODE_CHARS:
                 remaining = MAX_CODE_CHARS - total
                 if remaining > len(header) + 200:
-                    code_parts.append(header + content[:remaining - len(header)]
-                                      + "\n... (truncated)\n")
+                    code_parts.append(
+                        header
+                        + content[: remaining - len(header)]
+                        + "\n... (truncated)\n"
+                    )
                 break
             code_parts.append(chunk)
             total += len(chunk)
@@ -96,7 +99,7 @@ def _strip_accidental_frontmatter(text: str) -> str:
     if text.startswith("---\n"):
         end = text.find("\n---\n", 4)
         if end != -1:
-            text = text[end + len("\n---\n"):]
+            text = text[end + len("\n---\n") :]
     return text
 
 
