@@ -51,9 +51,7 @@ def test_windows_amd64(mock_platform):
 def test_unsupported_os(mock_platform):
     mock_platform.system.return_value = "FreeBSD"
     mock_platform.machine.return_value = "x86_64"
-    with pytest.raises(
-        RuntimeError, match="Unsupported operating system"
-    ):
+    with pytest.raises(RuntimeError, match="Unsupported operating system"):
         get_platform_info()
 
 
@@ -61,7 +59,5 @@ def test_unsupported_os(mock_platform):
 def test_unsupported_arch(mock_platform):
     mock_platform.system.return_value = "Linux"
     mock_platform.machine.return_value = "mips"
-    with pytest.raises(
-        RuntimeError, match="Unsupported architecture"
-    ):
+    with pytest.raises(RuntimeError, match="Unsupported architecture"):
         get_platform_info()

@@ -18,12 +18,10 @@ from camel.toolkits.terminal_toolkit.runtime_utils import Runtime
 
 
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_java_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_java_available"
 )
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_go_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_go_available"
 )
 @patch(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
@@ -34,8 +32,7 @@ from camel.toolkits.terminal_toolkit.runtime_utils import Runtime
     ".setup_initial_env_with_uv"
 )
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_uv_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_uv_available"
 )
 def test_default_skips_go_java(
     mock_uv,
@@ -60,12 +57,10 @@ def test_default_skips_go_java(
 
 
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_java_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_java_available"
 )
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_go_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_go_available"
 )
 @patch(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
@@ -76,8 +71,7 @@ def test_default_skips_go_java(
     ".setup_initial_env_with_uv"
 )
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_uv_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_uv_available"
 )
 def test_go_enabled_calls_go_only(
     mock_uv,
@@ -104,12 +98,10 @@ def test_go_enabled_calls_go_only(
 
 
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_java_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_java_available"
 )
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_go_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_go_available"
 )
 @patch(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
@@ -120,8 +112,7 @@ def test_go_enabled_calls_go_only(
     ".setup_initial_env_with_uv"
 )
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_uv_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_uv_available"
 )
 def test_both_enabled_calls_both(
     mock_uv,
@@ -149,12 +140,10 @@ def test_both_enabled_calls_both(
 
 
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_java_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_java_available"
 )
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_go_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_go_available"
 )
 @patch(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
@@ -183,12 +172,10 @@ def test_cloned_env_also_sets_up_runtimes(
 
 
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_java_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_java_available"
 )
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_go_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_go_available"
 )
 @patch(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
@@ -199,8 +186,7 @@ def test_cloned_env_also_sets_up_runtimes(
     ".setup_initial_env_with_uv"
 )
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit"
-    ".ensure_uv_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_uv_available"
 )
 def test_runtime_env_vars_not_in_os_environ(
     mock_uv,
@@ -227,9 +213,6 @@ def test_runtime_env_vars_not_in_os_environ(
         # Process-level PATH should remain unchanged
         assert os.environ.get("PATH", "") == original_path
         # Instance should have Go path stored
-        assert "/custom/go/bin" in toolkit._runtime_env_vars.get(
-            "PATH", ""
-        )
+        assert "/custom/go/bin" in toolkit._runtime_env_vars.get("PATH", "")
     finally:
         toolkit.cleanup()
-

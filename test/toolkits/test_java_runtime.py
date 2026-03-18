@@ -19,14 +19,8 @@ from camel.toolkits.terminal_toolkit.java_runtime import (
 )
 
 
-@patch(
-    "camel.toolkits.terminal_toolkit.java_runtime"
-    ".subprocess.run"
-)
-@patch(
-    "camel.toolkits.terminal_toolkit.java_runtime"
-    ".shutil.which"
-)
+@patch("camel.toolkits.terminal_toolkit.java_runtime" ".subprocess.run")
+@patch("camel.toolkits.terminal_toolkit.java_runtime" ".shutil.which")
 def test_java_already_installed(mock_which, mock_run):
     """Should return path without downloading if java and javac are on PATH."""
     mock_which.side_effect = lambda cmd: (
@@ -54,18 +48,9 @@ def test_java_already_installed(mock_which, mock_run):
     "camel.toolkits.terminal_toolkit.java_runtime"
     ".download_and_extract_runtime"
 )
-@patch(
-    "camel.toolkits.terminal_toolkit.java_runtime"
-    "._find_java_home"
-)
-@patch(
-    "camel.toolkits.terminal_toolkit.java_runtime"
-    ".get_platform_info"
-)
-@patch(
-    "camel.toolkits.terminal_toolkit.java_runtime"
-    ".shutil.which"
-)
+@patch("camel.toolkits.terminal_toolkit.java_runtime" "._find_java_home")
+@patch("camel.toolkits.terminal_toolkit.java_runtime" ".get_platform_info")
+@patch("camel.toolkits.terminal_toolkit.java_runtime" ".shutil.which")
 def test_java_without_javac_downloads(
     mock_which,
     mock_platform,
@@ -92,18 +77,9 @@ def test_java_without_javac_downloads(
     "camel.toolkits.terminal_toolkit.java_runtime"
     ".download_and_extract_runtime"
 )
-@patch(
-    "camel.toolkits.terminal_toolkit.java_runtime"
-    "._find_java_home"
-)
-@patch(
-    "camel.toolkits.terminal_toolkit.java_runtime"
-    ".get_platform_info"
-)
-@patch(
-    "camel.toolkits.terminal_toolkit.java_runtime"
-    ".shutil.which"
-)
+@patch("camel.toolkits.terminal_toolkit.java_runtime" "._find_java_home")
+@patch("camel.toolkits.terminal_toolkit.java_runtime" ".get_platform_info")
+@patch("camel.toolkits.terminal_toolkit.java_runtime" ".shutil.which")
 def test_java_not_installed_downloads(
     mock_which,
     mock_platform,
@@ -114,15 +90,11 @@ def test_java_not_installed_downloads(
     mock_which.return_value = None
     mock_platform.return_value = ("linux", "amd64")
     # First call: not found; second: found after download
-    java_path = (
-        "/home/user/.camel/runtimes/java/jdk-21"
-    )
+    java_path = "/home/user/.camel/runtimes/java/jdk-21"
     mock_find.side_effect = [None, java_path]
 
     callback = MagicMock()
-    path = ensure_java_available(
-        update_callback=callback
-    )
+    path = ensure_java_available(update_callback=callback)
 
     assert path == java_path
     mock_download.assert_called_once()
@@ -130,8 +102,7 @@ def test_java_not_installed_downloads(
     call_kwargs = mock_download.call_args
     call_url = call_kwargs.kwargs["url"]
     assert call_url.startswith(
-        "https://api.adoptium.net/v3/binary/latest/"
-        "21/ga/linux/x64/"
+        "https://api.adoptium.net/v3/binary/latest/" "21/ga/linux/x64/"
     )
 
 
