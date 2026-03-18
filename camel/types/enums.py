@@ -541,7 +541,6 @@ class ModelType(UnifiedModelType, Enum):
     AVIAN_DEEPSEEK_V3_2 = "deepseek/deepseek-v3.2"
     AVIAN_KIMI_K2_5 = "moonshotai/kimi-k2.5"
     AVIAN_GLM_5 = "z-ai/glm-5"
-    AVIAN_MINIMAX_M2_7 = "minimax/minimax-m2.7"
     AVIAN_MINIMAX_M2_5 = "minimax/minimax-m2.5"
 
     # AtlasCloud models
@@ -1215,7 +1214,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AVIAN_DEEPSEEK_V3_2,
             ModelType.AVIAN_KIMI_K2_5,
             ModelType.AVIAN_GLM_5,
-            ModelType.AVIAN_MINIMAX_M2_7,
             ModelType.AVIAN_MINIMAX_M2_5,
         }
 
@@ -1669,7 +1667,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
             ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
-            ModelType.AVIAN_MINIMAX_M2_7,
             ModelType.AVIAN_MINIMAX_M2_5,
         }:
             return 1_048_576
