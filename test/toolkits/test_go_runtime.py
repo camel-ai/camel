@@ -34,28 +34,16 @@ def test_go_already_installed(mock_which, mock_run):
     assert path == "/usr/local/go/bin"
     callback.assert_called()
     # Should NOT have tried to download
-    assert (
-        "installing"
-        not in str(callback.call_args_list).lower()
-    )
+    assert "installing" not in str(callback.call_args_list).lower()
 
 
 @patch(
     "camel.toolkits.terminal_toolkit.go_runtime"
     ".download_and_extract_runtime"
 )
-@patch(
-    "camel.toolkits.terminal_toolkit.go_runtime"
-    ".get_platform_info"
-)
-@patch(
-    "camel.toolkits.terminal_toolkit.go_runtime"
-    ".os.path.exists"
-)
-@patch(
-    "camel.toolkits.terminal_toolkit.go_runtime"
-    ".shutil.which"
-)
+@patch("camel.toolkits.terminal_toolkit.go_runtime" ".get_platform_info")
+@patch("camel.toolkits.terminal_toolkit.go_runtime" ".os.path.exists")
+@patch("camel.toolkits.terminal_toolkit.go_runtime" ".shutil.which")
 def test_go_not_installed_downloads(
     mock_which,
     mock_exists,
@@ -76,20 +64,11 @@ def test_go_not_installed_downloads(
     mock_download.assert_called_once()
     # Verify the URL uses the template correctly
     call_kwargs = mock_download.call_args
-    assert (
-        "go1.23.6.linux-amd64.tar.gz"
-        in call_kwargs.kwargs["url"]
-    )
+    assert "go1.23.6.linux-amd64.tar.gz" in call_kwargs.kwargs["url"]
 
 
-@patch(
-    "camel.toolkits.terminal_toolkit.go_runtime"
-    ".get_platform_info"
-)
-@patch(
-    "camel.toolkits.terminal_toolkit.go_runtime"
-    ".shutil.which"
-)
+@patch("camel.toolkits.terminal_toolkit.go_runtime" ".get_platform_info")
+@patch("camel.toolkits.terminal_toolkit.go_runtime" ".shutil.which")
 def test_go_unsupported_platform(mock_which, mock_platform):
     """Should return None for unsupported platforms."""
     mock_which.return_value = None

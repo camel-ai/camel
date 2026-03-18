@@ -76,9 +76,7 @@ def ensure_go_available(
             )
             if result.returncode == 0:
                 version_info = result.stdout.strip()
-                info = (
-                    f"Go is already available: {version_info}"
-                )
+                info = f"Go is already available: {version_info}"
                 if update_callback:
                     update_callback(f"{info}\n")
                 return os.path.dirname(existing_go)
@@ -87,42 +85,37 @@ def ensure_go_available(
 
     # Go not found, attempt auto-install
     if update_callback:
-        update_callback(
-            f"Go not found, installing Go {GO_VERSION}...\n"
-        )
+        update_callback(f"Go not found, installing Go {GO_VERSION}...\n")
 
     try:
         os_name, arch = get_platform_info()
     except RuntimeError as e:
         if update_callback:
-            update_callback(
-                f"Cannot auto-install Go: {e}\n"
-            )
+            update_callback(f"Cannot auto-install Go: {e}\n")
         return None
 
     # Construct download URL from template
-    ext: ArchiveType = (
-        "zip" if os_name == "windows" else "tar.gz"
-    )
+    ext: ArchiveType = "zip" if os_name == "windows" else "tar.gz"
     url = GO_DOWNLOAD_URL_TEMPLATE.format(
-        version=GO_VERSION, os_name=os_name, arch=arch, ext=ext,
+        version=GO_VERSION,
+        os_name=os_name,
+        arch=arch,
+        ext=ext,
     )
     checksum_url = GO_CHECKSUM_URL_TEMPLATE.format(
-        version=GO_VERSION, os_name=os_name, arch=arch, ext=ext,
+        version=GO_VERSION,
+        os_name=os_name,
+        arch=arch,
+        ext=ext,
     )
 
     go_runtime_dir = os.path.join(RUNTIMES_DIR, "go")
 
     # Check if already downloaded
     go_bin_dir = os.path.join(go_runtime_dir, "go", "bin")
-    go_executable = (
-        "go.exe" if os_name == "windows" else "go"
-    )
+    go_executable = "go.exe" if os_name == "windows" else "go"
     if os.path.exists(os.path.join(go_bin_dir, go_executable)):
-        info = (
-            f"Go {GO_VERSION} is already installed at "
-            f"{go_runtime_dir}"
-        )
+        info = f"Go {GO_VERSION} is already installed at " f"{go_runtime_dir}"
         if update_callback:
             update_callback(f"{info}\n")
         return go_bin_dir
@@ -155,7 +148,6 @@ def ensure_go_available(
 
     if update_callback:
         update_callback(
-            "Failed to install Go. "
-            "If needed, please install it manually.\n"
+            "Failed to install Go. " "If needed, please install it manually.\n"
         )
     return None
