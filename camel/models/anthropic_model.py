@@ -319,7 +319,7 @@ class AnthropicModel(BaseModelBackend):
                     )
             elif role == "tool":
                 # Convert tool response message
-                tool_call_id = msg.get("tool_call_id", "")
+                tool_call_id = str(msg.get("tool_call_id", ""))
                 tool_content = (
                     content if isinstance(content, str) else str(content)
                 )
@@ -720,7 +720,7 @@ class AnthropicModel(BaseModelBackend):
         request_params: Dict[str, Any] = {
             "model": str(self.model_type),
             "messages": anthropic_messages,
-            "max_tokens": self.model_config_dict.get("max_tokens", 4096),
+            "max_tokens": self.model_config_dict.get("max_tokens", None),
         }
 
         if system_message:
@@ -849,7 +849,7 @@ class AnthropicModel(BaseModelBackend):
         request_params: Dict[str, Any] = {
             "model": str(self.model_type),
             "messages": anthropic_messages,
-            "max_tokens": self.model_config_dict.get("max_tokens", 4096),
+            "max_tokens": self.model_config_dict.get("max_tokens", None),
         }
 
         if system_message:

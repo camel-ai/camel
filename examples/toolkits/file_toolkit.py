@@ -33,7 +33,7 @@ sys_msg = "You are a helpful assistant that can create and modify files."
 working_directory = "./file_write_outputs"
 os.makedirs(working_directory, exist_ok=True)
 
-# Initialize the FileWriteToolkit with the output directory
+# Initialize the FileToolkit with the output directory
 file_toolkit = FileToolkit(working_directory=working_directory)
 
 # Get the tools from the toolkit
@@ -460,3 +460,42 @@ The file now includes:
 Tool calls: [ToolCallingRecord(tool_name='read_file', args={'file_path': 'simple_flask_server.py'}, result='# This is a simple Flask application\nfrom flask import Flask\n\napp = Flask(__name__)\n\n@app.route(\'/\')\ndef home():\n    return "Hello, Flask!"\n\n@app.route(\'/about\')\ndef about():\n    return "About Flask Server"\n\n@app.route(\'/contact\')\ndef contact():\n    return "Contact us at contact@example.com"\n\nif __name__ == \'__main__\':\n    app.run(debug=True)', tool_call_id='call_hij789klm012')]
 ===============================================================================
 '''
+
+# Example 15: Use glob_files to find files by pattern
+camel_agent.reset()
+response = camel_agent.step(
+    "First, create three files in the working directory: "
+    "'utils.py' containing 'def add(a, b): return a + b', "
+    "'main.py' containing 'from utils import add\\nprint(add(1, 2))', "
+    "and 'notes.md' containing '# Project Notes'. "
+    "Then use glob_files to find all Python files (*.py)."
+)
+print("Example 15: Using glob_files")
+print(response.msgs[0].content)
+print("Tool calls:", response.info['tool_calls'])
+print("\n")
+
+# Example 16: Use grep_files to search content with regex
+camel_agent.reset()
+response = camel_agent.step(
+    "Use grep_files to search for the pattern 'def\\s+\\w+' "
+    "in all .py files under the working directory. "
+    "Show the matching content with 1 line of context."
+)
+print("Example 16: Using grep_files")
+print(response.msgs[0].content)
+print("Tool calls:", response.info['tool_calls'])
+print("\n")
+
+# Example 17: Edit a Jupyter notebook with notebook_edit_cell
+camel_agent.reset()
+response = camel_agent.step(
+    "Create a file 'demo.ipynb' with a valid empty Jupyter notebook "
+    "structure (nbformat 4, empty cells list). "
+    "Then use notebook_edit_cell to insert a markdown cell with "
+    "'# Demo Notebook' and a code cell with 'print(\"hello\")'."
+)
+print("Example 17: Using notebook_edit_cell")
+print(response.msgs[0].content)
+print("Tool calls:", response.info['tool_calls'])
+print("\n")
