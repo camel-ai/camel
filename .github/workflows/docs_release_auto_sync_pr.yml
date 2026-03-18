@@ -3,14 +3,6 @@ name: docs-release-auto-sync-pr
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      base_ref:
-        description: "Base ref for diff"
-        required: true
-      head_ref:
-        description: "Head ref for diff"
-        required: true
 
 jobs:
   auto-sync-docs-pr:
@@ -41,12 +33,6 @@ jobs:
       - name: Determine refs
         id: refs
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "base=${{ inputs.base_ref }}" >> "$GITHUB_OUTPUT"
-            echo "head=${{ inputs.head_ref }}" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
           current_tag="${{ github.event.release.tag_name }}"
           prev_tag=$(git describe --tags --abbrev=0 "${current_tag}^" 2>/dev/null || true)
           if [ -z "$prev_tag" ]; then

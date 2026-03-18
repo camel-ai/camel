@@ -16,19 +16,13 @@ Update Mintlify .mdx documentation so it stays in sync with CAMEL source code.
 ## Scope
 
 - Only use this skill when the driver is **Python source changes** under
-  `camel/**` or `services/**`.
+  `camel/**`.
 - Do **not** use it for docs-only edits, workflow/YAML changes, or broad
   wording cleanups without Python changes.
 - Prefer **no document change** when Python edits are internal and do not
   affect public API, behavior, configuration, examples, or reader understanding.
 
-## Default Tools
-
-Use only these by default:
-
-1. `SkillToolkit` to load this skill and follow its instructions.
-2. `TerminalToolkit` for inspecting Python diffs, mapped source files, and
-   updating the impacted `.mdx` document when needed.
+## Edit Rule
 
 Do not use browser/search/other toolkits unless the user explicitly asks.
 If you use terminal tools to edit the impacted document directly, keep the
@@ -95,8 +89,6 @@ For each impacted doc:
 Rewrite only the parts of the body that are outdated relative to the code.
 
 Rules:
-- **Load this skill first** and follow it before making document changes.
-- **Use only SkillToolkit and TerminalToolkit** for this workflow.
 - **If you edit through tools, keep changes scoped to the impacted docs** for
   this run.
 - **Focus on changed Python files first** — inspect the diff between the base
@@ -180,14 +172,3 @@ automatically on each release:
 4. Runs `auto_sync_docs_with_chatagent.py` with both files so the agent knows:
    which Python files changed and which docs it may update.
 5. Opens a PR with the changes.
-
-To trigger manually:
-
-```bash
-gh workflow run docs_release_auto_sync_pr.yml \
-  -f base_ref=v0.2.0 \
-  -f head_ref=v0.3.0
-```
-
-The release workflow is fixed to OpenAI `gpt-5.4`.
-Required secret for the release workflow: `OPENAI_API_KEY`.
