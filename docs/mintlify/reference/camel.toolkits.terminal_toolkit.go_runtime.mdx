@@ -1,0 +1,32 @@
+<a id="camel.toolkits.terminal_toolkit.go_runtime"></a>
+
+Go runtime auto-installation utilities.
+
+This module provides functionality to detect, download, and configure
+the Go programming language runtime. If Go is not already available
+on the system, it is downloaded from the official Go website and
+extracted to `__INLINE_CODE_0__`.
+
+<a id="camel.toolkits.terminal_toolkit.go_runtime.ensure_go_available"></a>
+
+## ensure_go_available
+
+```python
+def ensure_go_available(update_callback: UpdateCallback = None):
+```
+
+Ensure Go is available, downloading it if necessary.
+
+Checks if Go is already installed on the system. If not, downloads
+the official Go binary for the current platform and extracts it to
+`__INLINE_CODE_0__`.
+
+**Parameters:**
+
+- **update_callback** (Callable[[str], None], optional): Callback function to receive status updates. (default: :obj:`None`)
+
+**Returns:**
+
+  Optional[str]: The path to the Go `__INLINE_CODE_0__` directory that
+should be added to PATH, or `__INLINE_CODE_1__` if Go could not
+be made available.

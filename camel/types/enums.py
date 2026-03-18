@@ -43,14 +43,15 @@ class ModelType(UnifiedModelType, Enum):
     O1_PREVIEW = "o1-preview"
     O1_MINI = "o1-mini"
     O3_MINI = "o3-mini"
-    GPT_4_1 = "gpt-4.1-2025-04-14"
+    GPT_4_1 = "gpt-4.1"
     GPT_4_1_MINI = "gpt-4.1-mini-2025-04-14"
     GPT_4_1_NANO = "gpt-4.1-nano-2025-04-14"
     O4_MINI = "o4-mini"
     O3 = "o3"
     O3_PRO = "o3-pro"
     GPT_5_1 = "gpt-5.1"
-    GPT_5_2 = ("gpt-5.2",)
+    GPT_5_2 = "gpt-5.2"
+    GPT_5_4 = "gpt-5.4"
     GPT_5 = "gpt-5"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
@@ -254,6 +255,8 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
+    GEMINI_3_1_PRO = "gemini-3.1-pro-preview"
+    GEMINI_3_1_FLASH_LITE = "gemini-3.1-flash-lite-preview"
     GEMINI_3_PRO = "gemini-3-pro-preview"
     GEMINI_3_FLASH = "gemini-3-flash-preview"
     GEMINI_2_5_FLASH = "gemini-2.5-flash"
@@ -532,6 +535,12 @@ class ModelType(UnifiedModelType, Enum):
     MINIMAX_M2 = "MiniMax-M2"
     MINIMAX_M2_STABLE = "MiniMax-M2-Stable"
 
+    # Avian models
+    AVIAN_DEEPSEEK_V3_2 = "deepseek/deepseek-v3.2"
+    AVIAN_KIMI_K2_5 = "moonshotai/kimi-k2.5"
+    AVIAN_GLM_5 = "z-ai/glm-5"
+    AVIAN_MINIMAX_M2_5 = "minimax/minimax-m2.5"
+
     # AtlasCloud models
     ATLASCLOUD_GPT_OSS_120B = "openai/gpt-oss-120b"
     ATLASCLOUD_GLM_4_7 = "zai-org/glm-4.7"
@@ -593,6 +602,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_aiml,
                 self.is_azure_openai,
                 self.is_novita,
+                self.is_avian,
             ]
         )
 
@@ -621,6 +631,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O3,
             ModelType.GPT_5_1,
             ModelType.GPT_5_2,
+            ModelType.GPT_5_4,
         }
 
     @property
@@ -884,6 +895,8 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
+            ModelType.GEMINI_3_1_PRO,
+            ModelType.GEMINI_3_1_FLASH_LITE,
             ModelType.GEMINI_3_PRO,
             ModelType.GEMINI_3_FLASH,
             ModelType.GEMINI_2_5_FLASH,
@@ -1190,6 +1203,16 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.AIML_MIXTRAL_8X7B,
             ModelType.AIML_MISTRAL_7B_INSTRUCT,
+        }
+
+    @property
+    def is_avian(self) -> bool:
+        r"""Returns whether this type of models is served by Avian."""
+        return self in {
+            ModelType.AVIAN_DEEPSEEK_V3_2,
+            ModelType.AVIAN_KIMI_K2_5,
+            ModelType.AVIAN_GLM_5,
+            ModelType.AVIAN_MINIMAX_M2_5,
         }
 
     @property
@@ -1552,8 +1575,14 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_3_3_70B,
             ModelType.NOVITA_MISTRAL_NEMO,
             ModelType.NEBIUS_LLAMA_3_1_70B,
+            ModelType.AVIAN_KIMI_K2_5,
+            ModelType.AVIAN_GLM_5,
         }:
             return 131_072
+        elif self in {
+            ModelType.AVIAN_DEEPSEEK_V3_2,
+        }:
+            return 164_000
         elif self in {
             ModelType.O1,
             ModelType.O3_MINI,
@@ -1604,6 +1633,7 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.GPT_5_1,
             ModelType.GPT_5_2,
+            ModelType.GPT_5_4,
             ModelType.GPT_5_MINI,
             ModelType.GPT_5_NANO,
             ModelType.GPT_5,
@@ -1615,6 +1645,8 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 512_000
         elif self in {
+            ModelType.GEMINI_3_1_PRO,
+            ModelType.GEMINI_3_1_FLASH_LITE,
             ModelType.GEMINI_3_PRO,
             ModelType.GEMINI_3_FLASH,
             ModelType.GEMINI_2_5_FLASH,
@@ -1633,6 +1665,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
             ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
+            ModelType.AVIAN_MINIMAX_M2_5,
         }:
             return 1_048_576
         elif self in {
@@ -1847,6 +1880,7 @@ class ModelPlatformType(Enum):
 
     OPENAI = "openai"
     AWS_BEDROCK = "aws-bedrock"
+    AWS_BEDROCK_CONVERSE = "aws-bedrock-converse"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
@@ -1888,6 +1922,7 @@ class ModelPlatformType(Enum):
     MINIMAX = "minimax"
     CEREBRAS = "cerebras"
     FUNCTION_GEMMA = "function-gemma"
+    AVIAN = "avian"
     ATLASCLOUD = "atlascloud"
 
     @classmethod
@@ -1906,7 +1941,10 @@ class ModelPlatformType(Enum):
     @property
     def is_aws_bedrock(self) -> bool:
         r"""Returns whether this platform is aws-bedrock."""
-        return self is ModelPlatformType.AWS_BEDROCK
+        return self in (
+            ModelPlatformType.AWS_BEDROCK,
+            ModelPlatformType.AWS_BEDROCK_CONVERSE,
+        )
 
     @property
     def is_azure(self) -> bool:
@@ -2083,6 +2121,11 @@ class ModelPlatformType(Enum):
     def is_cerebras(self) -> bool:
         r"""Returns whether this platform is Cerebras."""
         return self is ModelPlatformType.CEREBRAS
+
+    @property
+    def is_avian(self) -> bool:
+        r"""Returns whether this platform is Avian."""
+        return self is ModelPlatformType.AVIAN
 
     @property
     def is_atlascloud(self) -> bool:

@@ -139,7 +139,11 @@ def __init__(
     clients: Optional[List[MCPClient]] = None,
     config_path: Optional[str] = None,
     config_dict: Optional[Dict[str, Any]] = None,
-    timeout: Optional[float] = None
+    timeout: Optional[float] = None,
+    skip_failed: bool = True,
+    per_client_timeout: Optional[float] = None,
+    max_retries: int = 2,
+    retry_delay: float = 3.0
 ):
 ```
 
@@ -153,8 +157,8 @@ def is_connected(self):
 
 **Returns:**
 
-  bool: True if the toolkit is connected to all MCP servers,
-False otherwise.
+  bool: True if the toolkit has at least one active client
+connection, False otherwise.
 
 <a id="camel.toolkits.mcp_toolkit.MCPToolkit.connect_sync"></a>
 
@@ -211,7 +215,11 @@ def create_sync(
     clients: Optional[List[MCPClient]] = None,
     config_path: Optional[str] = None,
     config_dict: Optional[Dict[str, Any]] = None,
-    timeout: Optional[float] = None
+    timeout: Optional[float] = None,
+    skip_failed: bool = True,
+    per_client_timeout: Optional[float] = None,
+    max_retries: int = 2,
+    retry_delay: float = 3.0
 ):
 ```
 

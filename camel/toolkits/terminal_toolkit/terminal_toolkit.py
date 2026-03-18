@@ -27,6 +27,13 @@ from camel.logger import get_logger
 from camel.toolkits import manual_timeout
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.toolkits.terminal_toolkit.go_runtime import (
+    ensure_go_available,
+)
+from camel.toolkits.terminal_toolkit.java_runtime import (
+    ensure_java_available,
+)
+from camel.toolkits.terminal_toolkit.runtime_utils import Runtime
 from camel.toolkits.terminal_toolkit.utils import (
     check_nodejs_availability,
     clone_current_environment,
@@ -88,6 +95,11 @@ class TerminalToolkit(BaseToolkit):
             environment for local execution. Defaults to False.
         install_dependencies (List): A list of user specified libraries
             to install.
+        enable_other_runtimes (list[Runtime]): List of additional
+            language runtimes to auto-install. Supported values are
+            ``Runtime.GO`` and ``Runtime.JAVA``. If empty (the default),
+            only the Python runtime is configured. Example:
+            ``enable_other_runtimes=[Runtime.GO, Runtime.JAVA]``.
     """
 
     def __init__(
@@ -101,6 +113,7 @@ class TerminalToolkit(BaseToolkit):
         allowed_commands: Optional[List[str]] = None,
         clone_current_env: bool = False,
         install_dependencies: Optional[List[str]] = None,
+        enable_other_runtimes: list[Runtime] | None = None,
     ):
         # auto-detect if running inside a CAMEL runtime container
         # when inside a runtime, use local execution (already sandboxed)
@@ -165,6 +178,12 @@ class TerminalToolkit(BaseToolkit):
         self.initial_env_path: Optional[str] = None
         self.python_executable = sys.executable
         self.install_dependencies = install_dependencies or []
+        self.enable_other_runtimes: set[Runtime] = set(
+            enable_other_runtimes or []
+        )
+        # Instance-level env vars for runtimes (avoids mutating
+        # process-global os.environ)
+        self._runtime_env_vars: dict[str, str] = {}
 
         self.log_dir = os.path.abspath(
             session_logs_dir or os.path.join(self.working_dir, "terminal_logs")
@@ -272,6 +291,9 @@ class TerminalToolkit(BaseToolkit):
                 self.python_executable = os.path.join(
                     self.cloned_env_path, "bin", "python"
                 )
+
+            # Set up other language runtimes if requested
+            self._setup_optional_runtimes(update_callback)
         else:
             logger.info(
                 "[ENV CLONE] Failed to create cloned environment, "
@@ -390,11 +412,62 @@ class TerminalToolkit(BaseToolkit):
 
             # Check Node.js availability
             check_nodejs_availability(update_callback)
+
+            # Set up other language runtimes if requested
+            self._setup_optional_runtimes(update_callback)
         else:
             logger.info(
                 "[ENV INIT] Failed to create initial environment, "
                 "using system Python"
             )
+
+    def _setup_optional_runtimes(self, update_callback):
+        r"""Set up Go and/or Java runtimes if requested.
+
+        Stores runtime paths in ``self._runtime_env_vars`` instead of
+        mutating the process-global ``os.environ``, so only commands
+        launched by this toolkit instance see the extra paths.
+
+        Args:
+            update_callback: Callback for status messages.
+        """
+        # Check Go availability if enabled
+        if Runtime.GO in self.enable_other_runtimes:
+            go_path = ensure_go_available(update_callback)
+            if go_path:
+                current = self._runtime_env_vars.get(
+                    "PATH", os.environ.get("PATH", "")
+                )
+                self._runtime_env_vars["PATH"] = (
+                    go_path + os.pathsep + current
+                )
+
+        # Check Java availability if enabled
+        if Runtime.JAVA in self.enable_other_runtimes:
+            java_home = ensure_java_available(update_callback)
+            if java_home:
+                self._runtime_env_vars["JAVA_HOME"] = java_home
+                java_bin = os.path.join(java_home, "bin")
+                current = self._runtime_env_vars.get(
+                    "PATH", os.environ.get("PATH", "")
+                )
+                self._runtime_env_vars["PATH"] = (
+                    java_bin + os.pathsep + current
+                )
+
+    def _get_env_vars(self) -> dict[str, str]:
+        r"""Build the environment dict for subprocess calls.
+
+        Merges the process environment with instance-level runtime
+        paths and sets ``PYTHONUNBUFFERED=1`` for real-time output.
+
+        Returns:
+            dict[str, str]: Environment variables for subprocess.
+        """
+        env = os.environ.copy()
+        env.update(self._runtime_env_vars)
+        env["PYTHONUNBUFFERED"] = "1"
+        return env
 
     def _get_venv_path(self) -> Optional[str]:
         r"""Get the virtual environment path if available."""
@@ -641,7 +714,10 @@ class TerminalToolkit(BaseToolkit):
         if self.safe_mode:
             is_safe, message = self._sanitize_command(command)
             if not is_safe:
-                return f"Error: {message}"
+                return (
+                    "Error: Command rejected by TerminalToolkit safe mode. "
+                    f"{message}"
+                )
             command = message
 
         if self.use_docker_backend:
@@ -674,8 +750,7 @@ class TerminalToolkit(BaseToolkit):
 
             try:
                 if not self.use_docker_backend:
-                    env_vars = os.environ.copy()
-                    env_vars["PYTHONUNBUFFERED"] = "1"
+                    env_vars = self._get_env_vars()
                     proc = subprocess.Popen(
                         command,
                         stdout=subprocess.PIPE,
@@ -836,8 +911,7 @@ class TerminalToolkit(BaseToolkit):
             # Without this, Python subprocesses buffer output (4KB buffer)
             # and shell_view() won't see output until buffer fills or process
             # exits
-            env_vars = os.environ.copy()
-            env_vars["PYTHONUNBUFFERED"] = "1"
+            env_vars = self._get_env_vars()
             docker_env = {"PYTHONUNBUFFERED": "1"}
 
             # Check and create session atomically to prevent race condition
