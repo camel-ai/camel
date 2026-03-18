@@ -24,24 +24,15 @@ Update Mintlify .mdx documentation so it stays in sync with CAMEL source code.
 
 ## Edit Rule
 
-Do not use browser/search/other toolkits unless the user explicitly asks.
 If you use terminal tools to edit the impacted document directly, keep the
 changes scoped to that doc and preserve its frontmatter.
 
-## Agent Setup
-
-When wiring an agent for this skill, enable only:
-
-- `camel.toolkits.SkillToolkit`
-- `camel.toolkits.TerminalToolkit`
-
-Keep terminal usage focused on the impacted docs and their mapped Python files.
 
 ## Quick Reference
 
 | Item | Path |
 |------|------|
-| Doc roots | `docs/mintlify/key_modules/`, `docs/mintlify/mcp/` |
+| Doc roots | `docs/mintlify/` |
 | Mapping utility | `docs/scripts/docs_sync/doc_code_map.py` |
 | Auto-sync script | `.camel/skills/docs-incremental-update/scripts/auto_sync_docs_with_chatagent.py` |
 | Workflow | `.github/workflows/docs_release_auto_sync_pr.yml` |
@@ -77,12 +68,11 @@ doc_code_map:
 
 For each impacted doc:
 
-1. Load the `docs-incremental-update` skill through `SkillToolkit`.
-2. Use terminal as needed to confirm the Python diff, inspect specific mapped
+1. Use terminal as needed to confirm the Python diff, inspect specific mapped
    files, or update the impacted doc directly.
-3. Open the `.mdx` file and separate the frontmatter from the body.
-4. Resolve every glob pattern in `doc_code_map` to actual source files.
-5. Read the source files — these represent the ground truth.
+2. Open the `.mdx` file and separate the frontmatter from the body.
+3. Resolve every glob pattern in `doc_code_map` to actual source files.
+4. Read the source files — these represent the ground truth.
 
 ### Step 3 — Update the Document Body
 
