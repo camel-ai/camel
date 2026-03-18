@@ -95,6 +95,7 @@ class QianfanModel(OpenAICompatibleModel):
     @property
     def structured_output_mode(self) -> StructuredOutputMode:
         return StructuredOutputMode.JSON_OBJECT
+
     @staticmethod
     def _sanitize_tools_for_qianfan(
         tools: list[dict[str, Any]],
