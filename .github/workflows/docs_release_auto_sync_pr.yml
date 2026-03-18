@@ -63,9 +63,18 @@ jobs:
         if: steps.refs.outputs.base != ''
         id: impacted
         run: |
+          git diff --name-only "${{ steps.refs.outputs.base }}..${{ steps.refs.outputs.head }}" -- '*.py' | \
+            grep -E '^(camel|services)/.*\.py$' > changed_python_files.txt || true
+          echo "Changed Python files:"
+          cat changed_python_files.txt || true
+          if [ ! -s changed_python_files.txt ]; then
+            echo "No changed Python files. Skip auto docs PR."
+            echo "has_impacted_docs=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           python docs/scripts/docs_sync/doc_code_map.py impacted \
-            --base-ref "${{ steps.refs.outputs.base }}" \
-            --head-ref "${{ steps.refs.outputs.head }}" > impacted_docs.txt
+            --changed-files-file changed_python_files.txt > impacted_docs.txt
           cat impacted_docs.txt
           if [ -s impacted_docs.txt ]; then
             echo "has_impacted_docs=true" >> "$GITHUB_OUTPUT"
@@ -89,6 +98,7 @@ jobs:
           fi
           python .camel/skills/docs-incremental-update/scripts/auto_sync_docs_with_chatagent.py \
             --docs-file impacted_docs.txt \
+            --changed-files-file changed_python_files.txt \
             --model-platform openai \
             --model-type gpt-5.4
 
@@ -120,7 +130,7 @@ jobs:
             Base ref: `${{ steps.refs.outputs.base }}`
             Head ref: `${{ steps.refs.outputs.head }}`
 
-            Updated by CAMEL ChatAgent using `doc_code_map`.
+            Updated by CAMEL ChatAgent using `changed_python_files.txt` and `doc_code_map`.
           labels: documentation, automated-pr
           add-paths: |
             docs/mintlify/key_modules

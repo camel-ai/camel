@@ -81,6 +81,15 @@ def _run_git_diff(base_ref: str, head_ref: str) -> list[str]:
     return [line.strip() for line in out.splitlines() if line.strip()]
 
 
+def _read_path_list(path: Path) -> list[str]:
+    """Read a text file containing one path per line."""
+    return [
+        line.strip()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
 def _verify(doc_maps: list[DocMap], repo_root: Path) -> int:
     errors: list[str] = []
     checked = 0
@@ -171,6 +180,11 @@ def main() -> int:
         default=[],
         help="Changed file path. Can be passed multiple times.",
     )
+    impacted_p.add_argument(
+        "--changed-files-file",
+        default=None,
+        help="Path to a text file listing changed files (one per line).",
+    )
 
     args = parser.parse_args()
     repo_root = Path(".").resolve()
@@ -186,11 +200,14 @@ def main() -> int:
     changed_files: list[str] = []
     if args.changed_file:
         changed_files.extend(args.changed_file)
+    elif args.changed_files_file:
+        changed_files.extend(_read_path_list(Path(args.changed_files_file)))
     elif args.base_ref:
         changed_files.extend(_run_git_diff(args.base_ref, args.head_ref))
     else:
         parser.error(
-            "impacted requires either --changed-file or --base-ref/--head-ref."
+            "impacted requires --changed-file, --changed-files-file, or "
+            "--base-ref/--head-ref."
         )
 
     impacted = _impacted_docs(doc_maps, changed_files, repo_root)

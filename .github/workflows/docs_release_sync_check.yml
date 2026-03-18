@@ -29,9 +29,16 @@ jobs:
 
       - name: Check impacted docs
         run: |
+          git diff --name-only "${{ inputs.base_ref }}..${{ inputs.head_ref }}" -- '*.py' | \
+            grep -E '^(camel|services)/.*\.py$' > changed_python_files.txt || true
+
+          if [ ! -s changed_python_files.txt ]; then
+            echo "No changed Python files in the selected diff."
+            exit 0
+          fi
+
           python docs/scripts/docs_sync/doc_code_map.py impacted \
-            --base-ref "${{ inputs.base_ref }}" \
-            --head-ref "${{ inputs.head_ref }}" > impacted_docs.txt
+            --changed-files-file changed_python_files.txt > impacted_docs.txt
 
           if [ -s impacted_docs.txt ]; then
             echo "The selected diff would update these mapped docs:"

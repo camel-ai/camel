@@ -1,16 +1,47 @@
 ---
 name: docs-incremental-update
 description: >
-  Incrementally update Mintlify documentation (.mdx) to match source code
-  changes. Use when: (1) source files referenced in doc_code_map frontmatter
-  have changed, (2) a PR touches Python modules that are documented in
+  Incrementally update Mintlify documentation (.mdx) from Python source
+  changes only. Use when: (1) Python files referenced in doc_code_map
+  frontmatter have changed, (2) a PR touches Python modules documented in
   docs/mintlify/key_modules/ or docs/mintlify/mcp/, (3) the user asks to
-  sync, refresh, or update documentation after code changes.
+  sync docs after Python code changes. Prefer minimal diffs and leave correct
+  content untouched.
 ---
 
 # Docs Incremental Update
 
 Update Mintlify .mdx documentation so it stays in sync with CAMEL source code.
+
+## Scope
+
+- Only use this skill when the driver is **Python source changes** under
+  `camel/**` or `services/**`.
+- Do **not** use it for docs-only edits, workflow/YAML changes, or broad
+  wording cleanups without Python changes.
+- Prefer **no document change** when Python edits are internal and do not
+  affect public API, behavior, configuration, examples, or reader understanding.
+
+## Default Tools
+
+Use only these by default:
+
+1. `SkillToolkit` to load this skill and follow its instructions.
+2. `TerminalToolkit` for inspecting Python diffs, mapped source files, and
+   updating the impacted `.mdx` document when needed.
+
+Do not use browser/search/other toolkits unless the user explicitly asks.
+If you use terminal tools to edit the impacted document directly, keep the
+changes scoped to that doc and preserve its frontmatter.
+
+## Agent Setup
+
+When wiring an agent for this skill, enable only:
+
+- `camel.toolkits.SkillToolkit`
+- `camel.toolkits.TerminalToolkit`
+
+Keep terminal usage focused on the impacted docs and their mapped Python files.
 
 ## Quick Reference
 
@@ -28,7 +59,7 @@ Update Mintlify .mdx documentation so it stays in sync with CAMEL source code.
 Determine which `.mdx` files are affected by the code change.
 
 ```bash
-# From repo root
+# From repo root, pass only changed Python files
 python docs/scripts/docs_sync/doc_code_map.py impacted \
   --changed-file <file1> --changed-file <file2>
 
@@ -44,7 +75,7 @@ Each `.mdx` file declares a `doc_code_map` block in its YAML frontmatter:
 title: MCP Toolkit
 doc_code_map:
   - "camel/toolkits/mcp_toolkit.py"
-  - "camel/runtime/llm_guard_runtime.py"
+  - "camel/runtimes/llm_guard_runtime.py"
 ---
 ```
 
@@ -52,15 +83,28 @@ doc_code_map:
 
 For each impacted doc:
 
-1. Open the `.mdx` file and separate the frontmatter from the body.
-2. Resolve every glob pattern in `doc_code_map` to actual source files.
-3. Read the source files — these represent the ground truth.
+1. Load the `docs-incremental-update` skill through `SkillToolkit`.
+2. Use terminal as needed to confirm the Python diff, inspect specific mapped
+   files, or update the impacted doc directly.
+3. Open the `.mdx` file and separate the frontmatter from the body.
+4. Resolve every glob pattern in `doc_code_map` to actual source files.
+5. Read the source files — these represent the ground truth.
 
 ### Step 3 — Update the Document Body
 
 Rewrite only the parts of the body that are outdated relative to the code.
 
 Rules:
+- **Load this skill first** and follow it before making document changes.
+- **Use only SkillToolkit and TerminalToolkit** for this workflow.
+- **If you edit through tools, keep changes scoped to the impacted docs** for
+  this run.
+- **Focus on changed Python files first** — inspect the diff between the base
+  and head refs when available.
+- **Base changes only on mapped Python files** — they are the source of truth.
+- **Ignore non-Python changes** — docs, workflow, YAML, test-only, and release
+  metadata changes should not trigger doc edits by themselves.
+- **Prefer the smallest possible diff** — keep all already-correct content.
 - **Preserve frontmatter** — never modify the `---` block.
 - **Preserve style** — keep existing section structure and tone.
 - **Preserve Mintlify components** — keep Card, Accordion, Tab, CodeGroup, etc.
@@ -68,6 +112,8 @@ Rules:
 - **Update prose** — fix descriptions that no longer match the code.
 - **Remove references** to deleted classes/methods/parameters.
 - **Add references** to newly introduced public API when relevant.
+- **Skip the document entirely** if the Python change is internal and does not
+  require reader-facing doc updates.
 
 ### Step 4 — Verify
 
@@ -128,10 +174,12 @@ The GitHub Actions workflow `docs_release_auto_sync_pr.yml` runs
 automatically on each release:
 
 1. Verifies `doc_code_map` patterns (`doc_code_map.py verify`).
-2. Computes impacted docs from the diff between the previous and current tag.
-3. Runs `auto_sync_docs_with_chatagent.py` to regenerate doc bodies via
-   CAMEL ChatAgent.
-4. Opens a PR with the changes.
+2. Writes `changed_python_files.txt` from the release diff, limited to
+   `camel/**.py` and `services/**.py`.
+3. Computes `impacted_docs.txt` from that changed Python file list.
+4. Runs `auto_sync_docs_with_chatagent.py` with both files so the agent knows:
+   which Python files changed and which docs it may update.
+5. Opens a PR with the changes.
 
 To trigger manually:
 
