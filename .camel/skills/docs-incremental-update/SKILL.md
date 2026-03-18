@@ -105,7 +105,7 @@ Use these components in `.mdx` files:
 </Tabs>
 ```
 
-```mdx
+~~~~mdx
 <CodeGroup>
 ```python title="example.py"
 print("hello")
@@ -114,7 +114,7 @@ print("hello")
 echo hello
 ```
 </CodeGroup>
-```
+~~~~
 
 ```mdx
 <Note>Important information the reader should know.</Note>
@@ -138,9 +138,8 @@ To trigger manually:
 ```bash
 gh workflow run docs_release_auto_sync_pr.yml \
   -f base_ref=v0.2.0 \
-  -f head_ref=v0.3.0 \
-  -f model_platform=openai \
-  -f model_type=gpt-4o-mini
+  -f head_ref=v0.3.0
 ```
 
-Required secret: `OPENAI_API_KEY` (or the key matching the chosen platform).
+The release workflow is fixed to OpenAI `gpt-5.4`.
+Required secret for the release workflow: `OPENAI_API_KEY`.

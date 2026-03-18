@@ -20,6 +20,8 @@ sys.path.insert(0, str(_REPO_ROOT / "docs" / "scripts" / "docs_sync"))
 from doc_code_map import _extract_doc_code_map  # noqa: E402
 
 MAX_CODE_CHARS = 120_000
+TRUNCATION_MARKER = "\n... (truncated)\n"
+NO_CHANGES_SENTINEL = "__NO_CHANGES__"
 
 SYSTEM_PROMPT = """\
 You are a technical documentation writer for the CAMEL-AI framework.
@@ -32,6 +34,11 @@ Your task:
 - Preserve the existing writing style, section structure, and Mintlify
   components (Card, Accordion, Tab, CodeGroup, etc.) as much as possible.
 - Only change content that is outdated or inaccurate relative to the code.
+- If the current body is already accurate, or the code changes are internal and
+  do not affect public API, behavior, configuration, examples, or reader
+  understanding, return exactly __NO_CHANGES__.
+- Prefer no changes for small internal refactors, logging changes, test-only
+  changes, or implementation details that readers do not need.
 - Do NOT output frontmatter (the --- block). Only return the body.
 - Do NOT wrap the output in markdown code fences.
 """
@@ -70,13 +77,15 @@ def _resolve_code(doc_path: Path, repo_root: Path) -> str:
             chunk = header + content + "\n"
             if total + len(chunk) > MAX_CODE_CHARS:
                 remaining = MAX_CODE_CHARS - total
-                if remaining > len(header) + 200:
-                    code_parts.append(
-                        header
-                        + content[: remaining - len(header)]
-                        + "\n... (truncated)\n"
+                min_required = len(header) + len(TRUNCATION_MARKER) + 200
+                if remaining >= min_required:
+                    content_budget = (
+                        remaining - len(header) - len(TRUNCATION_MARKER)
                     )
-                break
+                    code_parts.append(
+                        header + content[:content_budget] + TRUNCATION_MARKER
+                    )
+                return "".join(code_parts)
             code_parts.append(chunk)
             total += len(chunk)
         if total >= MAX_CODE_CHARS:
@@ -101,6 +110,11 @@ def _strip_accidental_frontmatter(text: str) -> str:
         if end != -1:
             text = text[end + len("\n---\n") :]
     return text
+
+
+def _should_skip_update(text: str) -> bool:
+    """Return whether the model requested skipping this doc update."""
+    return text.strip() == NO_CHANGES_SENTINEL
 
 
 def _update_single_doc(
@@ -145,6 +159,9 @@ def _update_single_doc(
     new_body = response.msgs[0].content
     new_body = _strip_fences(new_body)
     new_body = _strip_accidental_frontmatter(new_body)
+    if _should_skip_update(new_body):
+        print(f"  SKIP (no doc update needed): {doc_path}")
+        return
 
     doc_path.write_text(frontmatter + new_body + "\n", encoding="utf-8")
     print(f"  UPDATED: {doc_path}")
@@ -166,8 +183,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--model-type",
-        default="gpt-4o-mini",
-        help="Model type for CAMEL ChatAgent (default: gpt-4o-mini).",
+        default="gpt-5.4",
+        help="Model type for CAMEL ChatAgent (default: gpt-5.4).",
     )
     args = parser.parse_args()
 

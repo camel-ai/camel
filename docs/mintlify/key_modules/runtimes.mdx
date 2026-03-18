@@ -82,12 +82,12 @@ All runtimes inherit from <b>BaseRuntime</b>, which defines core methods:
   from camel.runtimes import RemoteHttpRuntime
   from camel.toolkits import MathToolkit
 
-if **name** == "**main**":
-runtime = (
-RemoteHttpRuntime("localhost")
-.add(MathToolkit().get_tools(), "camel.toolkits.MathToolkit")
-.build()
-)
+  if __name__ == "__main__":
+      runtime = (
+          RemoteHttpRuntime("localhost")
+          .add(MathToolkit().get_tools(), "camel.toolkits.MathToolkit")
+          .build()
+      )
 
       print("Waiting for runtime to be ready...")
       runtime.wait()
@@ -99,8 +99,7 @@ RemoteHttpRuntime("localhost")
       print(f"Add 1 + 2: {add.func(1, 2)}")
       # Example output:
       # Add 1 + 2: 3
-
-```
+  ```
 </Card>
 
 ## Runtime Types: Key Features
@@ -144,4 +143,3 @@ Each script demonstrates how to initialize and use a specific runtime—perfect 
 
 The runtime system primarily sandboxes <code>FunctionTool</code>-style tool functions.
 For agent-level, dynamic code execution, always consider dedicated sandboxing—such as <b>UbuntuDockerRuntime</b>’s <code>exec_python_file()</code>—for running dynamically generated scripts with maximum isolation and safety.
-```

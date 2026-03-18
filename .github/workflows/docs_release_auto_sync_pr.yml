@@ -11,14 +11,6 @@ on:
       head_ref:
         description: "Head ref for diff"
         required: true
-      model_platform:
-        description: "Model platform for CAMEL ChatAgent"
-        required: false
-        default: "openai"
-      model_type:
-        description: "Model type for CAMEL ChatAgent"
-        required: false
-        default: "gpt-4o-mini"
 
 jobs:
   auto-sync-docs-pr:
@@ -26,6 +18,9 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    concurrency:
+      group: docs-release-auto-sync-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,7 +33,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install CAMEL
-        run: pip install -e .
+        run: python -m pip install -e .
 
       - name: Verify doc_code_map
         run: python docs/scripts/docs_sync/doc_code_map.py verify
@@ -49,13 +44,11 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "base=${{ inputs.base_ref }}" >> "$GITHUB_OUTPUT"
             echo "head=${{ inputs.head_ref }}" >> "$GITHUB_OUTPUT"
-            echo "model_platform=${{ inputs.model_platform }}" >> "$GITHUB_OUTPUT"
-            echo "model_type=${{ inputs.model_type }}" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           current_tag="${{ github.event.release.tag_name }}"
-          prev_tag=$(git tag --sort=-creatordate | grep -Fxv "$current_tag" | head -n 1 || true)
+          prev_tag=$(git describe --tags --abbrev=0 "${current_tag}^" 2>/dev/null || true)
           if [ -z "$prev_tag" ]; then
             echo "No previous tag found; skip auto docs sync."
             echo "base=" >> "$GITHUB_OUTPUT"
@@ -65,27 +58,28 @@ jobs:
 
           echo "base=$prev_tag" >> "$GITHUB_OUTPUT"
           echo "head=$current_tag" >> "$GITHUB_OUTPUT"
-          echo "model_platform=openai" >> "$GITHUB_OUTPUT"
-          echo "model_type=gpt-4o-mini" >> "$GITHUB_OUTPUT"
 
       - name: Compute impacted docs
         if: steps.refs.outputs.base != ''
+        id: impacted
         run: |
           python docs/scripts/docs_sync/doc_code_map.py impacted \
             --base-ref "${{ steps.refs.outputs.base }}" \
             --head-ref "${{ steps.refs.outputs.head }}" > impacted_docs.txt
           cat impacted_docs.txt
-
-      - name: Skip when no impacted docs
-        if: steps.refs.outputs.base != ''
-        run: |
-          if [ ! -s impacted_docs.txt ]; then
-            echo "No impacted docs. Skip."
-            exit 0
+          if [ -s impacted_docs.txt ]; then
+            echo "has_impacted_docs=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_impacted_docs=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Skip when no impacted docs
+        if: steps.refs.outputs.base != '' && steps.impacted.outputs.has_impacted_docs != 'true'
+        run: |
+          echo "No impacted docs. Skip auto docs PR."
+
       - name: Auto update impacted docs with ChatAgent
-        if: steps.refs.outputs.base != ''
+        if: steps.impacted.outputs.has_impacted_docs == 'true'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
@@ -95,21 +89,39 @@ jobs:
           fi
           python .camel/skills/docs-incremental-update/scripts/auto_sync_docs_with_chatagent.py \
             --docs-file impacted_docs.txt \
-            --model-platform "${{ steps.refs.outputs.model_platform }}" \
-            --model-type "${{ steps.refs.outputs.model_type }}"
+            --model-platform openai \
+            --model-type gpt-5.4
+
+      - name: Detect generated doc changes
+        if: steps.impacted.outputs.has_impacted_docs == 'true'
+        id: changes
+        run: |
+          if git diff --quiet -- docs/mintlify/key_modules docs/mintlify/mcp; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "Docs were already in sync after auto-update."
+            exit 0
+          fi
+
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          git diff --stat -- docs/mintlify/key_modules docs/mintlify/mcp
 
       - name: Create docs sync PR
-        if: steps.refs.outputs.base != ''
+        if: steps.changes.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
+          base: ${{ github.event.repository.default_branch }}
           branch: bot/docs-sync-${{ github.run_id }}
-          commit-message: "docs: auto sync mapped docs after release"
-          title: "docs: auto sync mapped docs for release"
+          delete-branch: true
+          commit-message: "docs: auto sync mapped docs for ${{ steps.refs.outputs.head }}"
+          title: "docs: auto sync mapped docs for ${{ steps.refs.outputs.head }}"
           body: |
-            Auto-generated docs sync PR.
+            Auto-generated docs sync PR for a release diff.
 
             Base ref: `${{ steps.refs.outputs.base }}`
             Head ref: `${{ steps.refs.outputs.head }}`
 
             Updated by CAMEL ChatAgent using `doc_code_map`.
           labels: documentation, automated-pr
+          add-paths: |
+            docs/mintlify/key_modules
+            docs/mintlify/mcp

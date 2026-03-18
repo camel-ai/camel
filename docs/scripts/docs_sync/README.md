@@ -24,7 +24,8 @@ each doc + its mapped source code to a CAMEL ChatAgent, which rewrites the body
 while preserving the frontmatter and Mintlify components.
 
 The GitHub Actions workflow `.github/workflows/docs_release_auto_sync_pr.yml`
-orchestrates this end-to-end on every release and opens a PR automatically.
+orchestrates this end-to-end on every release tag diff and opens a PR
+automatically when mapped docs actually changed.
 
 ## Commands
 
@@ -54,12 +55,14 @@ Auto-sync impacted docs with CAMEL ChatAgent:
 python .camel/skills/docs-incremental-update/scripts/auto_sync_docs_with_chatagent.py \
   --docs-file impacted_docs.txt \
   --model-platform openai \
-  --model-type gpt-4o-mini
+  --model-type gpt-5.4
 ```
 
 ## Environment Variables
 
-The auto-sync script requires an API key for the chosen model platform:
+The auto-sync script requires an API key for the chosen model platform.
+The release workflow is fixed to OpenAI `gpt-5.4` and expects
+`OPENAI_API_KEY`.
 
 | Platform | Variable |
 |----------|----------|
@@ -73,10 +76,11 @@ Example:
 export OPENAI_API_KEY=...
 ```
 
-## Multi-Platform Support
+## Manual Multi-Platform Support
 
-Both `--model-platform` and `--model-type` can be overridden to use any backend
-supported by CAMEL's `ModelFactory`. For example:
+When you run the script directly, both `--model-platform` and `--model-type`
+can be overridden to use any backend supported by CAMEL's `ModelFactory`.
+For example:
 
 ```bash
 python .camel/skills/docs-incremental-update/scripts/auto_sync_docs_with_chatagent.py \

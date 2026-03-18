@@ -16,8 +16,6 @@ This guide walks you through turning your CAMEL AI agent into an MCP client, let
 2. **Use MCPToolkit to Connect**: Load your config file to connect to the servers.
 3. **Enable Tools in CAMEL Agent**: Pass the server tools to your CAMEL agent to use.
 
-This guide walks you through turning your CAMEL AI agent into an MCP client, letting your agent easily use tools from multiple MCP servers.
-
 ## Step-by-Step Setup
 
 <Steps>
@@ -57,31 +55,31 @@ This guide walks you through turning your CAMEL AI agent into an MCP client, let
       ```
       </Tab>
 
-  <Tab title="ACI.dev Server (configurable transport)">
-    ```json
-    {
-      "mcpServers": {
-        "aci_apps": {
-          "command": "uvx",
-          "args": [
-            "aci-mcp",
-            "apps-server",
-            "--apps=BRAVE_SEARCH,GITHUB,ARXIV",
-            "--linked-account-owner-id",
-            "<your_linked_acc_owner_id>"
-          ],
-          "env": {
-            "ACI_API_KEY": "your_aci_api_key"
-          },
-          "transport": "sse" // or "streamable-http"
+      <Tab title="ACI.dev Server (configurable transport)">
+      ```json
+      {
+        "mcpServers": {
+          "aci_apps": {
+            "command": "uvx",
+            "args": [
+              "aci-mcp",
+              "apps-server",
+              "--apps=BRAVE_SEARCH,GITHUB,ARXIV",
+              "--linked-account-owner-id",
+              "<your_linked_acc_owner_id>"
+            ],
+            "env": {
+              "ACI_API_KEY": "your_aci_api_key"
+            },
+            "transport": "sse" // or "streamable-http"
+          }
         }
       }
-    }
-    ```
-    <Note type="info">
-You can use <code>sse</code> or <code>streamable-http</code> for ACI.dev, pick whichever is supported by your agent/server.
-</Note>
-  </Tab>
+      ```
+      <Note type="info">
+      You can use <code>sse</code> or <code>streamable-http</code> for ACI.dev, pick whichever is supported by your agent/server.
+      </Note>
+      </Tab>
 
     </Tabs>
 
@@ -92,18 +90,25 @@ You can use <code>sse</code> or <code>streamable-http</code> for ACI.dev, pick w
 
     ```python
     import asyncio
-    from camel.toolkits.mcp_toolkit import MCPToolkit
+
     from camel.agents import ChatAgent
+    from camel.models import ModelFactory
+    from camel.toolkits import MCPToolkit
+    from camel.types import ModelPlatformType, ModelType
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O,
+    )
 
     async def main():
         async with MCPToolkit(config_path="config/time.json") as toolkit:
-          agent = ChatAgent(model=model, tools=toolkit.get_tools())
-          response = await agent.astep("What time is it now?")
-          print(response.msgs[0].content)
+            agent = ChatAgent(model=model, tools=toolkit.get_tools())
+            response = await agent.astep("What time is it now?")
+            print(response.msgs[0].content)
 
     asyncio.run(main())
     ```
-
   </Step>
 
   <Step title="Step 3: Add More Tools & Debug">
@@ -116,59 +121,49 @@ You can use <code>sse</code> or <code>streamable-http</code> for ACI.dev, pick w
 
     Try plugging in servers like GitHub, Notion, or ArXiv and see your CAMEL agent in action.
     </Note>
-
   </Step>
 
 </Steps>
 
 ## How It Works – System Diagram
 
-<Card
-  title="CAMEL Agent as an MCP Client"
-  img="/images/camel_toolks_as_mcp_server.png"
->
+<Card title="CAMEL Agent as an MCP Client" img="/images/camel_toolks_as_mcp_server.png">
   This diagram illustrates how CAMEL agents use MCPToolkit to seamlessly connect
   with MCP servers. Servers provide external tools from platforms like GitHub,
   Gmail, Notion, and more.
 </Card>
 
-<Card title="Advanced: Register with MCP Hubs & Registries">
-
 <Card title="Connect your agent to an MCP registry" icon="link">
 Want your MCP agent discoverable by thousands of clients?
 Register it with a hub like <a href="https://aci.dev/" target="_blank">ACI.dev</a> or similar.
-```python Register with ACI Registry lines icon="python"
+```python title="register_with_aci.py"
+import os
+
 from camel.agents import MCPAgent
 from camel.models import ModelFactory
 from camel.types import ACIRegistryConfig, ModelPlatformType, ModelType
-import os
 
 aci_config = ACIRegistryConfig(
-api_key=os.getenv("ACI_API_KEY"),
-linked_account_owner_id=os.getenv("ACI_LINKED_ACCOUNT_OWNER_ID"),
+    api_key=os.getenv("ACI_API_KEY"),
+    linked_account_owner_id=os.getenv("ACI_LINKED_ACCOUNT_OWNER_ID"),
 )
 model = ModelFactory.create(
-model_platform=ModelPlatformType.OPENAI,
-model_type=ModelType.GPT_4O,
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O,
 )
 
 agent = MCPAgent(
-model=model,
-registry_configs=[aci_config],
+    model=model,
+    registry_configs=[aci_config],
 )
-
 ```
 Your agent is now connected to the <a href="https://aci.dev/" target="_blank">ACI.dev</a> registry and visible in the ecosystem.
 </Card>
 
-<Card title = "Discover MCP Servers Easily with PulseMCP">
-
+<Card title="Discover MCP Servers Easily with PulseMCP" icon="wave-pulse">
 Finding MCP servers is now a breeze with PulseMCP integration.
 You don’t have to guess which MCP servers are available, just search, browse, and connect.
-
-<Card title="Discover MCP Servers Instantly" icon="wave-pulse">
-PulseMCP acts as a living directory of the entire MCP ecosystem.
-CAMEL toolkits can plug directly into PulseMCP, letting you browse and connect to thousands of servers, all kept up to date in real time.
+PulseMCP acts as a living directory of the entire MCP ecosystem. CAMEL toolkits can plug directly into PulseMCP, letting you browse and connect to thousands of servers, all kept up to date in real time.
 
 You can visit [PulseMCP.com](https://pulsemcp.com) to browse all available MCP servers—everything from file systems and search to specialized APIs.
 
@@ -184,12 +179,10 @@ print(results)
 
 PulseMCP does the heavy lifting of finding, categorizing, and keeping MCP servers fresh—your agents just connect and go.
 </Card>
-</Card>
 
 <Card title="Minimal agent without function-calling" icon="function">
 Don’t need advanced tool-calling?
 See <a href="https://github.com/camel-ai/camel/blob/master/examples/agents/mcp_agent/mcp_agent_without_function_calling.py" target="_blank">this example</a> for a super-lightweight setup.
-</Card>
 </Card>
 
 ## Using Transport Methods
@@ -207,4 +200,3 @@ See <a href="https://github.com/camel-ai/camel/blob/master/examples/agents/mcp_a
 ## Give It a Go
 
 Try setting up a config file for an MCP server (like [GitHub](https://github.com/github/github-mcp-server) or [Notion](https://github.com/makenotion/notion-mcp-server)) and see your CAMEL agent use the new tools right away!
-```
