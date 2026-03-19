@@ -21,7 +21,10 @@ Prerequisites:
    ./manage_camel_docker.sh build
 
 3. Set environment variables in .env:
-   - OPENAI_API_KEY (or other API keys)
+   - OPENAI_API_KEY (or other chat model API keys)
+   - AZURE_OPENAI_API_KEY
+   - AZURE_OPENAI_BASE_URL
+   - AZURE_API_VERSION
 
 4. Clean up stale containers if needed:
    docker stop $(docker ps -q) && docker rm $(docker ps -aq)
