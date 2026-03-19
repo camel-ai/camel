@@ -535,7 +535,6 @@ class ModelType(UnifiedModelType, Enum):
     MINIMAX_M2_1 = "MiniMax-M2.1"
     MINIMAX_M2_1_LIGHTNING = "MiniMax-M2.1-lightning"
     MINIMAX_M2 = "MiniMax-M2"
-    MINIMAX_M2_STABLE = "MiniMax-M2-Stable"
 
     # Avian models
     AVIAN_DEEPSEEK_V3_2 = "deepseek/deepseek-v3.2"
@@ -586,6 +585,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_gemini,
                 self.is_mistral,
                 self.is_qwen,
+                self.is_minimax,
                 self.is_deepseek,
                 self.is_ppio,
                 self.is_cohere,
@@ -983,6 +983,17 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_TURBO_LATEST,
             ModelType.QWEN_TURBO_2025_04_28,
             ModelType.QWEN_3_CODER_PLUS,
+        }
+
+    @property
+    def is_minimax(self) -> bool:
+        return self in {
+            ModelType.MINIMAX_M2_7,
+            ModelType.MINIMAX_M2_7_HIGHSPEED,
+            ModelType.MINIMAX_M2_5,
+            ModelType.MINIMAX_M2_1,
+            ModelType.MINIMAX_M2_1_LIGHTNING,
+            ModelType.MINIMAX_M2,
         }
 
     @property
