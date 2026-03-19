@@ -83,7 +83,7 @@ from camel.loaders import create_file_from_raw_bytes
 # Read a pdf file from disk
 
 with open("test.pdf", "rb") as file:
-file_content = file.read()
+    file_content = file.read()
 
 # Use the create_file function to create an object based on the file extension
 
@@ -168,8 +168,8 @@ print(extracted_text)
 chunks = uio.chunk_elements(elements=elements, chunk_type="chunk_by_title")
 
 for chunk in chunks:
-print(chunk)
-print("\n" + "-" \* 80)
+    print(chunk)
+    print("\n" + "-" * 80)
 
 ````
 ```markdown chunked_content.md

@@ -15,8 +15,8 @@ Update Mintlify .mdx documentation so it stays in sync with CAMEL source code.
 
 ## Scope
 
-- Only use this skill when the driver is **Python source changes** under
-  `camel/**`.
+- Only use this skill when the driver is **Python source changes** referenced
+  by a target document's `doc_code_map`.
 - Do **not** use it for docs-only edits, workflow/YAML changes, or broad
   wording cleanups without Python changes.
 - Prefer **no document change** when Python edits are internal and do not
@@ -96,7 +96,9 @@ Rules:
 - **Add references** to newly introduced public API when relevant.
 - **Skip the document entirely** if the Python change is internal and does not
   require reader-facing doc updates.
-- After finishing, return exactly `UPDATED` or `__NO_CHANGES__`.
+- After finishing, either leave the file unchanged or update it in place.
+- Do not return the full rewritten document body in chat; a short status note
+  is enough.
 
 ### Step 4 — Verify
 
@@ -157,8 +159,8 @@ The GitHub Actions workflow `docs_release_auto_sync_pr.yml` runs
 automatically on each release:
 
 1. Verifies `doc_code_map` patterns (`doc_code_map.py verify`).
-2. Writes `changed_python_files.txt` from the release diff, limited to
-   `camel/**.py`.
+2. Writes `changed_python_files.txt` from the release diff for all changed
+   `*.py` files that may match `doc_code_map`.
 3. Computes `impacted_docs.txt` from that changed Python file list.
 4. Runs `auto_sync_docs_with_chatagent.py` with both files so the agent knows
    which Python files changed and which target doc it may inspect and update

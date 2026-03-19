@@ -232,8 +232,8 @@ from mcp.types import CallToolResult
 from camel.toolkits.mcp_toolkit import MCPToolkit, MCPClient
 
 async def run_example():
-mcp_toolkit = MCPToolkit(config_path="path/to/mcp_servers_config.json")
-await mcp_toolkit.connect()
+    mcp_toolkit = MCPToolkit(config_path="path/to/mcp_servers_config.json")
+    await mcp_toolkit.connect()
 
     mcp_client: MCPClient = mcp_toolkit.servers[0]
 
@@ -250,8 +250,8 @@ await mcp_toolkit.connect()
 
     await mcp_toolkit.disconnect()
 
-if **name** == "**main**":
-asyncio.run(run_example())
+if __name__ == "__main__":
+    asyncio.run(run_example())
 
 ```
 </CodeGroup>

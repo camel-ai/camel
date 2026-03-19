@@ -16,6 +16,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -84,7 +86,7 @@ def test_read_path_list_file(tmp_path):
     ]
 
 
-def test_filter_changed_python_files_keeps_only_supported_roots():
+def test_filter_changed_python_files_keeps_all_python_paths():
     changed_files = [
         "camel/agents/chat_agent.py",
         "camel/models/base_model.py",
@@ -99,6 +101,59 @@ def test_filter_changed_python_files_keeps_only_supported_roots():
     assert filtered == [
         "camel/agents/chat_agent.py",
         "camel/models/base_model.py",
+        "services/doc_sync.py",
+        "tests/test_docs.py",
+    ]
+
+
+def test_select_changed_python_files_for_doc_preserves_service_paths(
+    tmp_path,
+):
+    docs_root = tmp_path / "docs" / "mintlify" / "mcp"
+    docs_root.mkdir(parents=True)
+
+    doc_path = docs_root / "export_camel_agent_as_mcp_server.mdx"
+    doc_path.write_text(
+        "---\n"
+        'doc_code_map:\n'
+        '  - "services/agent_mcp/agent_mcp_server.py"\n'
+        '  - "camel/agents/mcp_agent.py"\n'
+        "---\n"
+        "body\n",
+        encoding="utf-8",
+    )
+
+    service_root = tmp_path / "services" / "agent_mcp"
+    service_root.mkdir(parents=True)
+    (service_root / "agent_mcp_server.py").write_text(
+        "print('hello')\n",
+        encoding="utf-8",
+    )
+
+    camel_root = tmp_path / "camel" / "agents"
+    camel_root.mkdir(parents=True)
+    (camel_root / "mcp_agent.py").write_text(
+        "print('hello')\n",
+        encoding="utf-8",
+    )
+    (camel_root / "chat_agent.py").write_text(
+        "print('hello')\n",
+        encoding="utf-8",
+    )
+
+    selected = auto_sync_docs._select_changed_python_files_for_doc(
+        doc_path,
+        tmp_path,
+        [
+            "camel/agents/chat_agent.py",
+            "camel/agents/mcp_agent.py",
+            "services/agent_mcp/agent_mcp_server.py",
+        ],
+    )
+
+    assert selected == [
+        "camel/agents/mcp_agent.py",
+        "services/agent_mcp/agent_mcp_server.py",
     ]
 
 
@@ -113,13 +168,70 @@ def test_build_user_message_includes_target_doc_and_changed_files():
 
     assert "## Target doc" in message
     assert "docs/mintlify/key_modules/runtimes.mdx" in message
-    assert "## Changed Python files for this run" in message
+    assert "## Changed mapped Python files for this run" in message
     assert "camel/runtimes/base.py" in message
     assert "camel/runtimes/docker_runtime.py" in message
     assert "`doc_code_map`" in message
 
 
-def test_should_skip_update_recognizes_sentinel():
-    assert auto_sync_docs._should_skip_update("__NO_CHANGES__")
-    assert auto_sync_docs._should_skip_update("  __NO_CHANGES__\n")
-    assert not auto_sync_docs._should_skip_update("updated body")
+def test_write_agent_response_log_appends_entries(tmp_path):
+    auto_sync_docs._write_agent_response_log(
+        tmp_path,
+        Path("docs/mintlify/mcp/example.mdx"),
+        "UPDATED",
+        "UPDATED",
+    )
+
+    log_path = tmp_path / "terminal_logs" / "agent_response.log"
+
+    assert log_path.exists()
+    content = log_path.read_text(encoding="utf-8")
+    assert "UPDATED docs/mintlify/mcp/example.mdx" in content
+    assert content.rstrip().endswith("UPDATED")
+
+
+def test_validate_python_code_blocks_rejects_markdown_emphasis():
+    text = (
+        "```python demo.py\n"
+        'if **name** == "__main__":\n'
+        '    print("oops")\n'
+        "```\n"
+    )
+
+    with pytest.raises(RuntimeError, match="markdown emphasis"):
+        auto_sync_docs._validate_python_code_blocks(
+            Path("docs/mintlify/mcp/demo.mdx"),
+            text,
+        )
+
+
+def test_validate_python_code_blocks_rejects_missing_indented_body():
+    text = (
+        "```python demo.py\n"
+        "def run():\n"
+        'print("oops")\n'
+        "```\n"
+    )
+
+    with pytest.raises(RuntimeError, match="expected an indented body"):
+        auto_sync_docs._validate_python_code_blocks(
+            Path("docs/mintlify/mcp/demo.mdx"),
+            text,
+        )
+
+
+def test_validate_python_code_blocks_accepts_valid_python():
+    text = (
+        "```python demo.py\n"
+        "def run():\n"
+        '    print("ok")\n'
+        "\n"
+        'if __name__ == "__main__":\n'
+        "    run()\n"
+        "```\n"
+    )
+
+    auto_sync_docs._validate_python_code_blocks(
+        Path("docs/mintlify/mcp/demo.mdx"),
+        text,
+    )

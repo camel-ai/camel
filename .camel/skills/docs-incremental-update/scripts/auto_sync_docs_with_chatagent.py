@@ -9,11 +9,23 @@ document directly through TerminalToolkit.
 from __future__ import annotations
 
 import argparse
+import re
+import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
-NO_CHANGES_SENTINEL = "__NO_CHANGES__"
 SKILL_NAME = "docs-incremental-update"
+PYTHON_FENCE_PATTERN = re.compile(
+    r"^```python(?:\s+[^\n]*)?\n(.*?)\n```",
+    re.MULTILINE | re.DOTALL,
+)
+PYTHON_BLOCK_START_PATTERN = re.compile(
+    r"^\s*(?:"
+    r"async\s+def|def|class|if|elif|else|for|while|try|except|finally|"
+    r"with|match|case"
+    r")\b.*:\s*(?:#.*)?$"
+)
 
 SYSTEM_PROMPT = """\
 You are a technical documentation writer for the CAMEL-AI framework.
@@ -35,13 +47,12 @@ Your task:
   components (Card, Accordion, Tab, CodeGroup, etc.) as much as possible.
 - Only change content that is outdated or inaccurate relative to the changed
   Python behavior and the mapped source code.
-- If the current doc is already accurate, or the code changes are internal and
-  do not affect public API, behavior, configuration, examples, or reader
-  understanding, return exactly __NO_CHANGES__.
 - Prefer no changes for small internal refactors, logging changes, test-only
   changes, or implementation details that readers do not need.
-- If you update the target doc in place, return exactly UPDATED.
-- Do NOT return the rewritten doc body in chat.
+- If the current doc is already accurate, or the code changes are internal and
+  do not affect public API, behavior, configuration, examples, or reader
+  understanding, leave the file unchanged.
+- Do NOT return the rewritten doc body in chat. A brief status note is fine.
 """
 
 
@@ -55,15 +66,70 @@ def _read_path_list(list_path: Path) -> list[str]:
 
 
 def _filter_changed_python_files(changed_files: list[str]) -> list[str]:
-    """Keep only Python files under camel/."""
+    """Keep only normalized Python file paths."""
     filtered: set[str] = set()
     for path in changed_files:
         normalized = Path(path).as_posix()
         if not normalized.endswith(".py"):
             continue
-        if normalized.startswith("camel/"):
-            filtered.add(normalized)
+        filtered.add(normalized)
     return sorted(filtered)
+
+
+def _extract_doc_code_map_patterns(doc_path: Path) -> list[str]:
+    """Extract doc_code_map patterns from a Mintlify doc frontmatter block."""
+    text = doc_path.read_text(encoding="utf-8")
+    if not text.startswith("---\n"):
+        return []
+
+    end = text.find("\n---\n", 4)
+    if end == -1:
+        return []
+
+    patterns: list[str] = []
+    in_block = False
+    for line in text[4:end].splitlines():
+        if not in_block:
+            if line.startswith("doc_code_map:"):
+                in_block = True
+            continue
+
+        if line.startswith("  - "):
+            item = line[4:].strip()
+            if (
+                len(item) >= 2
+                and item[0] == item[-1]
+                and item[0] in ('"', "'")
+            ):
+                item = item[1:-1]
+            if item:
+                patterns.append(item)
+            continue
+
+        break
+
+    return patterns
+
+
+def _select_changed_python_files_for_doc(
+    doc_path: Path,
+    repo_root: Path,
+    changed_python_files: list[str],
+) -> list[str]:
+    """Return only changed Python files mapped to the target doc."""
+    patterns = _extract_doc_code_map_patterns(doc_path)
+    if not patterns:
+        return changed_python_files
+
+    changed = {Path(path).as_posix() for path in changed_python_files}
+    selected: set[str] = set()
+    for pattern in patterns:
+        for path in repo_root.glob(pattern):
+            rel = path.resolve().relative_to(repo_root).as_posix()
+            if rel in changed:
+                selected.add(rel)
+
+    return sorted(selected)
 
 
 def _format_path_section(title: str, paths: list[str]) -> str:
@@ -75,9 +141,46 @@ def _format_path_section(title: str, paths: list[str]) -> str:
     return f"## {title}\n\n{body}"
 
 
-def _should_skip_update(text: str) -> bool:
-    """Return whether the model requested skipping this doc update."""
-    return text.strip() == NO_CHANGES_SENTINEL
+def _git_status_paths(repo_root: Path) -> set[str] | None:
+    """Return modified or untracked repo paths from git status."""
+    try:
+        output = subprocess.check_output(
+            ["git", "status", "--porcelain", "--untracked-files=all"],
+            cwd=repo_root,
+            text=True,
+            stderr=subprocess.PIPE,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return None
+
+    paths: set[str] = set()
+    for line in output.splitlines():
+        if len(line) < 4:
+            continue
+        path = line[3:]
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        paths.add(Path(path).as_posix())
+    return paths
+
+
+def _write_agent_response_log(
+    repo_root: Path,
+    doc_path: Path,
+    result: str,
+    status: str,
+) -> None:
+    """Append the final agent response to a debug log for investigation."""
+    log_dir = repo_root / "terminal_logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / "agent_response.log"
+    timestamp = datetime.now(timezone.utc).isoformat()
+    with log_path.open("a", encoding="utf-8") as handle:
+        handle.write(f"[{timestamp}] {status} {doc_path.as_posix()}\n")
+        handle.write(result)
+        if not result.endswith("\n"):
+            handle.write("\n")
+        handle.write("\n")
 
 
 def _build_user_message(
@@ -86,7 +189,7 @@ def _build_user_message(
 ) -> str:
     """Build the user message for a single impacted doc."""
     changed_files_section = _format_path_section(
-        "Changed Python files for this run",
+        "Changed mapped Python files for this run",
         changed_python_files,
     )
     return (
@@ -96,6 +199,53 @@ def _build_user_message(
         "`doc_code_map`, inspect the mapped Python files, and update this "
         "target doc directly if needed."
     )
+
+
+def _validate_python_code_blocks(doc_path: Path, text: str) -> None:
+    """Reject obviously broken Python examples in a target doc."""
+    errors: list[str] = []
+    for block_index, match in enumerate(
+        PYTHON_FENCE_PATTERN.finditer(text),
+        start=1,
+    ):
+        lines = match.group(1).splitlines()
+        for line_index, line in enumerate(lines, start=1):
+            if "**" in line:
+                errors.append(
+                    "block "
+                    f"{block_index} line {line_index}: markdown emphasis "
+                    "found inside Python code"
+                )
+
+            if not PYTHON_BLOCK_START_PATTERN.match(line):
+                continue
+
+            next_index = line_index
+            while next_index < len(lines) and not lines[next_index].strip():
+                next_index += 1
+
+            if next_index >= len(lines):
+                errors.append(
+                    f"block {block_index} line {line_index}: block has no body"
+                )
+                continue
+
+            current_indent = len(line) - len(line.lstrip(" "))
+            next_line = lines[next_index]
+            next_indent = len(next_line) - len(next_line.lstrip(" "))
+            if next_indent <= current_indent:
+                errors.append(
+                    "block "
+                    f"{block_index} line {line_index}: expected an indented "
+                    f"body after '{line.strip()}'"
+                )
+
+    if errors:
+        joined = "; ".join(errors[:3])
+        raise RuntimeError(
+            f"Invalid Python example detected in {doc_path.as_posix()}: "
+            f"{joined}"
+        )
 
 
 def _update_single_doc(
@@ -113,7 +263,13 @@ def _update_single_doc(
     from camel.types import ModelPlatformType
 
     original_text = doc_path.read_text(encoding="utf-8")
-    user_message = _build_user_message(doc_path, changed_python_files)
+    doc_changed_python_files = _select_changed_python_files_for_doc(
+        doc_path,
+        repo_root,
+        changed_python_files,
+    )
+    user_message = _build_user_message(doc_path, doc_changed_python_files)
+    baseline_paths = _git_status_paths(repo_root)
 
     platform = ModelPlatformType(model_platform)
     model = ModelFactory.create(
@@ -126,7 +282,7 @@ def _update_single_doc(
     )
     terminal_toolkit = TerminalToolkit(
         working_directory=str(repo_root),
-        safe_mode=False,
+        safe_mode=True,
     )
     agent = ChatAgent(
         system_message=SYSTEM_PROMPT,
@@ -138,26 +294,29 @@ def _update_single_doc(
     )
     response = agent.step(user_message)
 
-    if not response.msgs:
-        raise RuntimeError("ChatAgent returned empty response")
+    current_paths = _git_status_paths(repo_root)
+    if baseline_paths is not None and current_paths is not None:
+        unexpected_paths = sorted(
+            path
+            for path in (current_paths - baseline_paths)
+            if path != doc_path.as_posix()
+        )
+        if unexpected_paths:
+            raise RuntimeError(
+                "Agent modified files outside the target doc: "
+                + ", ".join(unexpected_paths)
+            )
 
     current_text = doc_path.read_text(encoding="utf-8")
     doc_changed = current_text != original_text
-    result = response.msgs[0].content.strip()
-
-    if _should_skip_update(result):
-        if doc_changed:
-            raise RuntimeError(
-                "Agent returned __NO_CHANGES__ but modified the target doc."
-            )
-        print(f"  SKIP (no doc update needed): {doc_path}")
-        return
+    result = response.msgs[0].content.strip() if response.msgs else ""
+    status = "UPDATED" if doc_changed else "NO_WRITE"
+    _write_agent_response_log(repo_root, doc_path, result, status)
+    _validate_python_code_blocks(doc_path, current_text)
 
     if not doc_changed:
-        raise RuntimeError(
-            "Agent did not modify the target doc and did not return "
-            "__NO_CHANGES__."
-        )
+        print(f"  SKIP (no doc update needed): {doc_path}")
+        return
 
     if not current_text.endswith("\n"):
         doc_path.write_text(current_text + "\n", encoding="utf-8")

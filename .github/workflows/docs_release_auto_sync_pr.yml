@@ -49,8 +49,7 @@ jobs:
         if: steps.refs.outputs.base != ''
         id: impacted
         run: |
-          git diff --name-only "${{ steps.refs.outputs.base }}..${{ steps.refs.outputs.head }}" -- '*.py' | \
-            grep -E '^camel/.*\.py$' > changed_python_files.txt || true
+          git diff --name-only "${{ steps.refs.outputs.base }}..${{ steps.refs.outputs.head }}" -- '*.py' > changed_python_files.txt || true
           echo "Changed Python files:"
           cat changed_python_files.txt || true
           if [ ! -s changed_python_files.txt ]; then

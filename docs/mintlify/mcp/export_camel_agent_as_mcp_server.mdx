@@ -55,12 +55,13 @@ agent = ChatAgent(model="gpt-4o-mini")
 # Convert to an MCP server
 
 mcp_server = agent.to_mcp(
-name="demo", description="A demonstration of ChatAgent to MCP conversion"
+    name="demo",
+    description="A demonstration of ChatAgent to MCP conversion",
 )
 
-if **name** == "**main**":
-print("Starting MCP server on http://localhost:8000")
-mcp_server.run(transport="streamable-http")
+if __name__ == "__main__":
+    print("Starting MCP server on http://localhost:8000")
+    mcp_server.run(transport="streamable-http")
 
 ```
 <Info>
