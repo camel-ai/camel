@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
 import asyncio
+import contextvars
 import functools
 import inspect
 import logging
@@ -720,9 +721,10 @@ class FunctionTool:
         # For sync functions (including sync wrappers around async functions),
         # run in executor to avoid blocking
         loop = asyncio.get_running_loop()
+        copied_context = contextvars.copy_context()
         result = await loop.run_in_executor(
             _SYNC_TOOL_EXECUTOR,
-            functools.partial(self.func, *args, **kwargs),
+            functools.partial(copied_context.run, self.func, *args, **kwargs),
         )
 
         # If the sync wrapper returned a coroutine, await it

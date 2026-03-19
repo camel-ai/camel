@@ -11,8 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+from .agent_callback import AgentCallback
+from .agent_events import (
+    AgentEvent,
+    StepCompletedEvent,
+    StepFailedEvent,
+    StepStartedEvent,
+    ToolCompletedEvent,
+    ToolFailedEvent,
+    ToolStartedEvent,
+)
 from .base import BaseAgent
 from .chat_agent import ChatAgent
+from .clone_context import CloneContext
 from .critic_agent import CriticAgent
 from .embodied_agent import EmbodiedAgent
 from .knowledge_graph_agent import KnowledgeGraphAgent
@@ -30,8 +41,11 @@ from .tool_agents.base import BaseToolAgent
 from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
 
 __all__ = [
+    'AgentCallback',
+    'AgentEvent',
     'BaseAgent',
     'ChatAgent',
+    'CloneContext',
     'TaskSpecifyAgent',
     'TaskPlannerAgent',
     'TaskCreationAgent',
@@ -45,4 +59,10 @@ __all__ = [
     'KnowledgeGraphAgent',
     'MCPAgent',
     'RepoAgent',
+    'StepStartedEvent',
+    'StepCompletedEvent',
+    'StepFailedEvent',
+    'ToolStartedEvent',
+    'ToolCompletedEvent',
+    'ToolFailedEvent',
 ]
