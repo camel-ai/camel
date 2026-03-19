@@ -36,7 +36,8 @@ doc_code_map = _load_module(
 auto_sync_docs = _load_module(
     "test_auto_sync_docs_module",
     REPO_ROOT
-    / ".camel/skills/docs-incremental-update/scripts/auto_sync_docs_with_chatagent.py",
+    / ".camel/skills/docs-incremental-update/scripts/"
+    "auto_sync_docs_with_chatagent.py",
 )
 
 

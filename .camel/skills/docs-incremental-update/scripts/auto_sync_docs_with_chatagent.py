@@ -85,9 +85,13 @@ def _build_user_message(
     changed_python_files: list[str],
 ) -> str:
     """Build the user message for a single impacted doc."""
+    changed_files_section = _format_path_section(
+        "Changed Python files for this run",
+        changed_python_files,
+    )
     return (
         f"## Target doc\n\n{doc_path.as_posix()}\n\n"
-        f"{_format_path_section('Changed Python files for this run', changed_python_files)}\n\n"
+        f"{changed_files_section}\n\n"
         "Use the terminal to inspect this target doc, read its "
         "`doc_code_map`, inspect the mapped Python files, and update this "
         "target doc directly if needed."
