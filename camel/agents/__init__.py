@@ -17,6 +17,7 @@ from .critic_agent import CriticAgent
 from .embodied_agent import EmbodiedAgent
 from .knowledge_graph_agent import KnowledgeGraphAgent
 from .mcp_agent import MCPAgent
+from .middleware import MessageMiddleware, MiddlewareContext, MiddlewareError
 from .repo_agent import RepoAgent
 from .role_assignment_agent import RoleAssignmentAgent
 from .search_agent import SearchAgent
@@ -32,6 +33,9 @@ from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
 __all__ = [
     'BaseAgent',
     'ChatAgent',
+    'MessageMiddleware',
+    'MiddlewareContext',
+    'MiddlewareError',
     'TaskSpecifyAgent',
     'TaskPlannerAgent',
     'TaskCreationAgent',
