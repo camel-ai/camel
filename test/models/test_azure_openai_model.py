@@ -177,7 +177,7 @@ def test_run_routes_to_responses_api():
 
     model._client.responses.create.assert_called_once()
     call_kwargs = model._client.responses.create.call_args.kwargs
-    assert call_kwargs["model"] == str(ModelType.GPT_4O)
+    assert str(call_kwargs["model"]) == str(ModelType.GPT_4O)
     assert call_kwargs["stream"] is False
 
 
