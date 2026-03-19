@@ -1220,17 +1220,6 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
-    def is_minimax(self) -> bool:
-        r"""Returns whether this type of models is served by MiniMax."""
-        return self in {
-            ModelType.MINIMAX_M2_5,
-            ModelType.MINIMAX_M2_1,
-            ModelType.MINIMAX_M2_1_LIGHTNING,
-            ModelType.MINIMAX_M2,
-            ModelType.MINIMAX_M2_STABLE,
-        }
-
-    @property
     def is_avian(self) -> bool:
         r"""Returns whether this type of models is served by Avian."""
         return self in {
