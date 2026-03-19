@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+from collections import deque
 from typing import Any, Dict
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -32,6 +34,8 @@ from camel.societies.workforce.events import (
     WorkerDeletedEvent,
     WorkforceEvent,
 )
+from camel.societies.workforce.task_channel import TaskChannel
+from camel.societies.workforce.utils import TaskAssignResult, TaskAssignment
 from camel.societies.workforce.workforce import Workforce
 from camel.societies.workforce.workforce_callback import WorkforceCallback
 from camel.societies.workforce.workforce_logger import WorkforceLogger
@@ -184,6 +188,51 @@ def test_workforce_callback_registration_and_metrics_handling():
     # 3) Invalid callback type -> ValueError
     with pytest.raises(ValueError, match="instances of WorkforceCallback"):
         Workforce("CB Test - Invalid", callbacks=[object()])
+
+
+@pytest.mark.asyncio
+async def test_workforce_callback_event_metadata_is_populated():
+    cb = _NonMetricsCallback()
+    workforce = Workforce("CB Metadata Test", callbacks=[cb])
+    worker_agent = _build_stub_agent()
+    workforce.add_single_agent_worker(
+        "Metadata Worker", worker_agent, pool_max_size=3
+    )
+
+    worker_event = next(
+        event for event in cb.events if isinstance(event, WorkerCreatedEvent)
+    )
+    assert worker_event.metadata["agent_id"] == worker_agent.agent_id
+    assert worker_event.metadata["pool_config"]["pool_max_size"] == 3
+
+    task = Task(content="Inspect metadata", id="task-metadata")
+    workforce._pending_tasks = deque([task])
+    workforce.set_channel(TaskChannel())
+    workforce._find_assignee = AsyncMock(
+        return_value=TaskAssignResult(
+            assignments=[
+                TaskAssignment(
+                    task_id=task.id,
+                    assignee_id=worker_agent.agent_id,
+                    dependencies=[],
+                )
+            ]
+        )
+    )
+
+    await workforce._post_ready_tasks()
+
+    assigned_event = next(
+        event for event in cb.events if isinstance(event, TaskAssignedEvent)
+    )
+    started_event = next(
+        event for event in cb.events if isinstance(event, TaskStartedEvent)
+    )
+
+    assert assigned_event.metadata["task_content"] == "Inspect metadata"
+    assert assigned_event.metadata["worker_node_id"] == worker_agent.agent_id
+    assert started_event.metadata["task_content"] == "Inspect metadata"
+    assert started_event.metadata["failure_count"] == 0
 
 
 def assert_event_sequence(

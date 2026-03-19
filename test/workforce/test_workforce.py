@@ -28,7 +28,7 @@ from camel.societies.workforce.utils import (
     RecoveryStrategy,
     TaskAnalysisResult,
 )
-from camel.societies.workforce.workforce import Workforce
+from camel.societies.workforce.workforce import Workforce, WorkforcePlan
 from camel.tasks.task import Task, TaskState
 from camel.types import ModelPlatformType, ModelType
 
@@ -342,6 +342,115 @@ def test_workforce_initialization(mock_model, share_memory):
 
     assert workforce.share_memory == share_memory
     assert workforce.graceful_shutdown_timeout == 2.0
+
+
+@pytest.mark.asyncio
+async def test_plan_task_async_creates_editable_plan_without_queue_mutation(
+    mock_model,
+):
+    workforce = Workforce(
+        description="Planning Workforce",
+        coordinator_agent=ChatAgent("Coordinator", model=mock_model),
+        task_agent=ChatAgent("Planner", model=mock_model),
+    )
+    main_task = Task(content="Main task", id="task-1")
+    first = Task(content="First subtask", id="task-1.1")
+    second = Task(content="Second subtask", id="task-1.2")
+    raw_chunks = []
+    batches = []
+
+    def fake_decompose(task, planner_context=None, stream_callback=None):
+        assert planner_context == "planning-only context"
+        if stream_callback is not None:
+            stream_callback(
+                ChatAgentResponse(
+                    msgs=[
+                        BaseMessage.make_assistant_message(
+                            role_name="planner",
+                            content="Subtask draft",
+                        )
+                    ],
+                    terminated=False,
+                    info={"stream_accumulate_mode": "delta"},
+                )
+            )
+        for subtask in [first, second]:
+            subtask.parent = task
+        task.subtasks = [first, second]
+        return [first, second]
+
+    workforce._decompose_task = MagicMock(side_effect=fake_decompose)
+
+    plan = await workforce.plan_task_async(
+        main_task,
+        planner_context="planning-only context",
+        raw_text_callback=lambda chunk: raw_chunks.append(chunk.msg.content),
+        subtask_batch_callback=lambda batch, is_final: batches.append(
+            ([task.id for task in batch], is_final)
+        ),
+    )
+
+    assert isinstance(plan, WorkforcePlan)
+    assert [task.id for task in plan.subtasks] == ["task-1.1", "task-1.2"]
+    assert plan.planner_raw_text == "Subtask draft"
+    assert plan.planner_summary == "1. First subtask\n2. Second subtask"
+    assert list(workforce._pending_tasks) == []
+    assert raw_chunks == ["Subtask draft"]
+    assert batches == [(["task-1.1", "task-1.2"], True)]
+
+
+@pytest.mark.asyncio
+async def test_run_plan_async_executes_edited_subtasks(mock_model):
+    workforce = Workforce(
+        description="Run Plan Workforce",
+        coordinator_agent=ChatAgent("Coordinator", model=mock_model),
+        task_agent=ChatAgent("Planner", model=mock_model),
+    )
+    main_task = Task(content="Main task", id="task-2")
+    edited_subtask = Task(content="Edited subtask", id="task-2.1")
+    plan = WorkforcePlan(
+        task=main_task,
+        subtasks=[edited_subtask],
+        planner_summary="1. Edited subtask",
+        events_emitted=True,
+    )
+
+    async def fake_start():
+        queued_subtask = list(workforce._pending_tasks)[0]
+        queued_subtask.state = TaskState.DONE
+        queued_subtask.result = "Edited result"
+        workforce._pending_tasks.clear()
+
+    workforce.start = AsyncMock(side_effect=fake_start)
+
+    result = await workforce.run_plan_async(plan)
+
+    assert result.state == TaskState.DONE
+    assert "Edited result" in result.result
+    assert result.subtasks[0].content == "Edited subtask"
+
+
+def test_sync_task_to_parent_updates_parent_subtask_state(mock_model):
+    workforce = Workforce(
+        description="Sync Workforce",
+        coordinator_agent=ChatAgent("Coordinator", model=mock_model),
+        task_agent=ChatAgent("Planner", model=mock_model),
+    )
+    parent = Task(content="Parent task", id="parent")
+    stale_child = Task(content="Child task", id="parent.1")
+    parent.subtasks = [stale_child]
+
+    completed_child = Task(content="Child task", id="parent.1")
+    completed_child.parent = parent
+    completed_child.state = TaskState.DONE
+    completed_child.result = "Child result"
+    completed_child.failure_count = 2
+
+    workforce._sync_task_to_parent(completed_child)
+
+    assert parent.subtasks[0].state == TaskState.DONE
+    assert parent.subtasks[0].result == "Child result"
+    assert parent.subtasks[0].failure_count == 2
 
 
 def test_shared_memory_operations(
