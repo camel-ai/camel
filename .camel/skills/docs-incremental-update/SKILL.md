@@ -27,6 +27,8 @@ Update Mintlify .mdx documentation so it stays in sync with CAMEL source code.
 Use terminal tools to inspect the target doc, inspect mapped Python files,
 and edit the target doc directly. Keep changes scoped to that doc and
 preserve its frontmatter.
+CI treats the run as successful based on the resulting target doc file state,
+not on any special status token in the chat response.
 
 
 ## Quick Reference
@@ -81,6 +83,8 @@ Rewrite only the parts of the body that are outdated relative to the code.
 
 Rules:
 - **Edit the target doc directly through terminal tools** for this run.
+- **Let file changes speak for themselves** — if no update is needed, leave the
+  target doc untouched instead of relying on a sentinel reply.
 - **Focus on changed Python files first** — inspect the diff between the base
   and head refs when available.
 - **Base changes only on mapped Python files** — they are the source of truth.
@@ -90,6 +94,10 @@ Rules:
 - **Preserve frontmatter** — never modify the `---` block.
 - **Preserve style** — keep existing section structure and tone.
 - **Preserve Mintlify components** — keep Card, Accordion, Tab, CodeGroup, etc.
+- **Preserve valid MDX fences** — keep one opening fence and one closing fence
+  on separate lines.
+- **Keep runnable examples valid** — Python snippets must remain syntactically
+  correct and properly indented.
 - **Update code snippets** — fix imports, class names, method signatures, parameters.
 - **Update prose** — fix descriptions that no longer match the code.
 - **Remove references** to deleted classes/methods/parameters.
@@ -164,5 +172,7 @@ automatically on each release:
 3. Computes `impacted_docs.txt` from that changed Python file list.
 4. Runs `auto_sync_docs_with_chatagent.py` with both files so the agent knows
    which Python files changed and which target doc it may inspect and update
-   directly through terminal tools.
+   directly through terminal tools. The script accepts success based on whether
+   the target doc actually changed, rejects edits outside the target doc, and
+   validates fenced code blocks before proceeding.
 5. Opens a PR with the changes.

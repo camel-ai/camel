@@ -16,6 +16,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 SKILL_NAME = "docs-incremental-update"
+MDX_FENCE_LINE_PATTERN = re.compile(
+    r"^(?P<indent>\s*)(?P<fence>`{3,}|~{3,})(?P<info>[^\n]*)$"
+)
 PYTHON_FENCE_PATTERN = re.compile(
     r"^```python(?:\s+[^\n]*)?\n(.*?)\n```",
     re.MULTILINE | re.DOTALL,
@@ -42,6 +45,9 @@ Your task:
 - Preserve the target document frontmatter.
 - Focus only on the provided changed Python files. Ignore docs-only, workflow,
   YAML, release, and other non-Python changes.
+- CI determines success from the resulting target doc file state. Do not rely on
+  special sentinel strings in your final chat reply.
+- If no reader-facing update is needed, leave the target doc untouched.
 - Rewrite the documentation so it accurately reflects the latest code.
 - Preserve the existing writing style, section structure, and Mintlify
   components (Card, Accordion, Tab, CodeGroup, etc.) as much as possible.
@@ -52,6 +58,9 @@ Your task:
 - If the current doc is already accurate, or the code changes are internal and
   do not affect public API, behavior, configuration, examples, or reader
   understanding, leave the file unchanged.
+- Keep fenced code blocks valid MDX. Use one opening fence and one closing fence
+  on separate lines.
+- Keep Python examples syntactically valid and properly indented.
 - Do NOT return the rewritten doc body in chat. A brief status note is fine.
 """
 
@@ -201,6 +210,60 @@ def _build_user_message(
     )
 
 
+def _validate_mdx_code_fences(doc_path: Path, text: str) -> None:
+    """Reject obviously malformed fenced code blocks in a target doc."""
+    errors: list[str] = []
+    in_fence = False
+    fence_char = ""
+    fence_length = 0
+
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        if line.count("```") > 1 or line.count("~~~") > 1:
+            errors.append(
+                f"line {line_number}: multiple fenced code delimiters found "
+                "on one line"
+            )
+            continue
+
+        match = MDX_FENCE_LINE_PATTERN.match(line)
+        if not match:
+            continue
+
+        fence = match.group("fence")
+        info = match.group("info").strip()
+
+        if in_fence:
+            if (
+                fence[0] == fence_char
+                and len(fence) >= fence_length
+                and not info
+            ):
+                in_fence = False
+                fence_char = ""
+                fence_length = 0
+            continue
+
+        in_fence = True
+        fence_char = fence[0]
+        fence_length = len(fence)
+
+        if "(" in info:
+            errors.append(
+                f"line {line_number}: code fence header looks like inline "
+                "code content"
+            )
+
+    if in_fence:
+        errors.append("document ends with an unclosed fenced code block")
+
+    if errors:
+        joined = "; ".join(errors[:3])
+        raise RuntimeError(
+            f"Invalid MDX code fence detected in {doc_path.as_posix()}: "
+            f"{joined}"
+        )
+
+
 def _validate_python_code_blocks(doc_path: Path, text: str) -> None:
     """Reject obviously broken Python examples in a target doc."""
     errors: list[str] = []
@@ -312,6 +375,7 @@ def _update_single_doc(
     result = response.msgs[0].content.strip() if response.msgs else ""
     status = "UPDATED" if doc_changed else "NO_WRITE"
     _write_agent_response_log(repo_root, doc_path, result, status)
+    _validate_mdx_code_fences(doc_path, current_text)
     _validate_python_code_blocks(doc_path, current_text)
 
     if not doc_changed:

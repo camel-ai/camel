@@ -131,13 +131,24 @@ print(("\n\n".join([str(el) for el in elements])))
 
 <strong>2. Clean unstructured text data:</strong>
 <CodeGroup>
-  ```python unstructured_io_clean.py example_dirty_text = ("\x93Some dirty text
-  â€™ with extra spaces and – dashes.") options = [ ('replace_unicode_quotes',{" "}
-  {}), ('clean_dashes', {}), ('clean_non_ascii_chars', {}),
-  ('clean_extra_whitespace', {}), ] cleaned_text =
-  uio.clean_text_data(text=example_dirty_text, clean_options=options)
-  print(cleaned_text) ``` ```markdown cleaned_text.md >>> Some dirty text with
-  extra spaces and dashes. ```
+```python unstructured_io_clean.py
+example_dirty_text = "\u201cSome dirty text\u201d with  extra spaces and \u2013 dashes."
+options = [
+    ("replace_unicode_quotes", {}),
+    ("clean_dashes", {}),
+    ("clean_non_ascii_chars", {}),
+    ("clean_extra_whitespace", {}),
+]
+cleaned_text = uio.clean_text_data(
+    text=example_dirty_text,
+    clean_options=options,
+)
+print(cleaned_text)
+````
+
+```markdown cleaned_text.md
+>>> "Some dirty text" with extra spaces and dashes.
+````
 </CodeGroup>
 
 <br />

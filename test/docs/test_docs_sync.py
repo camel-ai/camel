@@ -235,3 +235,50 @@ def test_validate_python_code_blocks_accepts_valid_python():
         Path("docs/mintlify/mcp/demo.mdx"),
         text,
     )
+
+
+def test_validate_mdx_code_fences_rejects_multiple_fences_on_one_line():
+    text = (
+        "```python demo.py\n"
+        'print("ok") ``` ```markdown output.md\n'
+        ">>> ok\n"
+        "```\n"
+    )
+
+    with pytest.raises(RuntimeError, match="multiple fenced code delimiters"):
+        auto_sync_docs._validate_mdx_code_fences(
+            Path("docs/mintlify/key_modules/demo.mdx"),
+            text,
+        )
+
+
+def test_validate_mdx_code_fences_rejects_inline_code_in_header():
+    text = (
+        "```python demo.py print(\"oops\")\n"
+        "print('still broken')\n"
+        "```\n"
+    )
+
+    with pytest.raises(RuntimeError, match="inline code content"):
+        auto_sync_docs._validate_mdx_code_fences(
+            Path("docs/mintlify/key_modules/demo.mdx"),
+            text,
+        )
+
+
+def test_validate_mdx_code_fences_accepts_valid_codegroup():
+    text = (
+        "<CodeGroup>\n"
+        "```python demo.py\n"
+        'print("ok")\n'
+        "```\n"
+        "```markdown output.md\n"
+        ">>> ok\n"
+        "```\n"
+        "</CodeGroup>\n"
+    )
+
+    auto_sync_docs._validate_mdx_code_fences(
+        Path("docs/mintlify/key_modules/demo.mdx"),
+        text,
+    )
