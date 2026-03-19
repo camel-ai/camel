@@ -1697,7 +1697,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MINIMAX_M2_1,
             ModelType.MINIMAX_M2_1_LIGHTNING,
             ModelType.MINIMAX_M2,
-            ModelType.MINIMAX_M2_STABLE,
         }:
             return 204_800
 
