@@ -407,7 +407,10 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         )
         if self._should_sync_request_log(normalized_kwargs):
             self._sync_request_log_with_client_kwargs(normalized_kwargs)
-        return await call(*args, **kwargs)
+        result = call(*args, **kwargs)
+        if inspect.isawaitable(result):
+            return await result
+        return result
 
     def _should_sync_request_log(self, kwargs: Dict[str, Any]) -> bool:
         r"""Check whether a client call should sync request logs."""

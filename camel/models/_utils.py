@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import copy
 import re
 import textwrap
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 from pydantic import BaseModel
 
@@ -64,42 +65,53 @@ def extract_thinking_from_content(
     return content, reasoning_content
 
 
-def try_modify_message_with_format(
-    message: OpenAIMessage,
+def with_response_format_system_message(
+    messages: List[OpenAIMessage],
     response_format: Type[BaseModel] | None,
-) -> None:
-    r"""Modifies the content of the message to include the instruction of using
-    the response format.
+) -> List[OpenAIMessage]:
+    r"""Return a request-scoped copy with format instructions in system.
 
-    The message will not be modified in the following cases:
-    - response_format is None
-    - message content is not a string
-    - message role is assistant
-
-    Args:
-        response_format (Type[BaseModel] | None): The Pydantic model class.
-        message (OpenAIMessage): The message to be modified.
+    The JSON-format instruction is treated as runtime policy rather than user
+    content, so it is merged into the first text system message when present,
+    or prepended as a new system message otherwise.
     """
     if response_format is None:
-        return
+        return messages
 
-    if not isinstance(message["content"], str):
-        return
+    request_messages = copy.deepcopy(messages)
+    instruction = _format_instruction_for_response_format(response_format)
 
-    if message["role"] == "assistant":
-        return
+    for message in request_messages:
+        content = message.get("content")
+        if message.get("role") == "system" and isinstance(content, str):
+            content = content.rstrip()
+            message["content"] = (
+                f"{content}\n\n{instruction}" if content else instruction
+            )
+            return request_messages
 
+    request_messages.insert(
+        0,
+        {
+            "role": "system",
+            "content": instruction,
+        },
+    )
+    return request_messages
+
+
+def _format_instruction_for_response_format(
+    response_format: Type[BaseModel],
+) -> str:
+    r"""Build the text instruction used for prompt-based structured output."""
     json_schema = response_format.model_json_schema()
-    updated_prompt = textwrap.dedent(
+    return textwrap.dedent(
         f"""\
-        {message["content"]}
-
         Please generate a JSON response adhering to the following JSON schema:
         {json_schema}
         Make sure the JSON response is valid and matches the EXACT structure defined in the schema. Your result should ONLY be a valid json object, WITHOUT ANY OTHER TEXT OR COMMENTS.
         """  # noqa: E501
-    )
-    message["content"] = updated_prompt
+    ).strip()
 
 
 def pydantic_to_json_schema_response_format(

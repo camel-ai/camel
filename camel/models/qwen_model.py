@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional, Union
 
 from camel.configs import QwenConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
-from camel.types import ModelType
+from camel.types import ModelType, StructuredOutputMode
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
@@ -51,6 +51,10 @@ class QwenModel(OpenAICompatibleModel):
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
     """
+
+    @property
+    def structured_output_mode(self) -> StructuredOutputMode:
+        return StructuredOutputMode.JSON_OBJECT
 
     @api_keys_required(
         [

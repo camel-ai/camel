@@ -27,7 +27,7 @@ from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models._utils import (
     pydantic_to_json_schema_response_format,
-    try_modify_message_with_format,
+    with_response_format_system_message,
 )
 from camel.models.base_model import BaseModelBackend
 from camel.types import (
@@ -234,9 +234,6 @@ class OpenAICompatibleModel(BaseModelBackend):
 
             is_streaming = self.model_config_dict.get("stream", False)
 
-            def _prompt_no_inject(m, rf, t):
-                return self._request_prompt_only(m, rf, t, inject_schema=False)
-
             attempts: List[Tuple[str, Callable[..., Any]]]
 
             if mode == StructuredOutputMode.JSON_SCHEMA:
@@ -248,12 +245,12 @@ class OpenAICompatibleModel(BaseModelBackend):
                     ("parse", self._request_parse),
                     ("json_schema", self._request_json_schema),
                     ("json_object", self._request_json_object),
-                    ("prompt_only", _prompt_no_inject),
+                    ("prompt_only", self._request_prompt_only),
                 ]
             elif mode == StructuredOutputMode.JSON_OBJECT:
                 attempts = [
                     ("json_object", self._request_json_object),
-                    ("prompt_only", _prompt_no_inject),
+                    ("prompt_only", self._request_prompt_only),
                 ]
             else:
                 attempts = [
@@ -332,11 +329,6 @@ class OpenAICompatibleModel(BaseModelBackend):
 
             is_streaming = self.model_config_dict.get("stream", False)
 
-            def _prompt_no_inject(m, rf, t):
-                return self._arequest_prompt_only(
-                    m, rf, t, inject_schema=False
-                )
-
             attempts: List[Tuple[str, Callable[..., Any]]]
 
             if mode == StructuredOutputMode.JSON_SCHEMA:
@@ -348,12 +340,12 @@ class OpenAICompatibleModel(BaseModelBackend):
                     ("parse", self._arequest_parse),
                     ("json_schema", self._arequest_json_schema),
                     ("json_object", self._arequest_json_object),
-                    ("prompt_only", _prompt_no_inject),
+                    ("prompt_only", self._arequest_prompt_only),
                 ]
             elif mode == StructuredOutputMode.JSON_OBJECT:
                 attempts = [
                     ("json_object", self._arequest_json_object),
-                    ("prompt_only", _prompt_no_inject),
+                    ("prompt_only", self._arequest_prompt_only),
                 ]
             else:
                 attempts = [
@@ -500,13 +492,14 @@ class OpenAICompatibleModel(BaseModelBackend):
         ``chat.completions.create()`` with ``{"type": "json_object"}``.
         """
         request_config = self._prepare_request_config(tools)
-
-        try_modify_message_with_format(messages[-1], response_format)
+        request_messages = with_response_format_system_message(
+            messages, response_format
+        )
         request_config["response_format"] = {"type": "json_object"}
 
         return self._call_client(
             self._client.chat.completions.create,
-            messages=messages,
+            messages=request_messages,
             model=self.model_type,
             **request_config,
         )
@@ -519,13 +512,14 @@ class OpenAICompatibleModel(BaseModelBackend):
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         r"""Async variant of :meth:`_request_json_object`."""
         request_config = self._prepare_request_config(tools)
-
-        try_modify_message_with_format(messages[-1], response_format)
+        request_messages = with_response_format_system_message(
+            messages, response_format
+        )
         request_config["response_format"] = {"type": "json_object"}
 
         return await self._acall_client(
             self._async_client.chat.completions.create,
-            messages=messages,
+            messages=request_messages,
             model=self.model_type,
             **request_config,
         )
@@ -540,17 +534,20 @@ class OpenAICompatibleModel(BaseModelBackend):
         r"""Call ``chat.completions.create()`` without ``response_format``.
 
         Args:
-            inject_schema: If ``True`` (default), inject the JSON schema into
-                the last message via prompt.
+            inject_schema: If ``True`` (default), merge the JSON schema
+                instruction into a request-scoped system message.
         """
         request_config = self._prepare_request_config(tools)
+        request_messages = messages
 
         if inject_schema:
-            try_modify_message_with_format(messages[-1], response_format)
+            request_messages = with_response_format_system_message(
+                messages, response_format
+            )
 
         return self._call_client(
             self._client.chat.completions.create,
-            messages=messages,
+            messages=request_messages,
             model=self.model_type,
             **request_config,
         )
@@ -564,13 +561,16 @@ class OpenAICompatibleModel(BaseModelBackend):
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         r"""Async variant of :meth:`_request_prompt_only`."""
         request_config = self._prepare_request_config(tools)
+        request_messages = messages
 
         if inject_schema:
-            try_modify_message_with_format(messages[-1], response_format)
+            request_messages = with_response_format_system_message(
+                messages, response_format
+            )
 
         return await self._acall_client(
             self._async_client.chat.completions.create,
-            messages=messages,
+            messages=request_messages,
             model=self.model_type,
             **request_config,
         )

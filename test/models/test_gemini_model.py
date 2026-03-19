@@ -409,15 +409,11 @@ def test_gemini_parse_path_applies_cached_content_and_retry():
         "DummyClient",
         (),
         {
-            "beta": type(
-                "DummyBeta",
+            "chat": type(
+                "DummyChat",
                 (),
                 {
-                    "chat": type(
-                        "DummyChat",
-                        (),
-                        {"completions": retry_parse_completions},
-                    )()
+                    "completions": retry_parse_completions,
                 },
             )()
         },
