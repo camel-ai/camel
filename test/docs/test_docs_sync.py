@@ -16,8 +16,6 @@ import importlib.util
 import sys
 from pathlib import Path
 
-import pytest
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -86,33 +84,6 @@ def test_read_path_list_file(tmp_path):
     ]
 
 
-def test_resolve_code_respects_budget_after_truncation(tmp_path, monkeypatch):
-    docs_root = tmp_path / "docs"
-    source_root = tmp_path / "camel" / "runtimes"
-    docs_root.mkdir(parents=True)
-    source_root.mkdir(parents=True)
-
-    doc_path = docs_root / "runtimes.mdx"
-    doc_path.write_text(
-        "---\n"
-        'doc_code_map:\n'
-        '  - "camel/runtimes/*.py"\n'
-        "---\n"
-        "body\n",
-        encoding="utf-8",
-    )
-    (source_root / "large.py").write_text("a" * 400, encoding="utf-8")
-    (source_root / "second.py").write_text("b" * 40, encoding="utf-8")
-
-    monkeypatch.setattr(auto_sync_docs, "MAX_CODE_CHARS", 260)
-
-    resolved = auto_sync_docs._resolve_code(doc_path, tmp_path)
-
-    assert len(resolved) <= auto_sync_docs.MAX_CODE_CHARS
-    assert "... (truncated)" in resolved
-    assert "# --- camel/runtimes/second.py ---" not in resolved
-
-
 def test_filter_changed_python_files_keeps_only_supported_roots():
     changed_files = [
         "camel/agents/chat_agent.py",
@@ -131,60 +102,24 @@ def test_filter_changed_python_files_keeps_only_supported_roots():
     ]
 
 
-def test_relevant_changed_python_files_match_doc_code_map(tmp_path):
-    docs_root = tmp_path / "docs"
-    source_root = tmp_path / "camel" / "runtimes"
-    docs_root.mkdir(parents=True)
-    source_root.mkdir(parents=True)
-
-    doc_path = docs_root / "runtimes.mdx"
-    doc_path.write_text(
-        "---\n"
-        'doc_code_map:\n'
-        '  - "camel/runtimes/*.py"\n'
-        "---\n"
-        "body\n",
-        encoding="utf-8",
-    )
-    (source_root / "remote.py").write_text(
-        "print('hello')\n", encoding="utf-8"
-    )
-    (source_root / "local.py").write_text("print('world')\n", encoding="utf-8")
-
-    relevant = auto_sync_docs._relevant_changed_python_files(
-        doc_path,
-        tmp_path,
+def test_build_user_message_includes_target_doc_and_changed_files():
+    message = auto_sync_docs._build_user_message(
+        Path("docs/mintlify/key_modules/runtimes.mdx"),
         [
-            "camel/runtimes/remote.py",
-            "camel/agents/chat_agent.py",
+            "camel/runtimes/base.py",
+            "camel/runtimes/docker_runtime.py",
         ],
     )
 
-    assert relevant == ["camel/runtimes/remote.py"]
+    assert "## Target doc" in message
+    assert "docs/mintlify/key_modules/runtimes.mdx" in message
+    assert "## Changed Python files for this run" in message
+    assert "camel/runtimes/base.py" in message
+    assert "camel/runtimes/docker_runtime.py" in message
+    assert "`doc_code_map`" in message
 
 
 def test_should_skip_update_recognizes_sentinel():
     assert auto_sync_docs._should_skip_update("__NO_CHANGES__")
     assert auto_sync_docs._should_skip_update("  __NO_CHANGES__\n")
     assert not auto_sync_docs._should_skip_update("updated body")
-
-
-def test_doc_was_updated_in_place_detects_direct_edit():
-    original = "---\ntitle: Demo\n---\nbody\n"
-    current = "---\ntitle: Demo\n---\nupdated body\n"
-    frontmatter = "---\ntitle: Demo\n---\n"
-
-    assert auto_sync_docs._doc_was_updated_in_place(
-        original, current, frontmatter
-    )
-
-
-def test_doc_was_updated_in_place_rejects_frontmatter_change():
-    original = "---\ntitle: Demo\n---\nbody\n"
-    current = "---\ntitle: Changed\n---\nupdated body\n"
-    frontmatter = "---\ntitle: Demo\n---\n"
-
-    with pytest.raises(RuntimeError):
-        auto_sync_docs._doc_was_updated_in_place(
-            original, current, frontmatter
-        )

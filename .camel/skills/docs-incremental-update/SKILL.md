@@ -24,8 +24,9 @@ Update Mintlify .mdx documentation so it stays in sync with CAMEL source code.
 
 ## Edit Rule
 
-If you use terminal tools to edit the impacted document directly, keep the
-changes scoped to that doc and preserve its frontmatter.
+Use terminal tools to inspect the target doc, inspect mapped Python files,
+and edit the target doc directly. Keep changes scoped to that doc and
+preserve its frontmatter.
 
 
 ## Quick Reference
@@ -68,19 +69,18 @@ doc_code_map:
 
 For each impacted doc:
 
-1. Use terminal as needed to confirm the Python diff, inspect specific mapped
-   files, or update the impacted doc directly.
-2. Open the `.mdx` file and separate the frontmatter from the body.
-3. Resolve every glob pattern in `doc_code_map` to actual source files.
-4. Read the source files — these represent the ground truth.
+1. Open the target `.mdx` file and inspect its `doc_code_map` frontmatter.
+2. Resolve every glob pattern in `doc_code_map` to actual source files.
+3. Read the mapped Python files with terminal commands.
+4. Compare the target doc against the mapped source files and the provided
+   changed Python file list.
 
 ### Step 3 — Update the Document Body
 
 Rewrite only the parts of the body that are outdated relative to the code.
 
 Rules:
-- **If you edit through tools, keep changes scoped to the impacted docs** for
-  this run.
+- **Edit the target doc directly through terminal tools** for this run.
 - **Focus on changed Python files first** — inspect the diff between the base
   and head refs when available.
 - **Base changes only on mapped Python files** — they are the source of truth.
@@ -96,6 +96,7 @@ Rules:
 - **Add references** to newly introduced public API when relevant.
 - **Skip the document entirely** if the Python change is internal and does not
   require reader-facing doc updates.
+- After finishing, return exactly `UPDATED` or `__NO_CHANGES__`.
 
 ### Step 4 — Verify
 
@@ -159,6 +160,7 @@ automatically on each release:
 2. Writes `changed_python_files.txt` from the release diff, limited to
    `camel/**.py`.
 3. Computes `impacted_docs.txt` from that changed Python file list.
-4. Runs `auto_sync_docs_with_chatagent.py` with both files so the agent knows:
-   which Python files changed and which docs it may update.
+4. Runs `auto_sync_docs_with_chatagent.py` with both files so the agent knows
+   which Python files changed and which target doc it may inspect and update
+   directly through terminal tools.
 5. Opens a PR with the changes.

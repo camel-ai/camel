@@ -7,8 +7,7 @@ This folder keeps Mintlify documentation in sync with CAMEL source code.
 | Script | Purpose |
 |--------|---------|
 | `doc_code_map.py` | Validate `doc_code_map` frontmatter and find impacted docs after code changes. |
-| `auto_sync_docs_with_chatagent.py` | Regenerate doc bodies for impacted files using a CAMEL ChatAgent. Located at `.camel/skills/docs-incremental-update/scripts/`. |
-| `LOCAL_DRY_RUN.md` | Local step-by-step instructions for validating the agent-driven docs sync flow. |
+| `auto_sync_docs_with_chatagent.py` | Ask a CAMEL ChatAgent to inspect impacted docs with terminal tools and update them directly. Located at `.camel/skills/docs-incremental-update/scripts/`. |
 
 Documented doc roots:
 
@@ -20,11 +19,10 @@ Documented doc roots:
 Each `.mdx` doc declares a `doc_code_map` block in its YAML frontmatter listing
 glob patterns for the source files it documents. When code changes land,
 `doc_code_map.py impacted` matches the changed files against those patterns to
-produce a list of impacted docs. `auto_sync_docs_with_chatagent.py` then feeds
-each doc + its mapped source code to a CAMEL ChatAgent, which rewrites the body
-while preserving the frontmatter and Mintlify components. The workflow passes
-both `changed_python_files.txt` and `impacted_docs.txt` into the agent so it
-can limit itself to Python-driven, incremental updates.
+produce a list of impacted docs. `auto_sync_docs_with_chatagent.py` then passes
+each target doc path plus `changed_python_files.txt` to a CAMEL ChatAgent. The
+agent uses terminal tools to inspect the target doc, resolve `doc_code_map`,
+read mapped Python files, and update the target doc directly.
 
 The GitHub Actions workflow `.github/workflows/docs_release_auto_sync_pr.yml`
 orchestrates this end-to-end on every release tag diff and opens a PR
@@ -100,10 +98,8 @@ python .camel/skills/docs-incremental-update/scripts/auto_sync_docs_with_chatage
   --model-type claude-sonnet-4-20250514
 ```
 
-## Claude Code Skill
+## Repo Skill
 
-A companion Claude Code skill is available at
-`.camel/skills/docs-incremental-update/`. It guides interactive, manual doc
-updates following the same doc-code-map approach used by the automated workflow:
-load the skill, inspect only the changed Python files plus the impacted docs,
-then return the minimal necessary doc changes.
+The repo skill at `.camel/skills/docs-incremental-update/` guides the agent to
+inspect only the changed Python files plus the impacted doc, then edit that doc
+directly through terminal tools with the smallest necessary diff.
