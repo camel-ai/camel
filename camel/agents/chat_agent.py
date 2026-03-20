@@ -6527,7 +6527,6 @@ class ChatAgent(BaseAgent):
         r"""Clone tools and return toolkits that need agent registration.
 
         This method handles stateful toolkits by cloning them if they expose a
-        ``clone_with_context(clone_context)`` or
         ``clone_for_new_session(session_id)`` method, and collects
         RegisteredAgentToolkit instances for later registration.
 
@@ -6549,11 +6548,7 @@ class ChatAgent(BaseAgent):
 
                 if toolkit_id not in cloned_toolkits:
                     try:
-                        if hasattr(toolkit_instance, 'clone_with_context'):
-                            new_toolkit = toolkit_instance.clone_with_context(
-                                clone_context
-                            )
-                        elif hasattr(toolkit_instance, 'clone_for_new_session'):
+                        if hasattr(toolkit_instance, 'clone_for_new_session'):
                             new_session_id = (
                                 clone_context.session_id
                                 if clone_context is not None
