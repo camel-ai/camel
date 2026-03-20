@@ -840,4 +840,3 @@ def check_nodejs_availability(update_callback=None) -> Tuple[bool, str]:
             update_callback(f"Note: {info}.\n")
         logger.warning(f"Failed to check Node.js: {e}")
         return False, info
-
