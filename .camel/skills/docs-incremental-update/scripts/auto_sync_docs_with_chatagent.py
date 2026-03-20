@@ -45,8 +45,8 @@ Your task:
 - Preserve the target document frontmatter.
 - Focus only on the provided changed Python files. Ignore docs-only, workflow,
   YAML, release, and other non-Python changes.
-- CI determines success from the resulting target doc file state. Do not rely on
-  special sentinel strings in your final chat reply.
+- CI determines success from the resulting target doc file state. Do not rely
+  on special sentinel strings in your final chat reply.
 - If no reader-facing update is needed, leave the target doc untouched.
 - Rewrite the documentation so it accurately reflects the latest code.
 - Preserve the existing writing style, section structure, and Mintlify
@@ -58,8 +58,8 @@ Your task:
 - If the current doc is already accurate, or the code changes are internal and
   do not affect public API, behavior, configuration, examples, or reader
   understanding, leave the file unchanged.
-- Keep fenced code blocks valid MDX. Use one opening fence and one closing fence
-  on separate lines.
+- Keep fenced code blocks valid MDX. Use one opening fence and one closing
+  fence on separate lines.
 - Keep Python examples syntactically valid and properly indented.
 - Do NOT return the rewritten doc body in chat. A brief status note is fine.
 """

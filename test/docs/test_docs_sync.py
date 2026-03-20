@@ -206,12 +206,7 @@ def test_validate_python_code_blocks_rejects_markdown_emphasis():
 
 
 def test_validate_python_code_blocks_rejects_missing_indented_body():
-    text = (
-        "```python demo.py\n"
-        "def run():\n"
-        'print("oops")\n'
-        "```\n"
-    )
+    text = "```python demo.py\n" "def run():\n" 'print("oops")\n' "```\n"
 
     with pytest.raises(RuntimeError, match="expected an indented body"):
         auto_sync_docs._validate_python_code_blocks(
@@ -254,9 +249,7 @@ def test_validate_mdx_code_fences_rejects_multiple_fences_on_one_line():
 
 def test_validate_mdx_code_fences_rejects_inline_code_in_header():
     text = (
-        "```python demo.py print(\"oops\")\n"
-        "print('still broken')\n"
-        "```\n"
+        "```python demo.py print(\"oops\")\n" "print('still broken')\n" "```\n"
     )
 
     with pytest.raises(RuntimeError, match="inline code content"):
