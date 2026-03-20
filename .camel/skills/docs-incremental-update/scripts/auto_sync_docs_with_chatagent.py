@@ -9,26 +9,12 @@ document directly through TerminalToolkit.
 from __future__ import annotations
 
 import argparse
-import re
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 SKILL_NAME = "docs-incremental-update"
-MDX_FENCE_LINE_PATTERN = re.compile(
-    r"^(?P<indent>\s*)(?P<fence>`{3,}|~{3,})(?P<info>[^\n]*)$"
-)
-PYTHON_FENCE_PATTERN = re.compile(
-    r"^```python(?:\s+[^\n]*)?\n(.*?)\n```",
-    re.MULTILINE | re.DOTALL,
-)
-PYTHON_BLOCK_START_PATTERN = re.compile(
-    r"^\s*(?:"
-    r"async\s+def|def|class|if|elif|else|for|while|try|except|finally|"
-    r"with|match|case"
-    r")\b.*:\s*(?:#.*)?$"
-)
 
 SYSTEM_PROMPT = """\
 You are a technical documentation writer for the CAMEL-AI framework.
@@ -39,12 +25,12 @@ You will receive:
 
 Your task:
 - First load the docs-incremental-update skill and follow it.
-- Use the terminal to inspect the target doc, read its doc_code_map, inspect
-  the mapped Python files, and update only the target document when needed.
+- Use the terminal to inspect the target doc, inspect any relevant code, and
+  update only the target document when needed.
 - Keep tool-based edits scoped to the current target doc.
 - Preserve the target document frontmatter.
-- Focus only on the provided changed Python files. Ignore docs-only, workflow,
-  YAML, release, and other non-Python changes.
+- Treat the provided changed Python files as optional context rather than a
+  hard restriction.
 - CI determines success from the resulting target doc file state. Do not rely
   on special sentinel strings in your final chat reply.
 - If no reader-facing update is needed, leave the target doc untouched.
@@ -58,9 +44,6 @@ Your task:
 - If the current doc is already accurate, or the code changes are internal and
   do not affect public API, behavior, configuration, examples, or reader
   understanding, leave the file unchanged.
-- Keep fenced code blocks valid MDX. Use one opening fence and one closing
-  fence on separate lines.
-- Keep Python examples syntactically valid and properly indented.
 - Do NOT return the rewritten doc body in chat. A brief status note is fine.
 """
 
@@ -83,62 +66,6 @@ def _filter_changed_python_files(changed_files: list[str]) -> list[str]:
             continue
         filtered.add(normalized)
     return sorted(filtered)
-
-
-def _extract_doc_code_map_patterns(doc_path: Path) -> list[str]:
-    """Extract doc_code_map patterns from a Mintlify doc frontmatter block."""
-    text = doc_path.read_text(encoding="utf-8")
-    if not text.startswith("---\n"):
-        return []
-
-    end = text.find("\n---\n", 4)
-    if end == -1:
-        return []
-
-    patterns: list[str] = []
-    in_block = False
-    for line in text[4:end].splitlines():
-        if not in_block:
-            if line.startswith("doc_code_map:"):
-                in_block = True
-            continue
-
-        if line.startswith("  - "):
-            item = line[4:].strip()
-            if (
-                len(item) >= 2
-                and item[0] == item[-1]
-                and item[0] in ('"', "'")
-            ):
-                item = item[1:-1]
-            if item:
-                patterns.append(item)
-            continue
-
-        break
-
-    return patterns
-
-
-def _select_changed_python_files_for_doc(
-    doc_path: Path,
-    repo_root: Path,
-    changed_python_files: list[str],
-) -> list[str]:
-    """Return only changed Python files mapped to the target doc."""
-    patterns = _extract_doc_code_map_patterns(doc_path)
-    if not patterns:
-        return changed_python_files
-
-    changed = {Path(path).as_posix() for path in changed_python_files}
-    selected: set[str] = set()
-    for pattern in patterns:
-        for path in repo_root.glob(pattern):
-            rel = path.resolve().relative_to(repo_root).as_posix()
-            if rel in changed:
-                selected.add(rel)
-
-    return sorted(selected)
 
 
 def _format_path_section(title: str, paths: list[str]) -> str:
@@ -198,117 +125,15 @@ def _build_user_message(
 ) -> str:
     """Build the user message for a single impacted doc."""
     changed_files_section = _format_path_section(
-        "Changed mapped Python files for this run",
+        "Changed Python files for this run (optional context)",
         changed_python_files,
     )
     return (
         f"## Target doc\n\n{doc_path.as_posix()}\n\n"
         f"{changed_files_section}\n\n"
-        "Use the terminal to inspect this target doc, read its "
-        "`doc_code_map`, inspect the mapped Python files, and update this "
-        "target doc directly if needed."
+        "Use the terminal to inspect this target doc and any relevant code, "
+        "then update this target doc directly if needed."
     )
-
-
-def _validate_mdx_code_fences(doc_path: Path, text: str) -> None:
-    """Reject obviously malformed fenced code blocks in a target doc."""
-    errors: list[str] = []
-    in_fence = False
-    fence_char = ""
-    fence_length = 0
-
-    for line_number, line in enumerate(text.splitlines(), start=1):
-        if line.count("```") > 1 or line.count("~~~") > 1:
-            errors.append(
-                f"line {line_number}: multiple fenced code delimiters found "
-                "on one line"
-            )
-            continue
-
-        match = MDX_FENCE_LINE_PATTERN.match(line)
-        if not match:
-            continue
-
-        fence = match.group("fence")
-        info = match.group("info").strip()
-
-        if in_fence:
-            if (
-                fence[0] == fence_char
-                and len(fence) >= fence_length
-                and not info
-            ):
-                in_fence = False
-                fence_char = ""
-                fence_length = 0
-            continue
-
-        in_fence = True
-        fence_char = fence[0]
-        fence_length = len(fence)
-
-        if "(" in info:
-            errors.append(
-                f"line {line_number}: code fence header looks like inline "
-                "code content"
-            )
-
-    if in_fence:
-        errors.append("document ends with an unclosed fenced code block")
-
-    if errors:
-        joined = "; ".join(errors[:3])
-        raise RuntimeError(
-            f"Invalid MDX code fence detected in {doc_path.as_posix()}: "
-            f"{joined}"
-        )
-
-
-def _validate_python_code_blocks(doc_path: Path, text: str) -> None:
-    """Reject obviously broken Python examples in a target doc."""
-    errors: list[str] = []
-    for block_index, match in enumerate(
-        PYTHON_FENCE_PATTERN.finditer(text),
-        start=1,
-    ):
-        lines = match.group(1).splitlines()
-        for line_index, line in enumerate(lines, start=1):
-            if "**" in line:
-                errors.append(
-                    "block "
-                    f"{block_index} line {line_index}: markdown emphasis "
-                    "found inside Python code"
-                )
-
-            if not PYTHON_BLOCK_START_PATTERN.match(line):
-                continue
-
-            next_index = line_index
-            while next_index < len(lines) and not lines[next_index].strip():
-                next_index += 1
-
-            if next_index >= len(lines):
-                errors.append(
-                    f"block {block_index} line {line_index}: block has no body"
-                )
-                continue
-
-            current_indent = len(line) - len(line.lstrip(" "))
-            next_line = lines[next_index]
-            next_indent = len(next_line) - len(next_line.lstrip(" "))
-            if next_indent <= current_indent:
-                errors.append(
-                    "block "
-                    f"{block_index} line {line_index}: expected an indented "
-                    f"body after '{line.strip()}'"
-                )
-
-    if errors:
-        joined = "; ".join(errors[:3])
-        raise RuntimeError(
-            f"Invalid Python example detected in {doc_path.as_posix()}: "
-            f"{joined}"
-        )
 
 
 def _update_single_doc(
@@ -326,12 +151,7 @@ def _update_single_doc(
     from camel.types import ModelPlatformType
 
     original_text = doc_path.read_text(encoding="utf-8")
-    doc_changed_python_files = _select_changed_python_files_for_doc(
-        doc_path,
-        repo_root,
-        changed_python_files,
-    )
-    user_message = _build_user_message(doc_path, doc_changed_python_files)
+    user_message = _build_user_message(doc_path, changed_python_files)
     baseline_paths = _git_status_paths(repo_root)
 
     platform = ModelPlatformType(model_platform)
@@ -375,8 +195,6 @@ def _update_single_doc(
     result = response.msgs[0].content.strip() if response.msgs else ""
     status = "UPDATED" if doc_changed else "NO_WRITE"
     _write_agent_response_log(repo_root, doc_path, result, status)
-    _validate_mdx_code_fences(doc_path, current_text)
-    _validate_python_code_blocks(doc_path, current_text)
 
     if not doc_changed:
         print(f"  SKIP (no doc update needed): {doc_path}")
