@@ -115,7 +115,8 @@ jobs:
             Base ref: `${{ steps.refs.outputs.base }}`
             Head ref: `${{ steps.refs.outputs.head }}`
 
-            Updated by CAMEL ChatAgent using `changed_python_files.txt` and `doc_code_map`.
+            Updated by CAMEL ChatAgent for docs selected via `doc_code_map`,
+            with `changed_python_files.txt` provided as context.
           labels: documentation, automated-pr
           add-paths: |
             docs/mintlify/key_modules

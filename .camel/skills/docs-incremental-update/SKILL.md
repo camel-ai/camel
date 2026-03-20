@@ -24,9 +24,9 @@ Update Mintlify .mdx documentation so it stays in sync with CAMEL source code.
 
 ## Edit Rule
 
-Use terminal tools to inspect the target doc, inspect mapped Python files,
-and edit the target doc directly. Keep changes scoped to that doc and
-preserve its frontmatter.
+Use terminal tools to inspect the target doc, inspect any relevant code, and
+edit the target doc directly. Keep changes scoped to that doc and preserve its
+frontmatter.
 CI treats the run as successful based on the resulting target doc file state,
 not on any special status token in the chat response.
 
@@ -67,15 +67,15 @@ doc_code_map:
 ---
 ```
 
-### Step 2 — Read Mapped Code and Current Doc
+### Step 2 — Read Current Doc and Relevant Code
 
 For each impacted doc:
 
 1. Open the target `.mdx` file and inspect its `doc_code_map` frontmatter.
-2. Resolve every glob pattern in `doc_code_map` to actual source files.
-3. Read the mapped Python files with terminal commands.
-4. Compare the target doc against the mapped source files and the provided
-   changed Python file list.
+2. Use the provided changed Python file list as initial context.
+3. Read any source files needed to judge whether the doc is still accurate.
+4. Compare the target doc against the current code and decide whether a
+   reader-facing update is actually needed.
 
 ### Step 3 — Update the Document Body
 
@@ -85,19 +85,14 @@ Rules:
 - **Edit the target doc directly through terminal tools** for this run.
 - **Let file changes speak for themselves** — if no update is needed, leave the
   target doc untouched instead of relying on a sentinel reply.
-- **Focus on changed Python files first** — inspect the diff between the base
-  and head refs when available.
-- **Base changes only on mapped Python files** — they are the source of truth.
+- **Use changed Python files as context, not a hard boundary** — inspect other
+  relevant code when needed to make a correct documentation decision.
 - **Ignore non-Python changes** — docs, workflow, YAML, test-only, and release
   metadata changes should not trigger doc edits by themselves.
 - **Prefer the smallest possible diff** — keep all already-correct content.
 - **Preserve frontmatter** — never modify the `---` block.
 - **Preserve style** — keep existing section structure and tone.
 - **Preserve Mintlify components** — keep Card, Accordion, Tab, CodeGroup, etc.
-- **Preserve valid MDX fences** — keep one opening fence and one closing fence
-  on separate lines.
-- **Keep runnable examples valid** — Python snippets must remain syntactically
-  correct and properly indented.
 - **Update code snippets** — fix imports, class names, method signatures, parameters.
 - **Update prose** — fix descriptions that no longer match the code.
 - **Remove references** to deleted classes/methods/parameters.
@@ -171,8 +166,8 @@ automatically on each release:
    `*.py` files that may match `doc_code_map`.
 3. Computes `impacted_docs.txt` from that changed Python file list.
 4. Runs `auto_sync_docs_with_chatagent.py` with both files so the agent knows
-   which Python files changed and which target doc it may inspect and update
-   directly through terminal tools. The script accepts success based on whether
-   the target doc actually changed, rejects edits outside the target doc, and
-   validates fenced code blocks before proceeding.
+   which target doc it may inspect and update directly through terminal tools,
+   while using `changed_python_files.txt` as context. The script accepts
+   success based on whether the target doc actually changed and rejects edits
+   outside the target doc.
 5. Opens a PR with the changes.

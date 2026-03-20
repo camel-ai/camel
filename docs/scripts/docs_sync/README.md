@@ -21,8 +21,8 @@ glob patterns for the source files it documents. When code changes land,
 `doc_code_map.py impacted` matches the changed files against those patterns to
 produce a list of impacted docs. `auto_sync_docs_with_chatagent.py` then passes
 each target doc path plus `changed_python_files.txt` to a CAMEL ChatAgent. The
-agent uses terminal tools to inspect the target doc, resolve `doc_code_map`,
-read mapped Python files, and update the target doc directly.
+agent uses terminal tools to inspect the target doc and any relevant code, then
+updates the target doc directly when a reader-facing change is needed.
 
 The GitHub Actions workflow `.github/workflows/docs_release_auto_sync_pr.yml`
 orchestrates this end-to-end on every release tag diff and opens a PR
@@ -101,5 +101,6 @@ python .camel/skills/docs-incremental-update/scripts/auto_sync_docs_with_chatage
 ## Repo Skill
 
 The repo skill at `.camel/skills/docs-incremental-update/` guides the agent to
-inspect only the changed Python files plus the impacted doc, then edit that doc
-directly through terminal tools with the smallest necessary diff.
+inspect the impacted doc, use `changed_python_files.txt` as context, inspect
+any other relevant code when needed, and edit that doc directly through
+terminal tools with the smallest necessary diff.
