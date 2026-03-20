@@ -19,8 +19,9 @@ using different transport protocols (stdio, sse, streamable-http, websocket).
 The client can automatically detect the transport type based on configuration.
 """
 
+import asyncio
 import inspect
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import timedelta
 from enum import Enum
 from pathlib import Path
@@ -254,7 +255,7 @@ class MCPClient:
         self,
         config: Union[ServerConfig, Dict[str, Any]],
         client_info: Optional[types.Implementation] = None,
-        timeout: Optional[float] = 10.0,
+        timeout: Optional[float] = None,
     ):
         # Convert dict config to ServerConfig if needed
         if isinstance(config, dict):
@@ -267,10 +268,13 @@ class MCPClient:
 
         self.client_info = client_info
         self.read_timeout_seconds = timedelta(seconds=timeout or 10.0)
+        self._handshake_timeout_seconds = (
+            timeout if timeout is not None else self.config.timeout
+        )
 
         self._session: Optional[ClientSession] = None
         self._tools: List[types.Tool] = []
-        self._connection_context = None
+        self._connection_context: Optional[Any] = None
 
     @property
     def transport_type(self) -> TransportType:
@@ -296,12 +300,73 @@ class MCPClient:
         await self._cleanup_connection()
 
     async def _establish_connection(self):
-        r"""Establish connection to the MCP server."""
+        r"""Establish connection to the MCP server.
+
+        For auto-detected HTTP/HTTPS URLs, first tries StreamableHTTP
+        transport (MCP 2025 spec). If that fails or times out, automatically
+        falls back to SSE transport (MCP 2024 / supergateway-compatible).
+        Explicitly configured transport types are honored without fallback.
+        """
+        transport_type = self.config.transport_type
+        transports_to_try = [transport_type]
+
+        # Only auto-detected HTTP transports fall back to SSE. If the user
+        # explicitly selected a transport type, keep connection behavior
+        # deterministic and honor that choice.
+        if (
+            transport_type == TransportType.STREAMABLE_HTTP
+            and self.config.type is None
+        ):
+            transports_to_try.append(TransportType.SSE)
+
+        last_error: Optional[Exception] = None
+        for attempt_transport in transports_to_try:
+            connect_task = asyncio.create_task(
+                self._try_connect(attempt_transport)
+            )
+            try:
+                await asyncio.shield(connect_task)
+                return  # success
+            except asyncio.CancelledError:
+                if not connect_task.done():
+                    connect_task.cancel()
+                    with suppress(BaseException):
+                        await connect_task
+                    await self._cleanup_connection()
+                    raise
+                last_error = ConnectionError(
+                    f"{attempt_transport} connection attempt was cancelled"
+                )
+            except Exception as e:
+                last_error = e
+                if attempt_transport != transports_to_try[-1]:
+                    from camel.logger import get_logger
+
+                    logger = get_logger(__name__)
+                    logger.warning(
+                        f"StreamableHTTP connection failed "
+                        f"({type(e).__name__}: {str(e)[:80]}). "
+                        f"Retrying with SSE transport..."
+                    )
+
+        # All transports exhausted — raise simplified error
+        await self._cleanup_connection()
+        from camel.logger import get_logger
+
+        logger = get_logger(__name__)
+        error_msg = self._simplify_connection_error(last_error)
+        logger.error(f"MCP connection failed: {error_msg}")
+        raise ConnectionError(error_msg) from last_error
+
+    async def _try_connect(self, transport_type: "TransportType"):
+        r"""Attempt connection with a specific transport type."""
         try:
-            self._connection_context = self._create_transport()
+            self._connection_context = self._create_transport(
+                override_transport=transport_type
+            )
             streams = await self._connection_context.__aenter__()
 
-            # Handle extra returns safely
+            # Handle extra returns safely (streamable_http yields 3 values)
             read_stream, write_stream = streams[:2]
 
             self._session = ClientSession(
@@ -314,25 +379,20 @@ class MCPClient:
             # Start the session's message processing loop
             await self._session.__aenter__()
 
-            # Initialize the session and load tools
-            await self._session.initialize()
-            tools_response = await self._session.list_tools()
+            # Initialize the session and load tools — apply a hard timeout so
+            # a hung server (e.g., streamable_http vs supergateway mismatch)
+            # fails fast instead of blocking forever.
+            init_timeout = self._handshake_timeout_seconds
+            await self._run_operation_with_timeout(
+                self._session.initialize(), timeout=init_timeout
+            )
+            tools_response = await self._run_operation_with_timeout(
+                self._session.list_tools(), timeout=init_timeout
+            )
             self._tools = tools_response.tools if tools_response else []
-
-        except Exception as e:
-            # Clean up on error
+        except BaseException:
             await self._cleanup_connection()
-
-            # Convert complex exceptions to simpler, more understandable ones
-            from camel.logger import get_logger
-
-            logger = get_logger(__name__)
-
-            error_msg = self._simplify_connection_error(e)
-            logger.error(f"MCP connection failed: {error_msg}")
-
-            # Raise a simpler exception
-            raise ConnectionError(error_msg) from e
+            raise
 
     async def _cleanup_connection(self):
         r"""Clean up connection resources."""
@@ -365,7 +425,25 @@ class MCPClient:
             # Ensure state is reset
             self._tools = []
 
-    def _simplify_connection_error(self, error: Exception) -> str:
+    async def _run_operation_with_timeout(
+        self, operation: Any, timeout: float
+    ) -> Any:
+        r"""Run a session operation with deterministic timeout cleanup."""
+        task = asyncio.create_task(operation)
+        try:
+            return await asyncio.wait_for(task, timeout=timeout)
+        except asyncio.TimeoutError:
+            task.cancel()
+            with suppress(BaseException):
+                await task
+            raise
+        except asyncio.CancelledError:
+            task.cancel()
+            with suppress(BaseException):
+                await task
+            raise
+
+    def _simplify_connection_error(self, error: BaseException) -> str:
         r"""Convert complex MCP connection errors to simple, understandable
         messages.
         """
@@ -436,9 +514,16 @@ class MCPClient:
             )
 
     @asynccontextmanager
-    async def _create_transport(self):
-        """Create the appropriate transport based on detected type."""
-        transport_type = self.config.transport_type
+    async def _create_transport(
+        self, override_transport: Optional["TransportType"] = None
+    ):
+        """Create the appropriate transport based on detected type.
+
+        Args:
+            override_transport: If provided, use this transport type instead
+                of the auto-detected one. Used for fallback logic.
+        """
+        transport_type = override_transport or self.config.transport_type
 
         if transport_type == TransportType.STDIO:
             from mcp import StdioServerParameters
