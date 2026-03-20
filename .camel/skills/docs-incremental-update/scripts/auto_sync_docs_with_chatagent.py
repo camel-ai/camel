@@ -125,7 +125,7 @@ def _build_user_message(
 ) -> str:
     """Build the user message for a single impacted doc."""
     changed_files_section = _format_path_section(
-        "Changed Python files for this run (optional context)",
+        "Changed Python files for this run",
         changed_python_files,
     )
     return (
