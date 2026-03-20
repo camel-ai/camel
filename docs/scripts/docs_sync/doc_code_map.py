@@ -141,8 +141,11 @@ def _impacted_docs(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    subparsers = parser.add_subparsers(dest="command")
 
     verify_p = subparsers.add_parser(
         "verify", help="Verify doc_code_map blocks and pattern matches."
@@ -187,6 +190,10 @@ def main() -> int:
     )
 
     args = parser.parse_args()
+    if not args.command:
+        parser.print_help()
+        return 0
+
     repo_root = Path(".").resolve()
 
     roots = [Path(p) for p in args.docs_root] if args.docs_root else list(
