@@ -2536,3 +2536,29 @@ def test_chat_agent_clone_preserves_runtime_config_and_clone_context():
         "request_id": "req-7",
         "task_id": "task-42",
     }
+
+
+def test_chat_agent_scoped_execution_context_merges_and_restores():
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=DummyModel(ModelType.GPT_4O_MINI),
+        execution_context={"request_id": "req-9"},
+        execution_context_provider=lambda: {"agent_run": "active"},
+    )
+
+    assert agent.get_execution_context() == {
+        "request_id": "req-9",
+        "agent_run": "active",
+    }
+
+    with agent.scoped_execution_context({"task_id": "task-8"}):
+        assert agent.get_execution_context() == {
+            "request_id": "req-9",
+            "task_id": "task-8",
+            "agent_run": "active",
+        }
+
+    assert agent.get_execution_context() == {
+        "request_id": "req-9",
+        "agent_run": "active",
+    }

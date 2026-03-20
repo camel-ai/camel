@@ -18,6 +18,7 @@ import atexit
 import base64
 import concurrent.futures
 import contextvars
+import contextlib
 import functools
 import hashlib
 import inspect
@@ -647,6 +648,7 @@ class ChatAgent(BaseAgent):
         self._callbacks = self._validate_callbacks(callbacks)
         self._execution_context = dict(execution_context or {})
         self._execution_context_provider = execution_context_provider
+        self._scoped_execution_contexts: List[Dict[str, Any]] = []
         self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
 
@@ -667,6 +669,7 @@ class ChatAgent(BaseAgent):
         # Snapshot-clean cache is per-conversation state and must not survive
         # agent reuse (e.g. pooled workers across different tasks).
         self._tool_output_history.clear()
+        self._scoped_execution_contexts.clear()
         for terminator in self.response_terminators:
             terminator.reset()
 
@@ -686,6 +689,8 @@ class ChatAgent(BaseAgent):
 
     def get_execution_context(self) -> Dict[str, Any]:
         execution_context = dict(self._execution_context)
+        for scoped_context in self._scoped_execution_contexts:
+            execution_context.update(scoped_context)
         if self._execution_context_provider is None:
             return execution_context
 
@@ -701,6 +706,27 @@ class ChatAgent(BaseAgent):
         if provided_context:
             execution_context.update(provided_context)
         return execution_context
+
+    @contextlib.contextmanager
+    def scoped_execution_context(
+        self, execution_context: Optional[Dict[str, Any]]
+    ):
+        r"""Temporarily apply execution context for a single runtime scope.
+
+        This is intended for outer orchestration layers such as workforce
+        workers that need to attach task-scoped context to a reused or cloned
+        agent without mutating its long-lived base configuration.
+        """
+        scoped_context = dict(execution_context or {})
+        if not scoped_context:
+            yield
+            return
+
+        self._scoped_execution_contexts.append(scoped_context)
+        try:
+            yield
+        finally:
+            self._scoped_execution_contexts.pop()
 
     def _build_event_metadata(
         self, extra_metadata: Optional[Dict[str, Any]] = None
