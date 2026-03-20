@@ -31,7 +31,7 @@ def _load_module(module_name: str, file_path: Path):
 
 doc_code_map = _load_module(
     "test_doc_code_map_module",
-    REPO_ROOT / "docs/scripts/docs_sync/doc_code_map.py",
+    REPO_ROOT / "docs/mintlify/scripts/docs_sync/doc_code_map.py",
 )
 auto_sync_docs = _load_module(
     "test_auto_sync_docs_module",

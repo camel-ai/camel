@@ -28,7 +28,7 @@ jobs:
         run: python -m pip install -e .
 
       - name: Verify doc_code_map
-        run: python docs/scripts/docs_sync/doc_code_map.py verify
+        run: python docs/mintlify/scripts/docs_sync/doc_code_map.py verify
 
       - name: Determine refs
         id: refs
@@ -58,7 +58,7 @@ jobs:
             exit 0
           fi
 
-          python docs/scripts/docs_sync/doc_code_map.py impacted \
+          python docs/mintlify/scripts/docs_sync/doc_code_map.py impacted \
             --changed-files-file changed_python_files.txt > impacted_docs.txt
           cat impacted_docs.txt
           if [ -s impacted_docs.txt ]; then

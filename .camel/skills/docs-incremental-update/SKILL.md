@@ -36,7 +36,7 @@ not on any special status token in the chat response.
 | Item | Path |
 |------|------|
 | Doc roots | `docs/mintlify/` |
-| Mapping utility | `docs/scripts/docs_sync/doc_code_map.py` |
+| Mapping utility | `docs/mintlify/scripts/docs_sync/doc_code_map.py` |
 | Auto-sync script | `.camel/skills/docs-incremental-update/scripts/auto_sync_docs_with_chatagent.py` |
 | Workflow | `.github/workflows/docs_release_auto_sync_pr.yml` |
 
@@ -48,11 +48,11 @@ Determine which `.mdx` files are affected by the code change.
 
 ```bash
 # From repo root, pass only changed Python files
-python docs/scripts/docs_sync/doc_code_map.py impacted \
+python docs/mintlify/scripts/docs_sync/doc_code_map.py impacted \
   --changed-file <file1> --changed-file <file2>
 
 # Or using git refs
-python docs/scripts/docs_sync/doc_code_map.py impacted \
+python docs/mintlify/scripts/docs_sync/doc_code_map.py impacted \
   --base-ref <base> --head-ref <head>
 ```
 
@@ -107,7 +107,7 @@ Rules:
 
 ```bash
 # Ensure all patterns still resolve
-python docs/scripts/docs_sync/doc_code_map.py verify
+python docs/mintlify/scripts/docs_sync/doc_code_map.py verify
 ```
 
 Check that no frontmatter was accidentally removed or duplicated.

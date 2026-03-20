@@ -33,13 +33,13 @@ automatically when mapped docs actually changed.
 Verify all mappings and ensure every pattern resolves to at least one file:
 
 ```bash
-python docs/scripts/docs_sync/doc_code_map.py verify
+python docs/mintlify/scripts/docs_sync/doc_code_map.py verify
 ```
 
 Print impacted docs from an explicit changed-file list:
 
 ```bash
-python docs/scripts/docs_sync/doc_code_map.py impacted \
+python docs/mintlify/scripts/docs_sync/doc_code_map.py impacted \
   --changed-file camel/toolkits/mcp_toolkit.py \
   --changed-file camel/societies/workforce/workforce.py
 ```
@@ -47,14 +47,14 @@ python docs/scripts/docs_sync/doc_code_map.py impacted \
 Print impacted docs from a file containing changed paths:
 
 ```bash
-python docs/scripts/docs_sync/doc_code_map.py impacted \
+python docs/mintlify/scripts/docs_sync/doc_code_map.py impacted \
   --changed-files-file changed_python_files.txt
 ```
 
 Print impacted docs from git refs:
 
 ```bash
-python docs/scripts/docs_sync/doc_code_map.py impacted --base-ref <base> --head-ref <head>
+python docs/mintlify/scripts/docs_sync/doc_code_map.py impacted --base-ref <base> --head-ref <head>
 ```
 
 Auto-sync impacted docs with CAMEL ChatAgent:
