@@ -11,8 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import copy
+from unittest.mock import AsyncMock, Mock
+
 import pytest
 from httpx import URL
+from pydantic import BaseModel
 from pytest import MonkeyPatch
 
 from camel.models import OpenAICompatibleModel
@@ -61,3 +65,67 @@ def test_openai_compatible_model_apikey_from_env(monkeypatch: MonkeyPatch):
     assert model._client.base_url == URL(url)
     assert model._async_client.api_key == api_key
     assert model._async_client.base_url == URL(url)
+
+
+def test_request_json_object_injects_schema_into_system_message():
+    class ResponseSchema(BaseModel):
+        answer: str
+
+    client = Mock()
+    client.chat.completions.create.return_value = Mock()
+
+    model = OpenAICompatibleModel(
+        ModelType.GPT_4O,
+        api_key="test-key",
+        url="https://example.com/v1",
+        client=client,
+        async_client=AsyncMock(),
+    )
+
+    messages = [
+        {"role": "system", "content": "Base system instruction."},
+        {"role": "user", "content": "Return the answer."},
+    ]
+    original_messages = copy.deepcopy(messages)
+
+    model._request_json_object(messages, ResponseSchema)
+
+    call_messages = client.chat.completions.create.call_args.kwargs["messages"]
+    assert messages == original_messages
+    assert call_messages[0]["role"] == "system"
+    assert "Base system instruction." in call_messages[0]["content"]
+    assert (
+        "Please generate a JSON response adhering to the following JSON "
+        "schema:" in call_messages[0]["content"]
+    )
+    assert call_messages[1] == original_messages[1]
+
+
+def test_request_prompt_only_prepends_system_message_when_missing():
+    class ResponseSchema(BaseModel):
+        answer: str
+
+    client = Mock()
+    client.chat.completions.create.return_value = Mock()
+
+    model = OpenAICompatibleModel(
+        ModelType.GPT_4O,
+        api_key="test-key",
+        url="https://example.com/v1",
+        client=client,
+        async_client=AsyncMock(),
+    )
+
+    messages = [{"role": "user", "content": "Return the answer."}]
+    original_messages = copy.deepcopy(messages)
+
+    model._request_prompt_only(messages, ResponseSchema)
+
+    call_messages = client.chat.completions.create.call_args.kwargs["messages"]
+    assert messages == original_messages
+    assert call_messages[0]["role"] == "system"
+    assert (
+        "Please generate a JSON response adhering to the following JSON "
+        "schema:" in call_messages[0]["content"]
+    )
+    assert call_messages[1] == original_messages[0]

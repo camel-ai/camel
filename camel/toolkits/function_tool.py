@@ -308,7 +308,7 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
     else:
         func_description = short_description
 
-    # OpenAI client.beta.chat.completions.parse for structured output has
+    # OpenAI client.chat.completions.parse for structured output has
     # additional requirements for the schema, refer:
     # https://platform.openai.com/docs/guides/structured-outputs/some-type-specific-keywords-are-not-yet-supported#supported-schemas
     parameters_dict["additionalProperties"] = False

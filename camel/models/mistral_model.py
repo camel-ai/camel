@@ -28,7 +28,7 @@ from camel.configs import MistralConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.models._utils import try_modify_message_with_format
+from camel.models._utils import with_response_format_system_message
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import (
     BaseTokenCounter,
@@ -278,10 +278,10 @@ class MistralModel(BaseModelBackend):
         )
         self._log_and_trace()
 
-        request_config = self._prepare_request(
+        request_messages, request_config = self._prepare_request(
             messages, response_format, tools
         )
-        mistral_messages = self._to_mistral_chatmessage(messages)
+        mistral_messages = self._to_mistral_chatmessage(request_messages)
 
         response = self._call_client(
             self._client.chat.complete,
@@ -342,10 +342,10 @@ class MistralModel(BaseModelBackend):
         )
         self._log_and_trace()
 
-        request_config = self._prepare_request(
+        request_messages, request_config = self._prepare_request(
             messages, response_format, tools
         )
-        mistral_messages = self._to_mistral_chatmessage(messages)
+        mistral_messages = self._to_mistral_chatmessage(request_messages)
 
         response = self._call_client(
             self._client.chat.complete,
@@ -381,15 +381,18 @@ class MistralModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
+    ) -> tuple[List[OpenAIMessage], Dict[str, Any]]:
         request_config = self.model_config_dict.copy()
+        request_messages = messages
         if tools:
             request_config["tools"] = tools
         elif response_format:
-            try_modify_message_with_format(messages[-1], response_format)
+            request_messages = with_response_format_system_message(
+                messages, response_format
+            )
             request_config["response_format"] = {"type": "json_object"}
 
-        return request_config
+        return request_messages, request_config
 
     @property
     def stream(self) -> bool:

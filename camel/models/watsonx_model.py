@@ -20,7 +20,7 @@ from camel.configs import WatsonXConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.models._utils import try_modify_message_with_format
+from camel.models._utils import with_response_format_system_message
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
@@ -150,18 +150,21 @@ class WatsonXModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
+    ) -> tuple[List[OpenAIMessage], Dict[str, Any]]:
         import copy
 
         request_config = copy.deepcopy(self.model_config_dict)
+        request_messages = messages
 
         if tools:
             request_config["tools"] = tools
         elif response_format:
-            try_modify_message_with_format(messages[-1], response_format)
+            request_messages = with_response_format_system_message(
+                messages, response_format
+            )
             request_config["response_format"] = {"type": "json_object"}
 
-        return request_config
+        return request_messages, request_config
 
     @observe(as_type='generation')
     def _run(
@@ -193,13 +196,13 @@ class WatsonXModel(BaseModelBackend):
         )
         self._log_and_trace()
         try:
-            request_config = self._prepare_request(
+            request_messages, request_config = self._prepare_request(
                 messages, response_format, tools
             )
 
             # WatsonX expects messages as a list of dictionaries
             response = self._model.chat(
-                messages=messages,
+                messages=request_messages,
                 params=request_config,
                 tools=tools,
             )
@@ -245,13 +248,13 @@ class WatsonXModel(BaseModelBackend):
         self._log_and_trace()
 
         try:
-            request_config = self._prepare_request(
+            request_messages, request_config = self._prepare_request(
                 messages, response_format, tools
             )
 
             # WatsonX expects messages as a list of dictionaries
             response = await self._model.achat(
-                messages=messages,
+                messages=request_messages,
                 params=request_config,
                 tools=tools,
             )

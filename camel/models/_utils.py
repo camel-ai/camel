@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import copy
 import re
 import textwrap
-from typing import Type
+from typing import Any, Dict, List, Optional, Type
 
 from pydantic import BaseModel
 
@@ -64,39 +65,125 @@ def extract_thinking_from_content(
     return content, reasoning_content
 
 
-def try_modify_message_with_format(
-    message: OpenAIMessage,
+def with_response_format_system_message(
+    messages: List[OpenAIMessage],
     response_format: Type[BaseModel] | None,
-) -> None:
-    r"""Modifies the content of the message to include the instruction of using
-    the response format.
+) -> List[OpenAIMessage]:
+    r"""Return a request-scoped copy with format instructions in system.
 
-    The message will not be modified in the following cases:
-    - response_format is None
-    - message content is not a string
-    - message role is assistant
-
-    Args:
-        response_format (Type[BaseModel] | None): The Pydantic model class.
-        message (OpenAIMessage): The message to be modified.
+    The JSON-format instruction is treated as runtime policy rather than user
+    content, so it is merged into the first text system message when present,
+    or prepended as a new system message otherwise.
     """
     if response_format is None:
-        return
+        return messages
 
-    if not isinstance(message["content"], str):
-        return
+    request_messages = copy.deepcopy(messages)
+    instruction = _format_instruction_for_response_format(response_format)
 
-    if message["role"] == "assistant":
-        return
+    for message in request_messages:
+        content = message.get("content")
+        if message.get("role") == "system" and isinstance(content, str):
+            content = content.rstrip()
+            message["content"] = (
+                f"{content}\n\n{instruction}" if content else instruction
+            )
+            return request_messages
 
+    request_messages.insert(
+        0,
+        {
+            "role": "system",
+            "content": instruction,
+        },
+    )
+    return request_messages
+
+
+def _format_instruction_for_response_format(
+    response_format: Type[BaseModel],
+) -> str:
+    r"""Build the text instruction used for prompt-based structured output."""
     json_schema = response_format.model_json_schema()
-    updated_prompt = textwrap.dedent(
+    return textwrap.dedent(
         f"""\
-        {message["content"]}
-
         Please generate a JSON response adhering to the following JSON schema:
         {json_schema}
         Make sure the JSON response is valid and matches the EXACT structure defined in the schema. Your result should ONLY be a valid json object, WITHOUT ANY OTHER TEXT OR COMMENTS.
         """  # noqa: E501
-    )
-    message["content"] = updated_prompt
+    ).strip()
+
+
+def pydantic_to_json_schema_response_format(
+    response_format: Type[BaseModel],
+) -> Dict[str, Any]:
+    r"""Convert a Pydantic model class to a ``json_schema`` response_format
+    dict suitable for ``chat.completions.create()``.
+
+    The returned dict has the shape::
+
+        {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "<ModelClassName>",
+                "schema": { ... }
+            }
+        }
+
+    Args:
+        response_format (Type[BaseModel]): The Pydantic model class.
+
+    Returns:
+        Dict[str, Any]: The response_format dict for the API call.
+    """
+    schema = response_format.model_json_schema()
+    _enforce_object_additional_properties_false(schema)
+    return {
+        "type": "json_schema",
+        "json_schema": {
+            "name": response_format.__name__,
+            "schema": schema,
+        },
+    }
+
+
+def _enforce_object_additional_properties_false(schema: Any) -> None:
+    r"""Recursively enforce strict object schemas.
+
+    OpenAI-compatible structured-output backends frequently reject object
+    schemas that omit ``additionalProperties``. Mirror the stricter OpenAI
+    Responses handling so the json_schema fallback remains usable for nested
+    Pydantic models.
+    """
+    if isinstance(schema, dict):
+        if (
+            schema.get("type") == "object"
+            and "additionalProperties" not in schema
+        ):
+            schema["additionalProperties"] = False
+
+        for value in schema.values():
+            _enforce_object_additional_properties_false(value)
+    elif isinstance(schema, list):
+        for item in schema:
+            _enforce_object_additional_properties_false(item)
+
+
+def parse_json_response_to_pydantic(
+    content: Optional[str],
+    response_format: Type[BaseModel],
+) -> Optional[BaseModel]:
+    r"""Parse a JSON string returned by the model into a Pydantic instance.
+
+    Args:
+        content (Optional[str]): The raw JSON string from the model response.
+        response_format (Type[BaseModel]): The Pydantic model class to
+            validate against.
+
+    Returns:
+        Optional[BaseModel]: The validated Pydantic instance, or ``None``
+            if *content* is ``None`` or empty.
+    """
+    if not content:
+        return None
+    return response_format.model_validate_json(content)

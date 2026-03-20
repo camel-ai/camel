@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 from camel.configs import CohereConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.models._utils import try_modify_message_with_format
+from camel.models._utils import with_response_format_system_message
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
@@ -273,10 +273,11 @@ class CohereModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
+    ) -> tuple[List[OpenAIMessage], Dict[str, Any]]:
         import copy
 
         request_config = copy.deepcopy(self.model_config_dict)
+        request_messages = messages
         # Remove strict from each tool's function parameters since Cohere does
         # not support them
         if tools:
@@ -285,10 +286,16 @@ class CohereModel(BaseModelBackend):
                 function_dict.pop("strict", None)
             request_config["tools"] = tools
         elif response_format:
-            try_modify_message_with_format(messages[-1], response_format)
-            request_config["response_format"] = {"type": "json_object"}
+            request_messages = with_response_format_system_message(
+                messages, response_format
+            )
+            schema = response_format.model_json_schema()
+            request_config["response_format"] = {
+                "type": "json_object",
+                "schema": schema,
+            }
 
-        return request_config
+        return request_messages, request_config
 
     @observe(as_type="generation")
     def _run(
@@ -317,11 +324,11 @@ class CohereModel(BaseModelBackend):
 
         from cohere.core.api_error import ApiError
 
-        request_config = self._prepare_request(
+        request_messages, request_config = self._prepare_request(
             messages, response_format, tools
         )
 
-        cohere_messages = self._to_cohere_chatmessage(messages)
+        cohere_messages = self._to_cohere_chatmessage(request_messages)
 
         try:
             response = self._call_client(
@@ -387,11 +394,11 @@ class CohereModel(BaseModelBackend):
 
         from cohere.core.api_error import ApiError
 
-        request_config = self._prepare_request(
+        request_messages, request_config = self._prepare_request(
             messages, response_format, tools
         )
 
-        cohere_messages = self._to_cohere_chatmessage(messages)
+        cohere_messages = self._to_cohere_chatmessage(request_messages)
 
         try:
             response = await self._acall_client(
