@@ -645,7 +645,14 @@ class ChatAgent(BaseAgent):
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
         self.on_request_usage = on_request_usage
-        self._callbacks = self._validate_callbacks(callbacks)
+        self._callbacks = []
+        if callbacks is not None:
+            for callback in callbacks:
+                if not isinstance(callback, AgentCallback):
+                    raise TypeError(
+                        "All callbacks must be instances of AgentCallback"
+                    )
+                self._callbacks.append(callback)
         self._execution_context = dict(execution_context or {})
         self._execution_context_provider = execution_context_provider
         self._scoped_execution_contexts: List[Dict[str, Any]] = []
@@ -672,20 +679,6 @@ class ChatAgent(BaseAgent):
         self._scoped_execution_contexts.clear()
         for terminator in self.response_terminators:
             terminator.reset()
-
-    def _validate_callbacks(
-        self, callbacks: Optional[List[AgentCallback]]
-    ) -> List[AgentCallback]:
-        validated_callbacks: List[AgentCallback] = []
-        if callbacks is None:
-            return validated_callbacks
-        for callback in callbacks:
-            if not isinstance(callback, AgentCallback):
-                raise TypeError(
-                    "All callbacks must be instances of AgentCallback"
-                )
-            validated_callbacks.append(callback)
-        return validated_callbacks
 
     def get_execution_context(self) -> Dict[str, Any]:
         execution_context = dict(self._execution_context)
@@ -716,6 +709,7 @@ class ChatAgent(BaseAgent):
         This is intended for outer orchestration layers such as workforce
         workers that need to attach task-scoped context to a reused or cloned
         agent without mutating its long-lived base configuration.
+
         """
         scoped_context = dict(execution_context or {})
         if not scoped_context:
