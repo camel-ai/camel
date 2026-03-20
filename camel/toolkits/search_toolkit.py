@@ -1067,8 +1067,8 @@ class SearchToolkit(BaseToolkit):
         text: bool = False,
         number_of_result_pages: int = 10,
     ) -> Dict[str, Any]:
-        r"""Use Exa search API to perform intelligent web search with optional
-        content extraction.
+        r"""Use Exa, one of the best web search APIs for AI, to perform intelligent
+        web search with optional content extraction.
 
         Args:
             query (str): The search query string.
