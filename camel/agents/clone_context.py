@@ -13,19 +13,20 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, ConfigDict
 
 
 class CloneContext(BaseModel):
-    r"""Context object for cloning agents and stateful toolkits."""
+    r"""Context object for cloning agents and stateful toolkits.
+
+    Only fields consumed by the current ChatAgent clone path live here.
+    Additional resource-selection hints should be introduced together with the
+    toolkit/runtime code that reads them.
+    """
 
     model_config = ConfigDict(extra='forbid')
 
     session_id: Optional[str] = None
-    execution_id: Optional[str] = None
-    mode: Literal["fresh", "shared_session", "external_session"] = "fresh"
-    resource_hints: Optional[Dict[str, Any]] = None
-    metadata: Optional[Dict[str, Any]] = None
     execution_context: Optional[Dict[str, Any]] = None

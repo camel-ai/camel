@@ -18,7 +18,6 @@ import atexit
 import base64
 import concurrent.futures
 import contextvars
-import contextlib
 import functools
 import hashlib
 import inspect
@@ -645,7 +644,7 @@ class ChatAgent(BaseAgent):
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
         self.on_request_usage = on_request_usage
-        self._callbacks = []
+        self._callbacks: List[AgentCallback] = []
         if callbacks is not None:
             for callback in callbacks:
                 if not isinstance(callback, AgentCallback):
@@ -655,7 +654,6 @@ class ChatAgent(BaseAgent):
                 self._callbacks.append(callback)
         self._execution_context = dict(execution_context or {})
         self._execution_context_provider = execution_context_provider
-        self._scoped_execution_contexts: List[Dict[str, Any]] = []
         self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
 
@@ -676,14 +674,11 @@ class ChatAgent(BaseAgent):
         # Snapshot-clean cache is per-conversation state and must not survive
         # agent reuse (e.g. pooled workers across different tasks).
         self._tool_output_history.clear()
-        self._scoped_execution_contexts.clear()
         for terminator in self.response_terminators:
             terminator.reset()
 
-    def get_execution_context(self) -> Dict[str, Any]:
+    def _get_execution_context(self) -> Dict[str, Any]:
         execution_context = dict(self._execution_context)
-        for scoped_context in self._scoped_execution_contexts:
-            execution_context.update(scoped_context)
         if self._execution_context_provider is None:
             return execution_context
 
@@ -700,33 +695,11 @@ class ChatAgent(BaseAgent):
             execution_context.update(provided_context)
         return execution_context
 
-    @contextlib.contextmanager
-    def scoped_execution_context(
-        self, execution_context: Optional[Dict[str, Any]]
-    ):
-        r"""Temporarily apply execution context for a single runtime scope.
-
-        This is intended for outer orchestration layers such as workforce
-        workers that need to attach task-scoped context to a reused or cloned
-        agent without mutating its long-lived base configuration.
-
-        """
-        scoped_context = dict(execution_context or {})
-        if not scoped_context:
-            yield
-            return
-
-        self._scoped_execution_contexts.append(scoped_context)
-        try:
-            yield
-        finally:
-            self._scoped_execution_contexts.pop()
-
     def _build_event_metadata(
         self, extra_metadata: Optional[Dict[str, Any]] = None
     ) -> Optional[Dict[str, Any]]:
         metadata: Dict[str, Any] = {}
-        execution_context = self.get_execution_context()
+        execution_context = self._get_execution_context()
         if execution_context:
             metadata["execution_context"] = execution_context
         if extra_metadata:
@@ -786,8 +759,6 @@ class ChatAgent(BaseAgent):
     ) -> Optional[str]:
         if tool is None:
             return None
-        if hasattr(tool, "_toolkit_name"):
-            return cast(Optional[str], getattr(tool, "_toolkit_name"))
         func = getattr(tool, "func", None)
         if func is None:
             return None
@@ -6555,9 +6526,10 @@ class ChatAgent(BaseAgent):
     ) -> Tuple[List[FunctionTool], List[RegisteredAgentToolkit]]:
         r"""Clone tools and return toolkits that need agent registration.
 
-        This method handles stateful toolkits by cloning them if they have
-        a clone_for_new_session method, and collecting RegisteredAgentToolkit
-        instances for later registration.
+        This method handles stateful toolkits by cloning them if they expose a
+        ``clone_with_context(clone_context)`` or
+        ``clone_for_new_session(session_id)`` method, and collects
+        RegisteredAgentToolkit instances for later registration.
 
         Returns:
             Tuple containing:
@@ -6576,46 +6548,40 @@ class ChatAgent(BaseAgent):
                 toolkit_id = id(toolkit_instance)
 
                 if toolkit_id not in cloned_toolkits:
-                    # Check if the toolkit has a clone method
-                    if hasattr(toolkit_instance, 'clone_with_context') or hasattr(
-                        toolkit_instance, 'clone_for_new_session'
-                    ):
-                        try:
-                            if hasattr(toolkit_instance, 'clone_with_context'):
-                                new_toolkit = (
-                                    toolkit_instance.clone_with_context(
-                                        clone_context
-                                    )
-                                )
-                            else:
-                                import uuid
-
-                                new_session_id = (
-                                    clone_context.session_id
-                                    if clone_context is not None
-                                    and clone_context.session_id is not None
-                                    else str(uuid.uuid4())[:8]
-                                )
-                                new_toolkit = (
-                                    toolkit_instance.clone_for_new_session(
-                                        new_session_id
-                                    )
-                                )
-
-                            # If this is a RegisteredAgentToolkit,
-                            # add it to registration list
-                            if isinstance(new_toolkit, RegisteredAgentToolkit):
-                                toolkits_to_register.append(new_toolkit)
-
-                            cloned_toolkits[toolkit_id] = new_toolkit
-                        except Exception as e:
-                            logger.warning(
-                                f"Failed to clone toolkit {toolkit_instance.__class__.__name__}: {e}"  # noqa:E501
+                    try:
+                        if hasattr(toolkit_instance, 'clone_with_context'):
+                            new_toolkit = toolkit_instance.clone_with_context(
+                                clone_context
                             )
-                            # Use original toolkit if cloning fails
-                            cloned_toolkits[toolkit_id] = toolkit_instance
-                    else:
-                        # Toolkit doesn't support cloning, use original
+                        elif hasattr(toolkit_instance, 'clone_for_new_session'):
+                            new_session_id = (
+                                clone_context.session_id
+                                if clone_context is not None
+                                and clone_context.session_id is not None
+                                else str(uuid.uuid4())[:8]
+                            )
+                            new_toolkit = (
+                                toolkit_instance.clone_for_new_session(
+                                    new_session_id
+                                )
+                            )
+                        else:
+                            new_toolkit = toolkit_instance
+
+                        if (
+                            new_toolkit is not toolkit_instance
+                            and isinstance(
+                                new_toolkit, RegisteredAgentToolkit
+                            )
+                        ):
+                            toolkits_to_register.append(new_toolkit)
+
+                        cloned_toolkits[toolkit_id] = new_toolkit
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to clone toolkit {toolkit_instance.__class__.__name__}: {e}"  # noqa:E501
+                        )
+                        # Use original toolkit if cloning fails
                         cloned_toolkits[toolkit_id] = toolkit_instance
 
                 # Get the method from the cloned (or original) toolkit
