@@ -2,6 +2,9 @@
 title: "Models"
 description: "CAMEL-AI: Flexible integration and deployment of top LLMs and multimodal models like [OpenAI](https://openai.com/), [Mistral](https://mistral.ai/), [Gemini](https://ai.google.dev/gemini-api/docs/models), [Llama](https://www.llama.com/), [Nebius](https://nebius.com/), and more."
 icon: gear-code
+
+doc_code_map:
+  - "camel/models/**/*.py"
 ---
 
 <Note type="info" title="What is a Model in CAMEL?">
