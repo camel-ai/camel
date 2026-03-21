@@ -387,19 +387,39 @@ class AWSBedrockConverseModel(BaseModelBackend):
                 if not isinstance(tool_id, str) or not tool_id:
                     continue
                 payload = self._parse_json_or_text(msg.get("content", ""))
-                bedrock_messages.append(
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "toolResult": {
-                                    "toolUseId": tool_id,
-                                    "content": [payload],
-                                }
-                            }
-                        ],
+                tool_result_block = {
+                    "toolResult": {
+                        "toolUseId": tool_id,
+                        "content": [payload],
                     }
-                )
+                }
+                # Bedrock Converse requires all toolResult blocks for a
+                # multi-tool-use assistant turn to be grouped in a single
+                # user message immediately following that assistant turn.
+                # When the previous bedrock message is already a user
+                # message (i.e. from a prior tool result in the same
+                # batch), append to it instead of creating a new one.
+                if (
+                    bedrock_messages
+                    and bedrock_messages[-1].get("role") == "user"
+                    and isinstance(
+                        bedrock_messages[-1].get("content"), list
+                    )
+                    and any(
+                        isinstance(b, dict) and "toolResult" in b
+                        for b in bedrock_messages[-1]["content"]
+                    )
+                ):
+                    bedrock_messages[-1]["content"].append(
+                        tool_result_block
+                    )
+                else:
+                    bedrock_messages.append(
+                        {
+                            "role": "user",
+                            "content": [tool_result_block],
+                        }
+                    )
 
         system_blocks: List[Dict[str, Any]] = []
         if system_parts:
