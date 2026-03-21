@@ -233,14 +233,11 @@ from camel.societies.workforce import Workforce
 from camel.agents import ChatAgent
 from camel.toolkits import HumanToolkit
 
-# 1) Create the workforce
-workforce = Workforce("Interactive Workforce")
-
-# 2) Prepare human-in-the-loop tools
+# 1) Prepare human-in-the-loop tools
 human_toolkit = HumanToolkit()
 human_tools = human_toolkit.get_tools()  # includes ask_human_via_console, send_message_to_user, ...
 
-# 3) Attach HumanToolkit to any agents that may need human help
+# 2) Attach HumanToolkit to any agents that may need human help
 coordinator = ChatAgent(
     system_message="You coordinate tasks and may ask a human for help when needed.",
     tools=human_tools,
@@ -251,7 +248,7 @@ worker = ChatAgent(
     tools=[human_toolkit.ask_human_via_console],  # or use `human_tools`
 )
 
-# 4) Register agents into the workforce
+# 3) Register agents into the workforce
 workforce = Workforce(
     description="Interactive Workforce",
     coordinator_agent=coordinator,
@@ -259,7 +256,7 @@ workforce = Workforce(
 )
 workforce.add_single_agent_worker(description="Worker", worker=worker)
 
-# 5) Run tasks as usual. When an agent invokes a human tool, it will prompt via console.
+# 4) Run tasks as usual. When an agent invokes a human tool, it will prompt via console.
 # workforce.process_task(Task(content="Build a quick demo and confirm requirements with the human."))
 ```
 

@@ -210,7 +210,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 
       os.environ["TIDB_DATABASE_URL"] = "The database url of your TiDB cluster."
       tidb_storage = TiDBStorage(
-          url_and_api_key=(os.getenv("DATABASE_URL"), ''),
+          url_and_api_key=(os.getenv("TIDB_DATABASE_URL"), ''),
           vector_dim=4,
           collection_name="my_collection"
       )

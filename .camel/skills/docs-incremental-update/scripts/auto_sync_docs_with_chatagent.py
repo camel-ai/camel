@@ -1,4 +1,16 @@
-#!/usr/bin/env python3
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """Auto-sync impacted docs using CAMEL ChatAgent.
 
 Reads a list of impacted .mdx doc paths plus an optional list of changed
@@ -11,6 +23,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -101,13 +114,12 @@ def _git_status_paths(repo_root: Path) -> set[str] | None:
 
 
 def _write_agent_response_log(
-    repo_root: Path,
+    log_dir: Path,
     doc_path: Path,
     result: str,
     status: str,
 ) -> None:
     """Append the final agent response to a debug log for investigation."""
-    log_dir = repo_root / "terminal_logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / "agent_response.log"
     timestamp = datetime.now(timezone.utc).isoformat()
@@ -139,6 +151,7 @@ def _build_user_message(
 def _update_single_doc(
     doc_path: Path,
     repo_root: Path,
+    log_dir: Path,
     model_platform: str,
     model_type: str,
     changed_python_files: list[str],
@@ -163,9 +176,11 @@ def _update_single_doc(
         working_directory=str(repo_root),
         allowed_skills={SKILL_NAME},
     )
+    terminal_log_dir = str(log_dir / "terminal_sessions")
     terminal_toolkit = TerminalToolkit(
         working_directory=str(repo_root),
         safe_mode=True,
+        session_logs_dir=terminal_log_dir,
     )
     agent = ChatAgent(
         system_message=SYSTEM_PROMPT,
@@ -178,11 +193,13 @@ def _update_single_doc(
     response = agent.step(user_message)
 
     current_paths = _git_status_paths(repo_root)
+    target_posix = doc_path.as_posix()
+    log_dir_posix = log_dir.relative_to(repo_root).as_posix() + "/"
     if baseline_paths is not None and current_paths is not None:
         unexpected_paths = sorted(
             path
             for path in (current_paths - baseline_paths)
-            if path != doc_path.as_posix()
+            if path != target_posix and not path.startswith(log_dir_posix)
         )
         if unexpected_paths:
             raise RuntimeError(
@@ -194,7 +211,7 @@ def _update_single_doc(
     doc_changed = current_text != original_text
     result = response.msgs[0].content.strip() if response.msgs else ""
     status = "UPDATED" if doc_changed else "NO_WRITE"
-    _write_agent_response_log(repo_root, doc_path, result, status)
+    _write_agent_response_log(log_dir, doc_path, result, status)
 
     if not doc_changed:
         print(f"  SKIP (no doc update needed): {doc_path}")
@@ -253,6 +270,9 @@ def main() -> int:
     changed_python_files = _filter_changed_python_files(changed_files)
 
     repo_root = Path(".").resolve()
+    # Use a dedicated log directory separate from TerminalToolkit's log dir
+    # to avoid TerminalToolkit's init from cleaning up our response logs.
+    log_dir = repo_root / "docs_sync_logs"
     success = 0
     fail = 0
 
@@ -262,6 +282,7 @@ def main() -> int:
             _update_single_doc(
                 doc_path,
                 repo_root,
+                log_dir,
                 args.model_platform,
                 args.model_type,
                 changed_python_files,
@@ -269,6 +290,7 @@ def main() -> int:
             success += 1
         except Exception as exc:
             print(f"  FAIL: {doc_path} — {exc}")
+            traceback.print_exc()
             fail += 1
 
     print(f"\nDone. success={success} fail={fail}")
