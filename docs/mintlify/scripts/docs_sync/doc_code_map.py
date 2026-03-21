@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-
-#!/usr/bin/env python3
 """Utilities for validating and using doc_code_map in Mintlify docs."""
 
 from __future__ import annotations
@@ -221,11 +219,11 @@ def main() -> int:
     changed_files: list[str] = []
     if args.changed_file:
         changed_files.extend(args.changed_file)
-    elif args.changed_files_file:
+    if args.changed_files_file:
         changed_files.extend(_read_path_list(Path(args.changed_files_file)))
-    elif args.base_ref:
+    if not changed_files and args.base_ref:
         changed_files.extend(_run_git_diff(args.base_ref, args.head_ref))
-    else:
+    if not changed_files and not args.changed_file and not args.changed_files_file and not args.base_ref:
         parser.error(
             "impacted requires --changed-file, --changed-files-file, or "
             "--base-ref/--head-ref."

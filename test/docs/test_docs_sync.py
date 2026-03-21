@@ -115,21 +115,22 @@ def test_build_user_message_includes_target_doc_and_changed_files():
 
     assert "## Target doc" in message
     assert "docs/mintlify/key_modules/runtimes.mdx" in message
-    assert "## Changed Python files for this run (optional context)" in message
+    assert "## Changed Python files for this run" in message
     assert "camel/runtimes/base.py" in message
     assert "camel/runtimes/docker_runtime.py" in message
     assert "any relevant code" in message
 
 
 def test_write_agent_response_log_appends_entries(tmp_path):
+    log_dir = tmp_path / "docs_sync_logs"
     auto_sync_docs._write_agent_response_log(
-        tmp_path,
+        log_dir,
         Path("docs/mintlify/mcp/example.mdx"),
         "UPDATED",
         "UPDATED",
     )
 
-    log_path = tmp_path / "terminal_logs" / "agent_response.log"
+    log_path = log_dir / "agent_response.log"
 
     assert log_path.exists()
     content = log_path.read_text(encoding="utf-8")
