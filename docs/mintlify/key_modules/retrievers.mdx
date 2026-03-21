@@ -1,6 +1,9 @@
 ---
 title: "Retrievers"
 icon: code-compare
+
+doc_code_map:
+  - "camel/retrievers/**/*.py"
 ---
 
 ## What Are Retrievers?

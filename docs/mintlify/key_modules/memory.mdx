@@ -1,6 +1,9 @@
 ---
 title: "Memory"
 icon: memory
+
+doc_code_map:
+  - "camel/memories/**/*.py"
 ---
 
 <Card title="What is Memory?" icon="memory">
