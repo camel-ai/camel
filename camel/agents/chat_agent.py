@@ -54,6 +54,14 @@ from openai import (
     RateLimitError,
     Stream,
 )
+
+try:
+    from anthropic import RateLimitError as AnthropicRateLimitError
+
+    _RATE_LIMIT_ERRORS: tuple = (RateLimitError, AnthropicRateLimitError)
+except ImportError:
+    _RATE_LIMIT_ERRORS: tuple = (RateLimitError,)  # type: ignore[misc]
+
 from pydantic import BaseModel, ValidationError
 
 from camel.agents._types import ModelResponse, ToolCallRequest
@@ -3592,7 +3600,7 @@ class ChatAgent(BaseAgent):
                 )
                 if response:
                     break
-            except RateLimitError as e:
+            except _RATE_LIMIT_ERRORS as e:
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
@@ -3654,7 +3662,7 @@ class ChatAgent(BaseAgent):
                 )
                 if response:
                     break
-            except RateLimitError as e:
+            except _RATE_LIMIT_ERRORS as e:
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
