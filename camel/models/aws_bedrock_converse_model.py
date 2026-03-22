@@ -402,17 +402,13 @@ class AWSBedrockConverseModel(BaseModelBackend):
                 if (
                     bedrock_messages
                     and bedrock_messages[-1].get("role") == "user"
-                    and isinstance(
-                        bedrock_messages[-1].get("content"), list
-                    )
+                    and isinstance(bedrock_messages[-1].get("content"), list)
                     and any(
                         isinstance(b, dict) and "toolResult" in b
                         for b in bedrock_messages[-1]["content"]
                     )
                 ):
-                    bedrock_messages[-1]["content"].append(
-                        tool_result_block
-                    )
+                    bedrock_messages[-1]["content"].append(tool_result_block)
                 else:
                     bedrock_messages.append(
                         {
