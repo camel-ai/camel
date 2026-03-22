@@ -289,11 +289,15 @@ class InternalPythonInterpreter(BaseInterpreter):
     # but is still necessary for older versions.
     @typing.no_type_check
     def _execute_ast(self, expression: ast.AST) -> Any:
-        if isinstance(expression, ast.Assign):
+        if isinstance(expression, ast.AnnAssign):
+            return self._execute_annassign(expression)
+        elif isinstance(expression, ast.Assign):
             # Assignment -> evaluate the assignment which should
             # update the state. We return the variable assigned as it may
             # be used to determine the final result.
             return self._execute_assign(expression)
+        elif isinstance(expression, ast.AugAssign):
+            return self._execute_augassign(expression)
         elif isinstance(expression, ast.Attribute):
             value = self._execute_ast(expression.value)
             return getattr(value, expression.attr)
@@ -395,6 +399,69 @@ class InternalPythonInterpreter(BaseInterpreter):
                 f"ast.Name or ast.Tuple, got "
                 f"{target.__class__.__name__} instead."
             )
+
+    def _execute_augassign(self, augassign: ast.AugAssign) -> Any:
+        # Augmented assignment (e.g. x += 1, x *= 2)
+        # Evaluate the right-hand side first, then get the current
+        # value of the target from state (not via _execute_ast which
+        # returns the name string for Store context).
+        right = self._execute_ast(augassign.value)
+        target = augassign.target
+        if isinstance(target, ast.Name):
+            left = self._get_value_from_state(target.id)
+        elif isinstance(target, ast.Subscript):
+            left = self._execute_ast(target)
+        else:
+            raise InterpreterError(
+                f"Unsupported augmented assignment target: "
+                f"{target.__class__.__name__}"
+            )
+        operator = augassign.op
+
+        if isinstance(operator, ast.Add):
+            result = left + right
+        elif isinstance(operator, ast.Sub):
+            result = left - right
+        elif isinstance(operator, ast.Mult):
+            result = left * right
+        elif isinstance(operator, ast.Div):
+            result = left / right
+        elif isinstance(operator, ast.FloorDiv):
+            result = left // right
+        elif isinstance(operator, ast.Mod):
+            result = left % right
+        elif isinstance(operator, ast.Pow):
+            result = left**right
+        elif isinstance(operator, ast.LShift):
+            result = left << right
+        elif isinstance(operator, ast.RShift):
+            result = left >> right
+        elif isinstance(operator, ast.BitAnd):
+            result = left & right
+        elif isinstance(operator, ast.BitOr):
+            result = left | right
+        elif isinstance(operator, ast.BitXor):
+            result = left ^ right
+        elif isinstance(operator, ast.MatMult):
+            result = left @ right
+        else:
+            raise InterpreterError(
+                f"Operator not supported: {operator}"
+            )
+
+        self._assign(augassign.target, result)
+        return result
+
+    def _execute_annassign(
+        self, annassign: ast.AnnAssign
+    ) -> Any:
+        # Annotated assignment (e.g. x: int = 5)
+        if annassign.value is None:
+            # Declaration only (e.g. x: int), no value to assign
+            return None
+        result = self._execute_ast(annassign.value)
+        self._assign(annassign.target, result)
+        return result
 
     def _execute_call(self, call: ast.Call) -> Any:
         callable_func = self._execute_ast(call.func)
