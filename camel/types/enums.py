@@ -397,6 +397,9 @@ class ModelType(UnifiedModelType, Enum):
     AIML_MISTRAL_7B_INSTRUCT = "mistralai/Mistral-7B-Instruct-v0.1"
 
     # Novita platform models support tool calling
+    NOVITA_KIMI_K2_5 = "moonshotai/kimi-k2.5"
+    NOVITA_GLM_5 = "zai-org/glm-5"
+    NOVITA_MINIMAX_M2_5 = "minimax/minimax-m2.5"
     NOVITA_LLAMA_4_MAVERICK_17B = (
         "meta-llama/llama-4-maverick-17b-128e-instruct-fp8"
     )
@@ -1152,6 +1155,9 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def is_novita(self) -> bool:
         return self in {
+            ModelType.NOVITA_KIMI_K2_5,
+            ModelType.NOVITA_GLM_5,
+            ModelType.NOVITA_MINIMAX_M2_5,
             ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
             ModelType.NOVITA_LLAMA_4_SCOUT_17B,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
@@ -1625,6 +1631,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_7_FLASH,
             ModelType.GLM_4_6,
             ModelType.GLM_4_5_FLASH,
+            ModelType.NOVITA_GLM_5,
         }:
             return 200_000
         elif self in {
@@ -1636,6 +1643,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_KIMI_K2_TURBO_PREVIEW,
             ModelType.MOONSHOT_KIMI_K2_THINKING,
             ModelType.MOONSHOT_KIMI_K2_THINKING_TURBO,
+            ModelType.NOVITA_KIMI_K2_5,
         }:
             return 256_000
 
@@ -1697,6 +1705,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MINIMAX_M2_1,
             ModelType.MINIMAX_M2_1_LIGHTNING,
             ModelType.MINIMAX_M2,
+            ModelType.NOVITA_MINIMAX_M2_5,
         }:
             return 204_800
 

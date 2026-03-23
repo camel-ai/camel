@@ -73,7 +73,7 @@ class NovitaModel(OpenAICompatibleModel):
             model_config_dict = NovitaConfig().as_dict()
         api_key = api_key or os.environ.get("NOVITA_API_KEY")
         url = url or os.environ.get(
-            "NOVITA_API_BASE_URL", "https://api.novita.ai/v3/openai"
+            "NOVITA_API_BASE_URL", "https://api.novita.ai/openai"
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
