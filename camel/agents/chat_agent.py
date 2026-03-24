@@ -678,34 +678,23 @@ class ChatAgent(BaseAgent):
         for terminator in self.response_terminators:
             terminator.reset()
 
-    def _get_execution_context(self) -> Dict[str, Any]:
+    def _build_event_metadata(self) -> Optional[Dict[str, Any]]:
         execution_context = dict(self._execution_context)
-        if self._execution_context_provider is None:
-            return execution_context
+        if self._execution_context_provider is not None:
+            try:
+                provided_context = self._execution_context_provider()
+            except Exception as exc:
+                logger.warning(
+                    f"execution_context_provider failed for agent "
+                    f"{self.agent_id}: {exc}"
+                )
+                provided_context = None
+            if provided_context:
+                execution_context.update(provided_context)
 
-        try:
-            provided_context = self._execution_context_provider()
-        except Exception as exc:
-            logger.warning(
-                f"execution_context_provider failed for agent "
-                f"{self.agent_id}: {exc}"
-            )
-            return execution_context
-
-        if provided_context:
-            execution_context.update(provided_context)
-        return execution_context
-
-    def _build_event_metadata(
-        self, extra_metadata: Optional[Dict[str, Any]] = None
-    ) -> Optional[Dict[str, Any]]:
-        metadata: Dict[str, Any] = {}
-        execution_context = self._get_execution_context()
         if execution_context:
-            metadata["execution_context"] = execution_context
-        if extra_metadata:
-            metadata.update(extra_metadata)
-        return metadata or None
+            return {"execution_context": execution_context}
+        return None
 
     def _emit_agent_event(self, event: AgentEvent) -> None:
         for callback in self._callbacks:
