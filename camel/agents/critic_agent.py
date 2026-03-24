@@ -222,7 +222,9 @@ class CriticAgent(ChatAgent):
             info={},
         )
 
-    def clone(self, with_memory: bool = False) -> 'CriticAgent':
+    def clone(
+        self, with_memory: bool = False, clone_context=None
+    ) -> 'CriticAgent':
         r"""Creates a new instance of :obj:`CriticAgent` with the same
         configuration as the current instance.
 

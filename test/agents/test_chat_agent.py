@@ -122,7 +122,7 @@ class DummyModel(BaseModelBackend):
 
 class RecordingAgentCallback(AgentCallback):
     def __init__(self) -> None:
-        self.events = []
+        self.events: list = []
 
     def handle_event(self, event) -> None:
         self.events.append(event)

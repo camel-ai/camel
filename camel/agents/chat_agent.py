@@ -755,9 +755,7 @@ class ChatAgent(BaseAgent):
             return text
         return f"{text[:max_length]}... (truncated, total length: {len(text)})"
 
-    def _get_toolkit_name(
-        self, tool: Optional[FunctionTool]
-    ) -> Optional[str]:
+    def _get_toolkit_name(self, tool: Optional[FunctionTool]) -> Optional[str]:
         if tool is None:
             return None
         func = getattr(tool, "func", None)
@@ -6679,11 +6677,8 @@ class ChatAgent(BaseAgent):
                         else:
                             new_toolkit = toolkit_instance
 
-                        if (
-                            new_toolkit is not toolkit_instance
-                            and isinstance(
-                                new_toolkit, RegisteredAgentToolkit
-                            )
+                        if new_toolkit is not toolkit_instance and isinstance(
+                            new_toolkit, RegisteredAgentToolkit
                         ):
                             toolkits_to_register.append(new_toolkit)
 
