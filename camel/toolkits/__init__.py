@@ -107,6 +107,7 @@ from .agent_toolkit import AgentToolkit
 from .planning_worktree_toolkit import PlanningWorktreeToolkit
 from .todo_toolkit import TodoItem, TodoToolkit
 from .web_fetch_toolkit import WebFetchToolkit
+from .goodmem_toolkit import GoodMemToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -205,4 +206,5 @@ __all__ = [
     'TodoItem',
     'TodoToolkit',
     'WebFetchToolkit',
+    'GoodMemToolkit',
 ]
