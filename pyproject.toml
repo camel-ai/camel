@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.90a6"
+version = "0.2.90"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.15"
@@ -88,6 +88,7 @@ rag = [
     "unstructured==0.16.20; python_version < '3.13'",
     "crawl4ai>=0.3.745",
     "pyobvector>=0.2.22; python_version < '3.13'",
+    "sqlglot>=26.0.1,<30; python_version < '3.13'",
     "google-genai>=1.13.0",
     "chunkr-ai>=0.0.50, <0.1.0",
     "chromadb>=0.6.0,<1.0.0",
@@ -222,6 +223,7 @@ storage = [
     "boto3>=1.42.64",
     "mem0ai>=0.1.73",
     "pyobvector>=0.2.22; python_version < '3.13'",
+    "sqlglot>=26.0.1,<30; python_version < '3.13'",
     "weaviate-client>=4.15.0",
     "protobuf>=6.0.0",
     "grpcio>=1.72.0",
@@ -431,6 +433,7 @@ all = [
     "crawl4ai>=0.4.0",
     "pyautogui>=0.9.54,<0.10",
     "pyobvector>=0.2.22; python_version < '3.13'",
+    "sqlglot>=26.0.1,<30; python_version < '3.13'",
     "scrapegraph-py>=1.12.0,<2",
     "daytona-sdk>=0.20.0",
     "ibm-watsonx-ai>=1.3.11",
