@@ -430,6 +430,7 @@ class SingleAgentWorker(Worker):
             "borrowed_agent_id": getattr(
                 worker_agent, "agent_id", worker_agent.role_name
             ),
+            # Alias kept for backward compatibility with eigent consumers.
             "agent_id": getattr(
                 worker_agent, "agent_id", worker_agent.role_name
             ),
@@ -441,7 +442,6 @@ class SingleAgentWorker(Worker):
     ) -> Dict[str, Any]:
         execution_context = self._build_execution_context(task, worker_agent)
         worker_agent._execution_context = execution_context.copy()
-        worker_agent.execution_context = execution_context.copy()
 
         if task.additional_info is None:
             task.additional_info = {}
@@ -484,9 +484,12 @@ class SingleAgentWorker(Worker):
             "execution_context": execution_context.copy(),
             "response_content_summary": response_content[:200],
             "tool_calls_summary": tool_calls_summary,
-            "tool_call_count": len(tool_calls) if isinstance(tool_calls, list) else 0,
+            "tool_call_count": (
+                len(tool_calls) if isinstance(tool_calls, list) else 0
+            ),
             "token_usage": token_usage.copy(),
-            # Backward-compatible fields.
+            # Backward-compatible fields — used by eigent task detail UI.
+            # TODO: migrate eigent to *_summary keys, then remove these.
             "response_content": response_content[:50],
             "tool_calls": tool_calls_summary[:50],
             "total_tokens": token_usage.get("total_tokens", 0),
@@ -564,10 +567,12 @@ class SingleAgentWorker(Worker):
 
                 # Normalize streamed vs non-streamed content for logging and
                 # structured parsing.
-                final_response, response_content, _ = (
-                    await self._consume_worker_response(
-                        response, stream_callback
-                    )
+                (
+                    final_response,
+                    response_content,
+                    _,
+                ) = await self._consume_worker_response(
+                    response, stream_callback
                 )
                 response = final_response
                 task_result = (
@@ -585,10 +590,12 @@ class SingleAgentWorker(Worker):
                 response = await worker_agent.astep(
                     prompt, response_format=TaskResult
                 )
-                final_response, response_content, parsed_result = (
-                    await self._consume_worker_response(
-                        response, stream_callback
-                    )
+                (
+                    final_response,
+                    response_content,
+                    parsed_result,
+                ) = await self._consume_worker_response(
+                    response, stream_callback
                 )
                 response = final_response
 
@@ -604,7 +611,6 @@ class SingleAgentWorker(Worker):
                 "token_usage"
             )
             token_usage = usage_info or {"total_tokens": 0}
-            total_tokens = token_usage.get("total_tokens", 0)
 
             # collect conversation from working agent to
             # accumulator for workflow memory

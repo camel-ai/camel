@@ -124,7 +124,6 @@ class FakeWorkerAgent:
         self.role_name = "Fake Worker Agent"
         self.agent_id = agent_id
         self._execution_context = {"stale": "value"}
-        self.execution_context = {"stale": "value"}
         self.astep = AsyncMock(return_value=response)
 
 
@@ -299,7 +298,7 @@ async def test_workforce_stream_callback_accumulate_mode_emits_delta():
 
 
 @pytest.mark.asyncio
-async def test_single_agent_worker_normalizes_delta_stream_and_records_context():
+async def test_single_agent_worker_normalizes_delta_stream_and_ctx():
     sys_msg = BaseMessage.make_assistant_message(
         role_name="programmer",
         content="You are a python programmer.",
@@ -354,19 +353,18 @@ async def test_single_agent_worker_normalizes_delta_stream_and_records_context()
         "agent_id": "worker-clone-1",
         "attempt": 1,
     }
-    assert fake_agent._execution_context == task.additional_info[
-        "execution_context"
-    ]
-    assert fake_agent.execution_context == task.additional_info[
-        "execution_context"
-    ]
+    assert (
+        fake_agent._execution_context
+        == task.additional_info["execution_context"]
+    )
     assert "stale" not in fake_agent._execution_context
 
     worker_attempt = task.additional_info["worker_attempts"][0]
     assert worker_attempt["attempt"] == 1
-    assert worker_attempt["execution_context"] == task.additional_info[
-        "execution_context"
-    ]
+    assert (
+        worker_attempt["execution_context"]
+        == task.additional_info["execution_context"]
+    )
     assert worker_attempt["response_content_summary"] == "Hello"
     assert worker_attempt["tool_call_count"] == 1
     assert worker_attempt["token_usage"] == {
@@ -422,6 +420,7 @@ async def test_single_agent_worker_attempt_counter_uses_existing_attempts():
         "worker-clone-2"
     )
     assert task.additional_info["worker_attempts"][-1]["attempt"] == 2
-    assert task.additional_info["worker_attempts"][-1][
-        "response_content_summary"
-    ] == "Completed"
+    assert (
+        task.additional_info["worker_attempts"][-1]["response_content_summary"]
+        == "Completed"
+    )
