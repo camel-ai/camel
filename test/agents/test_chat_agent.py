@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
+import contextvars
 import json
 from copy import deepcopy
 from io import BytesIO
@@ -29,7 +30,15 @@ from openai.types.completion_usage import CompletionUsage
 from PIL import Image
 from pydantic import BaseModel, Field
 
-from camel.agents import ChatAgent
+from camel.agents import (
+    AgentCallback,
+    ChatAgent,
+    CloneContext,
+    StepCompletedEvent,
+    StepStartedEvent,
+    ToolCompletedEvent,
+    ToolStartedEvent,
+)
 from camel.agents.chat_agent import (
     StreamContentAccumulator,
     ToolCallingRecord,
@@ -109,6 +118,14 @@ class DummyModel(BaseModelBackend):
 
     async def _arun(self, messages, response_format=None, tools=None):
         raise NotImplementedError
+
+
+class RecordingAgentCallback(AgentCallback):
+    def __init__(self) -> None:
+        self.events: list = []
+
+    def handle_event(self, event) -> None:
+        self.events.append(event)
 
 
 @parametrize
@@ -2252,3 +2269,399 @@ async def test_chat_agent_async_stream_with_structured_output():
     assert len(responses) > 1, "Should receive multiple streaming chunks"
     assert responses[-1].msg.parsed.answer == 6
     assert responses[-1].msg.parsed.explanation
+
+
+@pytest.mark.model_backend
+def test_chat_agent_emits_lifecycle_events_for_sync_tool_execution():
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+
+    def add(a: int, b: int) -> int:
+        r"""Add two integers."""
+        return a + b
+
+    callback = RecordingAgentCallback()
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+    agent = ChatAgent(
+        system_message=system_message,
+        model=model,
+        tools=[FunctionTool(add)],
+        callbacks=[callback],
+        execution_context_provider=lambda: {"request_id": "req-1"},
+    )
+
+    tool_response = ChatCompletion(
+        id='mock_id_123456',
+        choices=[
+            Choice(
+                finish_reason='tool_calls',
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content=None,
+                    refusal=None,
+                    role='assistant',
+                    audio=None,
+                    function_call=None,
+                    tool_calls=[
+                        ChatCompletionMessageFunctionToolCall(
+                            id='call_mock_123456',
+                            function=Function(
+                                arguments='{"a": 2, "b": 3}',
+                                name='add',
+                            ),
+                            type='function',
+                        )
+                    ],
+                ),
+            )
+        ],
+        created=1730752528,
+        model='gpt-5-mini-2024-07-18',
+        object='chat.completion',
+        service_tier=None,
+        usage=CompletionUsage(
+            completion_tokens=12, prompt_tokens=21, total_tokens=33
+        ),
+    )
+    final_response = ChatCompletion(
+        id='mock_id_123457',
+        choices=[
+            Choice(
+                finish_reason='stop',
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content='The sum is 5.',
+                    refusal=None,
+                    role='assistant',
+                    audio=None,
+                    function_call=None,
+                    tool_calls=None,
+                ),
+            )
+        ],
+        created=1730752529,
+        model='gpt-5-mini-2024-07-18',
+        object='chat.completion',
+        service_tier=None,
+        usage=CompletionUsage(
+            completion_tokens=8, prompt_tokens=12, total_tokens=20
+        ),
+    )
+
+    model.run = MagicMock(side_effect=[tool_response, final_response])
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Add 2 and 3.",
+    )
+
+    response = agent.step(user_msg)
+
+    assert response.info["tool_calls"][0].result == 5
+    assert [event.event_type for event in callback.events] == [
+        "step_started",
+        "tool_started",
+        "tool_completed",
+        "step_completed",
+    ]
+    assert isinstance(callback.events[0], StepStartedEvent)
+    assert isinstance(callback.events[1], ToolStartedEvent)
+    assert isinstance(callback.events[2], ToolCompletedEvent)
+    assert isinstance(callback.events[3], StepCompletedEvent)
+    assert (
+        callback.events[0].metadata["execution_context"]["request_id"]
+        == "req-1"
+    )
+    assert callback.events[2].tool_name == "add"
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_async_sync_tool_preserves_contextvars():
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    task_context = contextvars.ContextVar("task_context", default=None)
+
+    def read_task_context() -> str | None:
+        r"""Return the current task context value."""
+        return task_context.get()
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+    agent = ChatAgent(
+        system_message=system_message,
+        model=model,
+        tools=[FunctionTool(read_task_context)],
+    )
+
+    tool_response = ChatCompletion(
+        id='mock_id_context',
+        choices=[
+            Choice(
+                finish_reason='tool_calls',
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content=None,
+                    refusal=None,
+                    role='assistant',
+                    audio=None,
+                    function_call=None,
+                    tool_calls=[
+                        ChatCompletionMessageFunctionToolCall(
+                            id='call_context_1',
+                            function=Function(
+                                arguments='{}',
+                                name='read_task_context',
+                            ),
+                            type='function',
+                        )
+                    ],
+                ),
+            )
+        ],
+        created=1730752530,
+        model='gpt-5-mini-2024-07-18',
+        object='chat.completion',
+        service_tier=None,
+        usage=CompletionUsage(
+            completion_tokens=6, prompt_tokens=11, total_tokens=17
+        ),
+    )
+    final_response = ChatCompletion(
+        id='mock_id_context_final',
+        choices=[
+            Choice(
+                finish_reason='stop',
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content='Done.',
+                    refusal=None,
+                    role='assistant',
+                    audio=None,
+                    function_call=None,
+                    tool_calls=None,
+                ),
+            )
+        ],
+        created=1730752531,
+        model='gpt-5-mini-2024-07-18',
+        object='chat.completion',
+        service_tier=None,
+        usage=CompletionUsage(
+            completion_tokens=4, prompt_tokens=6, total_tokens=10
+        ),
+    )
+
+    model.arun = AsyncMock(side_effect=[tool_response, final_response])
+
+    token = task_context.set("task-123")
+    try:
+        response = await agent.astep("Read the current task context.")
+    finally:
+        task_context.reset(token)
+
+    assert response.info["tool_calls"][0].result == "task-123"
+
+
+def test_chat_agent_clone_preserves_runtime_config_and_clone_context():
+    class SessionToolkit:
+        def __init__(self, session_id: str = "original") -> None:
+            self.session_id = session_id
+
+        def echo(self, text: str) -> str:
+            r"""Echo the current session identifier with text."""
+            return f"{self.session_id}:{text}"
+
+        def clone_for_new_session(
+            self, new_session_id: str | None = None
+        ) -> "SessionToolkit":
+            return SessionToolkit(new_session_id or "generated")
+
+    callback = RecordingAgentCallback()
+    toolkit = SessionToolkit()
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=DummyModel(ModelType.GPT_4O_MINI),
+        tools=[FunctionTool(toolkit.echo)],
+        mask_tool_output=True,
+        enable_snapshot_clean=True,
+        retry_attempts=5,
+        retry_delay=2.5,
+        step_timeout=9.0,
+        callbacks=[callback],
+        execution_context={"request_id": "req-7"},
+        stream_accumulate=True,
+        summary_window_ratio=0.75,
+    )
+
+    cloned = agent.clone(
+        clone_context=CloneContext(
+            session_id="session-42",
+            execution_context={"task_id": "task-42"},
+        )
+    )
+
+    cloned_toolkit = cloned.tool_dict["echo"].func.__self__
+
+    assert cloned.mask_tool_output is True
+    assert cloned._enable_snapshot_clean is True
+    assert cloned.retry_attempts == 5
+    assert cloned.retry_delay == 2.5
+    assert cloned.step_timeout == 9.0
+    assert cloned.stream_accumulate is True
+    assert cloned.summary_window_ratio == 0.75
+    assert cloned._callbacks == [callback]
+    assert cloned_toolkit is not toolkit
+    assert cloned_toolkit.session_id == "session-42"
+    assert cloned._execution_context == {
+        "request_id": "req-7",
+        "task_id": "task-42",
+    }
+    # callbacks list is independent from the original
+    assert cloned._callbacks is not agent._callbacks
+    assert cloned._callbacks == [callback]
+    # response_terminators are independent copies
+    assert cloned.response_terminators is not agent.response_terminators
+
+
+@pytest.mark.model_backend
+def test_chat_agent_step_failed_event_on_error():
+    """Verify StepFailedEvent is emitted when step() raises."""
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+    model.run = MagicMock(side_effect=RuntimeError("boom"))
+
+    callback = RecordingAgentCallback()
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        callbacks=[callback],
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        agent.step("hello")
+
+    event_types = [e.event_type for e in callback.events]
+    assert "step_started" in event_types
+    assert "step_failed" in event_types
+    failed = [e for e in callback.events if e.event_type == "step_failed"]
+    assert len(failed) == 1
+    assert "boom" in failed[0].error_message
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_astep_failed_event_on_error():
+    """Verify StepFailedEvent is emitted when astep() raises."""
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+    model.arun = AsyncMock(side_effect=RuntimeError("async boom"))
+
+    callback = RecordingAgentCallback()
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        callbacks=[callback],
+    )
+
+    with pytest.raises(RuntimeError, match="async boom"):
+        await agent.astep("hello")
+
+    event_types = [e.event_type for e in callback.events]
+    assert "step_started" in event_types
+    assert "step_failed" in event_types
+
+
+@pytest.mark.model_backend
+def test_chat_agent_multiple_callbacks_independence():
+    """One callback throwing does not prevent other callbacks from running."""
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+    model.run = MagicMock(return_value=model_backend_rsp_base)
+
+    class FailingCallback(AgentCallback):
+        def handle_event(self, event):
+            raise ValueError("I always fail")
+
+    good_callback = RecordingAgentCallback()
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        callbacks=[FailingCallback(), good_callback],
+    )
+    agent.step("hello")
+
+    # good_callback should still receive events despite the first one failing
+    assert len(good_callback.events) >= 2  # at least step_started + completed
+
+
+@pytest.mark.model_backend
+def test_chat_agent_execution_context_provider_failure_fallback():
+    """execution_context_provider failure falls back to static context."""
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+    model.run = MagicMock(return_value=model_backend_rsp_base)
+
+    callback = RecordingAgentCallback()
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        callbacks=[callback],
+        execution_context={"static_key": "static_val"},
+        execution_context_provider=lambda: (_ for _ in ()).throw(
+            RuntimeError("provider error")
+        ),
+    )
+    agent.step("hello")
+
+    # Events should still have the static execution_context
+    assert len(callback.events) >= 1
+    assert callback.events[0].metadata["execution_context"] == {
+        "static_key": "static_val"
+    }
+
+
+@pytest.mark.model_backend
+def test_chat_agent_clone_response_terminators_are_independent():
+    """Cloned agent's response_terminators don't share state."""
+    from camel.terminators import ResponseWordsTerminator
+
+    terminator = ResponseWordsTerminator(words_dict={"bye": 1})
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=DummyModel(ModelType.GPT_4O_MINI),
+        response_terminators=[terminator],
+    )
+
+    cloned = agent.clone()
+
+    # Mutating the clone's terminator should not affect the original
+    assert len(cloned.response_terminators) == 1
+    assert cloned.response_terminators[0] is not terminator

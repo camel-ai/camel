@@ -17,6 +17,8 @@ import asyncio
 import atexit
 import base64
 import concurrent.futures
+import contextvars
+import copy
 import functools
 import hashlib
 import inspect
@@ -65,7 +67,18 @@ from camel.agents._utils import (
     handle_logprobs,
     safe_model_dump,
 )
+from camel.agents.agent_callback import AgentCallback
+from camel.agents.agent_events import (
+    AgentEvent,
+    StepCompletedEvent,
+    StepFailedEvent,
+    StepStartedEvent,
+    ToolCompletedEvent,
+    ToolFailedEvent,
+    ToolStartedEvent,
+)
 from camel.agents.base import BaseAgent
+from camel.agents.clone_context import CloneContext
 from camel.logger import get_logger
 from camel.memories import (
     AgentMemory,
@@ -514,6 +527,11 @@ class ChatAgent(BaseAgent):
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         on_request_usage: Optional[Callable[[Dict[str, Any]], Any]] = None,
+        callbacks: Optional[List[AgentCallback]] = None,
+        execution_context: Optional[Dict[str, Any]] = None,
+        execution_context_provider: Optional[
+            Callable[[], Optional[Dict[str, Any]]]
+        ] = None,
         stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
     ) -> None:
@@ -627,6 +645,16 @@ class ChatAgent(BaseAgent):
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
         self.on_request_usage = on_request_usage
+        self._callbacks: List[AgentCallback] = []
+        if callbacks is not None:
+            for callback in callbacks:
+                if not isinstance(callback, AgentCallback):
+                    raise TypeError(
+                        "All callbacks must be instances of AgentCallback"
+                    )
+                self._callbacks.append(callback)
+        self._execution_context = dict(execution_context or {})
+        self._execution_context_provider = execution_context_provider
         self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
 
@@ -649,6 +677,159 @@ class ChatAgent(BaseAgent):
         self._tool_output_history.clear()
         for terminator in self.response_terminators:
             terminator.reset()
+
+    def _build_event_metadata(self) -> Optional[Dict[str, Any]]:
+        execution_context = dict(self._execution_context)
+        if self._execution_context_provider is not None:
+            try:
+                provided_context = self._execution_context_provider()
+            except Exception as exc:
+                logger.warning(
+                    f"execution_context_provider failed for agent "
+                    f"{self.agent_id}: {exc}"
+                )
+                provided_context = None
+            if provided_context:
+                execution_context.update(provided_context)
+
+        if execution_context:
+            return {"execution_context": execution_context}
+        return None
+
+    def _emit_agent_event(self, event: AgentEvent) -> None:
+        for callback in self._callbacks:
+            try:
+                callback_result = callback.handle_event(event)
+                if inspect.isawaitable(callback_result):
+                    logger.warning(
+                        "AgentCallback.handle_event returned awaitable in "
+                        "sync execution. Use an async callback with `astep` "
+                        "or return synchronously."
+                    )
+                    if inspect.iscoroutine(callback_result):
+                        callback_result.close()
+            except Exception as exc:
+                logger.warning(
+                    f"Agent callback failed for event "
+                    f"{event.event_type}: {exc}"
+                )
+
+    async def _aemit_agent_event(self, event: AgentEvent) -> None:
+        for callback in self._callbacks:
+            try:
+                callback_result = callback.handle_event(event)
+                if inspect.isawaitable(callback_result):
+                    await callback_result
+            except Exception as exc:
+                logger.warning(
+                    f"Agent callback failed for event "
+                    f"{event.event_type}: {exc}"
+                )
+
+    def _summarize_for_event(
+        self, value: Any, max_length: int = 500
+    ) -> Optional[str]:
+        if value is None:
+            return None
+        if isinstance(value, BaseMessage):
+            text = value.content
+        elif isinstance(value, str):
+            text = value
+        else:
+            try:
+                text = json.dumps(value, ensure_ascii=False, default=str)
+            except TypeError:
+                text = repr(value)
+        if len(text) <= max_length:
+            return text
+        return f"{text[:max_length]}... (truncated, total length: {len(text)})"
+
+    def _get_toolkit_name(self, tool: Optional[FunctionTool]) -> Optional[str]:
+        if tool is None:
+            return None
+        func = getattr(tool, "func", None)
+        if func is None:
+            return None
+        toolkit_instance = getattr(func, "__self__", None)
+        if toolkit_instance is not None:
+            toolkit_name = getattr(toolkit_instance, "toolkit_name", None)
+            if callable(toolkit_name):
+                try:
+                    return cast(str, toolkit_name())
+                except Exception:
+                    return None
+        return None
+
+    def _build_step_completed_event(
+        self, response: ChatAgentResponse
+    ) -> StepCompletedEvent:
+        usage = response.info.get("usage") or response.info.get("token_usage")
+        output_summary = None
+        if response.msg is not None:
+            output_summary = self._summarize_for_event(response.msg.content)
+        return StepCompletedEvent(
+            agent_id=self.agent_id,
+            role_name=self.role_name,
+            output_summary=output_summary,
+            usage=usage,
+            metadata=self._build_event_metadata(),
+        )
+
+    def _wrap_stream_generator_with_events(
+        self,
+        generator: Generator[ChatAgentResponse, None, None],
+    ) -> Generator[ChatAgentResponse, None, None]:
+        def wrapped_generator():
+            last_response: Optional[ChatAgentResponse] = None
+            try:
+                for response in generator:
+                    last_response = response
+                    yield response
+            except Exception as exc:
+                self._emit_agent_event(
+                    StepFailedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        error_message=str(exc),
+                        metadata=self._build_event_metadata(),
+                    )
+                )
+                raise
+            else:
+                if last_response is not None:
+                    self._emit_agent_event(
+                        self._build_step_completed_event(last_response)
+                    )
+
+        return wrapped_generator()
+
+    def _wrap_async_stream_generator_with_events(
+        self,
+        generator: AsyncGenerator[ChatAgentResponse, None],
+    ) -> AsyncGenerator[ChatAgentResponse, None]:
+        async def wrapped_generator():
+            last_response: Optional[ChatAgentResponse] = None
+            try:
+                async for response in generator:
+                    last_response = response
+                    yield response
+            except Exception as exc:
+                await self._aemit_agent_event(
+                    StepFailedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        error_message=str(exc),
+                        metadata=self._build_event_metadata(),
+                    )
+                )
+                raise
+            else:
+                if last_response is not None:
+                    await self._aemit_agent_event(
+                        self._build_step_completed_event(last_response)
+                    )
+
+        return wrapped_generator()
 
     def _update_token_cache(
         self,
@@ -2854,29 +3035,57 @@ class ChatAgent(BaseAgent):
         """
 
         stream = self.model_backend.model_config_dict.get("stream", False)
+        self._emit_agent_event(
+            StepStartedEvent(
+                agent_id=self.agent_id,
+                role_name=self.role_name,
+                input_summary=self._summarize_for_event(input_message) or "",
+                metadata=self._build_event_metadata(),
+            )
+        )
 
         if stream:
             # Return wrapped generator that has ChatAgentResponse interface
-            generator = self._stream(input_message, response_format)
+            generator = self._wrap_stream_generator_with_events(
+                self._stream(input_message, response_format)
+            )
             return StreamingChatAgentResponse(generator)
 
         # Execute with timeout if configured
-        if self.step_timeout is not None:
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=1
-            ) as executor:
-                future = executor.submit(
-                    self._step_impl, input_message, response_format
-                )
-                try:
-                    return future.result(timeout=self.step_timeout)
-                except concurrent.futures.TimeoutError:
-                    future.cancel()
-                    raise TimeoutError(
-                        f"Step timed out after {self.step_timeout}s"
+        try:
+            if self.step_timeout is not None:
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=1
+                ) as executor:
+                    copied_ctx = contextvars.copy_context()
+                    future = executor.submit(
+                        copied_ctx.run,
+                        self._step_impl,
+                        input_message,
+                        response_format,
                     )
-        else:
-            return self._step_impl(input_message, response_format)
+                    try:
+                        response = future.result(timeout=self.step_timeout)
+                    except concurrent.futures.TimeoutError:
+                        future.cancel()
+                        raise TimeoutError(
+                            f"Step timed out after {self.step_timeout}s"
+                        )
+            else:
+                response = self._step_impl(input_message, response_format)
+        except Exception as exc:
+            self._emit_agent_event(
+                StepFailedEvent(
+                    agent_id=self.agent_id,
+                    role_name=self.role_name,
+                    error_message=str(exc),
+                    metadata=self._build_event_metadata(),
+                )
+            )
+            raise
+
+        self._emit_agent_event(self._build_step_completed_event(response))
+        return response
 
     def _step_impl(
         self,
@@ -3166,27 +3375,53 @@ class ChatAgent(BaseAgent):
             pass  # Langfuse not available
 
         stream = self.model_backend.model_config_dict.get("stream", False)
+        await self._aemit_agent_event(
+            StepStartedEvent(
+                agent_id=self.agent_id,
+                role_name=self.role_name,
+                input_summary=self._summarize_for_event(input_message) or "",
+                metadata=self._build_event_metadata(),
+            )
+        )
         if stream:
             # Return wrapped async generator that is awaitable
-            async_generator = self._astream(input_message, response_format)
+            async_generator = self._wrap_async_stream_generator_with_events(
+                self._astream(input_message, response_format)
+            )
             return AsyncStreamingChatAgentResponse(async_generator)
         else:
-            if self.step_timeout is not None:
-                try:
-                    return await asyncio.wait_for(
-                        self._astep_non_streaming_task(
-                            input_message, response_format
-                        ),
-                        timeout=self.step_timeout,
+            try:
+                if self.step_timeout is not None:
+                    try:
+                        response = await asyncio.wait_for(
+                            self._astep_non_streaming_task(
+                                input_message, response_format
+                            ),
+                            timeout=self.step_timeout,
+                        )
+                    except asyncio.TimeoutError:
+                        raise asyncio.TimeoutError(
+                            f"Async step timed out after {self.step_timeout}s"
+                        )
+                else:
+                    response = await self._astep_non_streaming_task(
+                        input_message, response_format
                     )
-                except asyncio.TimeoutError:
-                    raise asyncio.TimeoutError(
-                        f"Async step timed out after {self.step_timeout}s"
+            except Exception as exc:
+                await self._aemit_agent_event(
+                    StepFailedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        error_message=str(exc),
+                        metadata=self._build_event_metadata(),
                     )
-            else:
-                return await self._astep_non_streaming_task(
-                    input_message, response_format
                 )
+                raise
+
+            await self._aemit_agent_event(
+                self._build_step_completed_event(response)
+            )
+            return response
 
     async def _astep_non_streaming_task(
         self,
@@ -4038,12 +4273,36 @@ class ChatAgent(BaseAgent):
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools.get(func_name)
         mask_flag = False
+        toolkit_name = self._get_toolkit_name(tool)
+        input_summary = self._summarize_for_event(args)
 
         if tool is None:
             error_msg = f"Tool '{func_name}' not found in registered tools"
             result = f"Tool execution failed: {error_msg}"
             logger.warning(error_msg)
+            self._emit_agent_event(
+                ToolFailedEvent(
+                    agent_id=self.agent_id,
+                    role_name=self.role_name,
+                    tool_name=func_name,
+                    tool_call_id=tool_call_id,
+                    toolkit_name=toolkit_name,
+                    error_message=error_msg,
+                    metadata=self._build_event_metadata(),
+                )
+            )
         else:
+            self._emit_agent_event(
+                ToolStartedEvent(
+                    agent_id=self.agent_id,
+                    role_name=self.role_name,
+                    tool_name=func_name,
+                    tool_call_id=tool_call_id,
+                    toolkit_name=toolkit_name,
+                    input_summary=input_summary,
+                    metadata=self._build_event_metadata(),
+                )
+            )
             try:
                 raw_result = tool(**args)
                 if self.mask_tool_output:
@@ -4056,11 +4315,34 @@ class ChatAgent(BaseAgent):
                     mask_flag = True
                 else:
                     result = raw_result
+                self._emit_agent_event(
+                    ToolCompletedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        tool_name=func_name,
+                        tool_call_id=tool_call_id,
+                        toolkit_name=toolkit_name,
+                        output_summary=self._summarize_for_event(result),
+                        mask_output=mask_flag,
+                        metadata=self._build_event_metadata(),
+                    )
+                )
             except Exception as e:
                 # Capture the error message to prevent framework crash
                 error_msg = f"Error executing tool '{func_name}': {e!s}"
                 result = f"Tool execution failed: {error_msg}"
                 logger.warning(f"{error_msg} with result: {result}")
+                self._emit_agent_event(
+                    ToolFailedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        tool_name=func_name,
+                        tool_call_id=tool_call_id,
+                        toolkit_name=toolkit_name,
+                        error_message=error_msg,
+                        metadata=self._build_event_metadata(),
+                    )
+                )
 
         return self._record_tool_calling(
             func_name,
@@ -4082,12 +4364,36 @@ class ChatAgent(BaseAgent):
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools.get(func_name)
         mask_flag = False
+        toolkit_name = self._get_toolkit_name(tool)
+        input_summary = self._summarize_for_event(args)
 
         if tool is None:
             error_msg = f"Tool '{func_name}' not found in registered tools"
             result = f"Tool execution failed: {error_msg}"
             logger.warning(error_msg)
+            await self._aemit_agent_event(
+                ToolFailedEvent(
+                    agent_id=self.agent_id,
+                    role_name=self.role_name,
+                    tool_name=func_name,
+                    tool_call_id=tool_call_id,
+                    toolkit_name=toolkit_name,
+                    error_message=error_msg,
+                    metadata=self._build_event_metadata(),
+                )
+            )
         else:
+            await self._aemit_agent_event(
+                ToolStartedEvent(
+                    agent_id=self.agent_id,
+                    role_name=self.role_name,
+                    tool_name=func_name,
+                    tool_call_id=tool_call_id,
+                    toolkit_name=toolkit_name,
+                    input_summary=input_summary,
+                    metadata=self._build_event_metadata(),
+                )
+            )
             try:
                 # Try different invocation paths in order of preference
                 if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
@@ -4112,8 +4418,13 @@ class ChatAgent(BaseAgent):
                     # Fallback: synchronous call
                     # Use functools.partial to properly capture args
                     loop = asyncio.get_running_loop()
+                    copied_context = contextvars.copy_context()
                     raw_result = await loop.run_in_executor(
-                        None, functools.partial(tool, **args)
+                        None,
+                        functools.partial(
+                            copied_context.run,
+                            functools.partial(tool, **args),
+                        ),
                     )
 
                 if self.mask_tool_output:
@@ -4126,12 +4437,35 @@ class ChatAgent(BaseAgent):
                     mask_flag = True
                 else:
                     result = raw_result
+                await self._aemit_agent_event(
+                    ToolCompletedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        tool_name=func_name,
+                        tool_call_id=tool_call_id,
+                        toolkit_name=toolkit_name,
+                        output_summary=self._summarize_for_event(result),
+                        mask_output=mask_flag,
+                        metadata=self._build_event_metadata(),
+                    )
+                )
 
             except Exception as e:
                 # Capture the error message to prevent framework crash
                 error_msg = f"Error executing async tool '{func_name}': {e!s}"
                 result = f"Tool execution failed: {error_msg}"
                 logger.warning(f"{error_msg} with result: {result}")
+                await self._aemit_agent_event(
+                    ToolFailedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        tool_name=func_name,
+                        tool_call_id=tool_call_id,
+                        toolkit_name=toolkit_name,
+                        error_message=error_msg,
+                        metadata=self._build_event_metadata(),
+                    )
+                )
         return self._record_tool_calling(
             func_name,
             args,
@@ -5025,10 +5359,24 @@ class ChatAgent(BaseAgent):
             tool_call_id = tool_call_data['id']
             extra_content = tool_call_data.get('extra_content')
 
-            if function_name in self._internal_tools:
-                tool = self._internal_tools[function_name]
+            tool = self._internal_tools.get(function_name)
+            toolkit_name = self._get_toolkit_name(tool)
+
+            if tool is not None:
+                self._emit_agent_event(
+                    ToolStartedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        tool_name=function_name,
+                        tool_call_id=tool_call_id,
+                        toolkit_name=toolkit_name,
+                        input_summary=self._summarize_for_event(args),
+                        metadata=self._build_event_metadata(),
+                    )
+                )
                 try:
                     result = tool(**args)
+                    mask_flag = False
 
                     # Handle mask_tool_output
                     if self.mask_tool_output:
@@ -5039,6 +5387,20 @@ class ChatAgent(BaseAgent):
                             " output from the tool is masked. You can move"
                             " forward]"
                         )
+                        mask_flag = True
+
+                    self._emit_agent_event(
+                        ToolCompletedEvent(
+                            agent_id=self.agent_id,
+                            role_name=self.role_name,
+                            tool_name=function_name,
+                            tool_call_id=tool_call_id,
+                            toolkit_name=toolkit_name,
+                            output_summary=self._summarize_for_event(result),
+                            mask_output=mask_flag,
+                            metadata=self._build_event_metadata(),
+                        )
+                    )
 
                     # Truncate tool result if it exceeds the maximum token
                     # limit. This prevents single tool calls from exceeding
@@ -5083,6 +5445,17 @@ class ChatAgent(BaseAgent):
                     )
                     result = {"error": error_msg}
                     logger.warning(f"{error_msg} with result: {result}")
+                    self._emit_agent_event(
+                        ToolFailedEvent(
+                            agent_id=self.agent_id,
+                            role_name=self.role_name,
+                            tool_name=function_name,
+                            tool_call_id=tool_call_id,
+                            toolkit_name=toolkit_name,
+                            error_message=error_msg,
+                            metadata=self._build_event_metadata(),
+                        )
+                    )
 
                     # Record error response
                     func_msg = FunctionCallingMessage(
@@ -5112,6 +5485,17 @@ class ChatAgent(BaseAgent):
                 )
                 result = {"error": error_msg}
                 logger.warning(error_msg)
+                self._emit_agent_event(
+                    ToolFailedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        tool_name=function_name,
+                        tool_call_id=tool_call_id,
+                        toolkit_name=toolkit_name,
+                        error_message=error_msg,
+                        metadata=self._build_event_metadata(),
+                    )
+                )
 
                 func_msg = FunctionCallingMessage(
                     role_name=self.role_name,
@@ -5154,8 +5538,21 @@ class ChatAgent(BaseAgent):
             tool_call_id = tool_call_data['id']
             extra_content = tool_call_data.get('extra_content')
 
-            if function_name in self._internal_tools:
-                tool = self._internal_tools[function_name]
+            tool = self._internal_tools.get(function_name)
+            toolkit_name = self._get_toolkit_name(tool)
+
+            if tool is not None:
+                await self._aemit_agent_event(
+                    ToolStartedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        tool_name=function_name,
+                        tool_call_id=tool_call_id,
+                        toolkit_name=toolkit_name,
+                        input_summary=self._summarize_for_event(args),
+                        metadata=self._build_event_metadata(),
+                    )
+                )
                 try:
                     # Try different invocation paths in order of preference
                     if hasattr(tool, 'func') and hasattr(
@@ -5184,10 +5581,16 @@ class ChatAgent(BaseAgent):
                         # Fallback: synchronous call
                         # Use functools.partial to properly capture args
                         loop = asyncio.get_running_loop()
+                        copied_context = contextvars.copy_context()
                         result = await loop.run_in_executor(
-                            None, functools.partial(tool, **args)
+                            None,
+                            functools.partial(
+                                copied_context.run,
+                                functools.partial(tool, **args),
+                            ),
                         )
 
+                    mask_flag = False
                     # Handle mask_tool_output
                     if self.mask_tool_output:
                         with self._secure_result_store_lock:
@@ -5197,6 +5600,20 @@ class ChatAgent(BaseAgent):
                             " output from the tool is masked. You can move"
                             " forward]"
                         )
+                        mask_flag = True
+
+                    await self._aemit_agent_event(
+                        ToolCompletedEvent(
+                            agent_id=self.agent_id,
+                            role_name=self.role_name,
+                            tool_name=function_name,
+                            tool_call_id=tool_call_id,
+                            toolkit_name=toolkit_name,
+                            output_summary=self._summarize_for_event(result),
+                            mask_output=mask_flag,
+                            metadata=self._build_event_metadata(),
+                        )
+                    )
 
                     # Truncate tool result if it exceeds the maximum token
                     # limit. This prevents single tool calls from exceeding
@@ -5239,6 +5656,17 @@ class ChatAgent(BaseAgent):
                     )
                     result = {"error": error_msg}
                     logger.warning(f"{error_msg} with result: {result}")
+                    await self._aemit_agent_event(
+                        ToolFailedEvent(
+                            agent_id=self.agent_id,
+                            role_name=self.role_name,
+                            tool_name=function_name,
+                            tool_call_id=tool_call_id,
+                            toolkit_name=toolkit_name,
+                            error_message=error_msg,
+                            metadata=self._build_event_metadata(),
+                        )
+                    )
 
                     # Record error response
                     func_msg = FunctionCallingMessage(
@@ -5267,6 +5695,17 @@ class ChatAgent(BaseAgent):
                 )
                 result = {"error": error_msg}
                 logger.warning(error_msg)
+                await self._aemit_agent_event(
+                    ToolFailedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        tool_name=function_name,
+                        tool_call_id=tool_call_id,
+                        toolkit_name=toolkit_name,
+                        error_message=error_msg,
+                        metadata=self._build_event_metadata(),
+                    )
+                )
 
                 func_msg = FunctionCallingMessage(
                     role_name=self.role_name,
@@ -6098,7 +6537,11 @@ class ChatAgent(BaseAgent):
         """
         self.model_backend.add_strategy(name, strategy_fn)
 
-    def clone(self, with_memory: bool = False) -> ChatAgent:
+    def clone(
+        self,
+        with_memory: bool = False,
+        clone_context: Optional[CloneContext] = None,
+    ) -> ChatAgent:
         r"""Creates a new instance of :obj:`ChatAgent` with the same
         configuration as the current instance.
 
@@ -6108,6 +6551,10 @@ class ChatAgent(BaseAgent):
                 the same conversation history. If False, the new agent will
                 have a fresh memory with only the system message.
                 (default: :obj:`False`)
+            clone_context (Optional[CloneContext]): Optional context for
+                cloning. Provides ``session_id`` (forwarded to toolkit
+                ``clone_for_new_session``) and ``execution_context`` (merged
+                into the clone's execution context). (default: :obj:`None`)
 
         Returns:
             ChatAgent: A new instance of :obj:`ChatAgent` with the same
@@ -6122,7 +6569,11 @@ class ChatAgent(BaseAgent):
         system_message = None if with_memory else self._system_message
 
         # Clone tools and collect toolkits that need registration
-        cloned_tools, toolkits_to_register = self._clone_tools()
+        cloned_tools, toolkits_to_register = self._clone_tools(clone_context)
+
+        execution_context = dict(self._execution_context)
+        if clone_context and clone_context.execution_context:
+            execution_context.update(clone_context.execution_context)
 
         new_agent = ChatAgent(
             system_message=system_message,
@@ -6138,17 +6589,28 @@ class ChatAgent(BaseAgent):
             external_tools=[
                 schema for schema in self._external_tool_schemas.values()
             ],
-            response_terminators=self.response_terminators,
+            response_terminators=[
+                copy.deepcopy(t) for t in self.response_terminators
+            ],
             scheduling_strategy=(
                 self.model_backend.scheduling_strategy.__name__
             ),
             max_iteration=self.max_iteration,
             stop_event=self.stop_event,
             tool_execution_timeout=self.tool_execution_timeout,
+            mask_tool_output=self.mask_tool_output,
             pause_event=self.pause_event,
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
+            enable_snapshot_clean=self._enable_snapshot_clean,
+            retry_attempts=self.retry_attempts,
+            retry_delay=self.retry_delay,
+            step_timeout=self.step_timeout,
             on_request_usage=self.on_request_usage,
+            callbacks=list(self._callbacks),
+            execution_context=execution_context,
+            execution_context_provider=self._execution_context_provider,
             stream_accumulate=self.stream_accumulate,
+            summary_window_ratio=self.summary_window_ratio,
         )
 
         # Copy memory if requested
@@ -6163,12 +6625,13 @@ class ChatAgent(BaseAgent):
 
     def _clone_tools(
         self,
+        clone_context: Optional[CloneContext] = None,
     ) -> Tuple[List[FunctionTool], List[RegisteredAgentToolkit]]:
         r"""Clone tools and return toolkits that need agent registration.
 
-        This method handles stateful toolkits by cloning them if they have
-        a clone_for_new_session method, and collecting RegisteredAgentToolkit
-        instances for later registration.
+        This method handles stateful toolkits by cloning them if they expose a
+        ``clone_for_new_session(session_id)`` method, and collects
+        RegisteredAgentToolkit instances for later registration.
 
         Returns:
             Tuple containing:
@@ -6187,32 +6650,33 @@ class ChatAgent(BaseAgent):
                 toolkit_id = id(toolkit_instance)
 
                 if toolkit_id not in cloned_toolkits:
-                    # Check if the toolkit has a clone method
-                    if hasattr(toolkit_instance, 'clone_for_new_session'):
-                        try:
-                            import uuid
-
-                            new_session_id = str(uuid.uuid4())[:8]
+                    try:
+                        if hasattr(toolkit_instance, 'clone_for_new_session'):
+                            new_session_id = (
+                                clone_context.session_id
+                                if clone_context is not None
+                                and clone_context.session_id is not None
+                                else str(uuid.uuid4())[:8]
+                            )
                             new_toolkit = (
                                 toolkit_instance.clone_for_new_session(
                                     new_session_id
                                 )
                             )
+                        else:
+                            new_toolkit = toolkit_instance
 
-                            # If this is a RegisteredAgentToolkit,
-                            # add it to registration list
-                            if isinstance(new_toolkit, RegisteredAgentToolkit):
-                                toolkits_to_register.append(new_toolkit)
+                        if new_toolkit is not toolkit_instance and isinstance(
+                            new_toolkit, RegisteredAgentToolkit
+                        ):
+                            toolkits_to_register.append(new_toolkit)
 
-                            cloned_toolkits[toolkit_id] = new_toolkit
-                        except Exception as e:
-                            logger.warning(
-                                f"Failed to clone toolkit {toolkit_instance.__class__.__name__}: {e}"  # noqa:E501
-                            )
-                            # Use original toolkit if cloning fails
-                            cloned_toolkits[toolkit_id] = toolkit_instance
-                    else:
-                        # Toolkit doesn't support cloning, use original
+                        cloned_toolkits[toolkit_id] = new_toolkit
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to clone toolkit {toolkit_instance.__class__.__name__}: {e}"  # noqa:E501
+                        )
+                        # Use original toolkit if cloning fails
                         cloned_toolkits[toolkit_id] = toolkit_instance
 
                 # Get the method from the cloned (or original) toolkit
