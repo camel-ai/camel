@@ -2536,3 +2536,132 @@ def test_chat_agent_clone_preserves_runtime_config_and_clone_context():
         "request_id": "req-7",
         "task_id": "task-42",
     }
+    # callbacks list is independent from the original
+    assert cloned._callbacks is not agent._callbacks
+    assert cloned._callbacks == [callback]
+    # response_terminators are independent copies
+    assert cloned.response_terminators is not agent.response_terminators
+
+
+@pytest.mark.model_backend
+def test_chat_agent_step_failed_event_on_error():
+    """Verify StepFailedEvent is emitted when step() raises."""
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+    model.run = MagicMock(side_effect=RuntimeError("boom"))
+
+    callback = RecordingAgentCallback()
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        callbacks=[callback],
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        agent.step("hello")
+
+    event_types = [e.event_type for e in callback.events]
+    assert "step_started" in event_types
+    assert "step_failed" in event_types
+    failed = [e for e in callback.events if e.event_type == "step_failed"]
+    assert len(failed) == 1
+    assert "boom" in failed[0].error_message
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_astep_failed_event_on_error():
+    """Verify StepFailedEvent is emitted when astep() raises."""
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+    model.arun = AsyncMock(side_effect=RuntimeError("async boom"))
+
+    callback = RecordingAgentCallback()
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        callbacks=[callback],
+    )
+
+    with pytest.raises(RuntimeError, match="async boom"):
+        await agent.astep("hello")
+
+    event_types = [e.event_type for e in callback.events]
+    assert "step_started" in event_types
+    assert "step_failed" in event_types
+
+
+@pytest.mark.model_backend
+def test_chat_agent_multiple_callbacks_independence():
+    """One callback throwing does not prevent other callbacks from running."""
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+    model.run = MagicMock(return_value=model_backend_rsp_base)
+
+    class FailingCallback(AgentCallback):
+        def handle_event(self, event):
+            raise ValueError("I always fail")
+
+    good_callback = RecordingAgentCallback()
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        callbacks=[FailingCallback(), good_callback],
+    )
+    agent.step("hello")
+
+    # good_callback should still receive events despite the first one failing
+    assert len(good_callback.events) >= 2  # at least step_started + completed
+
+
+@pytest.mark.model_backend
+def test_chat_agent_execution_context_provider_failure_fallback():
+    """execution_context_provider failure falls back to static context."""
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+    model.run = MagicMock(return_value=model_backend_rsp_base)
+
+    callback = RecordingAgentCallback()
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        callbacks=[callback],
+        execution_context={"static_key": "static_val"},
+        execution_context_provider=lambda: (_ for _ in ()).throw(
+            RuntimeError("provider error")
+        ),
+    )
+    agent.step("hello")
+
+    # Events should still have the static execution_context
+    assert len(callback.events) >= 1
+    assert callback.events[0].metadata["execution_context"] == {
+        "static_key": "static_val"
+    }
+
+
+@pytest.mark.model_backend
+def test_chat_agent_clone_response_terminators_are_independent():
+    """Cloned agent's response_terminators don't share state."""
+    from camel.terminators import ResponseWordsTerminator
+
+    terminator = ResponseWordsTerminator(words_dict={"bye": 1})
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=DummyModel(ModelType.GPT_4O_MINI),
+        response_terminators=[terminator],
+    )
+
+    cloned = agent.clone()
+
+    # Mutating the clone's terminator should not affect the original
+    assert len(cloned.response_terminators) == 1
+    assert cloned.response_terminators[0] is not terminator

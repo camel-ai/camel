@@ -18,6 +18,7 @@ import atexit
 import base64
 import concurrent.futures
 import contextvars
+import copy
 import functools
 import hashlib
 import inspect
@@ -3069,8 +3070,12 @@ class ChatAgent(BaseAgent):
                 with concurrent.futures.ThreadPoolExecutor(
                     max_workers=1
                 ) as executor:
+                    copied_ctx = contextvars.copy_context()
                     future = executor.submit(
-                        self._step_impl, input_message, response_format
+                        copied_ctx.run,
+                        self._step_impl,
+                        input_message,
+                        response_format,
                     )
                     try:
                         response = future.result(timeout=self.step_timeout)
@@ -5367,10 +5372,24 @@ class ChatAgent(BaseAgent):
             tool_call_id = tool_call_data['id']
             extra_content = tool_call_data.get('extra_content')
 
-            if function_name in self._internal_tools:
-                tool = self._internal_tools[function_name]
+            tool = self._internal_tools.get(function_name)
+            toolkit_name = self._get_toolkit_name(tool)
+
+            if tool is not None:
+                self._emit_agent_event(
+                    ToolStartedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        tool_name=function_name,
+                        tool_call_id=tool_call_id,
+                        toolkit_name=toolkit_name,
+                        input_summary=self._summarize_for_event(args),
+                        metadata=self._build_event_metadata(),
+                    )
+                )
                 try:
                     result = tool(**args)
+                    mask_flag = False
 
                     # Handle mask_tool_output
                     if self.mask_tool_output:
@@ -5381,6 +5400,20 @@ class ChatAgent(BaseAgent):
                             " output from the tool is masked. You can move"
                             " forward]"
                         )
+                        mask_flag = True
+
+                    self._emit_agent_event(
+                        ToolCompletedEvent(
+                            agent_id=self.agent_id,
+                            role_name=self.role_name,
+                            tool_name=function_name,
+                            tool_call_id=tool_call_id,
+                            toolkit_name=toolkit_name,
+                            output_summary=self._summarize_for_event(result),
+                            mask_output=mask_flag,
+                            metadata=self._build_event_metadata(),
+                        )
+                    )
 
                     # Truncate tool result if it exceeds the maximum token
                     # limit. This prevents single tool calls from exceeding
@@ -5425,6 +5458,17 @@ class ChatAgent(BaseAgent):
                     )
                     result = {"error": error_msg}
                     logger.warning(f"{error_msg} with result: {result}")
+                    self._emit_agent_event(
+                        ToolFailedEvent(
+                            agent_id=self.agent_id,
+                            role_name=self.role_name,
+                            tool_name=function_name,
+                            tool_call_id=tool_call_id,
+                            toolkit_name=toolkit_name,
+                            error_message=error_msg,
+                            metadata=self._build_event_metadata(),
+                        )
+                    )
 
                     # Record error response
                     func_msg = FunctionCallingMessage(
@@ -5454,6 +5498,17 @@ class ChatAgent(BaseAgent):
                 )
                 result = {"error": error_msg}
                 logger.warning(error_msg)
+                self._emit_agent_event(
+                    ToolFailedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        tool_name=function_name,
+                        tool_call_id=tool_call_id,
+                        toolkit_name=toolkit_name,
+                        error_message=error_msg,
+                        metadata=self._build_event_metadata(),
+                    )
+                )
 
                 func_msg = FunctionCallingMessage(
                     role_name=self.role_name,
@@ -5496,8 +5551,21 @@ class ChatAgent(BaseAgent):
             tool_call_id = tool_call_data['id']
             extra_content = tool_call_data.get('extra_content')
 
-            if function_name in self._internal_tools:
-                tool = self._internal_tools[function_name]
+            tool = self._internal_tools.get(function_name)
+            toolkit_name = self._get_toolkit_name(tool)
+
+            if tool is not None:
+                await self._aemit_agent_event(
+                    ToolStartedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        tool_name=function_name,
+                        tool_call_id=tool_call_id,
+                        toolkit_name=toolkit_name,
+                        input_summary=self._summarize_for_event(args),
+                        metadata=self._build_event_metadata(),
+                    )
+                )
                 try:
                     # Try different invocation paths in order of preference
                     if hasattr(tool, 'func') and hasattr(
@@ -5526,10 +5594,16 @@ class ChatAgent(BaseAgent):
                         # Fallback: synchronous call
                         # Use functools.partial to properly capture args
                         loop = asyncio.get_running_loop()
+                        copied_context = contextvars.copy_context()
                         result = await loop.run_in_executor(
-                            None, functools.partial(tool, **args)
+                            None,
+                            functools.partial(
+                                copied_context.run,
+                                functools.partial(tool, **args),
+                            ),
                         )
 
+                    mask_flag = False
                     # Handle mask_tool_output
                     if self.mask_tool_output:
                         with self._secure_result_store_lock:
@@ -5539,6 +5613,20 @@ class ChatAgent(BaseAgent):
                             " output from the tool is masked. You can move"
                             " forward]"
                         )
+                        mask_flag = True
+
+                    await self._aemit_agent_event(
+                        ToolCompletedEvent(
+                            agent_id=self.agent_id,
+                            role_name=self.role_name,
+                            tool_name=function_name,
+                            tool_call_id=tool_call_id,
+                            toolkit_name=toolkit_name,
+                            output_summary=self._summarize_for_event(result),
+                            mask_output=mask_flag,
+                            metadata=self._build_event_metadata(),
+                        )
+                    )
 
                     # Truncate tool result if it exceeds the maximum token
                     # limit. This prevents single tool calls from exceeding
@@ -5581,6 +5669,17 @@ class ChatAgent(BaseAgent):
                     )
                     result = {"error": error_msg}
                     logger.warning(f"{error_msg} with result: {result}")
+                    await self._aemit_agent_event(
+                        ToolFailedEvent(
+                            agent_id=self.agent_id,
+                            role_name=self.role_name,
+                            tool_name=function_name,
+                            tool_call_id=tool_call_id,
+                            toolkit_name=toolkit_name,
+                            error_message=error_msg,
+                            metadata=self._build_event_metadata(),
+                        )
+                    )
 
                     # Record error response
                     func_msg = FunctionCallingMessage(
@@ -5609,6 +5708,17 @@ class ChatAgent(BaseAgent):
                 )
                 result = {"error": error_msg}
                 logger.warning(error_msg)
+                await self._aemit_agent_event(
+                    ToolFailedEvent(
+                        agent_id=self.agent_id,
+                        role_name=self.role_name,
+                        tool_name=function_name,
+                        tool_call_id=tool_call_id,
+                        toolkit_name=toolkit_name,
+                        error_message=error_msg,
+                        metadata=self._build_event_metadata(),
+                    )
+                )
 
                 func_msg = FunctionCallingMessage(
                     role_name=self.role_name,
@@ -6454,6 +6564,10 @@ class ChatAgent(BaseAgent):
                 the same conversation history. If False, the new agent will
                 have a fresh memory with only the system message.
                 (default: :obj:`False`)
+            clone_context (Optional[CloneContext]): Optional context for
+                cloning. Provides ``session_id`` (forwarded to toolkit
+                ``clone_for_new_session``) and ``execution_context`` (merged
+                into the clone's execution context). (default: :obj:`None`)
 
         Returns:
             ChatAgent: A new instance of :obj:`ChatAgent` with the same
@@ -6488,7 +6602,9 @@ class ChatAgent(BaseAgent):
             external_tools=[
                 schema for schema in self._external_tool_schemas.values()
             ],
-            response_terminators=self.response_terminators,
+            response_terminators=[
+                copy.deepcopy(t) for t in self.response_terminators
+            ],
             scheduling_strategy=(
                 self.model_backend.scheduling_strategy.__name__
             ),
@@ -6503,7 +6619,7 @@ class ChatAgent(BaseAgent):
             retry_delay=self.retry_delay,
             step_timeout=self.step_timeout,
             on_request_usage=self.on_request_usage,
-            callbacks=self._callbacks,
+            callbacks=list(self._callbacks),
             execution_context=execution_context,
             execution_context_provider=self._execution_context_provider,
             stream_accumulate=self.stream_accumulate,
