@@ -2252,3 +2252,28 @@ async def test_chat_agent_async_stream_with_structured_output():
     assert len(responses) > 1, "Should receive multiple streaming chunks"
     assert responses[-1].msg.parsed.answer == 6
     assert responses[-1].msg.parsed.explanation
+
+
+def test_clone_preserves_constructor_options():
+    model = DummyModel(ModelType.GPT_4O_MINI)
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        summarize_threshold=30,
+        mask_tool_output=True,
+        enable_snapshot_clean=True,
+        retry_attempts=5,
+        retry_delay=2.0,
+        step_timeout=60.0,
+        summary_window_ratio=0.8,
+    )
+
+    cloned = agent.clone()
+
+    assert cloned.summarize_threshold == 30
+    assert cloned.mask_tool_output is True
+    assert cloned._enable_snapshot_clean is True
+    assert cloned.retry_attempts == 5
+    assert cloned.retry_delay == 2.0
+    assert cloned.step_timeout == 60.0
+    assert cloned.summary_window_ratio == 0.8
