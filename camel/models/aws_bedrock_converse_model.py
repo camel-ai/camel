@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import base64
 import json
 import os
@@ -20,6 +21,7 @@ import time
 import warnings
 from typing import (
     Any,
+    AsyncGenerator,
     Dict,
     Generator,
     List,
@@ -75,6 +77,10 @@ class AWSBedrockConverseModel(BaseModelBackend):
             key. (default: :obj:`None`)
         aws_session_token (str, optional): Temporary session token for STS
             credentials. (default: :obj:`None`)
+        url (str, optional): Custom endpoint URL for the Bedrock
+            Runtime service (e.g. VPC endpoint). Falls back to
+            the ``BEDROCK_API_BASE_URL`` environment variable.
+            (default: :obj:`None`)
         token_counter (BaseTokenCounter, optional): Token counter to use
             for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
@@ -106,6 +112,7 @@ class AWSBedrockConverseModel(BaseModelBackend):
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
+        url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
@@ -132,11 +139,13 @@ class AWSBedrockConverseModel(BaseModelBackend):
                 "Must be either '5m' or '1h'."
             )
 
+        url = url or os.environ.get("BEDROCK_API_BASE_URL") or None
+
         super().__init__(
             model_type=model_type,
             model_config_dict=model_config_dict,
             api_key=api_key,
-            url=None,
+            url=url,
             token_counter=token_counter,
             timeout=timeout or float(os.environ.get("MODEL_TIMEOUT", 180)),
             max_retries=max_retries,
@@ -180,6 +189,9 @@ class AWSBedrockConverseModel(BaseModelBackend):
                     )
             # Otherwise: boto3 default credential chain
             # (env vars, ~/.aws/credentials, instance profile, etc.)
+
+            if self._url:
+                client_kwargs["endpoint_url"] = self._url
 
             import boto3
 
@@ -375,19 +387,35 @@ class AWSBedrockConverseModel(BaseModelBackend):
                 if not isinstance(tool_id, str) or not tool_id:
                     continue
                 payload = self._parse_json_or_text(msg.get("content", ""))
-                bedrock_messages.append(
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "toolResult": {
-                                    "toolUseId": tool_id,
-                                    "content": [payload],
-                                }
-                            }
-                        ],
+                tool_result_block = {
+                    "toolResult": {
+                        "toolUseId": tool_id,
+                        "content": [payload],
                     }
-                )
+                }
+                # Bedrock Converse requires all toolResult blocks for a
+                # multi-tool-use assistant turn to be grouped in a single
+                # user message immediately following that assistant turn.
+                # When the previous bedrock message is already a user
+                # message (i.e. from a prior tool result in the same
+                # batch), append to it instead of creating a new one.
+                if (
+                    bedrock_messages
+                    and bedrock_messages[-1].get("role") == "user"
+                    and isinstance(bedrock_messages[-1].get("content"), list)
+                    and any(
+                        isinstance(b, dict) and "toolResult" in b
+                        for b in bedrock_messages[-1]["content"]
+                    )
+                ):
+                    bedrock_messages[-1]["content"].append(tool_result_block)
+                else:
+                    bedrock_messages.append(
+                        {
+                            "role": "user",
+                            "content": [tool_result_block],
+                        }
+                    )
 
         system_blocks: List[Dict[str, Any]] = []
         if system_parts:
@@ -466,10 +494,64 @@ class AWSBedrockConverseModel(BaseModelBackend):
                 return {"tool": tool_choice["tool"]}
         return None
 
+    @staticmethod
+    def _ensure_additional_properties_false(
+        schema: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Recursively set ``additionalProperties: false`` on all object
+        types in *schema*.  AWS Bedrock requires this or it raises a
+        ``ValidationException``."""
+        if schema.get("type") == "object":
+            schema.setdefault("additionalProperties", False)
+        for key in ("properties", "$defs", "definitions"):
+            container = schema.get(key)
+            if isinstance(container, dict):
+                for v in container.values():
+                    if isinstance(v, dict):
+                        AWSBedrockConverseModel._ensure_additional_properties_false(
+                            v
+                        )
+        for key in ("allOf", "anyOf", "oneOf"):
+            variants = schema.get(key)
+            if isinstance(variants, list):
+                for v in variants:
+                    if isinstance(v, dict):
+                        AWSBedrockConverseModel._ensure_additional_properties_false(
+                            v
+                        )
+        items = schema.get("items")
+        if isinstance(items, dict):
+            AWSBedrockConverseModel._ensure_additional_properties_false(items)
+        return schema
+
+    @staticmethod
+    def _convert_response_format_to_output_config(
+        response_format: Type[BaseModel],
+    ) -> Dict[str, Any]:
+        schema = response_format.model_json_schema()
+        AWSBedrockConverseModel._ensure_additional_properties_false(schema)
+        return {
+            "textFormat": {
+                "type": "json_schema",
+                "structure": {
+                    "jsonSchema": {
+                        "schema": json.dumps(schema, ensure_ascii=False),
+                        "name": response_format.__name__,
+                        "description": schema.get(
+                            "description",
+                            "Structured output for "
+                            f"{response_format.__name__}",
+                        ),
+                    }
+                },
+            }
+        }
+
     def _build_converse_request(
         self,
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
+        response_format: Optional[Type[BaseModel]] = None,
     ) -> Dict[str, Any]:
         request: Dict[str, Any] = {"modelId": str(self.model_type)}
         system_blocks, bedrock_messages = (
@@ -524,6 +606,11 @@ class AWSBedrockConverseModel(BaseModelBackend):
             if converted_choice:
                 tool_config["toolChoice"] = converted_choice
             request["toolConfig"] = tool_config
+
+        if response_format is not None:
+            request["outputConfig"] = (
+                self._convert_response_format_to_output_config(response_format)
+            )
 
         return request
 
@@ -764,15 +851,11 @@ class AWSBedrockConverseModel(BaseModelBackend):
         ChatCompletion,
         Generator[ChatCompletionChunk, None, None],
     ]:
-        if response_format is not None:
-            warnings.warn(
-                "The 'response_format' parameter is not supported by "
-                "Bedrock Converse and will be ignored.",
-                UserWarning,
-                stacklevel=2,
-            )
-
-        request = self._build_converse_request(messages, tools=tools)
+        request = self._build_converse_request(
+            messages,
+            tools=tools,
+            response_format=response_format,
+        )
         if self.model_config_dict.get("stream", False):
             stream_resp = self.bedrock_client.converse_stream(**request)
             return self._converse_stream_to_openai_chunks(
@@ -783,15 +866,48 @@ class AWSBedrockConverseModel(BaseModelBackend):
             response=response, model=str(self.model_type)
         )
 
+    async def _arun_stream(
+        self,
+        request: Dict[str, Any],
+    ) -> AsyncGenerator[ChatCompletionChunk, None]:
+        stream_resp = await asyncio.to_thread(
+            self.bedrock_client.converse_stream, **request
+        )
+        # boto3 streams are synchronous iterators; collect in a thread
+        # then yield asynchronously.  True incremental bridging would
+        # require a thread-safe queue, which adds complexity for little
+        # gain given that the underlying I/O is already synchronous.
+        chunks = await asyncio.to_thread(
+            lambda: list(
+                self._converse_stream_to_openai_chunks(
+                    stream_obj=stream_resp,
+                    model=str(self.model_type),
+                )
+            )
+        )
+        for chunk in chunks:
+            yield chunk
+
     @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> None:
-        raise NotImplementedError(
-            "Async inference is not supported for AWSBedrockConverseModel "
-            "because boto3 Bedrock Runtime client is synchronous. "
-            "Use `_run` instead."
+    ) -> Union[
+        ChatCompletion,
+        AsyncGenerator[ChatCompletionChunk, None],
+    ]:
+        request = self._build_converse_request(
+            messages,
+            tools=tools,
+            response_format=response_format,
+        )
+        if self.model_config_dict.get("stream", False):
+            return self._arun_stream(request)
+        response = await asyncio.to_thread(
+            self.bedrock_client.converse, **request
+        )
+        return self._convert_converse_to_openai_response(
+            response=response, model=str(self.model_type)
         )

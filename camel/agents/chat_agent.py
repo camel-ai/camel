@@ -4561,6 +4561,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         self._emit_request_usage(
@@ -4790,6 +4793,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         yield final_response
@@ -5565,6 +5571,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         await self._aemit_request_usage(
@@ -5896,6 +5905,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         yield final_response
@@ -6048,6 +6060,9 @@ class ChatAgent(BaseAgent):
                 "external_tool_requests": None,
                 "streaming": True,
                 "partial": True,
+                "stream_accumulate_mode": "accumulate"
+                if self.stream_accumulate
+                else "delta",
             },
         )
 
@@ -6134,6 +6149,13 @@ class ChatAgent(BaseAgent):
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
             on_request_usage=self.on_request_usage,
             stream_accumulate=self.stream_accumulate,
+            summarize_threshold=self.summarize_threshold,
+            mask_tool_output=self.mask_tool_output,
+            enable_snapshot_clean=self._enable_snapshot_clean,
+            retry_attempts=self.retry_attempts,
+            retry_delay=self.retry_delay,
+            step_timeout=self.step_timeout,
+            summary_window_ratio=self.summary_window_ratio,
         )
 
         # Copy memory if requested

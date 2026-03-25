@@ -2,6 +2,9 @@
 title: "Models"
 description: "CAMEL-AI: Flexible integration and deployment of top LLMs and multimodal models like [OpenAI](https://openai.com/), [Mistral](https://mistral.ai/), [Gemini](https://ai.google.dev/gemini-api/docs/models), [Llama](https://www.llama.com/), [Nebius](https://nebius.com/), and more."
 icon: gear-code
+
+doc_code_map:
+  - "camel/models/**/*.py"
 ---
 
 <Note type="info" title="What is a Model in CAMEL?">
@@ -52,7 +55,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **Reka**         | reka-core, reka-flash, reka-edge |
 | **COHERE**       | command-r-plus, command-r, command-light, command, command-nightly |
 | **ERNIE**        | ernie-x1-turbo-32k, ernie-x1-32k, ernie-x1-32k-preview<br/>ernie-4.5-turbo-128k, ernie-4.5-turbo-32k<br/>deepseek-v3, deepseek-r1, qwen3-235b-a22b |
-| **MiniMax**      | MiniMax-M2.1, MiniMax-M2.1-lightning, MiniMax-M2, MiniMax-M2-Stable |
+| **MiniMax**      | MiniMax-M2.7, MiniMax-M2.7-highspeed, MiniMax-M2.5<br/>MiniMax-M2.1, MiniMax-M2.1-lightning, MiniMax-M2 |
 | **AtlasCloud**   | openai/gpt-oss-120b, zai-org/glm-4-7 |
 
 

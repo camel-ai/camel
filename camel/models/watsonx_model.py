@@ -230,7 +230,7 @@ class WatsonXModel(BaseModelBackend):
 
             # WatsonX expects messages as a list of dictionaries
             response = self._model.chat(
-                messages=messages,
+                messages=[dict(m) for m in messages],
                 params=request_config,
                 tools=tools,
             )
@@ -282,7 +282,7 @@ class WatsonXModel(BaseModelBackend):
 
             # WatsonX expects messages as a list of dictionaries
             response = await self._model.achat(
-                messages=messages,
+                messages=[dict(m) for m in messages],
                 params=request_config,
                 tools=tools,
             )

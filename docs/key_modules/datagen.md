@@ -2,6 +2,9 @@
 title: "Datagen"
 description: "CAMEL’s data generation modules for high-quality, instruction-tuned, and reasoning-rich datasets."
 icon: arrow-progress
+
+doc_code_map:
+  - "camel/datagen/**/*.py"
 ---
 
 This page introduces CAMEL's **data generation modules** for creating high-quality training data with explicit reasoning, diverse instructions, and advanced automated refinement.
