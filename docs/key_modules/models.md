@@ -2,6 +2,9 @@
 title: "Models"
 description: "CAMEL-AI: Flexible integration and deployment of top LLMs and multimodal models like [OpenAI](https://openai.com/), [Mistral](https://mistral.ai/), [Gemini](https://ai.google.dev/gemini-api/docs/models), [Llama](https://www.llama.com/), [Nebius](https://nebius.com/), and more."
 icon: gear-code
+
+doc_code_map:
+  - "camel/models/**/*.py"
 ---
 
 <Note type="info" title="What is a Model in CAMEL?">
@@ -39,9 +42,9 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **OpenAI**       | gpt-4.5-preview<br/>gpt-4o, gpt-4o-mini<br/>o1, o1-preview, o1-mini<br/>o3-mini, o3-pro, o3<br/>o4-mini<br/>gpt-4.1, gpt-4.1-mini, gpt-4.1-nano<br/>gpt-5, gpt-5-mini, gpt-5-nano<br/>gpt-4-turbo, gpt-4, gpt-3.5-turbo |
 | **Azure OpenAI** | gpt-4o, gpt-4-turbo<br/>gpt-4, gpt-3.5-turbo |
 | **Mistral AI**   | mistral-large-latest, pixtral-12b-2409<br/>ministral-8b-latest, ministral-3b-latest<br/>open-mistral-nemo, codestral-latest<br/>open-mistral-7b, open-mixtral-8x7b<br/>open-mixtral-8x22b, open-codestral-mamba<br/>mistral-small-2506, mistral-medium-2508<br/>magistral-small-1.2, magistral-medium-1.2 |
-| **Moonshot**     | moonshot-v1-8k<br/>moonshot-v1-32k<br/>moonshot-v1-128k |
+| **Moonshot**     | kimi-k2-0905-Preview, kimi-k2.5, kimi-k2-turbo-preview<br/>kimi-k2-thinking, kimi-k2-thinking-turbo<br/>moonshot-v1-8k, moonshot-v1-32k, moonshot-v1-128k |
 | **Anthropic**    | claude-3-7-sonnet-latest<br/>claude-sonnet-4-5, claude-opus-4-5, claude-haiku-4-5<br/>claude-sonnet-4-20250514, claude-opus-4-20250514, claude-opus-4-1-20250805 |
-| **Gemini**       | gemini-3-pro-preview, gemini-3-flash-preview<br/>gemini-2.5-pro, gemini-2.5-flash<br/>gemini-2.0-flash, gemini-2.0-flash-thinking-exp<br/> gemini-2.0-flash-lite|
+| **Gemini**       | gemini-3.1-pro-preview, gemini-3.1-flash-lite-preview<br/>gemini-3-pro-preview, gemini-3-flash-preview<br/>gemini-2.5-pro, gemini-2.5-flash<br/>gemini-2.0-flash, gemini-2.0-flash-thinking-exp<br/>gemini-2.0-flash-lite |
 | **Lingyiwanwu**  | yi-lightning, yi-large, yi-medium<br/>yi-large-turbo, yi-vision, yi-medium-200k<br/>yi-spark, yi-large-rag, yi-large-fc |
 | **Qwen**         | qwen3-coder-plus, qwq-32b-preview, qwq-plus, qvq-72b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long<br/>qwen-plus-latest, qwen-plus-2025-04-28, qwen-turbo-latest, qwen-turbo-2025-04-28<br/>qwen-vl-max, qwen-vl-plus, qwen-vl-72b-instruct, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo<br/>qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
 | **DeepSeek**     | deepseek-chat<br/>deepseek-reasoner |
@@ -52,7 +55,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **Reka**         | reka-core, reka-flash, reka-edge |
 | **COHERE**       | command-r-plus, command-r, command-light, command, command-nightly |
 | **ERNIE**        | ernie-x1-turbo-32k, ernie-x1-32k, ernie-x1-32k-preview<br/>ernie-4.5-turbo-128k, ernie-4.5-turbo-32k<br/>deepseek-v3, deepseek-r1, qwen3-235b-a22b |
-| **MiniMax**      | MiniMax-M2, MiniMax-M2-Stable |
+| **MiniMax**      | MiniMax-M2.7, MiniMax-M2.7-highspeed, MiniMax-M2.5<br/>MiniMax-M2.1, MiniMax-M2.1-lightning, MiniMax-M2 |
 | **AtlasCloud**   | openai/gpt-oss-120b, zai-org/glm-4-7 |
 
 

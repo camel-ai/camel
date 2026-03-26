@@ -261,11 +261,13 @@ Skip this step only if the skill being developed already exists, and iteration o
 
 When creating a new skill from scratch, always run the `init_skill.py` script. The script conveniently generates a new template skill directory that automatically includes everything a skill requires, making the skill creation process much more efficient and reliable.
 
-Usage:
+Usage (run from the skill-creator skill directory):
 
 ```bash
-scripts/init_skill.py <skill-name> --path <output-directory>
+python scripts/init_skill.py <skill-name> --path <output-directory>
 ```
+
+Note: The scripts are located in this skill's `scripts/` directory. Use the full path if running from a different directory.
 
 The script:
 
@@ -319,17 +321,21 @@ Write instructions for using the skill and its bundled resources.
 
 ### Step 5: Packaging a Skill
 
-Once development of the skill is complete, it must be packaged into a distributable .skill file that gets shared with the user. The packaging process automatically validates the skill first to ensure it meets all requirements:
+Once development of the skill is complete, it must be packaged into a distributable .skill file that gets shared with the user. The packaging process automatically validates the skill first to ensure it meets all requirements.
+
+Usage (run from the skill-creator skill directory):
 
 ```bash
-scripts/package_skill.py <path/to/skill-folder>
+python scripts/package_skill.py <path/to/skill-folder>
 ```
 
 Optional output directory specification:
 
 ```bash
-scripts/package_skill.py <path/to/skill-folder> ./dist
+python scripts/package_skill.py <path/to/skill-folder> ./dist
 ```
+
+Note: The scripts are located in this skill's `scripts/` directory. Use the full path if running from a different directory.
 
 The packaging script will:
 

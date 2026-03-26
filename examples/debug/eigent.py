@@ -28,7 +28,7 @@ from camel.toolkits import (
     AudioAnalysisToolkit,
     Crawl4AIToolkit,
     ExcelToolkit,
-    FileWriteToolkit,
+    FileToolkit,
     # GoogleDriveMCPToolkit,
     HumanToolkit,
     HybridBrowserToolkit,
@@ -324,7 +324,7 @@ def document_agent_factory(
     r"""Factory for creating a document agent, based on user-provided code
     structure."""
     tools = [
-        *FileWriteToolkit().get_tools(),
+        *FileToolkit().get_tools(),
         *PPTXToolkit().get_tools(),
         # *google_drive_mcp_toolkit.get_tools(),
         # *RetrievalToolkit().get_tools(),

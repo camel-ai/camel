@@ -313,7 +313,9 @@ class GithubToolkit(BaseToolkit):
             for content in contents:
                 if content.type == "dir":
                     # If it's a directory, recursively retrieve its file paths
-                    files.extend(self.github_get_all_file_paths(content.path))
+                    files.extend(
+                        self.github_get_all_file_paths(repo_name, content.path)
+                    )
                 else:
                     # If it's a file, add its path to the list
                     files.append(content.path)
