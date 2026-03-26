@@ -6148,7 +6148,11 @@ class ChatAgent(BaseAgent):
             pause_event=self.pause_event,
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
             on_request_usage=self.on_request_usage,
-            stream_accumulate=self.stream_accumulate,
+            stream_accumulate=(
+                self.stream_accumulate
+                if self._stream_accumulate_explicit
+                else None
+            ),
             summarize_threshold=self.summarize_threshold,
             mask_tool_output=self.mask_tool_output,
             enable_snapshot_clean=self._enable_snapshot_clean,
