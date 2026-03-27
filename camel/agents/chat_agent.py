@@ -64,7 +64,9 @@ def _is_rate_limit_error(error: Exception) -> bool:
     """
     if isinstance(error, RateLimitError):
         return True
-    status_code = getattr(error, 'status_code', None) or getattr(error, 'code', None)
+    # Only check status_code (HTTP-specific), not generic 'code' which
+    # may be an application error code unrelated to rate limiting.
+    status_code = getattr(error, 'status_code', None)
     if status_code == 429:
         return True
     error_msg = str(error).lower()
