@@ -662,6 +662,84 @@ def handle_http_error(response: requests.Response) -> str:
         return "HTTP Error"
 
 
+def is_rate_limit_error(error: Exception) -> bool:
+    r"""Check whether an exception represents a rate-limit (HTTP 429)
+    error from any supported model provider.
+
+    This allows retry logic to be provider-agnostic instead of
+    catching only :class:`openai.RateLimitError`.
+
+    Supported providers:
+        - **OpenAI** (``openai.RateLimitError``)
+        - **Anthropic** (``anthropic.RateLimitError``)
+        - **Google GenAI** (``google.genai.errors.ClientError``
+          with ``status_code == 429``)
+        - **Mistral** (``mistralai.models.sdkerror.SDKError``
+          with ``status_code == 429``)
+        - Any exception whose class name is ``RateLimitError``
+          (catch-all for compatible SDKs)
+        - Any exception carrying a ``status_code`` attribute
+          equal to ``429`` (generic HTTP fallback)
+
+    Args:
+        error (Exception): The caught exception to inspect.
+
+    Returns:
+        bool: :obj:`True` when *error* is a rate-limit error.
+    """
+    # ---- 1. openai ----
+    try:
+        from openai import RateLimitError as OpenAIRateLimitError
+
+        if isinstance(error, OpenAIRateLimitError):
+            return True
+    except ImportError:
+        pass
+
+    # ---- 2. anthropic ----
+    try:
+        from anthropic import RateLimitError as AnthropicRateLimitError
+
+        if isinstance(error, AnthropicRateLimitError):
+            return True
+    except ImportError:
+        pass
+
+    # ---- 3. google genai ----
+    try:
+        from google.genai.errors import ClientError
+
+        if isinstance(error, ClientError):
+            status = getattr(error, "code", None) or getattr(
+                error, "status_code", None
+            )
+            if status == 429:
+                return True
+    except ImportError:
+        pass
+
+    # ---- 4. mistral ----
+    try:
+        from mistralai.models.sdkerror import SDKError
+
+        if isinstance(error, SDKError):
+            if getattr(error, "status_code", None) == 429:
+                return True
+    except ImportError:
+        pass
+
+    # ---- 5. class-name heuristic (covers compatible SDKs) ----
+    if type(error).__name__ == "RateLimitError":
+        return True
+
+    # ---- 6. generic status_code fallback ----
+    status = getattr(error, "status_code", None)
+    if status == 429:
+        return True
+
+    return False
+
+
 def retry_on_error(
     max_retries: int = 3, initial_delay: float = 1.0
 ) -> Callable:

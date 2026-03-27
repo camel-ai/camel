@@ -28,6 +28,7 @@ from camel.utils import (
     get_system_information,
     get_task_list,
     is_docker_running,
+    is_rate_limit_error,
     retry_on_error,
     to_pascal,
     with_timeout,
@@ -512,3 +513,55 @@ def test_safe_extract_parsed_returns_none_when_parsed_is_none():
     response = _make_response(None)
     result = safe_extract_parsed(response, _DummySchema)
     assert result is None
+
+
+# ---- is_rate_limit_error tests ----
+
+
+def test_is_rate_limit_error_with_openai():
+    from openai import RateLimitError
+
+    # openai.RateLimitError requires message, response, body
+    err = RateLimitError(
+        message="Rate limit exceeded",
+        response=type(
+            "R",
+            (),
+            {
+                "status_code": 429,
+                "headers": {},
+                "request": type("Req", (), {"url": ""})(),
+            },
+        )(),
+        body=None,
+    )
+    assert is_rate_limit_error(err) is True
+
+
+def test_is_rate_limit_error_with_generic_exception():
+    assert is_rate_limit_error(ValueError("some error")) is False
+
+
+def test_is_rate_limit_error_with_status_code_429():
+    err = Exception("rate limited")
+    err.status_code = 429  # type: ignore[attr-defined]
+    assert is_rate_limit_error(err) is True
+
+
+def test_is_rate_limit_error_with_status_code_500():
+    err = Exception("server error")
+    err.status_code = 500  # type: ignore[attr-defined]
+    assert is_rate_limit_error(err) is False
+
+
+def test_is_rate_limit_error_with_class_name_heuristic():
+    # Simulate an unknown SDK that names its error RateLimitError
+    class RateLimitError(Exception):
+        pass
+
+    err = RateLimitError("custom rate limit")
+    assert is_rate_limit_error(err) is True
+
+
+def test_is_rate_limit_error_with_plain_exception():
+    assert is_rate_limit_error(RuntimeError("timeout")) is False
