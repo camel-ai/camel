@@ -151,6 +151,7 @@ class AgentPool:
             # Only add back to pool if under max size
             if len(self._available_agents) < self.max_size:
                 agent.reset()
+                agent._execution_context = {}
                 self._agent_last_used[agent_id] = time.time()
                 self._available_agents.append(agent)
                 # Notify one waiting coroutine that an agent is available
