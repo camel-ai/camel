@@ -79,6 +79,8 @@ async def test_post_task_timeout():
     workforce._channel = mock_channel
     mock_task = MagicMock(spec=Task)
     mock_task.id = "test_task_id"
+    mock_task.content = "test content"
+    mock_task.failure_count = 0
 
     # Since _post_task catches TimeoutError and doesn't re-raise it,
     # we should test that it completes without raising an exception

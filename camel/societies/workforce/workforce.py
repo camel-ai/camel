@@ -20,6 +20,7 @@ import os
 import time
 import uuid
 from collections import deque
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -172,29 +173,17 @@ class WorkforceSnapshot:
         self.timestamp = time.time()
 
 
+@dataclass
 class WorkforcePlan:
     r"""Headless plan object for two-phase workforce execution."""
 
-    def __init__(
-        self,
-        task: Task,
-        subtasks: Optional[List[Task]] = None,
-        dependency_graph: Optional[Dict[str, List[str]]] = None,
-        planner_context: Optional[str] = None,
-        planner_raw_text: Optional[str] = None,
-        planner_summary: Optional[str] = None,
-        events_emitted: bool = False,
-    ) -> None:
-        self.task = task
-        self.subtasks = list(subtasks or [])
-        self.dependency_graph = {
-            task_id: dependencies.copy()
-            for task_id, dependencies in (dependency_graph or {}).items()
-        }
-        self.planner_context = planner_context
-        self.planner_raw_text = planner_raw_text
-        self.planner_summary = planner_summary
-        self.events_emitted = events_emitted
+    task: Task
+    subtasks: List[Task] = field(default_factory=list)
+    dependency_graph: Dict[str, List[str]] = field(default_factory=dict)
+    planner_context: Optional[str] = None
+    planner_raw_text: Optional[str] = None
+    planner_summary: Optional[str] = None
+    events_emitted: bool = False
 
 
 class Workforce(BaseNode):
@@ -1679,7 +1668,9 @@ class Workforce(BaseNode):
         reset: bool,
         append_to_pending: bool,
         planner_context: Optional[str] = None,
-        raw_text_callback: Optional[Callable[["ChatAgentResponse"], None]] = None,
+        raw_text_callback: Optional[
+            Callable[["ChatAgentResponse"], None]
+        ] = None,
         subtask_batch_callback: Optional[
             Callable[[List[Task], bool], Any]
         ] = None,
@@ -2758,7 +2749,9 @@ class Workforce(BaseNode):
         *,
         reset: bool = True,
         planner_context: Optional[str] = None,
-        raw_text_callback: Optional[Callable[["ChatAgentResponse"], None]] = None,
+        raw_text_callback: Optional[
+            Callable[["ChatAgentResponse"], None]
+        ] = None,
         subtask_batch_callback: Optional[
             Callable[[List[Task], bool], Any]
         ] = None,
