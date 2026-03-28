@@ -542,9 +542,35 @@ def test_is_rate_limit_error_with_generic_exception():
     assert is_rate_limit_error(ValueError("some error")) is False
 
 
-def test_is_rate_limit_error_with_status_code_429():
-    err = Exception("rate limited")
+def test_is_rate_limit_error_with_status_code_429_and_message():
+    """429 + rate-limit keywords in the message -> True."""
+    err = Exception("rate limit exceeded")
     err.status_code = 429  # type: ignore[attr-defined]
+    assert is_rate_limit_error(err) is True
+
+
+def test_is_rate_limit_error_with_status_code_429_bare():
+    """Bare 429 with no corroborating signal -> False."""
+    err = Exception("something went wrong")
+    err.status_code = 429  # type: ignore[attr-defined]
+    assert is_rate_limit_error(err) is False
+
+
+def test_is_rate_limit_error_with_status_code_429_retry_after():
+    """429 + Retry-After header -> True."""
+    resp = type("R", (), {"headers": {"Retry-After": "30"}})()
+    err = Exception("hold on")
+    err.status_code = 429  # type: ignore[attr-defined]
+    err.response = resp  # type: ignore[attr-defined]
+    assert is_rate_limit_error(err) is True
+
+
+def test_is_rate_limit_error_with_status_code_429_ratelimit_header():
+    """429 + X-RateLimit-Remaining: 0 header -> True."""
+    resp = type("R", (), {"headers": {"X-RateLimit-Remaining": "0"}})()
+    err = Exception("hold on")
+    err.status_code = 429  # type: ignore[attr-defined]
+    err.response = resp  # type: ignore[attr-defined]
     assert is_rate_limit_error(err) is True
 
 

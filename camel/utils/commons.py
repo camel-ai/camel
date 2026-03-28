@@ -662,6 +662,37 @@ def handle_http_error(response: requests.Response) -> str:
         return "HTTP Error"
 
 
+def _has_rate_limit_signal(error: Exception) -> bool:
+    r"""Return :obj:`True` when *error* carries evidence beyond the bare
+    status code that it represents a rate-limit event.
+
+    Checks for:
+        - ``Retry-After`` response header (RFC 6585 / 7231)
+        - ``X-RateLimit-Remaining`` header at zero
+        - Rate-limit keywords in the error message
+    """
+    # ---- response headers ----
+    response = getattr(error, "response", None)
+    headers = getattr(response, "headers", None) or {}
+    if "retry-after" in {k.lower() for k in headers}:
+        return True
+    for key in headers:
+        if key.lower() == "x-ratelimit-remaining":
+            try:
+                if int(headers[key]) == 0:
+                    return True
+            except (ValueError, TypeError):
+                pass
+
+    # ---- message keywords ----
+    msg = str(error).lower()
+    if any(kw in msg for kw in ("rate limit", "rate_limit", "ratelimit",
+                                "too many requests")):
+        return True
+
+    return False
+
+
 def is_rate_limit_error(error: Exception) -> bool:
     r"""Check whether an exception represents a rate-limit (HTTP 429)
     error from any supported model provider.
@@ -669,17 +700,22 @@ def is_rate_limit_error(error: Exception) -> bool:
     This allows retry logic to be provider-agnostic instead of
     catching only :class:`openai.RateLimitError`.
 
-    Supported providers:
-        - **OpenAI** (``openai.RateLimitError``)
-        - **Anthropic** (``anthropic.RateLimitError``)
-        - **Google GenAI** (``google.genai.errors.ClientError``
-          with ``status_code == 429``)
-        - **Mistral** (``mistralai.models.sdkerror.SDKError``
-          with ``status_code == 429``)
-        - Any exception whose class name is ``RateLimitError``
-          (catch-all for compatible SDKs)
-        - Any exception carrying a ``status_code`` attribute
-          equal to ``429`` (generic HTTP fallback)
+    Detection strategy (ordered from most to least specific):
+
+        1. **Typed SDK exceptions** — ``isinstance`` checks against
+           provider-specific ``RateLimitError`` classes whose semantics
+           are guaranteed by the SDK.
+        2. **Class-name heuristic** — any exception whose class name is
+           ``RateLimitError`` (catch-all for compatible SDKs).
+        3. **Status code + corroborating evidence** — a bare
+           ``status_code == 429`` is not sufficient on its own because
+           some providers reuse 429 for non-rate-limit conditions
+           (quota exhaustion, concurrent-request caps, etc.).  The
+           status code must be accompanied by at least one of:
+
+           - A ``Retry-After`` response header
+           - ``X-RateLimit-Remaining: 0`` header
+           - Rate-limit keywords in the error message
 
     Args:
         error (Exception): The caught exception to inspect.
@@ -687,7 +723,7 @@ def is_rate_limit_error(error: Exception) -> bool:
     Returns:
         bool: :obj:`True` when *error* is a rate-limit error.
     """
-    # ---- 1. openai ----
+    # ---- 1. openai (typed) ----
     try:
         from openai import RateLimitError as OpenAIRateLimitError
 
@@ -696,7 +732,7 @@ def is_rate_limit_error(error: Exception) -> bool:
     except ImportError:
         pass
 
-    # ---- 2. anthropic ----
+    # ---- 2. anthropic (typed) ----
     try:
         from anthropic import RateLimitError as AnthropicRateLimitError
 
@@ -705,7 +741,7 @@ def is_rate_limit_error(error: Exception) -> bool:
     except ImportError:
         pass
 
-    # ---- 3. google genai ----
+    # ---- 3. google genai (typed + corroborating evidence) ----
     try:
         from google.genai.errors import ClientError
 
@@ -713,17 +749,18 @@ def is_rate_limit_error(error: Exception) -> bool:
             status = getattr(error, "code", None) or getattr(
                 error, "status_code", None
             )
-            if status == 429:
+            if status == 429 and _has_rate_limit_signal(error):
                 return True
     except ImportError:
         pass
 
-    # ---- 4. mistral ----
+    # ---- 4. mistral (typed + corroborating evidence) ----
     try:
         from mistralai.models.sdkerror import SDKError
 
         if isinstance(error, SDKError):
-            if getattr(error, "status_code", None) == 429:
+            if getattr(error, "status_code", None) == 429 and \
+                    _has_rate_limit_signal(error):
                 return True
     except ImportError:
         pass
@@ -732,9 +769,9 @@ def is_rate_limit_error(error: Exception) -> bool:
     if type(error).__name__ == "RateLimitError":
         return True
 
-    # ---- 6. generic status_code fallback ----
+    # ---- 6. generic status_code fallback (requires evidence) ----
     status = getattr(error, "status_code", None)
-    if status == 429:
+    if status == 429 and _has_rate_limit_signal(error):
         return True
 
     return False
