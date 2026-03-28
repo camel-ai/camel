@@ -55,7 +55,6 @@ from openai import (
     Stream,
 )
 
-
 from pydantic import BaseModel, ValidationError
 
 from camel.agents._types import ModelResponse, ToolCallRequest
