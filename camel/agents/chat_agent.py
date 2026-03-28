@@ -56,23 +56,6 @@ from openai import (
 )
 
 
-def _is_rate_limit_error(error: Exception) -> bool:
-    """Check if an error is a rate limit error from any LLM provider.
-
-    Handles OpenAI, Anthropic, Google, and other providers that signal
-    rate limiting via HTTP 429 status codes or error messages.
-    """
-    if isinstance(error, RateLimitError):
-        return True
-    # Only check status_code (HTTP-specific), not generic 'code' which
-    # may be an application error code unrelated to rate limiting.
-    status_code = getattr(error, 'status_code', None)
-    if status_code == 429:
-        return True
-    error_msg = str(error).lower()
-    if 'rate limit' in error_msg or 'too many requests' in error_msg:
-        return True
-    return False
 from pydantic import BaseModel, ValidationError
 
 from camel.agents._types import ModelResponse, ToolCallRequest
@@ -125,6 +108,24 @@ from camel.utils import (
 from camel.utils.commons import dependencies_required
 from camel.utils.context_utils import ContextUtility
 from camel.utils.tool_result import ToolResult
+
+def _is_rate_limit_error(error: Exception) -> bool:
+    """Check if an error is a rate limit error from any LLM provider.
+
+    Handles OpenAI, Anthropic, Google, and other providers that signal
+    rate limiting via HTTP 429 status codes or error messages.
+    """
+    if isinstance(error, RateLimitError):
+        return True
+    # Only check status_code (HTTP-specific), not generic 'code' which
+    # may be an application error code unrelated to rate limiting.
+    status_code = getattr(error, 'status_code', None)
+    if status_code == 429:
+        return True
+    error_msg = str(error).lower()
+    if 'rate limit' in error_msg or 'too many requests' in error_msg:
+        return True
+    return False
 
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
