@@ -54,7 +54,6 @@ from openai import (
     RateLimitError,
     Stream,
 )
-
 from pydantic import BaseModel, ValidationError
 
 from camel.agents._types import ModelResponse, ToolCallRequest
