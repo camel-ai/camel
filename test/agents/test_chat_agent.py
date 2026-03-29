@@ -773,6 +773,125 @@ async def test_chat_agent_astep_on_request_usage_callback():
 
 
 @pytest.mark.model_backend
+def test_chat_agent_summary_callback():
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+
+    summary_events = []
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        summarize_threshold=50,
+        token_limit=100,
+        on_context_summary=lambda payload: summary_events.append(payload),
+    )
+    agent.update_memory(
+        BaseMessage.make_user_message(
+            role_name="User",
+            content="Track authentication tokens and workspace constraints.",
+        ),
+        OpenAIBackendRole.USER,
+    )
+    agent.update_memory(
+        BaseMessage.make_assistant_message(
+            role_name="Assistant",
+            content="I will preserve the authentication token boundary.",
+        ),
+        OpenAIBackendRole.ASSISTANT,
+    )
+    agent._calculate_next_summary_threshold = MagicMock(return_value=1)
+    agent.summarize = MagicMock(
+        return_value={
+            "summary": (
+                "[CONTEXT_SUMMARY] Compressed state about authentication "
+                "tokens and workspace constraints."
+            )
+        }
+    )
+
+    agent._get_context_with_summarization()
+
+    assert len(summary_events) == 1
+    event = summary_events[0]
+    assert event["include_summaries"] is False
+    assert event["message_count_before"] >= 3
+    assert event["message_count_after"] >= 3
+    assert any(
+        str(message.get("content", "")).startswith("[CONTEXT_SUMMARY]")
+        for message in event["messages_after"]
+    )
+    assert any(
+        "Based on the previous CONTEXT_SUMMARY"
+        in str(message.get("content", ""))
+        for message in event["messages_after"]
+    )
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_summary_callback_async():
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+
+    summary_events = []
+
+    async def on_context_summary(payload):
+        summary_events.append(payload)
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        summarize_threshold=50,
+        token_limit=100,
+        on_context_summary=on_context_summary,
+    )
+    agent.update_memory(
+        BaseMessage.make_user_message(
+            role_name="User",
+            content="Track compression boundaries for the current session.",
+        ),
+        OpenAIBackendRole.USER,
+    )
+    agent.update_memory(
+        BaseMessage.make_assistant_message(
+            role_name="Assistant",
+            content="I will preserve the compression-boundary context.",
+        ),
+        OpenAIBackendRole.ASSISTANT,
+    )
+    agent._calculate_next_summary_threshold = MagicMock(return_value=1)
+    agent.asummarize = AsyncMock(
+        return_value={
+            "summary": (
+                "[CONTEXT_SUMMARY] Compressed state about compression "
+                "boundaries for the current session."
+            )
+        }
+    )
+
+    await agent._get_context_with_summarization_async()
+
+    assert len(summary_events) == 1
+    event = summary_events[0]
+    assert event["include_summaries"] is False
+    assert event["message_count_before"] >= 3
+    assert event["message_count_after"] >= 3
+    assert any(
+        str(message.get("content", "")).startswith("[CONTEXT_SUMMARY]")
+        for message in event["messages_after"]
+    )
+    assert any(
+        "Based on the previous CONTEXT_SUMMARY"
+        in str(message.get("content", ""))
+        for message in event["messages_after"]
+    )
+
+
+@pytest.mark.model_backend
 def test_chat_agent_stream_step_on_request_usage_callback():
     from openai.types.chat.chat_completion_chunk import (
         ChatCompletionChunk,

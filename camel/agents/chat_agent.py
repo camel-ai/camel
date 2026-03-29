@@ -458,6 +458,12 @@ class ChatAgent(BaseAgent):
             The callback receives a payload with per-request usage and
             cumulative step usage.
             (default: :obj:`None`)
+        on_context_summary (Optional[Callable[[Dict[str, Any]], Any]],
+            optional): Callback triggered after the agent replaces prior
+            context with a summary. The callback receives before/after
+            message windows plus summary metadata so callers can monitor
+            or log the compression boundary.
+            (default: :obj:`None`)
         stream_accumulate (Optional[bool], optional): When True, partial
             streaming updates return accumulated content. When False, partial
             updates return only the incremental delta (recommended).
@@ -514,6 +520,7 @@ class ChatAgent(BaseAgent):
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         on_request_usage: Optional[Callable[[Dict[str, Any]], Any]] = None,
+        on_context_summary: Optional[Callable[[Dict[str, Any]], Any]] = None,
         stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
     ) -> None:
@@ -627,6 +634,7 @@ class ChatAgent(BaseAgent):
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
         self.on_request_usage = on_request_usage
+        self.on_context_summary = on_context_summary
         self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
 
@@ -1023,9 +1031,10 @@ class ChatAgent(BaseAgent):
                 f"exceed limit, full compression."
             )
             summary = self.summarize(include_summaries=True)
-            self._update_memory_with_summary(
+            summary_event = self._update_memory_with_summary(
                 summary.get("summary", ""), include_summaries=True
             )
+            self._emit_context_summary(summary_event)
             return self.memory.get_context()
 
         threshold = self._calculate_next_summary_threshold()
@@ -1035,9 +1044,10 @@ class ChatAgent(BaseAgent):
                 f"({threshold}). Triggering summarization."
             )
             summary = self.summarize(include_summaries=False)
-            self._update_memory_with_summary(
+            summary_event = self._update_memory_with_summary(
                 summary.get("summary", ""), include_summaries=False
             )
+            self._emit_context_summary(summary_event)
             return self.memory.get_context()
 
         return openai_messages, num_tokens
@@ -1059,9 +1069,10 @@ class ChatAgent(BaseAgent):
                 f"exceed limit, full compression."
             )
             summary = await self.asummarize(include_summaries=True)
-            self._update_memory_with_summary(
+            summary_event = self._update_memory_with_summary(
                 summary.get("summary", ""), include_summaries=True
             )
+            await self._aemit_context_summary(summary_event)
             return self.memory.get_context()
 
         threshold = self._calculate_next_summary_threshold()
@@ -1071,9 +1082,10 @@ class ChatAgent(BaseAgent):
                 f"({threshold}). Triggering summarization."
             )
             summary = await self.asummarize(include_summaries=False)
-            self._update_memory_with_summary(
+            summary_event = self._update_memory_with_summary(
                 summary.get("summary", ""), include_summaries=False
             )
+            await self._aemit_context_summary(summary_event)
             return self.memory.get_context()
 
         return openai_messages, num_tokens
@@ -1122,7 +1134,7 @@ class ChatAgent(BaseAgent):
 
     def _update_memory_with_summary(
         self, summary: str, include_summaries: bool = False
-    ) -> None:
+    ) -> Dict[str, Any]:
         r"""Update memory with summary result.
 
         This method handles memory clearing and restoration of summaries based
@@ -1133,7 +1145,7 @@ class ChatAgent(BaseAgent):
 
         existing_summaries = []
         last_user_message: Optional[str] = None
-        messages, _ = self.memory.get_context()
+        messages, before_token_count = self.memory.get_context()
         for msg in messages:
             content = msg.get('content', '')
             role = msg.get('role', '')
@@ -1207,6 +1219,16 @@ class ChatAgent(BaseAgent):
                 )
         except Exception as e:
             logger.warning(f"Failed to count summary tokens: {e}")
+
+        messages_after, after_token_count = self.memory.get_context()
+        return self._build_context_summary_payload(
+            summary=summary_content,
+            include_summaries=include_summaries,
+            messages_before=messages,
+            messages_after=messages_after,
+            before_token_count=before_token_count,
+            after_token_count=after_token_count,
+        )
 
     def _get_external_tool_names(self) -> Set[str]:
         r"""Returns a set of external tool names."""
@@ -3478,6 +3500,22 @@ class ChatAgent(BaseAgent):
                 f"{request_index}: {exc}"
             )
 
+    def _emit_context_summary(self, payload: Dict[str, Any]) -> None:
+        if self.on_context_summary is None:
+            return
+
+        try:
+            callback_result = self.on_context_summary(payload)
+            if inspect.isawaitable(callback_result):
+                logger.warning(
+                    "on_context_summary returned awaitable in sync step. "
+                    "Use a sync callback for `step`, or use `astep`."
+                )
+                if inspect.iscoroutine(callback_result):
+                    callback_result.close()
+        except Exception as exc:
+            logger.warning(f"on_context_summary callback failed: {exc}")
+
     async def _aemit_request_usage(
         self,
         usage_dict: Dict[str, Any],
@@ -3504,6 +3542,19 @@ class ChatAgent(BaseAgent):
                 f"{request_index}: {exc}"
             )
 
+    async def _aemit_context_summary(
+        self, payload: Dict[str, Any]
+    ) -> None:
+        if self.on_context_summary is None:
+            return
+
+        try:
+            callback_result = self.on_context_summary(payload)
+            if inspect.isawaitable(callback_result):
+                await callback_result
+        except Exception as exc:
+            logger.warning(f"on_context_summary callback failed: {exc}")
+
     def _build_request_usage_payload(
         self,
         usage_dict: Dict[str, Any],
@@ -3522,6 +3573,28 @@ class ChatAgent(BaseAgent):
                 "total_tokens": int(usage.get("total_tokens") or 0),
             },
             "step_usage": step_usage,
+        }
+
+    def _build_context_summary_payload(
+        self,
+        *,
+        summary: str,
+        include_summaries: bool,
+        messages_before: List[OpenAIMessage],
+        messages_after: List[OpenAIMessage],
+        before_token_count: int,
+        after_token_count: int,
+    ) -> Dict[str, Any]:
+        return {
+            "agent_id": self.agent_id,
+            "summary": summary,
+            "include_summaries": include_summaries,
+            "messages_before": messages_before,
+            "messages_after": messages_after,
+            "message_count_before": len(messages_before),
+            "message_count_after": len(messages_after),
+            "before_token_count": before_token_count,
+            "after_token_count": after_token_count,
         }
 
     def _convert_to_chatagent_response(
@@ -6148,6 +6221,7 @@ class ChatAgent(BaseAgent):
             pause_event=self.pause_event,
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
             on_request_usage=self.on_request_usage,
+            on_context_summary=self.on_context_summary,
             stream_accumulate=(
                 self.stream_accumulate
                 if self._stream_accumulate_explicit
