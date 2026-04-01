@@ -710,11 +710,12 @@ class Workforce(BaseNode):
                     "agent_id": getattr(worker_agent, "agent_id", None),
                     "agent_name": getattr(worker_agent, "role_name", None),
                     "model_type": (
-                        model_type.value
-                        if hasattr(model_type, "value")
-                        else str(model_type)
-                        if model_type is not None
-                        else None
+                        getattr(model_type, "value", None)
+                        or (
+                            str(model_type)
+                            if model_type is not None
+                            else None
+                        )
                     ),
                     "pool_config": {
                         "use_agent_pool": worker_node.use_agent_pool,
@@ -2097,7 +2098,7 @@ class Workforce(BaseNode):
                     f"Task {task.id} will be decomposed due to {reason}"
                 )
                 subtasks_result = self._decompose_task(
-                    task, self._on_stream_callback
+                    task, stream_callback=self._on_stream_callback
                 )
 
                 # Handle both streaming and non-streaming results
