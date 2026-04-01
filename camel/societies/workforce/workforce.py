@@ -2788,12 +2788,6 @@ class Workforce(BaseNode):
             self._emit_plan_events(plan.task, plan.subtasks)
             plan.events_emitted = True
 
-        self._task_dependencies.update(
-            {
-                task_id: dependencies.copy()
-                for task_id, dependencies in plan.dependency_graph.items()
-            }
-        )
         self._append_plan_to_pending(plan)
         self.set_channel(TaskChannel())
 
