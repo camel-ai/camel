@@ -4211,6 +4211,9 @@ class ChatAgent(BaseAgent):
                 cast(List[MemoryRecord], func_records),
             )
 
+        # Extract images from ToolResult if present
+        images = None
+
         if isinstance(result, ToolResult) and result.images:
             try:
                 import base64
@@ -4234,6 +4237,7 @@ class ChatAgent(BaseAgent):
                         f"{len(result.images)} image(s), injecting into "
                         "context"
                     )
+                    images = result.images
 
                     # Convert base64 images to PIL Image objects
                     pil_images: List[Union[Image.Image, str]] = []
@@ -4276,6 +4280,7 @@ class ChatAgent(BaseAgent):
             args=args,
             result=result,
             tool_call_id=tool_call_id,
+            images=images,
         )
         self._update_last_tool_call_state(tool_record)
         return tool_record
@@ -5068,11 +5073,19 @@ class ChatAgent(BaseAgent):
                     # Record only the tool result message
                     self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
+                    # Extract images if result is ToolResult
+                    images = (
+                        result.images
+                        if isinstance(result, ToolResult) and result.images
+                        else None
+                    )
+
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
                         args=args,
                         result=result,
                         tool_call_id=tool_call_id,
+                        images=images,
                     )
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
@@ -5224,11 +5237,19 @@ class ChatAgent(BaseAgent):
                     )
                     self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
+                    # Extract images if result is ToolResult
+                    images = (
+                        result.images
+                        if isinstance(result, ToolResult) and result.images
+                        else None
+                    )
+
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
                         args=args,
                         result=result,
                         tool_call_id=tool_call_id,
+                        images=images,
                     )
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
