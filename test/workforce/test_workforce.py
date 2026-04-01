@@ -418,7 +418,7 @@ async def test_run_plan_async_executes_edited_subtasks(mock_model):
     )
 
     async def fake_start():
-        queued_subtask = list(workforce._pending_tasks)[0]
+        queued_subtask = next(iter(workforce._pending_tasks))
         queued_subtask.state = TaskState.DONE
         queued_subtask.result = "Edited result"
         workforce._pending_tasks.clear()

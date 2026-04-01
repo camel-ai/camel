@@ -35,7 +35,7 @@ from camel.societies.workforce.events import (
     WorkforceEvent,
 )
 from camel.societies.workforce.task_channel import TaskChannel
-from camel.societies.workforce.utils import TaskAssignResult, TaskAssignment
+from camel.societies.workforce.utils import TaskAssignment, TaskAssignResult
 from camel.societies.workforce.workforce import Workforce
 from camel.societies.workforce.workforce_callback import WorkforceCallback
 from camel.societies.workforce.workforce_logger import WorkforceLogger
