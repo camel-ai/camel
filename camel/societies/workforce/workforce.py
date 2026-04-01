@@ -712,9 +712,7 @@ class Workforce(BaseNode):
                     "model_type": (
                         getattr(model_type, "value", None)
                         or (
-                            str(model_type)
-                            if model_type is not None
-                            else None
+                            str(model_type) if model_type is not None else None
                         )
                     ),
                     "pool_config": {
