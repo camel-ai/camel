@@ -1,0 +1,73 @@
+# CAMEL Society of Mind — Multi-Agent Debate in OSOP Format
+osop_version: "1.0"
+id: camel-society-of-mind
+name: CAMEL Society of Mind
+description: Role-playing multi-agent conversation where AI agents take on defined roles to collaboratively solve problems through structured dialogue.
+tags: [camel, multi-agent, role-playing, debate]
+
+nodes:
+  - id: task-specifier
+    type: agent
+    subtype: coordinator
+    name: Task Specifier
+    purpose: Refine the user's request into a concrete, well-defined task with clear deliverables.
+    runtime:
+      provider: openai
+      model: gpt-4o
+      config:
+        temperature: 0.3
+
+  - id: ai-assistant
+    type: agent
+    subtype: worker
+    name: AI Assistant
+    purpose: Work on the task from the assistant's perspective, providing solutions and implementations.
+    runtime:
+      provider: openai
+      model: gpt-4o
+      config:
+        system_prompt: You are a helpful AI assistant working to solve the assigned task.
+
+  - id: ai-user
+    type: agent
+    subtype: worker
+    name: AI User
+    purpose: Evaluate the assistant's work from the user's perspective, asking questions and requesting improvements.
+    runtime:
+      provider: openai
+      model: gpt-4o
+      config:
+        system_prompt: You are a critical user evaluating the assistant's output.
+
+  - id: critic
+    type: agent
+    subtype: worker
+    name: Critic Agent
+    purpose: Provide objective assessment of the conversation quality and solution completeness.
+    runtime:
+      provider: openai
+      model: gpt-4o
+
+  - id: output
+    type: system
+    name: Final Output
+    description: Compile the final solution from the multi-agent conversation.
+
+edges:
+  - from: task-specifier
+    to: ai-assistant
+    mode: sequential
+  - from: ai-assistant
+    to: ai-user
+    mode: sequential
+  - from: ai-user
+    to: ai-assistant
+    mode: loop
+    label: Continue conversation until task complete
+  - from: ai-user
+    to: critic
+    mode: conditional
+    condition: conversation_rounds >= 3
+  - from: critic
+    to: output
+    mode: sequential
