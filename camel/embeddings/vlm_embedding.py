@@ -15,14 +15,37 @@
 # Enables postponed evaluation of annotations (for string-based type hints)
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from PIL import Image
+
+if TYPE_CHECKING:
+    import torch
 
 from camel.embeddings import BaseEmbedding
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+def _feature_output_to_tensor(outputs: Any) -> torch.Tensor:
+    r"""Return the embedding tensor from CLIP-like `get_*_features` results.
+
+    Transformers v5 returns :class:`~transformers.modeling_outputs.
+    BaseModelOutputWithPooling` with projected features in ``pooler_output``;
+    older versions returned a raw tensor.
+    """
+    import torch
+
+    pooled = getattr(outputs, "pooler_output", None)
+    if pooled is not None:
+        return pooled
+    if isinstance(outputs, torch.Tensor):
+        return outputs
+    raise TypeError(
+        "Expected tensor or object with pooler_output from get_*_features; "
+        f"got {type(outputs)!r}"
+    )
 
 
 class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
@@ -113,8 +136,10 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                     **image_processor_kwargs,
                 )
                 image_feature = (
-                    self.model.get_image_features(
-                        **image_input, **model_kwargs
+                    _feature_output_to_tensor(
+                        self.model.get_image_features(
+                            **image_input, **model_kwargs
+                        )
                     )
                     .squeeze(dim=0)
                     .tolist()
@@ -128,7 +153,11 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                     **tokenizer_kwargs,
                 )
                 text_feature = (
-                    self.model.get_text_features(**text_input, **model_kwargs)
+                    _feature_output_to_tensor(
+                        self.model.get_text_features(
+                            **text_input, **model_kwargs
+                        )
+                    )
                     .squeeze(dim=0)
                     .tolist()
                 )
@@ -152,5 +181,7 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         if self.dim is None:
             text = 'dimension'
             inputs = self.processor(text=[text], return_tensors="pt")
-            self.dim = self.model.get_text_features(**inputs).shape[1]
+            self.dim = _feature_output_to_tensor(
+                self.model.get_text_features(**inputs)
+            ).shape[1]
         return self.dim
