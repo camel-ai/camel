@@ -431,7 +431,6 @@ class SingleAgentWorker(Worker):
             "borrowed_agent_id": getattr(
                 worker_agent, "agent_id", worker_agent.role_name
             ),
-            # Alias kept for backward compatibility with eigent consumers.
             "agent_id": getattr(
                 worker_agent, "agent_id", worker_agent.role_name
             ),
@@ -489,11 +488,6 @@ class SingleAgentWorker(Worker):
                 len(tool_calls) if isinstance(tool_calls, list) else 0
             ),
             "token_usage": token_usage.copy(),
-            # Backward-compatible fields — used by eigent task detail UI.
-            # TODO: migrate eigent to *_summary keys, then remove these.
-            "response_content": response_content[:50],
-            "tool_calls": tool_calls_summary[:50],
-            "total_tokens": token_usage.get("total_tokens", 0),
         }
 
         task.additional_info.setdefault("worker_attempts", []).append(
