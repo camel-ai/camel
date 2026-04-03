@@ -361,8 +361,7 @@ async def test_plan_task_async_creates_editable_plan_without_queue_mutation(
     raw_chunks = []
     batches = []
 
-    def fake_decompose(task, planner_context=None, stream_callback=None):
-        assert planner_context == "planning-only context"
+    def fake_decompose(task, stream_callback=None):
         if stream_callback is not None:
             stream_callback(
                 ChatAgentResponse(
@@ -385,7 +384,6 @@ async def test_plan_task_async_creates_editable_plan_without_queue_mutation(
 
     plan = await workforce.plan_task_async(
         main_task,
-        planner_context="planning-only context",
         raw_text_callback=lambda chunk: raw_chunks.append(chunk.msg.content),
         subtask_batch_callback=lambda batch, is_final: batches.append(
             ([task.id for task in batch], is_final)

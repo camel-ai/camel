@@ -180,7 +180,6 @@ class WorkforcePlan:
     task: Task
     subtasks: List[Task] = field(default_factory=list)
     dependency_graph: Dict[str, List[str]] = field(default_factory=dict)
-    planner_context: Optional[str] = None
     planner_raw_text: Optional[str] = None
     planner_summary: Optional[str] = None
     events_emitted: bool = False
@@ -1515,7 +1514,6 @@ class Workforce(BaseNode):
     def _decompose_task(
         self,
         task: Task,
-        planner_context: Optional[str] = None,
         stream_callback: Optional[
             Callable[["ChatAgentResponse"], None]
         ] = None,
@@ -1542,9 +1540,7 @@ class Workforce(BaseNode):
             TASK_DECOMPOSE_PROMPT.format(
                 content=task.content,
                 child_nodes_info=self._get_child_nodes_info(),
-                additional_info=self._compose_planner_additional_info(
-                    task, planner_context
-                ),
+                additional_info=task.additional_info,
             )
         )
         self.task_agent.reset()
@@ -1574,18 +1570,6 @@ class Workforce(BaseNode):
             if subtasks:
                 self._update_dependencies_for_decomposition(task, subtasks)
             return subtasks
-
-    def _compose_planner_additional_info(
-        self, task: Task, planner_context: Optional[str] = None
-    ) -> Any:
-        if not planner_context:
-            return task.additional_info
-        if task.additional_info:
-            return (
-                f"{task.additional_info}\n\n"
-                f"Planning-only context:\n{planner_context}"
-            )
-        return f"Planning-only context:\n{planner_context}"
 
     def _build_plan_summary(self, subtasks: List[Task]) -> Optional[str]:
         if not subtasks:
@@ -1666,7 +1650,6 @@ class Workforce(BaseNode):
         *,
         reset: bool,
         append_to_pending: bool,
-        planner_context: Optional[str] = None,
         raw_text_callback: Optional[
             Callable[["ChatAgentResponse"], None]
         ] = None,
@@ -1708,7 +1691,6 @@ class Workforce(BaseNode):
 
         subtasks_result = self._decompose_task(
             task,
-            planner_context=planner_context,
             stream_callback=combined_stream_callback,
         )
 
@@ -1731,7 +1713,6 @@ class Workforce(BaseNode):
                 subtask.id: self._task_dependencies.get(subtask.id, []).copy()
                 for subtask in subtasks
             },
-            planner_context=planner_context,
             planner_raw_text=planner_raw_text or None,
             planner_summary=self._build_plan_summary(subtasks),
         )
@@ -2747,7 +2728,6 @@ class Workforce(BaseNode):
         task: Task,
         *,
         reset: bool = True,
-        planner_context: Optional[str] = None,
         raw_text_callback: Optional[
             Callable[["ChatAgentResponse"], None]
         ] = None,
@@ -2760,7 +2740,6 @@ class Workforce(BaseNode):
             task,
             reset=reset,
             append_to_pending=False,
-            planner_context=planner_context,
             raw_text_callback=raw_text_callback,
             subtask_batch_callback=subtask_batch_callback,
         )
