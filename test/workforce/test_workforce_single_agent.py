@@ -13,15 +13,19 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import time
 from typing import Awaitable, Callable, List, Optional
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from camel.agents.chat_agent import ChatAgent
+from camel.agents.chat_agent import (
+    AsyncStreamingChatAgentResponse,
+    ChatAgent,
+)
 from camel.messages.base import BaseMessage
 from camel.responses import ChatAgentResponse
 from camel.societies.workforce import Workforce
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
+from camel.societies.workforce.utils import TaskResult
 from camel.tasks.task import Task, TaskState
 
 
@@ -90,6 +94,37 @@ class StreamingProbeWorker(SingleAgentWorker):
 class _DummyChannel:
     async def return_task(self, task_id: str) -> None:
         self.last_task_id = task_id
+
+
+async def _async_stream(chunks: List[ChatAgentResponse]):
+    for chunk in chunks:
+        yield chunk
+
+
+def _make_stream_chunk(
+    content: str,
+    *,
+    parsed: Optional[TaskResult] = None,
+    info: Optional[dict] = None,
+) -> ChatAgentResponse:
+    message = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content=content,
+    )
+    message.parsed = parsed
+    return ChatAgentResponse(
+        msgs=[message],
+        terminated=False,
+        info=info or {},
+    )
+
+
+class FakeWorkerAgent:
+    def __init__(self, response, agent_id: str = "worker-clone-1"):
+        self.role_name = "Fake Worker Agent"
+        self.agent_id = agent_id
+        self._execution_context = {"stale": "value"}
+        self.astep = AsyncMock(return_value=response)
 
 
 @pytest.mark.asyncio
@@ -260,3 +295,132 @@ async def test_workforce_stream_callback_accumulate_mode_emits_delta():
         ("worker-1", "task-1", "Hello", "accumulate"),
         ("worker-1", "task-1", " world", "accumulate"),
     ]
+
+
+@pytest.mark.asyncio
+async def test_single_agent_worker_normalizes_delta_stream_and_ctx():
+    sys_msg = BaseMessage.make_assistant_message(
+        role_name="programmer",
+        content="You are a python programmer.",
+    )
+    base_agent = ChatAgent(sys_msg)
+    worker = SingleAgentWorker(
+        "agent1",
+        base_agent,
+        use_agent_pool=False,
+        use_structured_output_handler=False,
+    )
+
+    chunks = [
+        _make_stream_chunk(
+            "Hel",
+            info={
+                "stream_accumulate_mode": "delta",
+                "partial": True,
+            },
+        ),
+        _make_stream_chunk(
+            "lo",
+            parsed=TaskResult(content="Task finished", failed=False),
+            info={
+                "usage": {"total_tokens": 12, "prompt_tokens": 5},
+                "tool_calls": [{"name": "search"}],
+                "stream_accumulate_mode": "delta",
+            },
+        ),
+    ]
+    fake_agent = FakeWorkerAgent(
+        AsyncStreamingChatAgentResponse(_async_stream(chunks))
+    )
+    worker._get_worker_agent = AsyncMock(return_value=fake_agent)
+    worker._return_worker_agent = AsyncMock()
+
+    parent_task = Task(content="parent", id="parent-task")
+    task = Task(content="child", id="task-1", parent=parent_task)
+
+    state = await worker._process_task(task, [])
+
+    assert state == TaskState.DONE
+    assert task.result == "Task finished"
+    assert task.additional_info is not None
+    assert task.additional_info["execution_context"] == {
+        "task_id": "task-1",
+        "parent_task_id": "parent-task",
+        "worker_node_id": worker.node_id,
+        "worker_description": "agent1",
+        "original_worker_id": worker.worker.agent_id,
+        "borrowed_agent_id": "worker-clone-1",
+        "agent_id": "worker-clone-1",
+        "attempt": 1,
+    }
+    assert (
+        fake_agent._execution_context
+        == task.additional_info["execution_context"]
+    )
+    assert "stale" not in fake_agent._execution_context
+
+    worker_attempt = task.additional_info["worker_attempts"][0]
+    assert worker_attempt["attempt"] == 1
+    assert (
+        worker_attempt["execution_context"]
+        == task.additional_info["execution_context"]
+    )
+    assert worker_attempt["response_content_summary"] == "Hello"
+    assert worker_attempt["tool_call_count"] == 1
+    assert worker_attempt["token_usage"] == {
+        "total_tokens": 12,
+        "prompt_tokens": 5,
+    }
+    assert task.additional_info["token_usage"] == {
+        "total_tokens": 12,
+        "prompt_tokens": 5,
+    }
+
+
+@pytest.mark.asyncio
+async def test_single_agent_worker_attempt_counter_uses_existing_attempts():
+    sys_msg = BaseMessage.make_assistant_message(
+        role_name="programmer",
+        content="You are a python programmer.",
+    )
+    base_agent = ChatAgent(sys_msg)
+    worker = SingleAgentWorker(
+        "agent1",
+        base_agent,
+        use_agent_pool=False,
+        use_structured_output_handler=False,
+    )
+
+    final_message = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content="Completed",
+    )
+    final_message.parsed = TaskResult(content="Completed", failed=False)
+    response = ChatAgentResponse(
+        msgs=[final_message],
+        terminated=False,
+        info={"usage": {"total_tokens": 7}, "tool_calls": []},
+    )
+    fake_agent = FakeWorkerAgent(response, agent_id="worker-clone-2")
+    worker._get_worker_agent = AsyncMock(return_value=fake_agent)
+    worker._return_worker_agent = AsyncMock()
+
+    task = Task(
+        content="follow up",
+        id="task-2",
+        additional_info={"worker_attempts": [{"attempt": 1}]},
+    )
+
+    state = await worker._process_task(task, [])
+
+    assert state == TaskState.DONE
+    assert task.additional_info is not None
+    assert task.additional_info["execution_context"]["attempt"] == 2
+    assert task.additional_info["execution_context"]["borrowed_agent_id"] == (
+        "worker-clone-2"
+    )
+    assert task.additional_info["worker_attempts"][-1]["attempt"] == 2
+    assert (
+        task.additional_info["worker_attempts"][-1]["response_content_summary"]
+        == "Completed"
+    )
