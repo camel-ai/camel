@@ -399,6 +399,26 @@ async def test_plan_task_async_creates_editable_plan_without_queue_mutation(
     assert batches == [(["task-1.1", "task-1.2"], True)]
 
 
+def test_decompose_task_supports_overriding_prompt_additional_info(mock_model):
+    class PlannerContextWorkforce(Workforce):
+        def _get_decompose_additional_info(self, task: Task):
+            return "planner-only context"
+
+    workforce = PlannerContextWorkforce(
+        description="Planning Workforce",
+        coordinator_agent=ChatAgent("Coordinator", model=mock_model),
+        task_agent=ChatAgent("Planner", model=mock_model),
+    )
+    task = Task(content="Main task", id="task-custom-info")
+
+    with patch.object(Task, "decompose", return_value=[]) as mock_decompose:
+        workforce._decompose_task(task)
+
+    prompt_args = mock_decompose.call_args.args
+    prompt = prompt_args[-1]
+    assert "planner-only context" in prompt
+
+
 @pytest.mark.asyncio
 async def test_run_plan_async_executes_edited_subtasks(mock_model):
     workforce = Workforce(

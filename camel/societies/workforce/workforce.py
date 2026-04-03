@@ -1540,7 +1540,7 @@ class Workforce(BaseNode):
             TASK_DECOMPOSE_PROMPT.format(
                 content=task.content,
                 child_nodes_info=self._get_child_nodes_info(),
-                additional_info=task.additional_info,
+                additional_info=self._get_decompose_additional_info(task),
             )
         )
         self.task_agent.reset()
@@ -1570,6 +1570,14 @@ class Workforce(BaseNode):
             if subtasks:
                 self._update_dependencies_for_decomposition(task, subtasks)
             return subtasks
+
+    def _get_decompose_additional_info(self, task: Task) -> Any:
+        r"""Return additional information included in the decompose prompt.
+
+        Subclasses can override this protected hook to adapt planner-only
+        prompt context without changing the public Workforce API.
+        """
+        return task.additional_info
 
     def _build_plan_summary(self, subtasks: List[Task]) -> Optional[str]:
         if not subtasks:
