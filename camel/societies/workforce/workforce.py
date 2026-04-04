@@ -69,6 +69,10 @@ from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
 )
 from camel.societies.workforce.task_channel import TaskChannel
+from camel.societies.workforce.transcript import (
+    TranscriptStore,
+    WorkforceTranscriptCallback,
+)
 from camel.societies.workforce.utils import (
     FailureHandlingConfig,
     PipelineTaskBuilder,
@@ -336,6 +340,8 @@ class Workforce(BaseNode):
         stream_callback: Optional[
             Callable[[str, str, str, str], Optional[Awaitable[None]]]
         ] = None,
+        transcript_store: Optional[TranscriptStore] = None,
+        transcript_enabled: bool = False,
         failure_handling_config: Optional[
             Union[FailureHandlingConfig, Dict[str, Any]]
         ] = None,
@@ -396,6 +402,16 @@ class Workforce(BaseNode):
         # Optional user callback for worker streaming text chunks.
         self._user_stream_callback = stream_callback
         self._stream_progress: Dict[Tuple[str, str], str] = {}
+        self.transcript_enabled = transcript_enabled
+        self.transcript_store = (
+            transcript_store
+            if transcript_store is not None
+            else (
+                TranscriptStore.create_temp(self.node_id)
+                if transcript_enabled
+                else None
+            )
+        )
         self._initialize_callbacks(callbacks)
 
         # Set up coordinator agent with default system message
@@ -570,6 +586,13 @@ class Workforce(BaseNode):
                         "All callbacks must be instances of WorkforceCallback"
                     )
                 self._callbacks.append(cb)
+        if self.transcript_enabled and self.transcript_store is not None:
+            self._callbacks.append(
+                WorkforceTranscriptCallback(
+                    workforce_id=self.node_id,
+                    store=self.transcript_store,
+                )
+            )
         # Check if any metrics callback is provided
         has_metrics_callback = any(
             isinstance(cb, WorkforceMetrics) for cb in self._callbacks

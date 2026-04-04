@@ -14,6 +14,12 @@
 
 from .role_playing_worker import RolePlayingWorker
 from .single_agent_worker import SingleAgentWorker
+from .transcript import (
+    TranscriptEvent,
+    TranscriptEventType,
+    TranscriptStore,
+    WorkforceTranscriptCallback,
+)
 from .utils import FailureHandlingConfig, PipelineTaskBuilder, RecoveryStrategy
 from .workflow_memory_manager import WorkflowSelectionMethod
 from .workforce import Workforce, WorkforceMode
@@ -27,4 +33,8 @@ __all__ = [
     "WorkflowSelectionMethod",
     "FailureHandlingConfig",
     "RecoveryStrategy",
+    "TranscriptEvent",
+    "TranscriptEventType",
+    "TranscriptStore",
+    "WorkforceTranscriptCallback",
 ]
