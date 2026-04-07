@@ -266,11 +266,17 @@ class GoodMemToolkit(BaseToolkit):
             spaces = self.list_spaces()
             for space in spaces:
                 if space.get("name") == name:
+                    actual_embedder_id = embedder_id
+                    space_embedders = space.get("spaceEmbedders", [])
+                    if space_embedders:
+                        actual_embedder_id = space_embedders[0].get(
+                            "embedderId", embedder_id
+                        )
                     return {
                         "success": True,
                         "spaceId": space["spaceId"],
                         "name": space["name"],
-                        "embedderId": embedder_id,
+                        "embedderId": actual_embedder_id,
                         "message": (
                             "Space already exists, reusing existing space"
                         ),
@@ -409,7 +415,7 @@ class GoodMemToolkit(BaseToolkit):
         max_results: int = 5,
         include_memory_definition: bool = True,
         wait_for_indexing: bool = True,
-        max_wait_seconds: float = 5,
+        max_wait_seconds: float = 10,
         poll_interval: float = 2,
         reranker_id: Optional[str] = None,
         llm_id: Optional[str] = None,
