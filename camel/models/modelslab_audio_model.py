@@ -204,7 +204,9 @@ class ModelsLabAudioModel(BaseAudioModel):
             TimeoutError: If the audio is not ready within ``timeout`` seconds.
             ValueError: If the API returns ``status: error``.
         """
-        fetch_url = _MODELSLAB_TTS_FETCH_URL.format(request_id=request_id)
+        # Derive fetch URL from configured base URL to respect custom proxy/gateway
+        base = self._url.rsplit("/", 1)[0]
+        fetch_url = base + "/fetch/" + request_id
         body = {"key": self._api_key}
         deadline = time.time() + timeout
 
