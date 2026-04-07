@@ -18,7 +18,7 @@ from typing import Any, Optional
 
 from camel.embeddings.base import BaseEmbedding
 from camel.types import EmbeddingModelType, GeminiEmbeddingTaskType
-from camel.utils import api_keys_required
+from camel.utils import api_keys_required, dependencies_required
 
 
 class GeminiEmbedding(BaseEmbedding[str]):
@@ -44,6 +44,7 @@ class GeminiEmbedding(BaseEmbedding[str]):
             ("api_key", 'GEMINI_API_KEY'),
         ]
     )
+    @dependencies_required('google.genai')
     def __init__(
         self,
         model_type: EmbeddingModelType = (
