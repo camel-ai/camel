@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import base64
+import binascii
 import json
 import os
 import time
@@ -625,8 +626,9 @@ class GoodMemToolkit(BaseToolkit):
 
         Returns:
             Dict[str, Any]: A dictionary with keys ``success``,
-                ``memory``, and optionally ``content`` or
-                ``contentError``.
+                ``memory``, and optionally ``content`` (decoded
+                original content) or ``contentError`` (set when
+                ``originalContent`` is present but cannot be decoded).
         """
         params = {"includeContent": "true"} if include_content else {}
         response = self._session.get(
@@ -646,13 +648,15 @@ class GoodMemToolkit(BaseToolkit):
             raw_b64 = body["originalContent"]
             mime_type = body.get("contentType", "")
             try:
-                decoded_bytes = base64.b64decode(raw_b64)
+                decoded_bytes = base64.b64decode(raw_b64, validate=True)
                 if mime_type.startswith("text/"):
                     result["content"] = decoded_bytes.decode("utf-8")
                 else:
                     result["content"] = decoded_bytes
-            except Exception:
-                result["content"] = raw_b64
+            except (binascii.Error, UnicodeDecodeError) as decode_err:
+                result["contentError"] = (
+                    f"Failed to decode content: {decode_err}"
+                )
 
         return result
 

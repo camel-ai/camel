@@ -843,6 +843,22 @@ class TestGetMemory:
         assert "content" not in result
         assert "contentError" not in result
 
+    def test_get_memory_invalid_base64_sets_content_error(self, toolkit):
+        """Malformed base64 should set contentError, not silently corrupt."""
+        toolkit._session.get.return_value = _make_response(
+            json_data={
+                "memoryId": "mem-1",
+                "processingStatus": "COMPLETED",
+                "contentType": "text/plain",
+                "originalContent": "not-valid-base64!!!",
+            }
+        )
+        result = toolkit.get_memory(memory_id="mem-1", include_content=True)
+        assert result["success"] is True
+        assert "content" not in result
+        assert "contentError" in result
+        assert "Failed to decode content" in result["contentError"]
+
     def test_get_memory_metadata_error_propagates(self, toolkit):
         toolkit._session.get.return_value = _make_response(
             raise_for_status=requests.HTTPError("404")
