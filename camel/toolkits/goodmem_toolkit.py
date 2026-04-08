@@ -204,7 +204,8 @@ class GoodMemToolkit(BaseToolkit):
 
         Returns:
             List[Dict[str, Any]]: A list of space objects, each
-                containing ``spaceId`` and ``name``.
+                containing ``spaceId``, ``name``, and
+                ``spaceEmbedders``.
         """
         response = self._session.get(
             f"{self.base_url}/v1/spaces",
@@ -217,6 +218,7 @@ class GoodMemToolkit(BaseToolkit):
             {
                 "spaceId": s.get("spaceId") or s.get("id"),
                 "name": s.get("name") or "Unnamed",
+                "spaceEmbedders": s.get("spaceEmbedders", []),
             }
             for s in spaces
         ]
@@ -444,7 +446,7 @@ class GoodMemToolkit(BaseToolkit):
                 still be processing. (default: :obj:`True`)
             max_wait_seconds (float): Maximum time in seconds to poll
                 for results when ``wait_for_indexing`` is ``True``.
-                (default: :obj:`5`)
+                (default: :obj:`10`)
             poll_interval (float): Seconds to sleep between polling
                 attempts when ``wait_for_indexing`` is ``True``.
                 (default: :obj:`2`)
