@@ -626,29 +626,31 @@ class GoodMemToolkit(BaseToolkit):
                 ``memory``, and optionally ``content`` or
                 ``contentError``.
         """
-        metadata_response = self._session.get(
+        params = {"includeContent": "true"} if include_content else {}
+        response = self._session.get(
             f"{self.base_url}/v1/memories/{memory_id}",
             headers=self._headers(include_content_type=False),
+            params=params,
         )
-        metadata_response.raise_for_status()
+        response.raise_for_status()
+        body = response.json()
 
         result: Dict[str, Any] = {
             "success": True,
-            "memory": metadata_response.json(),
+            "memory": body,
         }
 
-        if include_content:
+        if include_content and "originalContent" in body:
+            raw_b64 = body["originalContent"]
+            mime_type = body.get("contentType", "")
             try:
-                content_response = self._session.get(
-                    f"{self.base_url}/v1/memories/{memory_id}/content",
-                    headers=self._headers(include_content_type=False),
-                )
-                content_response.raise_for_status()
-                result["content"] = content_response.json()
-            except requests.RequestException as content_err:
-                result["contentError"] = (
-                    f"Failed to fetch content: {content_err}"
-                )
+                decoded_bytes = base64.b64decode(raw_b64)
+                if mime_type.startswith("text/"):
+                    result["content"] = decoded_bytes.decode("utf-8")
+                else:
+                    result["content"] = decoded_bytes
+            except Exception:
+                result["content"] = raw_b64
 
         return result
 
