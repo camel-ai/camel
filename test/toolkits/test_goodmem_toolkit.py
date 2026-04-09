@@ -39,17 +39,21 @@ API_KEY = "test-api-key-12345"
 
 
 def _make_response(
-    json_data=None, text=None, status_code=200, raise_for_status=None
+    json_data=None, text=None, content=None, headers=None,
+    status_code=200, raise_for_status=None
 ):
     """Create a mock requests.Response."""
     resp = MagicMock(spec=requests.Response)
     resp.status_code = status_code
     if json_data is not None:
         resp.json.return_value = json_data
+    if content is not None:
+        resp.content = content
     if text is not None:
         resp.text = text
     else:
         resp.text = json.dumps(json_data) if json_data else ""
+    resp.headers = headers or {}
     if raise_for_status:
         resp.raise_for_status.side_effect = raise_for_status
     else:
@@ -781,37 +785,47 @@ class TestRetrieveMemories:
 class TestGetMemory:
     """Tests for get_memory."""
 
-    def test_get_memory_with_content(self, toolkit):
-        encoded = base64.b64encode(b"Hello world").decode("ascii")
-        toolkit._session.get.return_value = _make_response(
+    def test_get_memory_with_text_content(self, toolkit):
+        meta_resp = _make_response(
             json_data={
                 "memoryId": "mem-1",
                 "processingStatus": "COMPLETED",
                 "contentType": "text/plain",
-                "originalContent": encoded,
             }
         )
+        content_resp = _make_response(
+            text="Hello world",
+            headers={"Content-Type": "text/plain"},
+        )
+        toolkit._session.get.side_effect = [meta_resp, content_resp]
         result = toolkit.get_memory(memory_id="mem-1", include_content=True)
         assert result["success"] is True
         assert result["memory"]["memoryId"] == "mem-1"
         assert result["content"] == "Hello world"
-        # Single GET with ?includeContent=true, no Content-Type header
-        assert toolkit._session.get.call_count == 1
-        call_kwargs = toolkit._session.get.call_args
-        assert "Content-Type" not in call_kwargs[1]["headers"]
-        assert call_kwargs[1]["params"] == {"includeContent": "true"}
+        # Two GET calls: metadata then content endpoint
+        assert toolkit._session.get.call_count == 2
+        urls = [c[0][0] for c in toolkit._session.get.call_args_list]
+        assert urls[0].endswith("/v1/memories/mem-1")
+        assert urls[1].endswith("/v1/memories/mem-1/content")
+        # No params or Content-Type on the metadata call
+        first_kwargs = toolkit._session.get.call_args_list[0][1]
+        assert "Content-Type" not in first_kwargs["headers"]
+        assert not first_kwargs.get("params")
 
     def test_get_memory_binary_content(self, toolkit):
         raw_bytes = b"%PDF-fake-content"
-        encoded = base64.b64encode(raw_bytes).decode("ascii")
-        toolkit._session.get.return_value = _make_response(
+        meta_resp = _make_response(
             json_data={
                 "memoryId": "mem-pdf",
                 "processingStatus": "COMPLETED",
                 "contentType": "application/pdf",
-                "originalContent": encoded,
             }
         )
+        content_resp = _make_response(
+            content=raw_bytes,
+            headers={"Content-Type": "application/pdf"},
+        )
+        toolkit._session.get.side_effect = [meta_resp, content_resp]
         result = toolkit.get_memory(memory_id="mem-pdf", include_content=True)
         assert result["success"] is True
         assert result["content"] == raw_bytes
@@ -825,39 +839,43 @@ class TestGetMemory:
         )
         assert result["success"] is True
         assert "content" not in result
-        # Single GET with no includeContent param
+        # Only one GET for metadata, /content endpoint not called
         assert toolkit._session.get.call_count == 1
-        call_kwargs = toolkit._session.get.call_args
-        assert not call_kwargs[1].get("params")
 
-    def test_get_memory_missing_original_content_field(self, toolkit):
-        """When server omits originalContent (e.g. memory still processing)."""
-        toolkit._session.get.return_value = _make_response(
+    def test_get_memory_content_fetch_error_sets_content_error(self, toolkit):
+        """When /content endpoint fails, contentError is set instead of raising."""
+        meta_resp = _make_response(
             json_data={
                 "memoryId": "mem-1",
                 "processingStatus": "PROCESSING",
             }
         )
-        result = toolkit.get_memory(memory_id="mem-1", include_content=True)
-        assert result["success"] is True
-        assert "content" not in result
-        assert "contentError" not in result
-
-    def test_get_memory_invalid_base64_sets_content_error(self, toolkit):
-        """Malformed base64 should set contentError, not silently corrupt."""
-        toolkit._session.get.return_value = _make_response(
-            json_data={
-                "memoryId": "mem-1",
-                "processingStatus": "COMPLETED",
-                "contentType": "text/plain",
-                "originalContent": "not-valid-base64!!!",
-            }
+        content_resp = _make_response(
+            raise_for_status=requests.RequestException("content not available")
         )
+        toolkit._session.get.side_effect = [meta_resp, content_resp]
         result = toolkit.get_memory(memory_id="mem-1", include_content=True)
         assert result["success"] is True
         assert "content" not in result
         assert "contentError" in result
-        assert "Failed to decode content" in result["contentError"]
+        assert "Failed to fetch content" in result["contentError"]
+
+    def test_get_memory_content_http_error_sets_content_error(self, toolkit):
+        """HTTP error from /content endpoint sets contentError, not exception."""
+        meta_resp = _make_response(
+            json_data={
+                "memoryId": "mem-1",
+                "processingStatus": "COMPLETED",
+            }
+        )
+        content_resp = _make_response(
+            raise_for_status=requests.HTTPError("404 Not Found")
+        )
+        toolkit._session.get.side_effect = [meta_resp, content_resp]
+        result = toolkit.get_memory(memory_id="mem-1", include_content=True)
+        assert result["success"] is True
+        assert "content" not in result
+        assert "contentError" in result
 
     def test_get_memory_metadata_error_propagates(self, toolkit):
         toolkit._session.get.return_value = _make_response(

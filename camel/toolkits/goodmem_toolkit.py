@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import base64
-import binascii
 import json
 import os
 import time
@@ -616,25 +615,27 @@ class GoodMemToolkit(BaseToolkit):
     ) -> Dict[str, Any]:
         r"""Fetches a specific memory record by its ID.
 
-        Returns metadata, processing status, and optionally the
-        original content.
+        Uses two separate endpoints: ``GET /v1/memories/{id}`` for
+        metadata and ``GET /v1/memories/{id}/content`` for content.
+        This separation allows efficient status polling without
+        fetching potentially large content unnecessarily.
 
         Args:
             memory_id (str): The UUID of the memory to fetch.
             include_content (bool): Whether to also fetch the original
-                document content. (default: :obj:`True`)
+                document content via the ``/content`` endpoint.
+                (default: :obj:`True`)
 
         Returns:
             Dict[str, Any]: A dictionary with keys ``success``,
-                ``memory``, and optionally ``content`` (decoded
-                original content) or ``contentError`` (set when
-                ``originalContent`` is present but cannot be decoded).
+                ``memory``, and optionally ``content`` (original
+                document content) or ``contentError`` (set when
+                the ``/content`` endpoint cannot be reached or
+                returns an error).
         """
-        params = {"includeContent": "true"} if include_content else {}
         response = self._session.get(
             f"{self.base_url}/v1/memories/{memory_id}",
             headers=self._headers(include_content_type=False),
-            params=params,
         )
         response.raise_for_status()
         body = response.json()
@@ -644,18 +645,23 @@ class GoodMemToolkit(BaseToolkit):
             "memory": body,
         }
 
-        if include_content and "originalContent" in body:
-            raw_b64 = body["originalContent"]
-            mime_type = body.get("contentType", "")
+        if include_content:
             try:
-                decoded_bytes = base64.b64decode(raw_b64, validate=True)
-                if mime_type.startswith("text/"):
-                    result["content"] = decoded_bytes.decode("utf-8")
+                content_response = self._session.get(
+                    f"{self.base_url}/v1/memories/{memory_id}/content",
+                    headers=self._headers(include_content_type=False),
+                )
+                content_response.raise_for_status()
+                content_type = content_response.headers.get(
+                    "Content-Type", ""
+                )
+                if "text" in content_type:
+                    result["content"] = content_response.text
                 else:
-                    result["content"] = decoded_bytes
-            except (binascii.Error, UnicodeDecodeError) as decode_err:
+                    result["content"] = content_response.content
+            except requests.RequestException as req_err:
                 result["contentError"] = (
-                    f"Failed to decode content: {decode_err}"
+                    f"Failed to fetch content: {req_err}"
                 )
 
         return result
