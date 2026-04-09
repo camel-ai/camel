@@ -204,7 +204,8 @@ class GoodMemToolkit(BaseToolkit):
 
         Returns:
             List[Dict[str, Any]]: A list of space objects, each
-                containing ``spaceId`` and ``name``.
+                containing ``spaceId``, ``name``, and
+                ``spaceEmbedders``.
         """
         response = self._session.get(
             f"{self.base_url}/v1/spaces",
@@ -217,6 +218,7 @@ class GoodMemToolkit(BaseToolkit):
             {
                 "spaceId": s.get("spaceId") or s.get("id"),
                 "name": s.get("name") or "Unnamed",
+                "spaceEmbedders": s.get("spaceEmbedders", []),
             }
             for s in spaces
         ]
@@ -444,7 +446,7 @@ class GoodMemToolkit(BaseToolkit):
                 still be processing. (default: :obj:`True`)
             max_wait_seconds (float): Maximum time in seconds to poll
                 for results when ``wait_for_indexing`` is ``True``.
-                (default: :obj:`5`)
+                (default: :obj:`10`)
             poll_interval (float): Seconds to sleep between polling
                 attempts when ``wait_for_indexing`` is ``True``.
                 (default: :obj:`2`)
@@ -613,28 +615,34 @@ class GoodMemToolkit(BaseToolkit):
     ) -> Dict[str, Any]:
         r"""Fetches a specific memory record by its ID.
 
-        Returns metadata, processing status, and optionally the
-        original content.
+        Uses two separate endpoints: ``GET /v1/memories/{id}`` for
+        metadata and ``GET /v1/memories/{id}/content`` for content.
+        This separation allows efficient status polling without
+        fetching potentially large content unnecessarily.
 
         Args:
             memory_id (str): The UUID of the memory to fetch.
             include_content (bool): Whether to also fetch the original
-                document content. (default: :obj:`True`)
+                document content via the ``/content`` endpoint.
+                (default: :obj:`True`)
 
         Returns:
             Dict[str, Any]: A dictionary with keys ``success``,
-                ``memory``, and optionally ``content`` or
-                ``contentError``.
+                ``memory``, and optionally ``content`` (original
+                document content) or ``contentError`` (set when
+                the ``/content`` endpoint cannot be reached or
+                returns an error).
         """
-        metadata_response = self._session.get(
+        response = self._session.get(
             f"{self.base_url}/v1/memories/{memory_id}",
             headers=self._headers(include_content_type=False),
         )
-        metadata_response.raise_for_status()
+        response.raise_for_status()
+        body = response.json()
 
         result: Dict[str, Any] = {
             "success": True,
-            "memory": metadata_response.json(),
+            "memory": body,
         }
 
         if include_content:
@@ -644,10 +652,16 @@ class GoodMemToolkit(BaseToolkit):
                     headers=self._headers(include_content_type=False),
                 )
                 content_response.raise_for_status()
-                result["content"] = content_response.json()
-            except requests.RequestException as content_err:
+                content_type = content_response.headers.get(
+                    "Content-Type", ""
+                )
+                if "text" in content_type:
+                    result["content"] = content_response.text
+                else:
+                    result["content"] = content_response.content
+            except requests.RequestException as req_err:
                 result["contentError"] = (
-                    f"Failed to fetch content: {content_err}"
+                    f"Failed to fetch content: {req_err}"
                 )
 
         return result
