@@ -979,8 +979,7 @@ class SearchToolkit(BaseToolkit):
             if response.status_code != 200:
                 return {
                     "error": (
-                        f"Bing returned status code: "
-                        f"{response.status_code}"
+                        f"Bing returned status code: {response.status_code}"
                     )
                 }
 
@@ -1664,9 +1663,7 @@ class SearchToolkit(BaseToolkit):
         except requests.exceptions.RequestException as e:
             return {"error": f"Querit search request failed: {e!s}"}
         except Exception as e:
-            return {
-                "error": f"Unexpected error during Querit search: {e!s}"
-            }
+            return {"error": f"Unexpected error during Querit search: {e!s}"}
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
