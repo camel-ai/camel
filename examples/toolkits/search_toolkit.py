@@ -514,3 +514,45 @@ rising investments linked to fault-tolerant performance and heightened ...',
 images=None)], 'external_tool_call_requests': None}
 ===============================================================================
 """
+
+# Example using Querit search
+querit_response = SearchToolkit().search_querit(
+    query="What is CAMEL-AI?",
+    number_of_result_pages=5,
+)
+print(querit_response)
+"""
+===============================================================================
+{'took': '156ms', 'search_id': 98765, 'results': [
+    {'result_id': 1, 'title': 'CAMEL-AI: First Multi-Agent Framework',
+     'snippet': 'CAMEL-AI is an open-source framework for building
+     multi-agent AI systems...', 'url': 'https://www.camel-ai.org/',
+     'site_name': 'camel-ai.org',
+     'site_icon': 'https://www.camel-ai.org/favicon.ico',
+     'page_age': '2025-01-15T10:30:00Z'},
+    ...
+]}
+===============================================================================
+"""
+
+# Example using Querit search with filters
+querit_filtered_response = SearchToolkit().search_querit(
+    query="multi-agent AI framework",
+    number_of_result_pages=10,
+    site_include=["github.com", "arxiv.org"],
+    time_range="m6",
+    language_include=["english"],
+)
+print(querit_filtered_response)
+
+# Example with ChatAgent using Querit search
+querit_agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use Querit search
+        engine to answer questions.""",
+    tools=[FunctionTool(SearchToolkit().search_querit)],
+)
+
+usr_msg = "What are the latest developments in multi-agent AI systems?"
+response = querit_agent.step(input_message=usr_msg, response_format=None)
+print(response.msgs[0].content)
+

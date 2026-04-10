@@ -1,0 +1,468 @@
+diff --git a/camel/toolkits/search_toolkit.py b/camel/toolkits/search_toolkit.py
+index fc871d10..80a16cae 100644
+--- a/camel/toolkits/search_toolkit.py
++++ b/camel/toolkits/search_toolkit.py
+@@ -1499,6 +1499,175 @@ class SearchToolkit(BaseToolkit):
+         except Exception as e:
+             return {"error": f"SerpApi search failed: {e!s}"}
+ 
++    @api_keys_required([(None, 'QUERIT_API_KEY')])
++    def search_querit(
++        self,
++        query: str,
++        number_of_result_pages: int = 10,
++        site_include: Optional[List[str]] = None,
++        site_exclude: Optional[List[str]] = None,
++        time_range: Optional[str] = None,
++        country_include: Optional[List[str]] = None,
++        language_include: Optional[List[str]] = None,
++    ) -> Dict[str, Any]:
++        r"""Use Querit search API to search information for the given query.
++
++        Querit (https://www.querit.ai) provides a web search API that returns
++        relevant search results including titles, snippets, URLs, and metadata
++        such as site names, favicons, and page ages.
++
++        Args:
++            query (str): The search query string.
++            number_of_result_pages (int): The maximum number of search results
++                to return. Adjust this based on your task - use fewer results
++                for focused searches and more for comprehensive searches.
++                (default: :obj:`10`)
++            site_include (Optional[List[str]]): List of websites to include,
++                only fetch data from these sites. For example:
++                ``["github.com", "stackoverflow.com"]``.
++                (default: :obj:`None`)
++            site_exclude (Optional[List[str]]): List of websites to exclude,
++                do not fetch data from these sites.
++                (default: :obj:`None`)
++            time_range (Optional[str]): Time range filter for search results.
++                Supported formats:
++
++                - ``d[number]``: Results from the past specified number of
++                  days (e.g., ``"d7"`` for the past 7 days).
++                - ``w[number]``: Results from the past specified number of
++                  weeks.
++                - ``m[number]``: Results from the past specified number of
++                  months.
++                - ``y[number]``: Results from the past specified number of
++                  years.
++                - ``YYYY-MM-DDtoYYYY-MM-DD``: Results within a specified
++                  date range (e.g., ``"2024-01-01to2024-06-30"``).
++
++                (default: :obj:`None`)
++            country_include (Optional[List[str]]): List of countries to include
++                in the results. Available options: ``"argentina"``,
++                ``"australia"``, ``"brazil"``, ``"canada"``, ``"colombia"``,
++                ``"france"``, ``"germany"``, ``"india"``, ``"indonesia"``,
++                ``"japan"``, ``"mexico"``, ``"nigeria"``, ``"philippines"``,
++                ``"south korea"``, ``"spain"``, ``"united kingdom"``,
++                ``"united states"``.
++                (default: :obj:`None`)
++            language_include (Optional[List[str]]): List of languages to
++                include in the results. Available options: ``"english"``,
++                ``"japanese"``, ``"korean"``, ``"german"``, ``"french"``,
++                ``"spanish"``, ``"portuguese"``.
++                (default: :obj:`None`)
++
++        Returns:
++            Dict[str, Any]: A dictionary containing either:
++
++                - 'results': A list of dictionaries, each with:
++
++                    - 'result_id': The index of the result (starting from 1).
++                    - 'title': The title of the search result.
++                    - 'snippet': A brief snippet from the web page.
++                    - 'url': The URL of the search result.
++                    - 'site_name': The website name.
++                    - 'site_icon': The favicon URL of the website.
++                    - 'page_age': The age of the web page (UTC+0).
++
++                - 'search_id': A unique request reference ID.
++                - 'took': The server-side response time.
++                - or 'error': An error message if something went wrong.
++        """
++        import json
++
++        QUERIT_API_KEY = os.getenv("QUERIT_API_KEY")
++
++        url = "https://api.querit.ai/v1/search"
++        headers = {
++            "Authorization": f"Bearer {QUERIT_API_KEY}",
++            "Content-Type": "application/json",
++        }
++
++        payload: Dict[str, Any] = {
++            "query": query,
++            "count": number_of_result_pages,
++        }
++
++        # Build filters object only if any filter is specified
++        filters: Dict[str, Any] = {}
++
++        if site_include is not None or site_exclude is not None:
++            filters["sites"] = {
++                "include": site_include or [],
++                "exclude": site_exclude or [],
++            }
++
++        if time_range is not None:
++            filters["timeRange"] = {"date": time_range}
++
++        if country_include is not None:
++            filters["geo"] = {"countries": {"include": country_include}}
++
++        if language_include is not None:
++            filters["languages"] = {"include": language_include}
++
++        if filters:
++            payload["filters"] = filters
++
++        try:
++            response = requests.post(
++                url,
++                headers=headers,
++                data=json.dumps(payload, ensure_ascii=False),
++                timeout=self.timeout,
++            )
++
++            if response.status_code != 200:
++                return {
++                    "error": (
++                        f"Querit API failed with status "
++                        f"{response.status_code}: {response.text}"
++                    )
++                }
++
++            data = response.json()
++
++            # Check for API-level errors
++            error_code = data.get("error_code", 200)
++            if error_code != 200:
++                return {
++                    "error": (
++                        f"Querit API error {error_code}: "
++                        f"{data.get('error_msg', 'Unknown error')}"
++                    )
++                }
++
++            # Parse results into CAMEL-consistent format
++            raw_results = data.get("results", {}).get("result", [])
++            results = []
++            for idx, item in enumerate(raw_results, 1):
++                results.append(
++                    {
++                        "result_id": idx,
++                        "title": item.get("title", ""),
++                        "snippet": item.get("snippet", ""),
++                        "url": item.get("url", ""),
++                        "site_name": item.get("site_name", ""),
++                        "site_icon": item.get("site_icon", ""),
++                        "page_age": item.get("page_age", ""),
++                    }
++                )
++
++            return {
++                "took": data.get("took", ""),
++                "search_id": data.get("search_id", 0),
++                "results": results,
++            }
++
++        except requests.exceptions.RequestException as e:
++            return {"error": f"Querit search request failed: {e!s}"}
++        except Exception as e:
++            return {
++                "error": f"Unexpected error during Querit search: {e!s}"
++            }
++
+     def get_tools(self) -> List[FunctionTool]:
+         r"""Returns a list of FunctionTool objects representing the
+         functions in the toolkit.
+@@ -1522,6 +1691,7 @@ class SearchToolkit(BaseToolkit):
+             FunctionTool(self.search_alibaba_tongxiao),
+             FunctionTool(self.search_metaso),
+             FunctionTool(self.search_serpapi),
++            FunctionTool(self.search_querit),
+         ]
+ 
+     # Deprecated method alias for backward compatibility
+diff --git a/camel/utils/commons.py b/camel/utils/commons.py
+index 179148b4..a8a2a1ad 100644
+--- a/camel/utils/commons.py
++++ b/camel/utils/commons.py
+@@ -340,6 +340,7 @@ def api_keys_required(
+                     'KLAVIS_API_KEY': "https://www.klavis.ai/docs",
+                     'XAI_API_KEY': "https://docs.x.ai/docs/overview",
+                     'AVIAN_API_KEY': "https://avian.io",
++                    'QUERIT_API_KEY': "https://www.querit.ai/en/dashboard/home",
+                 }
+                 key_way = env_key_urls.get(
+                     missing_keys[0], "the official website"
+diff --git a/examples/toolkits/search_toolkit.py b/examples/toolkits/search_toolkit.py
+index 942b68ab..e57da3a8 100644
+--- a/examples/toolkits/search_toolkit.py
++++ b/examples/toolkits/search_toolkit.py
+@@ -514,3 +514,45 @@ rising investments linked to fault-tolerant performance and heightened ...',
+ images=None)], 'external_tool_call_requests': None}
+ ===============================================================================
+ """
++
++# Example using Querit search
++querit_response = SearchToolkit().search_querit(
++    query="What is CAMEL-AI?",
++    number_of_result_pages=5,
++)
++print(querit_response)
++"""
++===============================================================================
++{'took': '156ms', 'search_id': 98765, 'results': [
++    {'result_id': 1, 'title': 'CAMEL-AI: First Multi-Agent Framework',
++     'snippet': 'CAMEL-AI is an open-source framework for building
++     multi-agent AI systems...', 'url': 'https://www.camel-ai.org/',
++     'site_name': 'camel-ai.org',
++     'site_icon': 'https://www.camel-ai.org/favicon.ico',
++     'page_age': '2025-01-15T10:30:00Z'},
++    ...
++]}
++===============================================================================
++"""
++
++# Example using Querit search with filters
++querit_filtered_response = SearchToolkit().search_querit(
++    query="multi-agent AI framework",
++    number_of_result_pages=10,
++    site_include=["github.com", "arxiv.org"],
++    time_range="m6",
++    language_include=["english"],
++)
++print(querit_filtered_response)
++
++# Example with ChatAgent using Querit search
++querit_agent = ChatAgent(
++    system_message="""You are a helpful assistant that can use Querit search
++        engine to answer questions.""",
++    tools=[FunctionTool(SearchToolkit().search_querit)],
++)
++
++usr_msg = "What are the latest developments in multi-agent AI systems?"
++response = querit_agent.step(input_message=usr_msg, response_format=None)
++print(response.msgs[0].content)
++
+diff --git a/test/toolkits/test_search_functions.py b/test/toolkits/test_search_functions.py
+index b11a7f94..240a561e 100644
+--- a/test/toolkits/test_search_functions.py
++++ b/test/toolkits/test_search_functions.py
+@@ -975,3 +975,213 @@ def test_search_serper_http_error(mock_post, search_toolkit):
+     assert "error" in result
+     assert "Serper API failed with status 401" in result["error"]
+     assert "Invalid API key" in result["error"]
++
++
++# ==================== Querit Search Tests ====================
++
++
++@patch('requests.post')
++def test_search_querit_success(mock_post, search_toolkit):
++    """Test successful Querit search."""
++    mock_response = MagicMock()
++    mock_response.status_code = 200
++    mock_response.json.return_value = {
++        "took": "120ms",
++        "error_code": 200,
++        "error_msg": "",
++        "search_id": 12345,
++        "query_context": {"query": "CAMEL-AI"},
++        "results": {
++            "result": [
++                {
++                    "url": "https://www.camel-ai.org/",
++                    "page_age": "2025-01-15T10:30:00Z",
++                    "title": "CAMEL-AI: First Multi-Agent Framework",
++                    "snippet": "CAMEL-AI is an open-source framework...",
++                    "site_name": "camel-ai.org",
++                    "site_icon": "https://www.camel-ai.org/favicon.ico",
++                },
++                {
++                    "url": "https://github.com/camel-ai/camel",
++                    "page_age": "2025-03-20T08:00:00Z",
++                    "title": "camel-ai/camel: Multi-Agent Framework",
++                    "snippet": "Finding the Scaling Law of Agents...",
++                    "site_name": "github.com",
++                    "site_icon": "https://github.com/favicon.ico",
++                },
++            ]
++        },
++    }
++    mock_post.return_value = mock_response
++
++    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_api_key'}):
++        result = search_toolkit.search_querit(query="CAMEL-AI")
++
++    assert "results" in result
++    assert len(result["results"]) == 2
++    assert result["took"] == "120ms"
++    assert result["search_id"] == 12345
++    assert result["results"][0] == {
++        "result_id": 1,
++        "title": "CAMEL-AI: First Multi-Agent Framework",
++        "snippet": "CAMEL-AI is an open-source framework...",
++        "url": "https://www.camel-ai.org/",
++        "site_name": "camel-ai.org",
++        "site_icon": "https://www.camel-ai.org/favicon.ico",
++        "page_age": "2025-01-15T10:30:00Z",
++    }
++
++    # Verify the request was made correctly
++    mock_post.assert_called_once()
++    args, kwargs = mock_post.call_args
++    assert args[0] == "https://api.querit.ai/v1/search"
++    assert kwargs['headers']['Authorization'] == 'Bearer fake_api_key'
++    assert kwargs['headers']['Content-Type'] == 'application/json'
++    assert 'timeout' in kwargs
++
++
++@patch('requests.post')
++def test_search_querit_with_filters(mock_post, search_toolkit):
++    """Test Querit search with all filter parameters."""
++    mock_response = MagicMock()
++    mock_response.status_code = 200
++    mock_response.json.return_value = {
++        "took": "80ms",
++        "error_code": 200,
++        "error_msg": "",
++        "search_id": 12346,
++        "query_context": {"query": "AI agents"},
++        "results": {"result": []},
++    }
++    mock_post.return_value = mock_response
++
++    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_api_key'}):
++        search_toolkit.search_querit(
++            query="AI agents",
++            number_of_result_pages=5,
++            site_include=["github.com"],
++            site_exclude=["reddit.com"],
++            time_range="m3",
++            country_include=["united states"],
++            language_include=["english"],
++        )
++
++    # Verify the payload contains correct filter parameters
++    import json
++
++    call_args = mock_post.call_args
++    payload = json.loads(call_args[1]['data'])
++
++    assert payload["query"] == "AI agents"
++    assert payload["count"] == 5
++    assert payload["filters"]["sites"]["include"] == ["github.com"]
++    assert payload["filters"]["sites"]["exclude"] == ["reddit.com"]
++    assert payload["filters"]["timeRange"]["date"] == "m3"
++    assert payload["filters"]["geo"]["countries"]["include"] == [
++        "united states"
++    ]
++    assert payload["filters"]["languages"]["include"] == ["english"]
++
++
++@patch('requests.post')
++def test_search_querit_no_filters(mock_post, search_toolkit):
++    """Test Querit search without filters omits filters key."""
++    mock_response = MagicMock()
++    mock_response.status_code = 200
++    mock_response.json.return_value = {
++        "took": "50ms",
++        "error_code": 200,
++        "error_msg": "",
++        "search_id": 12347,
++        "query_context": {"query": "test"},
++        "results": {"result": []},
++    }
++    mock_post.return_value = mock_response
++
++    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_api_key'}):
++        search_toolkit.search_querit(query="test")
++
++    import json
++
++    call_args = mock_post.call_args
++    payload = json.loads(call_args[1]['data'])
++
++    assert "filters" not in payload
++    assert payload["query"] == "test"
++    assert payload["count"] == 10
++
++
++@patch('requests.post')
++def test_search_querit_http_error(mock_post, search_toolkit):
++    """Test HTTP error handling in Querit search."""
++    mock_response = MagicMock()
++    mock_response.status_code = 401
++    mock_response.text = '{"error": "Unauthorized"}'
++    mock_post.return_value = mock_response
++
++    with patch.dict(os.environ, {'QUERIT_API_KEY': 'invalid_key'}):
++        result = search_toolkit.search_querit(query="test")
++
++    assert "error" in result
++    assert "401" in result["error"]
++
++
++@patch('requests.post')
++def test_search_querit_api_error(mock_post, search_toolkit):
++    """Test API-level error handling in Querit search."""
++    mock_response = MagicMock()
++    mock_response.status_code = 200
++    mock_response.json.return_value = {
++        "took": "10ms",
++        "error_code": 429,
++        "error_msg": "Rate limit exceeded",
++        "search_id": 0,
++        "query_context": {"query": "test"},
++        "results": {"result": []},
++    }
++    mock_post.return_value = mock_response
++
++    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_key'}):
++        result = search_toolkit.search_querit(query="test")
++
++    assert "error" in result
++    assert "429" in result["error"]
++    assert "Rate limit exceeded" in result["error"]
++
++
++@patch('requests.post')
++def test_search_querit_request_exception(mock_post, search_toolkit):
++    """Test request exception handling in Querit search."""
++    mock_post.side_effect = requests.exceptions.Timeout(
++        "Connection timed out"
++    )
++
++    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_key'}):
++        result = search_toolkit.search_querit(query="test")
++
++    assert "error" in result
++    assert "Querit search request failed" in result["error"]
++
++
++@patch('requests.post')
++def test_search_querit_empty_results(mock_post, search_toolkit):
++    """Test empty results handling in Querit search."""
++    mock_response = MagicMock()
++    mock_response.status_code = 200
++    mock_response.json.return_value = {
++        "took": "30ms",
++        "error_code": 200,
++        "error_msg": "",
++        "search_id": 12348,
++        "query_context": {"query": "xyznonexistent"},
++        "results": {"result": []},
++    }
++    mock_post.return_value = mock_response
++
++    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_key'}):
++        result = search_toolkit.search_querit(query="xyznonexistent")
++
++    assert "results" in result
++    assert len(result["results"]) == 0
++    assert result["search_id"] == 12348
++

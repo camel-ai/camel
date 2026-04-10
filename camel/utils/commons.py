@@ -340,6 +340,7 @@ def api_keys_required(
                     'KLAVIS_API_KEY': "https://www.klavis.ai/docs",
                     'XAI_API_KEY': "https://docs.x.ai/docs/overview",
                     'AVIAN_API_KEY': "https://avian.io",
+                    'QUERIT_API_KEY': "https://www.querit.ai/en/dashboard/home",
                 }
                 key_way = env_key_urls.get(
                     missing_keys[0], "the official website"
