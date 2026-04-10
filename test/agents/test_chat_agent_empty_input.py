@@ -6,6 +6,7 @@ from camel.types import RoleType
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
+
 @pytest.fixture
 def agent():
     model = ModelFactory.create(
