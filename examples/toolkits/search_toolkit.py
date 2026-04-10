@@ -555,4 +555,3 @@ querit_agent = ChatAgent(
 usr_msg = "What are the latest developments in multi-agent AI systems?"
 response = querit_agent.step(input_message=usr_msg, response_format=None)
 print(response.msgs[0].content)
-

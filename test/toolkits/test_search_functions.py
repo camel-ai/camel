@@ -1152,9 +1152,7 @@ def test_search_querit_api_error(mock_post, search_toolkit):
 @patch('requests.post')
 def test_search_querit_request_exception(mock_post, search_toolkit):
     """Test request exception handling in Querit search."""
-    mock_post.side_effect = requests.exceptions.Timeout(
-        "Connection timed out"
-    )
+    mock_post.side_effect = requests.exceptions.Timeout("Connection timed out")
 
     with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_key'}):
         result = search_toolkit.search_querit(query="test")
@@ -1184,4 +1182,3 @@ def test_search_querit_empty_results(mock_post, search_toolkit):
     assert "results" in result
     assert len(result["results"]) == 0
     assert result["search_id"] == 12348
-

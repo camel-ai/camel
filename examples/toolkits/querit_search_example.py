@@ -64,7 +64,7 @@ result_filtered = toolkit.search_querit(
     query="multi-agent AI framework",
     number_of_result_pages=5,
     site_include=["github.com", "arxiv.org"],
-    time_range="m6",                    # past 6 months
+    time_range="m6",  # past 6 months
     language_include=["english"],
 )
 print(f"Search ID : {result_filtered.get('search_id')}")
@@ -110,5 +110,7 @@ agent = ChatAgent(
     tools=[FunctionTool(toolkit.search_querit)],
 )
 
-response = agent.step("What are the latest breakthroughs in multi-agent AI systems in 2025?")
+response = agent.step(
+    "What are the latest breakthroughs in multi-agent AI systems in 2025?"
+)
 print(response.msgs[0].content)
