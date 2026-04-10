@@ -2855,6 +2855,20 @@ class ChatAgent(BaseAgent):
 
         stream = self.model_backend.model_config_dict.get("stream", False)
 
+        if input_message is None or (
+            isinstance(input_message, str) and not input_message.strip()
+        ):
+            return ChatAgentResponse(
+                msgs=[
+                    BaseMessage.make_assistant_message(
+                        role_name="assistant",
+                        content="Please provide a valid input."
+                    )
+                ],
+                terminated=False,
+                info={"error": "empty_input"}
+            )
+        
         if stream:
             # Return wrapped generator that has ChatAgentResponse interface
             generator = self._stream(input_message, response_format)
