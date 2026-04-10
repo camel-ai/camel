@@ -62,7 +62,8 @@ class AnthropicConfig(BaseConfig):
             (default: :obj:`None`)
         cache_control (Optional[Literal["5m", "1h"]], optional): The cache
             control TTL for prompt caching. Use '5m' for 5-minute cache or
-            '1h' for 1-hour cache. (default: :obj:`None`)
+            '1h' for 1-hour cache. Set to :obj:`None` to disable prompt
+            caching. (default: :obj:`"5m"`)
         extra_headers (Optional[dict], optional): Additional headers for the
             request. (default: :obj:`None`)
         extra_body (dict, optional): Extra body parameters to be passed to
@@ -77,7 +78,7 @@ class AnthropicConfig(BaseConfig):
     stream: Optional[bool] = None
     metadata: Optional[dict] = None
     tool_choice: Optional[dict] = None
-    cache_control: Optional[Literal["5m", "1h"]] = None
+    cache_control: Optional[Literal["5m", "1h"]] = "5m"
     extra_headers: Optional[dict] = None
     extra_body: Optional[dict] = None
 
