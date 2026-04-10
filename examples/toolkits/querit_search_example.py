@@ -38,7 +38,7 @@ if not os.getenv("QUERIT_API_KEY"):
 
 toolkit = SearchToolkit()
 
-# ── 1. Basic search ───────────────────────────────────────────────────────────
+# ── 1. Basic search ──────────────────────────────────────────────────────────
 print("=" * 60)
 print("Example 1: Basic search")
 print("=" * 60)
@@ -55,7 +55,7 @@ for item in result.get("results", []):
     print(f"    Snippet : {item['snippet'][:100]}...")
     print(f"    Age     : {item['page_age']}")
 
-# ── 2. Search with filters ────────────────────────────────────────────────────
+# ── 2. Search with filters ───────────────────────────────────────────────────
 print("\n" + "=" * 60)
 print("Example 2: Search with filters (site / time / language)")
 print("=" * 60)
@@ -73,7 +73,7 @@ for item in result_filtered.get("results", []):
     print(f"\n[{item['result_id']}] {item['title']}")
     print(f"    URL : {item['url']}")
 
-# ── 3. Search with geo filter ─────────────────────────────────────────────────
+# ── 3. Search with geo filter ────────────────────────────────────────────────
 print("\n" + "=" * 60)
 print("Example 3: Search with geo + date range filter")
 print("=" * 60)
@@ -90,7 +90,7 @@ for item in result_geo.get("results", []):
     print(f"\n[{item['result_id']}] {item['title']}")
     print(f"    URL : {item['url']}")
 
-# ── 4. ChatAgent with Querit tool ─────────────────────────────────────────────
+# ── 4. ChatAgent with Querit tool ────────────────────────────────────────────
 print("\n" + "=" * 60)
 print("Example 4: ChatAgent using Querit as a tool")
 print("=" * 60)
