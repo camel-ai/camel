@@ -23,6 +23,14 @@ class HuggingFaceToolAgent(BaseToolAgent):
         about the available models, please see the `transformers` documentation
         at https://huggingface.co/docs/transformers/transformers_agents.
 
+    .. note::
+        As of ``transformers`` v5, the ``transformers.tools`` subpackage
+        (including ``OpenAiAgent``) was removed from the library. Installing
+        v5 therefore makes this class unusable; use ``transformers`` 4.x
+        if you still need ``HuggingFaceToolAgent``, or migrate to another
+        tool-calling stack. Importing this class under v5 raises
+        :class:`ImportError` with migration guidance.
+
     Args:
         name (str): The name of the agent.
         *args (Any): Additional positional arguments to pass to the underlying
@@ -42,24 +50,18 @@ class HuggingFaceToolAgent(BaseToolAgent):
     ) -> None:
         try:
             # TODO: Support other tool agents
-            import transformers
-            from packaging import version
-
-            if version.parse(transformers.__version__) < version.parse(
-                "4.31.0"
-            ):
-                raise ValueError(
-                    "The version of \"transformers\" package should >= 4.31.0"
-                )
-
+            # NOTE: transformers.tools (OpenAiAgent) was removed in
+            # transformers v5. This agent requires transformers>=4.31.0,<5.
             from transformers.tools import OpenAiAgent
             from transformers.tools.agent_types import AgentImage
-        except (ImportError, ValueError):
-            raise ValueError(
-                "Could not import transformers tool agents. "
-                "Please setup the environment with "
-                "pip install huggingface_hub==0.14.1 transformers==4.31.0 diffusers accelerate==0.20.3 datasets torch soundfile sentencepiece opencv-python"
-            )
+        except ImportError as err:
+            raise ImportError(
+                "Could not import `transformers.tools` (e.g. `OpenAiAgent`). "
+                "That API was removed in transformers v5. To use "
+                "HuggingFaceToolAgent, pin transformers to 4.x, for example: "
+                'pip install "transformers>=4.31.0,<5" diffusers accelerate '
+                "datasets torch soundfile sentencepiece opencv-python"
+            ) from err
         self.agent_image_type = AgentImage
         self.agent = OpenAiAgent(*args, **kwargs)
         description = f"""The `{name}` is a tool agent that can perform a variety of tasks including:

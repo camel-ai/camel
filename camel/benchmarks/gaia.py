@@ -155,7 +155,6 @@ class GAIABenchmark(BaseBenchmark):
             repo_id="gaia-benchmark/GAIA",
             repo_type="dataset",
             local_dir=self.data_dir,
-            local_dir_use_symlinks=True,
         )
 
     def load(self, force_download=False):

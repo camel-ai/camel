@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Mapping, Optional, Union, cast
 
 import torch
 
@@ -76,7 +76,17 @@ class SkyworkRewardModel(BaseRewardModel):
             return_tensors="pt",
         )
         with torch.no_grad():
-            score = self._client(inputs).logits[0][0].item()
+            # apply_chat_template(..., tokenize=True, return_tensors="pt")
+            # returns BatchEncoding (UserDict), not builtins.dict; use
+            # **kwargs. Pass a raw tensor positionally for older paths.
+            if isinstance(inputs, torch.Tensor):
+                score = self._client(inputs).logits[0][0].item()
+            else:
+                score = (
+                    self._client(**cast(Mapping[str, object], inputs))
+                    .logits[0][0]
+                    .item()
+                )
             return {"Score": score}
 
     def get_scores_types(self) -> List[str]:
