@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import copy
 import json
 import os
 import time
-import warnings
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from openai import AsyncStream, Stream
@@ -119,8 +119,9 @@ class AnthropicModel(BaseModelBackend):
         async_client (Optional[Any], optional): A custom asynchronous Anthropic
             client instance. If provided, this client will be used instead of
             creating a new one. (default: :obj:`None`)
-        use_beta_for_structured_outputs (bool, optional): Whether to use the
-            beta API for structured outputs. (default: :obj:`False`)
+        use_beta_for_structured_outputs (bool, optional): Whether to send the
+            legacy beta header for structured outputs for backward-compatible
+            endpoints. (default: :obj:`False`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
     """
@@ -338,8 +339,39 @@ class AnthropicModel(BaseModelBackend):
 
         return system_message, anthropic_messages  # type: ignore[return-value]
 
+    @staticmethod
+    def _ensure_additional_properties_false(schema: Any) -> None:
+        r"""Recursively enforce strict object schemas."""
+        if isinstance(schema, dict):
+            if (
+                schema.get("type") == "object"
+                and "additionalProperties" not in schema
+            ):
+                schema["additionalProperties"] = False
+
+            for value in schema.values():
+                AnthropicModel._ensure_additional_properties_false(value)
+        elif isinstance(schema, list):
+            for item in schema:
+                AnthropicModel._ensure_additional_properties_false(item)
+
+    def _build_output_config(
+        self, response_format: Type[BaseModel]
+    ) -> Dict[str, Any]:
+        r"""Build Anthropic output_config.format from a Pydantic model."""
+        schema = copy.deepcopy(response_format.model_json_schema())
+        self._ensure_additional_properties_false(schema)
+        return {
+            "format": {
+                "type": "json_schema",
+                "schema": schema,
+            }
+        }
+
     def _convert_anthropic_to_openai_response(
-        self, response: Any, model: str
+        self,
+        response: Any,
+        model: str,
     ) -> ChatCompletion:
         r"""Convert Anthropic API response to OpenAI ChatCompletion format.
 
@@ -369,6 +401,7 @@ class AnthropicModel(BaseModelBackend):
                             tool_input = (
                                 block.input if hasattr(block, "input") else {}
                             )
+                            tool_name = getattr(block, "name", "")
                             tool_calls_list.append(
                                 {
                                     "id": block.id
@@ -376,9 +409,7 @@ class AnthropicModel(BaseModelBackend):
                                     else "",
                                     "type": "function",
                                     "function": {
-                                        "name": block.name
-                                        if hasattr(block, "name")
-                                        else "",
+                                        "name": tool_name,
                                         "arguments": json.dumps(tool_input)
                                         if isinstance(tool_input, dict)
                                         else str(tool_input),
@@ -390,12 +421,13 @@ class AnthropicModel(BaseModelBackend):
                             text_parts.append(block.get("text", ""))
                         elif block.get("type") == "tool_use":
                             tool_input = block.get("input", {})
+                            tool_name = block.get("name", "")
                             tool_calls_list.append(
                                 {
                                     "id": block.get("id", ""),
                                     "type": "function",
                                     "function": {
-                                        "name": block.get("name", ""),
+                                        "name": tool_name,
                                         "arguments": json.dumps(tool_input)
                                         if isinstance(tool_input, dict)
                                         else str(tool_input),
@@ -509,6 +541,7 @@ class AnthropicModel(BaseModelBackend):
                         # Tool use block starting
                         tool_id = getattr(block, "id", "")
                         tool_name = getattr(block, "name", "")
+                        chunk_idx = getattr(chunk, "index", 0)
                         # Assign index for this tool call
                         idx = len(
                             [
@@ -519,7 +552,6 @@ class AnthropicModel(BaseModelBackend):
                         )
                         tool_call_index[tool_id] = idx
                         # Also map by chunk.index for content_block_delta
-                        chunk_idx = getattr(chunk, "index", 0)
                         tool_call_index[f"_chunk_{chunk_idx}"] = idx
                         tool_calls = [
                             {
@@ -659,7 +691,7 @@ class AnthropicModel(BaseModelBackend):
                     "description": func.get("description", ""),
                     "input_schema": func.get("parameters", {}),
                 }
-                if self._use_beta_for_structured_outputs:
+                if "strict" in func:
                     anthropic_tool["strict"] = func.get("strict", True)
                 anthropic_tools.append(anthropic_tool)
 
@@ -678,7 +710,8 @@ class AnthropicModel(BaseModelBackend):
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
             response_format (Optional[Type[BaseModel]]): The format of the
-                response. (Not supported by Anthropic API directly)
+                response. When provided, CAMEL sends Anthropic's
+                ``output_config.format`` via ``extra_body``.
             tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
                 use for the request.
 
@@ -687,15 +720,6 @@ class AnthropicModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        if response_format is not None:
-            warnings.warn(
-                "The 'response_format' parameter is not supported by the "
-                "Anthropic API and will be ignored. Consider using tools "
-                "for structured output instead.",
-                UserWarning,
-                stacklevel=2,
-            )
-
         # Update Langfuse trace with current agent session and metadata
         agent_session_id = get_current_agent_session_id()
         if agent_session_id:
@@ -760,14 +784,37 @@ class AnthropicModel(BaseModelBackend):
                         ] = self._cache_control_config
 
         # Add config parameters
-        for key in ["temperature", "top_p", "top_k", "stop_sequences"]:
+        for key in [
+            "temperature",
+            "top_p",
+            "top_k",
+            "stop_sequences",
+            "metadata",
+        ]:
             if key in self.model_config_dict:
                 request_params[key] = self.model_config_dict[key]
+
+        extra_headers = self.model_config_dict.get("extra_headers")
+        if extra_headers is not None:
+            request_params["extra_headers"] = extra_headers
+
+        extra_body = copy.deepcopy(
+            self.model_config_dict.get("extra_body") or {}
+        )
+        if response_format is not None:
+            extra_body["output_config"] = self._build_output_config(
+                response_format
+            )
+        if extra_body:
+            request_params["extra_body"] = extra_body
 
         # Convert tools
         anthropic_tools = self._convert_openai_tools_to_anthropic(tools)
         if anthropic_tools:
             request_params["tools"] = anthropic_tools
+            tool_choice = self.model_config_dict.get("tool_choice")
+            if tool_choice is not None:
+                request_params["tool_choice"] = tool_choice
 
         # Add beta for structured outputs if configured
         if self._use_beta_for_structured_outputs:
@@ -807,7 +854,8 @@ class AnthropicModel(BaseModelBackend):
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
             response_format (Optional[Type[BaseModel]]): The format of the
-                response. (Not supported by Anthropic API directly)
+                response. When provided, CAMEL sends Anthropic's
+                ``output_config.format`` via ``extra_body``.
             tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
                 use for the request.
 
@@ -816,15 +864,6 @@ class AnthropicModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        if response_format is not None:
-            warnings.warn(
-                "The 'response_format' parameter is not supported by the "
-                "Anthropic API and will be ignored. Consider using tools "
-                "for structured output instead.",
-                UserWarning,
-                stacklevel=2,
-            )
-
         # Update Langfuse trace with current agent session and metadata
         agent_session_id = get_current_agent_session_id()
         if agent_session_id:
@@ -889,14 +928,37 @@ class AnthropicModel(BaseModelBackend):
                         ] = self._cache_control_config
 
         # Add config parameters
-        for key in ["temperature", "top_p", "top_k", "stop_sequences"]:
+        for key in [
+            "temperature",
+            "top_p",
+            "top_k",
+            "stop_sequences",
+            "metadata",
+        ]:
             if key in self.model_config_dict:
                 request_params[key] = self.model_config_dict[key]
+
+        extra_headers = self.model_config_dict.get("extra_headers")
+        if extra_headers is not None:
+            request_params["extra_headers"] = extra_headers
+
+        extra_body = copy.deepcopy(
+            self.model_config_dict.get("extra_body") or {}
+        )
+        if response_format is not None:
+            extra_body["output_config"] = self._build_output_config(
+                response_format
+            )
+        if extra_body:
+            request_params["extra_body"] = extra_body
 
         # Convert tools
         anthropic_tools = self._convert_openai_tools_to_anthropic(tools)
         if anthropic_tools:
             request_params["tools"] = anthropic_tools
+            tool_choice = self.model_config_dict.get("tool_choice")
+            if tool_choice is not None:
+                request_params["tool_choice"] = tool_choice
 
         # Add beta for structured outputs if configured
         if self._use_beta_for_structured_outputs:
@@ -926,7 +988,9 @@ class AnthropicModel(BaseModelBackend):
             )
 
     def _wrap_anthropic_stream(
-        self, stream: Any, model: str
+        self,
+        stream: Any,
+        model: str,
     ) -> Stream[ChatCompletionChunk]:
         r"""Wrap Anthropic streaming response to OpenAI Stream format.
 
@@ -943,7 +1007,10 @@ class AnthropicModel(BaseModelBackend):
             finish_reason_sent = False
             for chunk in stream:
                 converted = self._convert_anthropic_stream_to_openai_chunk(
-                    chunk, model, tool_call_index, finish_reason_sent
+                    chunk,
+                    model,
+                    tool_call_index,
+                    finish_reason_sent,
                 )
                 # Track if we've sent a finish_reason to avoid duplicates
                 if converted.choices:
@@ -960,7 +1027,9 @@ class AnthropicModel(BaseModelBackend):
         return cast(Stream[ChatCompletionChunk], _generate_chunks())
 
     def _wrap_anthropic_async_stream(
-        self, stream: Any, model: str
+        self,
+        stream: Any,
+        model: str,
     ) -> AsyncStream[ChatCompletionChunk]:
         r"""Wrap Anthropic async streaming response to OpenAI AsyncStream.
 
@@ -977,7 +1046,10 @@ class AnthropicModel(BaseModelBackend):
             finish_reason_sent = False
             async for chunk in stream:
                 converted = self._convert_anthropic_stream_to_openai_chunk(
-                    chunk, model, tool_call_index, finish_reason_sent
+                    chunk,
+                    model,
+                    tool_call_index,
+                    finish_reason_sent,
                 )
                 # Track if we've sent a finish_reason to avoid duplicates
                 if converted.choices:

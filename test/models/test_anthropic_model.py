@@ -15,10 +15,12 @@
 from unittest.mock import MagicMock
 
 import pytest
+from pydantic import BaseModel
 
 from camel.configs import AnthropicConfig
 from camel.models import AnthropicModel
 from camel.models.anthropic_model import (
+    ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS,
     strip_trailing_whitespace_from_messages,
 )
 from camel.types import ModelType
@@ -26,6 +28,10 @@ from camel.utils import AnthropicTokenCounter, BaseTokenCounter
 
 # Skip all tests in this module if the anthropic package is not available.
 pytest.importorskip("anthropic", reason="anthropic package is required")
+
+
+class TravelResponse(BaseModel):
+    city: str
 
 
 @pytest.mark.model_backend
@@ -442,12 +448,11 @@ def test_convert_tools_basic():
     assert result[0]["input_schema"]["type"] == "object"
 
 
-def test_convert_tools_with_beta_structured_outputs():
-    """Test tool conversion with beta structured outputs enabled."""
+def test_convert_tools_preserves_strict_flag():
+    """Test tool conversion preserves the strict field."""
     model = AnthropicModel(
         ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
-        use_beta_for_structured_outputs=True,
     )
 
     openai_tools = [
@@ -614,3 +619,127 @@ def test_use_beta_for_structured_outputs():
     )
 
     assert model._use_beta_for_structured_outputs is True
+
+
+def test_build_output_config_enforces_additional_properties_false():
+    """Test output_config generation for structured outputs."""
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        api_key="dummy_api_key",
+    )
+
+    output_config = model._build_output_config(TravelResponse)
+
+    assert output_config["format"]["type"] == "json_schema"
+    schema = output_config["format"]["schema"]
+    assert schema["type"] == "object"
+    assert schema["additionalProperties"] is False
+    assert "city" in schema["properties"]
+
+
+def test_run_passes_output_config_tool_choice_and_extra_fields():
+    """Test Anthropic request payload for structured outputs with tools."""
+    mock_client = MagicMock()
+    mock_async_client = MagicMock()
+
+    mock_response = MagicMock()
+    mock_response.content = [{"type": "text", "text": '{"city":"Kyoto"}'}]
+    mock_response.stop_reason = "end_turn"
+    mock_response.id = "msg_structured"
+    mock_response.usage = MagicMock()
+    mock_response.usage.input_tokens = 12
+    mock_response.usage.output_tokens = 4
+    mock_client.messages.create.return_value = mock_response
+
+    config = AnthropicConfig(
+        max_tokens=128,
+        tool_choice={"type": "auto"},
+        extra_headers={"x-test-header": "1"},
+        extra_body={"existing": True},
+    ).as_dict()
+
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        model_config_dict=config,
+        api_key="dummy_api_key",
+        client=mock_client,
+        async_client=mock_async_client,
+    )
+
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get weather",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {"type": "string"},
+                    },
+                    "required": ["location"],
+                },
+                "strict": True,
+            },
+        }
+    ]
+
+    result = model._run(
+        messages=[{"role": "user", "content": "Plan a trip"}],
+        response_format=TravelResponse,
+        tools=tools,
+    )
+
+    request_kwargs = mock_client.messages.create.call_args.kwargs
+
+    assert request_kwargs["tool_choice"] == {"type": "auto"}
+    assert request_kwargs["extra_headers"] == {"x-test-header": "1"}
+    assert request_kwargs["extra_body"]["existing"] is True
+    assert (
+        request_kwargs["extra_body"]["output_config"]["format"]["type"]
+        == "json_schema"
+    )
+    assert (
+        request_kwargs["extra_body"]["output_config"]["format"]["schema"][
+            "additionalProperties"
+        ]
+        is False
+    )
+    assert request_kwargs["tools"][0]["strict"] is True
+    assert result.choices[0].message.content == '{"city":"Kyoto"}'
+
+
+def test_run_uses_beta_endpoint_for_legacy_structured_outputs_flag():
+    """Test legacy beta header path still works when explicitly enabled."""
+    mock_client = MagicMock()
+    mock_async_client = MagicMock()
+
+    mock_response = MagicMock()
+    mock_response.content = [{"type": "text", "text": '{"city":"Kyoto"}'}]
+    mock_response.stop_reason = "end_turn"
+    mock_response.id = "msg_structured_beta"
+    mock_response.usage = MagicMock()
+    mock_response.usage.input_tokens = 8
+    mock_response.usage.output_tokens = 3
+    mock_client.beta.messages.create.return_value = mock_response
+
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        model_config_dict=AnthropicConfig(max_tokens=64).as_dict(),
+        api_key="dummy_api_key",
+        client=mock_client,
+        async_client=mock_async_client,
+        use_beta_for_structured_outputs=True,
+    )
+
+    model._run(
+        messages=[{"role": "user", "content": "Plan a trip"}],
+        response_format=TravelResponse,
+    )
+
+    request_kwargs = mock_client.beta.messages.create.call_args.kwargs
+    assert request_kwargs["betas"] == [ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS]
+    assert (
+        request_kwargs["extra_body"]["output_config"]["format"]["type"]
+        == "json_schema"
+    )

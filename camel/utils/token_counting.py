@@ -19,6 +19,7 @@ from abc import ABC, abstractmethod
 from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
+from urllib.parse import urlparse
 
 from PIL import Image
 
@@ -313,6 +314,27 @@ class AnthropicTokenCounter(BaseTokenCounter):
 
         self.client = Anthropic(api_key=api_key, base_url=base_url)
         self.model = model
+        self.base_url = base_url
+        self._fallback_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
+
+    @staticmethod
+    def _is_official_anthropic_base_url(base_url: Optional[str]) -> bool:
+        r"""Return whether the given base URL points to Anthropic official API.
+
+        ``None`` means the Anthropic SDK default endpoint is used, which is
+        treated as official.
+        """
+        if not base_url:
+            return True
+
+        hostname = urlparse(base_url).hostname
+        if not hostname:
+            return False
+
+        hostname = hostname.lower()
+        return hostname == "api.anthropic.com" or hostname.endswith(
+            ".anthropic.com"
+        )
 
     @dependencies_required('anthropic')
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
@@ -326,6 +348,9 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
+        if not self._is_official_anthropic_base_url(self.base_url):
+            return self._fallback_counter.count_tokens_from_messages(messages)
+
         from anthropic.types import MessageParam
 
         return self.client.messages.count_tokens(

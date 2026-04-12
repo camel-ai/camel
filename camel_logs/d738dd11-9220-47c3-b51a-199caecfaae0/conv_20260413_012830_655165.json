@@ -1,0 +1,155 @@
+{
+    "request_timestamp": "2026-04-13T01:28:30.655182",
+    "model": "anthropic/claude-sonnet-4.5",
+    "agent_id": "d738dd11-9220-47c3-b51a-199caecfaae0",
+    "request": {
+        "messages": [
+            {
+                "role": "user",
+                "content": "Create a 2-day travel plan for a first-time visitor going to Kyoto. Keep it practical and budget-conscious. Return only the structured result."
+            }
+        ],
+        "model_config_dict": {
+            "max_tokens": 800,
+            "system": "You are a helpful assistant. When the user asks for structured data, keep the content concise and return data that matches the requested schema.",
+            "temperature": 0.0,
+            "extra_body": {
+                "output_config": {
+                    "format": {
+                        "type": "json_schema",
+                        "schema": {
+                            "$defs": {
+                                "Attraction": {
+                                    "properties": {
+                                        "name": {
+                                            "description": "Name of the attraction",
+                                            "title": "Name",
+                                            "type": "string"
+                                        },
+                                        "visit_duration_hours": {
+                                            "description": "Approximate visit duration in hours",
+                                            "title": "Visit Duration Hours",
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": [
+                                        "name",
+                                        "visit_duration_hours"
+                                    ],
+                                    "title": "Attraction",
+                                    "type": "object",
+                                    "additionalProperties": false
+                                },
+                                "DayPlan": {
+                                    "properties": {
+                                        "day": {
+                                            "description": "Day number starting from 1",
+                                            "title": "Day",
+                                            "type": "integer"
+                                        },
+                                        "city": {
+                                            "description": "City for this day",
+                                            "title": "City",
+                                            "type": "string"
+                                        },
+                                        "attractions": {
+                                            "description": "Main attractions planned for the day",
+                                            "items": {
+                                                "$ref": "#/$defs/Attraction"
+                                            },
+                                            "title": "Attractions",
+                                            "type": "array"
+                                        },
+                                        "food_recommendation": {
+                                            "description": "One representative local food recommendation",
+                                            "title": "Food Recommendation",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "day",
+                                        "city",
+                                        "attractions",
+                                        "food_recommendation"
+                                    ],
+                                    "title": "DayPlan",
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            },
+                            "properties": {
+                                "title": {
+                                    "description": "A short title for the trip",
+                                    "title": "Title",
+                                    "type": "string"
+                                },
+                                "total_budget_rmb": {
+                                    "description": "Estimated total budget in RMB",
+                                    "title": "Total Budget Rmb",
+                                    "type": "integer"
+                                },
+                                "packing_list": {
+                                    "description": "A compact packing checklist",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "title": "Packing List",
+                                    "type": "array"
+                                },
+                                "itinerary": {
+                                    "description": "Detailed plan for each day of the trip",
+                                    "items": {
+                                        "$ref": "#/$defs/DayPlan"
+                                    },
+                                    "title": "Itinerary",
+                                    "type": "array"
+                                }
+                            },
+                            "required": [
+                                "title",
+                                "total_budget_rmb",
+                                "packing_list",
+                                "itinerary"
+                            ],
+                            "title": "WeekendTripPlan",
+                            "type": "object",
+                            "additionalProperties": false
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "response_timestamp": "2026-04-13T01:28:39.922918",
+    "response": {
+        "id": "b459f7395c5e47bfb49f725f07702a15",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "content": "{\"title\":\"Budget-Friendly 2-Day Kyoto Discovery\",\"total_budget_rmb\":1200,\"packing_list\":[\"Comfortable walking shoes\",\"Light backpack\",\"Reusable water bottle\",\"Portable phone charger\",\"Cash (many temples cash-only)\",\"IC card for transport\",\"Light jacket\",\"Sunscreen and hat\"],\"itinerary\":[{\"day\":1,\"city\":\"Kyoto\",\"attractions\":[{\"name\":\"Fushimi Inari Shrine\",\"visit_duration_hours\":2.5},{\"name\":\"Kiyomizu-dera Temple\",\"visit_duration_hours\":2},{\"name\":\"Gion District\",\"visit_duration_hours\":1.5}],\"food_recommendation\":\"Yudofu (tofu hot pot) at a local restaurant near Kiyomizu-dera\"},{\"day\":2,\"city\":\"Kyoto\",\"attractions\":[{\"name\":\"Arashiyama Bamboo Grove\",\"visit_duration_hours\":1.5},{\"name\":\"Tenryu-ji Temple\",\"visit_duration_hours\":1.5},{\"name\":\"Kinkaku-ji (Golden Pavilion)\",\"visit_duration_hours\":1.5}],\"food_recommendation\":\"Matcha soft serve and traditional soba noodles in Arashiyama\"}]}",
+                    "refusal": null,
+                    "role": "assistant",
+                    "annotations": null,
+                    "audio": null,
+                    "function_call": null,
+                    "tool_calls": null
+                }
+            }
+        ],
+        "created": 1776014919,
+        "model": "anthropic/claude-sonnet-4.5",
+        "object": "chat.completion",
+        "service_tier": null,
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 303,
+            "prompt_tokens": 862,
+            "total_tokens": 1165,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+        }
+    }
+}
