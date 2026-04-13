@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from pydantic import BaseModel
@@ -637,6 +637,67 @@ def test_build_output_config_enforces_additional_properties_false():
     assert "city" in schema["properties"]
 
 
+def test_convert_openai_tools_to_anthropic_normalizes_strict_schema():
+    """Test strict tool schemas are normalized for Anthropic."""
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        api_key="dummy_api_key",
+    )
+
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "plan_trip",
+                "description": "Plan a trip",
+                "strict": True,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "email": {
+                            "type": "string",
+                            "format": "email",
+                            "minLength": 5,
+                        },
+                        "tags": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "uniqueItems": True,
+                        },
+                        "preferences": {
+                            "type": "object",
+                            "properties": {
+                                "season": {"type": "string"},
+                            },
+                        },
+                    },
+                    "required": ["email"],
+                },
+            },
+        }
+    ]
+
+    anthropic_tools = model._convert_openai_tools_to_anthropic(tools)
+    input_schema = anthropic_tools[0]["input_schema"]
+
+    assert input_schema["additionalProperties"] is False
+    assert (
+        input_schema["properties"]["preferences"]["additionalProperties"]
+        is False
+    )
+    assert "format" not in input_schema["properties"]["email"]
+    assert "minLength" not in input_schema["properties"]["email"]
+    assert (
+        "Must be at least 5 characters long."
+        in input_schema["properties"]["email"]["description"]
+    )
+    assert "uniqueItems" not in input_schema["properties"]["tags"]
+    assert (
+        "Items must be unique."
+        in input_schema["properties"]["tags"]["description"]
+    )
+
+
 def test_run_passes_output_config_tool_choice_and_extra_fields():
     """Test Anthropic request payload for structured outputs with tools."""
     mock_client = MagicMock()
@@ -655,7 +716,10 @@ def test_run_passes_output_config_tool_choice_and_extra_fields():
         max_tokens=128,
         tool_choice={"type": "auto"},
         extra_headers={"x-test-header": "1"},
-        extra_body={"existing": True},
+        extra_body={
+            "existing": True,
+            "output_config": {"format": {"type": "json_schema", "schema": {}}},
+        },
     ).as_dict()
 
     model = AnthropicModel(
@@ -695,18 +759,87 @@ def test_run_passes_output_config_tool_choice_and_extra_fields():
     assert request_kwargs["tool_choice"] == {"type": "auto"}
     assert request_kwargs["extra_headers"] == {"x-test-header": "1"}
     assert request_kwargs["extra_body"]["existing"] is True
+    assert "output_config" not in request_kwargs["extra_body"]
+    assert request_kwargs["output_config"]["format"]["type"] == "json_schema"
     assert (
-        request_kwargs["extra_body"]["output_config"]["format"]["type"]
-        == "json_schema"
-    )
-    assert (
-        request_kwargs["extra_body"]["output_config"]["format"]["schema"][
+        request_kwargs["output_config"]["format"]["schema"][
             "additionalProperties"
         ]
         is False
     )
     assert request_kwargs["tools"][0]["strict"] is True
     assert result.choices[0].message.content == '{"city":"Kyoto"}'
+
+
+@pytest.mark.asyncio
+async def test_arun_passes_output_config_tool_choice_and_extra_fields():
+    """Test async Anthropic request payload for structured outputs."""
+    mock_client = MagicMock()
+    mock_async_client = MagicMock()
+
+    mock_response = MagicMock()
+    mock_response.content = [{"type": "text", "text": '{"city":"Kyoto"}'}]
+    mock_response.stop_reason = "end_turn"
+    mock_response.id = "msg_structured_async"
+    mock_response.usage = MagicMock()
+    mock_response.usage.input_tokens = 7
+    mock_response.usage.output_tokens = 3
+    mock_async_client.messages.create = AsyncMock(return_value=mock_response)
+
+    config = AnthropicConfig(
+        max_tokens=128,
+        tool_choice={"type": "auto"},
+        extra_headers={"x-test-header": "1"},
+        extra_body={"existing": True},
+    ).as_dict()
+
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        model_config_dict=config,
+        api_key="dummy_api_key",
+        client=mock_client,
+        async_client=mock_async_client,
+    )
+
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get weather",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "minLength": 3,
+                        },
+                    },
+                    "required": ["location"],
+                },
+                "strict": True,
+            },
+        }
+    ]
+
+    await model._arun(
+        messages=[{"role": "user", "content": "Plan a trip"}],
+        response_format=TravelResponse,
+        tools=tools,
+    )
+
+    request_kwargs = mock_async_client.messages.create.call_args.kwargs
+
+    assert request_kwargs["tool_choice"] == {"type": "auto"}
+    assert request_kwargs["extra_headers"] == {"x-test-header": "1"}
+    assert request_kwargs["extra_body"]["existing"] is True
+    assert request_kwargs["output_config"]["format"]["type"] == "json_schema"
+    assert (
+        request_kwargs["tools"][0]["input_schema"]["properties"][
+            "location"
+        ]["description"]
+        == "Must be at least 3 characters long."
+    )
 
 
 def test_run_uses_beta_endpoint_for_legacy_structured_outputs_flag():
@@ -739,7 +872,4 @@ def test_run_uses_beta_endpoint_for_legacy_structured_outputs_flag():
 
     request_kwargs = mock_client.beta.messages.create.call_args.kwargs
     assert request_kwargs["betas"] == [ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS]
-    assert (
-        request_kwargs["extra_body"]["output_config"]["format"]["type"]
-        == "json_schema"
-    )
+    assert request_kwargs["output_config"]["format"]["type"] == "json_schema"

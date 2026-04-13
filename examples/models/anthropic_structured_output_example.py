@@ -13,7 +13,10 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 """
-End-to-end structured output check for AnthropicModel.
+Anthropic structured output + tool use example for CAMEL.
+
+This single example focuses on the most important combined scenario:
+Anthropic tool calling and ``response_format`` in the same request.
 
 Required environment variable:
     export ANTHROPIC_API_KEY="<your-anthropic-api-key>"
@@ -24,17 +27,10 @@ Optional environment variables:
 
 Run:
     python3 examples/models/anthropic_structured_output_example.py
-
-Notes:
-    CAMEL forwards ``response_format`` to Anthropic via
-    ``output_config.format`` so the model returns schema-constrained JSON.
-    For older Anthropic-compatible gateways that still require the transition
-    beta header, set ``ANTHROPIC_USE_BETA_STRUCTURED_OUTPUTS=true``.
 """
 
 import json
 import os
-import warnings
 
 from pydantic import BaseModel, Field
 
@@ -43,36 +39,83 @@ from camel.configs import AnthropicConfig
 from camel.models import AnthropicModel
 
 
-class Attraction(BaseModel):
-    name: str = Field(description="Name of the attraction")
-    visit_duration_hours: float = Field(
-        description="Approximate visit duration in hours"
+class TripDecision(BaseModel):
+    recommended_area: str = Field(
+        description="Best Kyoto area for a first-time weekend visitor"
+    )
+    estimated_total_budget_rmb: int = Field(
+        description="Estimated total budget in RMB"
+    )
+    must_visit_spot: str = Field(
+        description="One attraction selected using tool-backed context"
+    )
+    transport_tip: str = Field(
+        description="Short practical transport advice"
     )
 
 
-class DayPlan(BaseModel):
-    day: int = Field(description="Day number starting from 1")
-    city: str = Field(description="City for this day")
-    attractions: list[Attraction] = Field(
-        description="Main attractions planned for the day"
-    )
-    food_recommendation: str = Field(
-        description="One representative local food recommendation"
+def lookup_kyoto_area(area: str) -> dict[str, str]:
+    """Look up concise travel notes for a Kyoto area.
+
+    Args:
+        area: Kyoto area name such as "Higashiyama", "Arashiyama", or
+            "Downtown Kyoto".
+
+    Returns:
+        Structured area information for itinerary decisions.
+    """
+    area_db = {
+        "Higashiyama": {
+            "must_visit_spot": "Kiyomizu-dera",
+            "transport_tip": "Take a bus or taxi early in the morning.",
+        },
+        "Arashiyama": {
+            "must_visit_spot": "Arashiyama Bamboo Grove",
+            "transport_tip": "Use JR or local rail and arrive before 9 AM.",
+        },
+        "Downtown Kyoto": {
+            "must_visit_spot": "Nishiki Market",
+            "transport_tip": "Stay near Karasuma or Kawaramachi for transfers.",
+        },
+    }
+    return area_db.get(
+        area,
+        {
+            "must_visit_spot": "Kyoto Station area",
+            "transport_tip": "Use Kyoto Station as the central transfer hub.",
+        },
     )
 
 
-class WeekendTripPlan(BaseModel):
-    title: str = Field(description="A short title for the trip")
-    total_budget_rmb: int = Field(description="Estimated total budget in RMB")
-    packing_list: list[str] = Field(
-        description="A compact packing checklist"
+def estimate_kyoto_budget(days: int, hotel_tier: str) -> dict[str, int]:
+    """Estimate a simple Kyoto travel budget in RMB.
+
+    Args:
+        days: Number of travel days.
+        hotel_tier: One of "budget", "midrange", or "premium".
+
+    Returns:
+        Budget breakdown in RMB.
+    """
+    hotel_per_day = {
+        "budget": 260,
+        "midrange": 460,
+        "premium": 900,
+    }.get(hotel_tier, 260)
+    food_per_day = 140
+    attraction_per_day = 110
+    transport_total = 80
+
+    total = (
+        days * hotel_per_day
+        + days * food_per_day
+        + days * attraction_per_day
+        + transport_total
     )
-    itinerary: list[DayPlan] = Field(
-        description="Detailed plan for each day of the trip"
-    )
+    return {"total_budget_rmb": total}
 
 
-def main() -> None:
+def build_anthropic_model() -> AnthropicModel:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         raise RuntimeError(
@@ -88,10 +131,10 @@ def main() -> None:
         == "true"
     )
 
-    anthropic_model = AnthropicModel(
+    return AnthropicModel(
         model_type="anthropic/claude-sonnet-4.5",
-        url=base_url,
         api_key=api_key,
+        url=base_url,
         use_beta_for_structured_outputs=use_beta_for_structured_outputs,
         model_config_dict=AnthropicConfig(
             temperature=0.0,
@@ -99,57 +142,47 @@ def main() -> None:
         ).as_dict(),
     )
 
+
+def main() -> None:
     agent = ChatAgent(
         system_message=(
             "You are a helpful assistant. "
-            "When the user asks for structured data, keep the content concise "
-            "and return data that matches the requested schema."
+            "Use tools first, then return concise structured data."
         ),
-        model=anthropic_model,
+        model=build_anthropic_model(),
+        tools=[lookup_kyoto_area, estimate_kyoto_budget],
     )
 
-    user_msg = (
-        "Create a 2-day travel plan for a first-time visitor going to Kyoto. "
-        "Keep it practical and budget-conscious. "
-        "Return only the structured result."
+    response = agent.step(
+        (
+            "Plan a first-time 2-day Kyoto weekend for a budget-conscious "
+            "traveler. Use the tools to pick a suitable area and estimate the "
+            "budget. Return only the structured result."
+        ),
+        response_format=TripDecision,
     )
 
-    with warnings.catch_warnings(record=True) as caught_warnings:
-        warnings.simplefilter("always")
-        response = agent.step(user_msg, response_format=WeekendTripPlan)
-
-    message = response.msgs[0]
-
-    print("=== Warnings ===")
-    if caught_warnings:
-        for item in caught_warnings:
-            print(f"- {item.message}")
-    else:
-        print("- None")
-
-    print("\n=== Raw Content ===")
-    print(message.content)
+    print("=== Raw Content ===")
+    print(response.msgs[0].content)
 
     print("\n=== Parsed Object ===")
-    print(message.parsed)
-
-    if message.parsed is None:
-        raise RuntimeError(
-            "Structured output parsing failed. "
-            "Check the raw content printed above."
-        )
+    print(response.msgs[0].parsed)
 
     print("\n=== Parsed JSON ===")
     print(
         json.dumps(
-            message.parsed.model_dump(),
+            response.msgs[0].parsed.model_dump(),
             ensure_ascii=False,
             indent=2,
         )
     )
 
-    print("\n=== Parsed Type ===")
-    print(type(message.parsed))
+    print("\n=== Tool Calls ===")
+    for tool_call in response.info.get("tool_calls", []):
+        print(
+            f"- {tool_call.tool_name} args={tool_call.args} "
+            f"result={tool_call.result}"
+        )
 
 
 if __name__ == "__main__":

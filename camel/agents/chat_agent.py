@@ -2650,7 +2650,10 @@ class ChatAgent(BaseAgent):
             return input_message, response_format, False
 
         # Check if tools are strict mode compatible
-        if self._check_tools_strict_compatibility():
+        if (
+            self._check_tools_strict_compatibility()
+            or self.model_backend.supports_response_format_with_non_strict_tools
+        ):
             return input_message, response_format, False
 
         # Tools are not strict compatible, convert to prompt

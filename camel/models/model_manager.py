@@ -154,6 +154,16 @@ class ModelManager:
         """
         return self.current_model.token_counter
 
+    @property
+    def supports_response_format_with_non_strict_tools(self) -> bool:
+        r"""Return whether the current model supports native structured
+        output together with non-strict tools.
+
+        Returns:
+            bool: Capability flag of the currently selected model.
+        """
+        return self.current_model.supports_response_format_with_non_strict_tools
+
     def add_strategy(self, name: str, strategy_fn: Callable):
         r"""Add a scheduling strategy method provided by user in case when none
             of existent strategies fits.

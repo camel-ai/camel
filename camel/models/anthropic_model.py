@@ -34,6 +34,24 @@ from camel.utils import (
 )
 
 ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS = "structured-outputs-2025-11-13"
+ANTHROPIC_SUPPORTED_STRING_FORMATS = {
+    "date",
+    "date-time",
+    "time",
+}
+ANTHROPIC_UNSUPPORTED_SCHEMA_CONSTRAINTS = {
+    "minimum": "Must be greater than or equal to {value}.",
+    "maximum": "Must be less than or equal to {value}.",
+    "exclusiveMinimum": "Must be greater than {value}.",
+    "exclusiveMaximum": "Must be less than {value}.",
+    "multipleOf": "Must be a multiple of {value}.",
+    "minLength": "Must be at least {value} characters long.",
+    "maxLength": "Must be at most {value} characters long.",
+    "minItems": "Must contain at least {value} items.",
+    "maxItems": "Must contain at most {value} items.",
+    "minProperties": "Must contain at least {value} properties.",
+    "maxProperties": "Must contain at most {value} properties.",
+}
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
@@ -220,6 +238,11 @@ class AnthropicModel(BaseModelBackend):
             )
         return self._token_counter
 
+    @property
+    def supports_response_format_with_non_strict_tools(self) -> bool:
+        r"""Anthropic JSON outputs are independent from strict tool use."""
+        return True
+
     def _convert_openai_to_anthropic_messages(
         self,
         messages: List[OpenAIMessage],
@@ -340,27 +363,75 @@ class AnthropicModel(BaseModelBackend):
         return system_message, anthropic_messages  # type: ignore[return-value]
 
     @staticmethod
-    def _ensure_additional_properties_false(schema: Any) -> None:
-        r"""Recursively enforce strict object schemas."""
+    def _append_constraint_descriptions(
+        schema: Dict[str, Any], descriptions: List[str]
+    ) -> None:
+        r"""Append constraint descriptions to a schema node."""
+        if not descriptions:
+            return
+
+        description = schema.get("description")
+        suffix = " ".join(descriptions)
+        if isinstance(description, str) and description:
+            schema["description"] = f"{description} {suffix}"
+        else:
+            schema["description"] = suffix
+
+    @staticmethod
+    def _normalize_schema_for_anthropic(schema: Any) -> None:
+        r"""Normalize JSON Schema to Anthropic's supported subset.
+
+        This mirrors the documented SDK behavior at a minimal level by:
+        1. Removing unsupported validation constraints
+        2. Moving those constraints into descriptions
+        3. Enforcing ``additionalProperties: false`` for objects
+        4. Filtering unsupported string ``format`` values
+        """
         if isinstance(schema, dict):
+            descriptions = []
+
+            for key, template in (
+                ANTHROPIC_UNSUPPORTED_SCHEMA_CONSTRAINTS.items()
+            ):
+                if key in schema:
+                    value = schema.pop(key)
+                    descriptions.append(template.format(value=value))
+
+            if schema.get("type") == "string":
+                string_format = schema.get("format")
+                if (
+                    isinstance(string_format, str)
+                    and string_format
+                    not in ANTHROPIC_SUPPORTED_STRING_FORMATS
+                ):
+                    schema.pop("format", None)
+
             if (
                 schema.get("type") == "object"
                 and "additionalProperties" not in schema
             ):
                 schema["additionalProperties"] = False
 
-            for value in schema.values():
-                AnthropicModel._ensure_additional_properties_false(value)
+            if schema.get("uniqueItems") is True:
+                schema.pop("uniqueItems", None)
+                descriptions.append("Items must be unique.")
+
+            AnthropicModel._append_constraint_descriptions(
+                schema, descriptions
+            )
+
+            for value in list(schema.values()):
+                AnthropicModel._normalize_schema_for_anthropic(value)
         elif isinstance(schema, list):
             for item in schema:
-                AnthropicModel._ensure_additional_properties_false(item)
+                AnthropicModel._normalize_schema_for_anthropic(item)
 
     def _build_output_config(
         self, response_format: Type[BaseModel]
     ) -> Dict[str, Any]:
         r"""Build Anthropic output_config.format from a Pydantic model."""
         schema = copy.deepcopy(response_format.model_json_schema())
-        self._ensure_additional_properties_false(schema)
+        self._normalize_schema_for_anthropic(schema)
         return {
             "format": {
                 "type": "json_schema",
@@ -541,7 +612,6 @@ class AnthropicModel(BaseModelBackend):
                         # Tool use block starting
                         tool_id = getattr(block, "id", "")
                         tool_name = getattr(block, "name", "")
-                        chunk_idx = getattr(chunk, "index", 0)
                         # Assign index for this tool call
                         idx = len(
                             [
@@ -552,6 +622,7 @@ class AnthropicModel(BaseModelBackend):
                         )
                         tool_call_index[tool_id] = idx
                         # Also map by chunk.index for content_block_delta
+                        chunk_idx = getattr(chunk, "index", 0)
                         tool_call_index[f"_chunk_{chunk_idx}"] = idx
                         tool_calls = [
                             {
@@ -686,10 +757,13 @@ class AnthropicModel(BaseModelBackend):
         for tool in tools:
             if "function" in tool:
                 func = tool["function"]
+                input_schema = copy.deepcopy(func.get("parameters", {}))
+                if func.get("strict") is True:
+                    self._normalize_schema_for_anthropic(input_schema)
                 anthropic_tool = {
                     "name": func.get("name", ""),
                     "description": func.get("description", ""),
-                    "input_schema": func.get("parameters", {}),
+                    "input_schema": input_schema,
                 }
                 if "strict" in func:
                     anthropic_tool["strict"] = func.get("strict", True)
@@ -710,8 +784,7 @@ class AnthropicModel(BaseModelBackend):
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
             response_format (Optional[Type[BaseModel]]): The format of the
-                response. When provided, CAMEL sends Anthropic's
-                ``output_config.format`` via ``extra_body``.
+                response.
             tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
                 use for the request.
 
@@ -802,7 +875,8 @@ class AnthropicModel(BaseModelBackend):
             self.model_config_dict.get("extra_body") or {}
         )
         if response_format is not None:
-            extra_body["output_config"] = self._build_output_config(
+            extra_body.pop("output_config", None)
+            request_params["output_config"] = self._build_output_config(
                 response_format
             )
         if extra_body:
@@ -854,8 +928,7 @@ class AnthropicModel(BaseModelBackend):
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
             response_format (Optional[Type[BaseModel]]): The format of the
-                response. When provided, CAMEL sends Anthropic's
-                ``output_config.format`` via ``extra_body``.
+                response.
             tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
                 use for the request.
 
@@ -946,7 +1019,8 @@ class AnthropicModel(BaseModelBackend):
             self.model_config_dict.get("extra_body") or {}
         )
         if response_format is not None:
-            extra_body["output_config"] = self._build_output_config(
+            extra_body.pop("output_config", None)
+            request_params["output_config"] = self._build_output_config(
                 response_format
             )
         if extra_body:
