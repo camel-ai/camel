@@ -338,6 +338,41 @@ class AnthropicModel(BaseModelBackend):
 
         return system_message, anthropic_messages  # type: ignore[return-value]
 
+    @staticmethod
+    def _extract_usage(usage_obj: Any) -> Dict[str, Any]:
+        r"""Extract usage information from an Anthropic usage object."""
+        input_tokens = getattr(usage_obj, "input_tokens", 0) or 0
+        output_tokens = getattr(usage_obj, "output_tokens", 0) or 0
+
+        usage: Dict[str, Any] = {
+            "prompt_tokens": input_tokens,
+            "completion_tokens": output_tokens,
+            "total_tokens": input_tokens + output_tokens,
+        }
+
+        # Prompt-caching fields — only include when actually set to
+        # an int (guards against MagicMock auto-attributes in tests)
+        cache_read = getattr(usage_obj, "cache_read_input_tokens", None)
+        if isinstance(cache_read, int):
+            usage["cache_read_input_tokens"] = cache_read
+
+        cache_creation = getattr(
+            usage_obj, "cache_creation_input_tokens", None
+        )
+        if isinstance(cache_creation, int):
+            usage["cache_creation_input_tokens"] = cache_creation
+
+        # Detailed cache_creation breakdown (mixed TTL).
+        # Anthropic SDK returns a CacheCreation pydantic model; convert
+        # it to a plain dict.  Accept dicts as well for forward compat.
+        cache_creation_detail = getattr(usage_obj, "cache_creation", None)
+        if isinstance(cache_creation_detail, dict):
+            usage["cache_creation"] = cache_creation_detail
+        elif isinstance(cache_creation_detail, BaseModel):
+            usage["cache_creation"] = cache_creation_detail.model_dump()
+
+        return usage
+
     def _convert_anthropic_to_openai_response(
         self, response: Any, model: str
     ) -> ChatCompletion:
@@ -436,16 +471,7 @@ class AnthropicModel(BaseModelBackend):
         # Extract usage information
         usage = None
         if hasattr(response, "usage"):
-            usage = {
-                "prompt_tokens": getattr(response.usage, "input_tokens", 0),
-                "completion_tokens": getattr(
-                    response.usage, "output_tokens", 0
-                ),
-                "total_tokens": (
-                    getattr(response.usage, "input_tokens", 0)
-                    + getattr(response.usage, "output_tokens", 0)
-                ),
-            }
+            usage = self._extract_usage(response.usage)
 
         # Create ChatCompletion
         return ChatCompletion.construct(
@@ -494,12 +520,22 @@ class AnthropicModel(BaseModelBackend):
                 # Initialize message
                 if hasattr(chunk, "message") and hasattr(chunk.message, "id"):
                     chunk_id = chunk.message.id
+                # Extract usage from message_start (contains cache
+                # fields like cache_read_input_tokens)
+                msg_usage = None
+                if (
+                    hasattr(chunk, "message")
+                    and hasattr(chunk.message, "usage")
+                    and chunk.message.usage
+                ):
+                    msg_usage = self._extract_usage(chunk.message.usage)
                 return ChatCompletionChunk.construct(
                     id=chunk_id,
                     choices=[{"index": 0, "delta": {}, "finish_reason": None}],
                     created=int(time.time()),
                     model=model,
                     object="chat.completion.chunk",
+                    usage=msg_usage,
                 )
             elif chunk_type == "content_block_start":
                 # Content block starting
@@ -593,14 +629,7 @@ class AnthropicModel(BaseModelBackend):
                         finish_reason = "tool_calls"
                 # Extract usage info from message_delta
                 if hasattr(chunk, "usage") and chunk.usage:
-                    usage_obj = chunk.usage
-                    input_tokens = getattr(usage_obj, "input_tokens", 0)
-                    output_tokens = getattr(usage_obj, "output_tokens", 0)
-                    usage = {
-                        "prompt_tokens": input_tokens,
-                        "completion_tokens": output_tokens,
-                        "total_tokens": input_tokens + output_tokens,
-                    }
+                    usage = self._extract_usage(chunk.usage)
             elif chunk_type == "message_stop":
                 # Message finished - only set finish_reason if not already sent
                 # This prevents duplicate finish_reason triggers in chat_agent
