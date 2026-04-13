@@ -15,15 +15,12 @@
 """
 Anthropic structured output + tool use example for CAMEL.
 
-This single example focuses on the most important combined scenario:
-Anthropic tool calling and ``response_format`` in the same request.
-
 Required environment variable:
     export ANTHROPIC_API_KEY="<your-anthropic-api-key>"
 
 Optional environment variables:
     export ANTHROPIC_API_BASE_URL="<your-anthropic-compatible-base-url>"
-    export ANTHROPIC_USE_BETA_STRUCTURED_OUTPUTS="true"
+    export ANTHROPIC_MODEL="<your-anthropic-model>"
 
 Run:
     python3 examples/models/anthropic_structured_output_example.py
@@ -35,8 +32,9 @@ import os
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.configs import AnthropicConfig
 from camel.models import AnthropicModel
+from camel.types import ModelType
+from camel.utils import OpenAITokenCounter
 
 
 class TripDecision(BaseModel):
@@ -124,22 +122,18 @@ def build_anthropic_model() -> AnthropicModel:
         )
 
     base_url = os.environ.get("ANTHROPIC_API_BASE_URL")
-    use_beta_for_structured_outputs = (
-        os.environ.get("ANTHROPIC_USE_BETA_STRUCTURED_OUTPUTS", "")
-        .strip()
-        .lower()
-        == "true"
+    model_type = os.environ.get("ANTHROPIC_MODEL") or (
+        "anthropic/claude-sonnet-4.5"
     )
 
     return AnthropicModel(
-        model_type="anthropic/claude-sonnet-4.5",
+        model_type=model_type,
         api_key=api_key,
         url=base_url,
-        use_beta_for_structured_outputs=use_beta_for_structured_outputs,
-        model_config_dict=AnthropicConfig(
-            temperature=0.0,
-            max_tokens=800,
-        ).as_dict(),
+        # Third-party Anthropic-compatible platforms may require a local
+        # fallback token counter instead of Anthropic's count_tokens API.
+        token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+        model_config_dict={"max_tokens": 800},
     )
 
 
@@ -187,3 +181,30 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+"""
+===============================================================================
+=== Raw Content ===
+{"recommended_area":"Higashiyama","estimated_total_budget_rmb":1100,"must_visit_spot":"Kiyomizu-dera","transport_tip":"Take a bus or taxi early in the morning to avoid crowds and save time-consider a Kyoto Bus One-Day Pass for unlimited rides."}
+
+=== Parsed Object ===
+recommended_area='Higashiyama' estimated_total_budget_rmb=1100
+must_visit_spot='Kiyomizu-dera' transport_tip='Take a bus or taxi early in
+the morning to avoid crowds and save time-consider a Kyoto Bus One-Day Pass
+for unlimited rides.'
+
+=== Parsed JSON ===
+{
+  "recommended_area": "Higashiyama",
+  "estimated_total_budget_rmb": 1100,
+  "must_visit_spot": "Kiyomizu-dera",
+  "transport_tip": "Take a bus or taxi early in the morning to avoid crowds and save time-consider a Kyoto Bus One-Day Pass for unlimited rides."
+}
+
+=== Tool Calls ===
+- lookup_kyoto_area args={'area': 'Higashiyama'} result={'must_visit_spot':
+'Kiyomizu-dera', 'transport_tip': 'Take a bus or taxi early in the morning.'}
+- estimate_kyoto_budget args={'days': 2, 'hotel_tier': 'budget'}
+result={'total_budget_rmb': 1100}
+===============================================================================
+"""

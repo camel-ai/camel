@@ -33,7 +33,6 @@ from camel.utils import (
     update_langfuse_trace,
 )
 
-ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS = "structured-outputs-2025-11-13"
 ANTHROPIC_SUPPORTED_STRING_FORMATS = {
     "date",
     "date-time",
@@ -137,9 +136,6 @@ class AnthropicModel(BaseModelBackend):
         async_client (Optional[Any], optional): A custom asynchronous Anthropic
             client instance. If provided, this client will be used instead of
             creating a new one. (default: :obj:`None`)
-        use_beta_for_structured_outputs (bool, optional): Whether to send the
-            legacy beta header for structured outputs for backward-compatible
-            endpoints. (default: :obj:`False`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
     """
@@ -161,7 +157,6 @@ class AnthropicModel(BaseModelBackend):
         max_retries: int = 3,
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,
-        use_beta_for_structured_outputs: bool = False,
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
@@ -219,8 +214,6 @@ class AnthropicModel(BaseModelBackend):
                 "type": "ephemeral",
                 "ttl": cache_control,
             }
-
-        self._use_beta_for_structured_outputs = use_beta_for_structured_outputs
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -890,12 +883,7 @@ class AnthropicModel(BaseModelBackend):
             if tool_choice is not None:
                 request_params["tool_choice"] = tool_choice
 
-        # Add beta for structured outputs if configured
-        if self._use_beta_for_structured_outputs:
-            request_params["betas"] = [ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS]
-            create_func = self._client.beta.messages.create
-        else:
-            create_func = self._client.messages.create
+        create_func = self._client.messages.create
 
         # Check if streaming
         is_streaming = self.model_config_dict.get("stream", False)
@@ -1034,12 +1022,7 @@ class AnthropicModel(BaseModelBackend):
             if tool_choice is not None:
                 request_params["tool_choice"] = tool_choice
 
-        # Add beta for structured outputs if configured
-        if self._use_beta_for_structured_outputs:
-            request_params["betas"] = [ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS]
-            create_func = self._async_client.beta.messages.create
-        else:
-            create_func = self._async_client.messages.create
+        create_func = self._async_client.messages.create
 
         # Check if streaming
         is_streaming = self.model_config_dict.get("stream", False)
