@@ -318,7 +318,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         pass
 
     @property
-    def supports_response_format_with_non_strict_tools(self) -> bool:
+    def supports_tool_response_format(self) -> bool:
         r"""Whether native ``response_format`` can coexist with non-strict
         tools on this backend.
 

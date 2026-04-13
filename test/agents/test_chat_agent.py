@@ -113,7 +113,7 @@ class DummyModel(BaseModelBackend):
 
 class DummyNativeStructuredOutputToolModel(DummyModel):
     @property
-    def supports_response_format_with_non_strict_tools(self) -> bool:
+    def supports_tool_response_format(self) -> bool:
         return True
 
 
@@ -213,9 +213,7 @@ def test_non_strict_tools_fall_back_to_prompt_formatting_by_default():
 def test_native_structured_output_backend_keeps_response_format_with_tools():
     assistant = ChatAgent(
         system_message="You are a helpful assistant.",
-        model=DummyNativeStructuredOutputToolModel(
-            ModelType.CLAUDE_HAIKU_4_5
-        ),
+        model=DummyNativeStructuredOutputToolModel(ModelType.CLAUDE_HAIKU_4_5),
     )
     assistant._get_full_tool_schemas = MagicMock(
         return_value=[

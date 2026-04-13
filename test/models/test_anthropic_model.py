@@ -823,8 +823,8 @@ async def test_arun_passes_output_config_tool_choice_and_extra_fields():
     assert request_kwargs["extra_body"]["existing"] is True
     assert request_kwargs["output_config"]["format"]["type"] == "json_schema"
     assert (
-        request_kwargs["tools"][0]["input_schema"]["properties"][
-            "location"
-        ]["description"]
+        request_kwargs["tools"][0]["input_schema"]["properties"]["location"][
+            "description"
+        ]
         == "Must be at least 3 characters long."
     )

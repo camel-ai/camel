@@ -47,9 +47,7 @@ class TripDecision(BaseModel):
     must_visit_spot: str = Field(
         description="One attraction selected using tool-backed context"
     )
-    transport_tip: str = Field(
-        description="Short practical transport advice"
-    )
+    transport_tip: str = Field(description="Short practical transport advice")
 
 
 def lookup_kyoto_area(area: str) -> dict[str, str]:
@@ -73,7 +71,9 @@ def lookup_kyoto_area(area: str) -> dict[str, str]:
         },
         "Downtown Kyoto": {
             "must_visit_spot": "Nishiki Market",
-            "transport_tip": "Stay near Karasuma or Kawaramachi for transfers.",
+            "transport_tip": (
+                "Stay near Karasuma or Kawaramachi for transfers."
+            ),
         },
     }
     return area_db.get(
@@ -185,7 +185,10 @@ if __name__ == "__main__":
 """
 ===============================================================================
 === Raw Content ===
-{"recommended_area":"Higashiyama","estimated_total_budget_rmb":1100,"must_visit_spot":"Kiyomizu-dera","transport_tip":"Take a bus or taxi early in the morning to avoid crowds and save time-consider a Kyoto Bus One-Day Pass for unlimited rides."}
+{"recommended_area":"Higashiyama","estimated_total_budget_rmb":1100,
+"must_visit_spot":"Kiyomizu-dera","transport_tip":"Take a bus or taxi early in
+the morning to avoid crowds and save time-consider a Kyoto Bus One-Day Pass
+for unlimited rides."}
 
 === Parsed Object ===
 recommended_area='Higashiyama' estimated_total_budget_rmb=1100
@@ -198,7 +201,8 @@ for unlimited rides.'
   "recommended_area": "Higashiyama",
   "estimated_total_budget_rmb": 1100,
   "must_visit_spot": "Kiyomizu-dera",
-  "transport_tip": "Take a bus or taxi early in the morning to avoid crowds and save time-consider a Kyoto Bus One-Day Pass for unlimited rides."
+  "transport_tip": "Take a bus or taxi early in the morning to avoid crowds and
+  save time-consider a Kyoto Bus One-Day Pass for unlimited rides."
 }
 
 === Tool Calls ===

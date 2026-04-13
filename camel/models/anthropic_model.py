@@ -232,7 +232,7 @@ class AnthropicModel(BaseModelBackend):
         return self._token_counter
 
     @property
-    def supports_response_format_with_non_strict_tools(self) -> bool:
+    def supports_tool_response_format(self) -> bool:
         r"""Anthropic JSON outputs are independent from strict tool use."""
         return True
 
@@ -383,9 +383,10 @@ class AnthropicModel(BaseModelBackend):
         if isinstance(schema, dict):
             descriptions = []
 
-            for key, template in (
-                ANTHROPIC_UNSUPPORTED_SCHEMA_CONSTRAINTS.items()
-            ):
+            for (
+                key,
+                template,
+            ) in ANTHROPIC_UNSUPPORTED_SCHEMA_CONSTRAINTS.items():
                 if key in schema:
                     value = schema.pop(key)
                     descriptions.append(template.format(value=value))
@@ -394,8 +395,7 @@ class AnthropicModel(BaseModelBackend):
                 string_format = schema.get("format")
                 if (
                     isinstance(string_format, str)
-                    and string_format
-                    not in ANTHROPIC_SUPPORTED_STRING_FORMATS
+                    and string_format not in ANTHROPIC_SUPPORTED_STRING_FORMATS
                 ):
                     schema.pop("format", None)
 

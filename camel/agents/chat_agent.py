@@ -2652,7 +2652,7 @@ class ChatAgent(BaseAgent):
         # Check if tools are strict mode compatible
         if (
             self._check_tools_strict_compatibility()
-            or self.model_backend.supports_response_format_with_non_strict_tools
+            or self.model_backend.supports_tool_response_format
         ):
             return input_message, response_format, False
 
