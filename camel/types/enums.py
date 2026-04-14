@@ -1938,6 +1938,7 @@ class ModelPlatformType(Enum):
     FUNCTION_GEMMA = "function-gemma"
     AVIAN = "avian"
     ATLASCLOUD = "atlascloud"
+    XAI = "xai"
 
     @classmethod
     def from_name(cls, name):

@@ -202,15 +202,15 @@ class MistralModel(BaseModelBackend):
                 mistral_tool_calls = []
                 for tool_call in tool_calls_list:
                     function_call = FunctionCall(
-                        name=tool_call["function"].get("name"),  # type: ignore[attr-defined]
-                        arguments=tool_call["function"].get("arguments"),  # type: ignore[attr-defined]
+                        name=tool_call["function"].get("name"),  # type: ignore[index]
+                        arguments=tool_call["function"].get("arguments"),  # type: ignore[index]
                     )
                     # Preserve the original tool call id to keep tool result
                     # ordering valid across turns.
                     mistral_tool_calls.append(
                         ToolCall(
                             function=function_call,
-                            id=tool_call.get("id"),  # type: ignore[attr-defined]
+                            id=tool_call.get("id"),  # type: ignore[union-attr]
                         )
                     )
 
