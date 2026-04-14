@@ -259,6 +259,7 @@
               "reference/camel.configs.vllm_config",
               "reference/camel.configs.volcano_config",
               "reference/camel.configs.watsonx_config",
+              "reference/camel.configs.xai_config",
               "reference/camel.configs.yi_config",
               "reference/camel.configs.zhipuai_config"
             ]
@@ -359,6 +360,7 @@
               "reference/camel.models.vllm_model",
               "reference/camel.models.volcano_model",
               "reference/camel.models.watsonx_model",
+              "reference/camel.models.xai_model",
               "reference/camel.models.yi_model",
               "reference/camel.models.zhipuai_model",
               "reference/camel.models.reward.base_reward_model",

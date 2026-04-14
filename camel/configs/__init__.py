@@ -60,6 +60,7 @@ from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .volcano_config import VOLCANO_API_PARAMS, VolcanoConfig
 from .watsonx_config import WATSONX_API_PARAMS, WatsonXConfig
+from .xai_config import XAI_API_PARAMS, XAIConfig
 from .yi_config import YI_API_PARAMS, YiConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
 
@@ -151,4 +152,6 @@ __all__ = [
     'VOLCANO_API_PARAMS',
     'AvianConfig',
     'AVIAN_API_PARAMS',
+    'XAIConfig',
+    'XAI_API_PARAMS',
 ]

@@ -405,7 +405,7 @@ class InternalPythonInterpreter(BaseInterpreter):
             keyword.arg: self._execute_ast(keyword.value)
             for keyword in call.keywords
         }
-        return callable_func(*args, **kwargs)
+        return callable_func(*args, **kwargs)  # type: ignore[arg-type]
 
     def _execute_subscript(self, subscript: ast.Subscript):
         index = self._execute_ast(subscript.slice)
