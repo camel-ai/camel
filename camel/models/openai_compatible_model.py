@@ -586,6 +586,15 @@ class OpenAICompatibleModel(BaseModelBackend):
 
         if previous_response_id and last_message_count > 0:
             delta_messages = messages[last_message_count:]
+            # Filter out ALL assistant messages from the delta.
+            # The server already knows every assistant turn via
+            # previous_response_id.  Only tool results and user
+            # messages are genuinely new.  ChatAgent's streaming
+            # path may also record duplicate assistant messages,
+            # so filtering by role is the safest approach.
+            delta_messages = [
+                m for m in delta_messages if m.get("role") != "assistant"
+            ]
             input_messages = (
                 delta_messages if delta_messages else [messages[-1]]
             )
