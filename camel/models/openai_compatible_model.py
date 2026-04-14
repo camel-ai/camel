@@ -586,6 +586,16 @@ class OpenAICompatibleModel(BaseModelBackend):
 
         if previous_response_id and last_message_count > 0:
             delta_messages = messages[last_message_count:]
+            # The first message in the delta may be an assistant message
+            # that echoes the previous response (already known to the
+            # server via previous_response_id).  Sending it again
+            # duplicates the assistant turn and causes the model to
+            # repeat tool calls infinitely.
+            if (
+                delta_messages
+                and delta_messages[0].get("role") == "assistant"
+            ):
+                delta_messages = delta_messages[1:]
             input_messages = (
                 delta_messages if delta_messages else [messages[-1]]
             )

@@ -749,9 +749,16 @@ class XAIModel(BaseModelBackend):
 
         if self._previous_response_id and n >= self._last_message_count:
             delta = messages[self._last_message_count :]
-            # Must have at least the new user message
             if delta:
-                return delta
+                # The first message in the delta may be an assistant message
+                # that echoes the previous response (already known to the
+                # server via previous_response_id).  Sending it again
+                # duplicates the assistant turn on the server side and
+                # confuses the model into repeating tool calls infinitely.
+                if delta[0].get("role") == "assistant":
+                    delta = delta[1:]
+                if delta:
+                    return delta
 
         # Fallback: reset chain, send everything
         self._previous_response_id = None
