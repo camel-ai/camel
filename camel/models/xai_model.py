@@ -338,12 +338,7 @@ class XAIModel(BaseModelBackend):
                 )
 
             else:
-                # Fallback: treat unknown roles as user messages
-                logger.warning(
-                    "Unknown message role '%s', treating as user message.",
-                    role,
-                )
-                converted.append(xai_user(content))
+                raise ValueError(f"Unsupported message role: {role!r}")
 
         return converted
 
