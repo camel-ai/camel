@@ -28,6 +28,13 @@ from typing import (
 
 from typing_extensions import TypedDict
 
+
+class _TypeInput(TypedDict):
+    r"""A single input entry for browser_type with ref and text."""
+
+    ref: str
+    text: str
+
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -999,7 +1006,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         *,
         ref: Optional[str] = None,
         text: Optional[str] = None,
-        inputs: Optional[List[Dict[str, str]]] = None,
+        inputs: Optional[List[_TypeInput]] = None,
         x: Optional[float] = None,
         y: Optional[float] = None,
     ) -> Dict[str, Any]:
@@ -1013,7 +1020,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         Args:
             ref (Optional[str]): The `ref` ID of the input element.
             text (Optional[str]): The text to type.
-            inputs (Optional[List[Dict[str, str]]]): List of inputs with
+            inputs (Optional[List[_TypeInput]]): List of inputs with
                 'ref' and 'text' keys.
             x (Optional[float]): X pixel coordinate of input field.
             y (Optional[float]): Y pixel coordinate of input field.
@@ -2184,7 +2191,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     *,
                     ref: Optional[str] = None,
                     text: Optional[str] = None,
-                    inputs: Optional[List[Dict[str, str]]] = None,
+                    inputs: Optional[List[_TypeInput]] = None,
                 ) -> Dict[str, Any]:
                     r"""Types text into input elements identified by ref ID.
 
@@ -2193,7 +2200,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     Args:
                         ref (Optional[str]): The ref ID of the input element.
                         text (Optional[str]): The text to type.
-                        inputs (Optional[List[Dict[str, str]]]): List of
+                        inputs (Optional[List[_TypeInput]]): List of
                             inputs, each with 'ref' and 'text' keys.
 
                     Returns:
