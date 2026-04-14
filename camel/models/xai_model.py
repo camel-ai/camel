@@ -523,6 +523,7 @@ class XAIModel(BaseModelBackend):
         """
         chunk_id = ""
         model = str(self.model_type)
+        tool_calls_emitted = False
         for response, chunk in stream_iter:
             chunk_id = chunk_id or (response.id if response.id else "")
 
@@ -533,11 +534,19 @@ class XAIModel(BaseModelBackend):
             ):
                 finish_reason = self._map_finish_reason(response.finish_reason)
 
-            delta_tc = (
-                self._build_delta_tool_calls(chunk.tool_calls)
-                if chunk.tool_calls
-                else None
-            )
+            # Emit tool calls only once, from the accumulated response,
+            # when the stream signals completion.  xAI gRPC streaming
+            # may repeat the full tool_calls list on every chunk (unlike
+            # OpenAI SSE incremental deltas), so emitting per-chunk
+            # causes ChatAgent to accumulate duplicates.
+            delta_tc = None
+            if (
+                finish_reason
+                and not tool_calls_emitted
+                and response.tool_calls
+            ):
+                delta_tc = self._build_delta_tool_calls(response.tool_calls)
+                tool_calls_emitted = True
 
             yield self._make_chunk(
                 chunk_id=chunk_id,
@@ -562,12 +571,13 @@ class XAIModel(BaseModelBackend):
                 u = response.usage
                 from openai.types.completion_usage import CompletionUsage
 
+                # Do NOT include finish_reason here — it was already
+                # sent on the final streaming chunk.  A second
+                # finish_reason triggers ChatAgent to re-execute the
+                # same tool calls.
                 yield self._make_chunk(
                     chunk_id=chunk_id,
                     model=model,
-                    finish_reason=self._map_finish_reason(
-                        response.finish_reason
-                    ),
                     usage=CompletionUsage(
                         prompt_tokens=u.prompt_tokens,
                         completion_tokens=u.completion_tokens,
@@ -593,6 +603,7 @@ class XAIModel(BaseModelBackend):
         chunk_id = ""
         model = str(self.model_type)
         response = None
+        tool_calls_emitted = False
         async for resp, chunk in stream_iter:
             response = resp
             chunk_id = chunk_id or (response.id if response.id else "")
@@ -604,11 +615,14 @@ class XAIModel(BaseModelBackend):
             ):
                 finish_reason = self._map_finish_reason(response.finish_reason)
 
-            delta_tc = (
-                self._build_delta_tool_calls(chunk.tool_calls)
-                if chunk.tool_calls
-                else None
-            )
+            delta_tc = None
+            if (
+                finish_reason
+                and not tool_calls_emitted
+                and response.tool_calls
+            ):
+                delta_tc = self._build_delta_tool_calls(response.tool_calls)
+                tool_calls_emitted = True
 
             yield self._make_chunk(
                 chunk_id=chunk_id,
@@ -635,9 +649,6 @@ class XAIModel(BaseModelBackend):
                 yield self._make_chunk(
                     chunk_id=chunk_id,
                     model=model,
-                    finish_reason=self._map_finish_reason(
-                        response.finish_reason
-                    ),
                     usage=CompletionUsage(
                         prompt_tokens=u.prompt_tokens,
                         completion_tokens=u.completion_tokens,
@@ -750,13 +761,15 @@ class XAIModel(BaseModelBackend):
         if self._previous_response_id and n >= self._last_message_count:
             delta = messages[self._last_message_count :]
             if delta:
-                # The first message in the delta may be an assistant message
-                # that echoes the previous response (already known to the
-                # server via previous_response_id).  Sending it again
-                # duplicates the assistant turn on the server side and
-                # confuses the model into repeating tool calls infinitely.
-                if delta[0].get("role") == "assistant":
-                    delta = delta[1:]
+                # Filter out ALL assistant messages from the delta.
+                # The server already knows every assistant turn via
+                # previous_response_id.  Only tool results and user
+                # messages are genuinely new.  ChatAgent's streaming
+                # path may also record duplicate assistant messages,
+                # so filtering by role is the safest approach.
+                delta = [
+                    m for m in delta if m.get("role") != "assistant"
+                ]
                 if delta:
                     return delta
 

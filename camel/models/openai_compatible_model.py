@@ -586,16 +586,15 @@ class OpenAICompatibleModel(BaseModelBackend):
 
         if previous_response_id and last_message_count > 0:
             delta_messages = messages[last_message_count:]
-            # The first message in the delta may be an assistant message
-            # that echoes the previous response (already known to the
-            # server via previous_response_id).  Sending it again
-            # duplicates the assistant turn and causes the model to
-            # repeat tool calls infinitely.
-            if (
-                delta_messages
-                and delta_messages[0].get("role") == "assistant"
-            ):
-                delta_messages = delta_messages[1:]
+            # Filter out ALL assistant messages from the delta.
+            # The server already knows every assistant turn via
+            # previous_response_id.  Only tool results and user
+            # messages are genuinely new.  ChatAgent's streaming
+            # path may also record duplicate assistant messages,
+            # so filtering by role is the safest approach.
+            delta_messages = [
+                m for m in delta_messages if m.get("role") != "assistant"
+            ]
             input_messages = (
                 delta_messages if delta_messages else [messages[-1]]
             )
