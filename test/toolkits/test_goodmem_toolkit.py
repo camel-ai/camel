@@ -207,12 +207,12 @@ class TestMimeType:
 
 
 # ---------------------------------------------------------------------------
-# list_embedders
+# goodmem_list_embedders
 # ---------------------------------------------------------------------------
 
 
 class TestListEmbedders:
-    """Tests for list_embedders."""
+    """Tests for goodmem_list_embedders."""
 
     def test_list_embedders_dict_response(self, toolkit):
         toolkit._session.get.return_value = _make_response(
@@ -253,12 +253,12 @@ class TestListEmbedders:
 
 
 # ---------------------------------------------------------------------------
-# list_spaces
+# goodmem_list_spaces
 # ---------------------------------------------------------------------------
 
 
 class TestListSpaces:
-    """Tests for list_spaces."""
+    """Tests for goodmem_list_spaces."""
 
     def test_list_spaces_dict_response(self, toolkit):
         toolkit._session.get.return_value = _make_response(
@@ -337,12 +337,12 @@ class TestGetSpace:
 
 
 # ---------------------------------------------------------------------------
-# create_space
+# goodmem_create_space
 # ---------------------------------------------------------------------------
 
 
 class TestCreateSpace:
-    """Tests for create_space."""
+    """Tests for goodmem_create_space."""
 
     def test_create_space_new(self, toolkit):
         # list_spaces returns empty -> no reuse
@@ -524,12 +524,12 @@ class TestDeleteSpace:
 
 
 # ---------------------------------------------------------------------------
-# create_memory
+# goodmem_create_memory
 # ---------------------------------------------------------------------------
 
 
 class TestCreateMemory:
-    """Tests for create_memory."""
+    """Tests for goodmem_create_memory."""
 
     def test_create_memory_text(self, toolkit):
         toolkit._session.post.return_value = _make_response(
@@ -662,7 +662,7 @@ class TestCreateMemory:
 
 
 # ---------------------------------------------------------------------------
-# retrieve_memories
+# goodmem_retrieve_memories
 # ---------------------------------------------------------------------------
 
 # Sample NDJSON responses matching GoodMem API format
@@ -758,7 +758,7 @@ SSE_FORMAT = "\n".join(
 
 
 class TestRetrieveMemories:
-    """Tests for retrieve_memories."""
+    """Tests for goodmem_retrieve_memories."""
 
     def test_retrieve_with_results(self, toolkit):
         toolkit._session.post.return_value = _make_response(
@@ -965,12 +965,12 @@ class TestListMemories:
 
 
 # ---------------------------------------------------------------------------
-# get_memory
+# goodmem_get_memory
 # ---------------------------------------------------------------------------
 
 
 class TestGetMemory:
-    """Tests for get_memory."""
+    """Tests for goodmem_get_memory."""
 
     def test_get_memory_with_text_content(self, toolkit):
         meta_resp = _make_response(
@@ -1083,12 +1083,12 @@ class TestGetMemory:
 
 
 # ---------------------------------------------------------------------------
-# delete_memory
+# goodmem_delete_memory
 # ---------------------------------------------------------------------------
 
 
 class TestDeleteMemory:
-    """Tests for delete_memory."""
+    """Tests for goodmem_delete_memory."""
 
     def test_delete_memory_success(self, toolkit):
         toolkit._session.delete.return_value = _make_response(json_data={})
