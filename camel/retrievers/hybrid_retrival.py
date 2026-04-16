@@ -234,4 +234,4 @@ class HybridRetriever(BaseRetriever):
                 else [item['text'] for item in all_retrieved_info]  # type: ignore[misc]
             ),
         }
-        return retrieved_info
+        return retrieved_info  # type: ignore[return-value]
