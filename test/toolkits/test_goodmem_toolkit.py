@@ -490,7 +490,7 @@ class TestCreateMemory:
         result = toolkit.goodmem_create_memory(
             space_id="sp-1",
             text_content="test",
-            metadata={"key": "value"},
+            metadata_json='{"key": "value"}',
         )
         assert result["success"] is True
         body = toolkit._session.post.call_args[1]["json"]

@@ -330,7 +330,7 @@ class GoodMemToolkit(BaseToolkit):
         space_id: str,
         text_content: Optional[str] = None,
         file_path: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata_json: Optional[str] = None,
     ) -> Dict[str, Any]:
         r"""Stores a document as a new memory in a space.
 
@@ -347,8 +347,9 @@ class GoodMemToolkit(BaseToolkit):
             file_path (Optional[str]): Path to a file to upload as
                 memory. The content type is auto-detected from the
                 file extension. (default: :obj:`None`)
-            metadata (Optional[Dict[str, Any]]): Additional key-value
-                metadata to attach to the memory.
+            metadata_json (Optional[str]): A JSON string containing
+                extra key-value metadata to attach to the memory,
+                e.g. ``'{"source": "email"}'``.
                 (default: :obj:`None`)
 
         Returns:
@@ -385,8 +386,8 @@ class GoodMemToolkit(BaseToolkit):
                 ),
             }
 
-        if metadata and isinstance(metadata, dict):
-            request_body["metadata"] = metadata
+        if metadata_json:
+            request_body["metadata"] = json.loads(metadata_json)
 
         response = self._session.post(
             f"{self.base_url}/v1/memories",
