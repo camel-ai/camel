@@ -65,7 +65,7 @@ def test_openai_compatible_model_apikey_from_env(monkeypatch: MonkeyPatch):
     assert model._async_client.base_url == URL(url)
 
 
-def test_openai_compatible_responses_uses_agent_session_scope_when_langfuse_is_disabled(
+def test_openai_compatible_responses_use_agent_session_scope_without_langfuse(
     monkeypatch,
 ):
     monkeypatch.setattr("camel.utils.langfuse._langfuse_configured", False)
