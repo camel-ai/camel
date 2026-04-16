@@ -223,6 +223,30 @@ class GoodMemToolkit(BaseToolkit):
         ]
 
     # ------------------------------------------------------------------
+    # Get Space
+    # ------------------------------------------------------------------
+
+    def goodmem_get_space(self, space_id: str) -> Dict[str, Any]:
+        r"""Fetches a single space by its ID.
+
+        Use this to inspect a space's full configuration, including
+        its embedders, chunking settings, and labels.
+
+        Args:
+            space_id (str): The UUID of the space to fetch.
+
+        Returns:
+            Dict[str, Any]: The full space object as returned by the
+                GoodMem API.
+        """
+        response = self._session.get(
+            f"{self.base_url}/v1/spaces/{space_id}",
+            headers=self._headers(include_content_type=False),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    # ------------------------------------------------------------------
     # Create Space
     # ------------------------------------------------------------------
 
@@ -319,6 +343,99 @@ class GoodMemToolkit(BaseToolkit):
             "chunkingConfig": request_body["defaultChunkingConfig"],
             "message": "Space created successfully",
             "reused": False,
+        }
+
+    # ------------------------------------------------------------------
+    # Update Space
+    # ------------------------------------------------------------------
+
+    def goodmem_update_space(
+        self,
+        space_id: str,
+        name: Optional[str] = None,
+        public_read: Optional[bool] = None,
+        replace_labels_json: Optional[str] = None,
+        merge_labels_json: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        r"""Updates a space's name, labels, or access settings.
+
+        Only the fields you provide are changed; omitted fields keep
+        their current values. ``replace_labels_json`` and
+        ``merge_labels_json`` are mutually exclusive.
+
+        Args:
+            space_id (str): The UUID of the space to update.
+            name (Optional[str]): New name for the space.
+                (default: :obj:`None`)
+            public_read (Optional[bool]): Whether to allow
+                unauthenticated read access.
+                (default: :obj:`None`)
+            replace_labels_json (Optional[str]): A JSON string of
+                labels that replace all existing labels, e.g.
+                ``'{"env": "prod"}'``.
+                (default: :obj:`None`)
+            merge_labels_json (Optional[str]): A JSON string of
+                labels that merge into existing labels, e.g.
+                ``'{"team": "ml"}'``.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: The updated space object as returned
+                by the GoodMem API.
+        """
+        if replace_labels_json and merge_labels_json:
+            return {
+                "success": False,
+                "error": (
+                    "Cannot use both replace_labels_json and "
+                    "merge_labels_json at the same time."
+                ),
+            }
+
+        request_body: Dict[str, Any] = {}
+        if name is not None:
+            request_body["name"] = name
+        if public_read is not None:
+            request_body["publicRead"] = public_read
+        if replace_labels_json:
+            request_body["replaceLabels"] = json.loads(replace_labels_json)
+        if merge_labels_json:
+            request_body["mergeLabels"] = json.loads(merge_labels_json)
+
+        response = self._session.put(
+            f"{self.base_url}/v1/spaces/{space_id}",
+            headers=self._headers(),
+            json=request_body,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    # ------------------------------------------------------------------
+    # Delete Space
+    # ------------------------------------------------------------------
+
+    def goodmem_delete_space(self, space_id: str) -> Dict[str, Any]:
+        r"""Permanently deletes a space and all associated data.
+
+        Removes the space along with all its memories, chunks, and
+        vector embeddings.
+
+        Args:
+            space_id (str): The UUID of the space to delete.
+
+        Returns:
+            Dict[str, Any]: A dictionary with keys ``success``,
+                ``spaceId``, and ``message``.
+        """
+        response = self._session.delete(
+            f"{self.base_url}/v1/spaces/{space_id}",
+            headers=self._headers(include_content_type=False),
+        )
+        response.raise_for_status()
+        return {
+            "success": True,
+            "spaceId": space_id,
+            "message": "Space deleted successfully",
         }
 
     # ------------------------------------------------------------------
@@ -594,6 +711,56 @@ class GoodMemToolkit(BaseToolkit):
             time.sleep(poll_interval)
 
     # ------------------------------------------------------------------
+    # List Memories
+    # ------------------------------------------------------------------
+
+    def goodmem_list_memories(
+        self,
+        space_id: str,
+        status_filter: Optional[str] = None,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        r"""Lists all memories in a space.
+
+        Returns metadata for every memory stored in the given space,
+        with optional filtering by processing status and sorting.
+
+        Args:
+            space_id (str): The UUID of the space to list memories
+                from.
+            status_filter (Optional[str]): Filter by processing
+                status. One of ``PENDING``, ``PROCESSING``,
+                ``COMPLETED``, or ``FAILED``.
+                (default: :obj:`None`)
+            sort_by (Optional[str]): Field to sort by. One of
+                ``created_at`` or ``updated_at``.
+                (default: :obj:`None`)
+            sort_order (Optional[str]): Sort direction. One of
+                ``ASCENDING`` or ``DESCENDING``.
+                (default: :obj:`None`)
+
+        Returns:
+            List[Dict[str, Any]]: A list of memory objects.
+        """
+        params: Dict[str, str] = {}
+        if status_filter:
+            params["statusFilter"] = status_filter
+        if sort_by:
+            params["sortBy"] = sort_by
+        if sort_order:
+            params["sortOrder"] = sort_order
+
+        response = self._session.get(
+            f"{self.base_url}/v1/spaces/{space_id}/memories",
+            headers=self._headers(include_content_type=False),
+            params=params,
+        )
+        response.raise_for_status()
+        body = response.json()
+        return body if isinstance(body, list) else body.get("memories", [])
+
+    # ------------------------------------------------------------------
     # Get Memory
     # ------------------------------------------------------------------
 
@@ -695,8 +862,12 @@ class GoodMemToolkit(BaseToolkit):
         return [
             FunctionTool(self.goodmem_list_embedders),
             FunctionTool(self.goodmem_list_spaces),
+            FunctionTool(self.goodmem_get_space),
             FunctionTool(self.goodmem_create_space),
+            FunctionTool(self.goodmem_update_space),
+            FunctionTool(self.goodmem_delete_space),
             FunctionTool(self.goodmem_create_memory),
+            FunctionTool(self.goodmem_list_memories),
             FunctionTool(self.goodmem_retrieve_memories),
             FunctionTool(self.goodmem_get_memory),
             FunctionTool(self.goodmem_delete_memory),

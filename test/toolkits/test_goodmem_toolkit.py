@@ -303,6 +303,40 @@ class TestListSpaces:
 
 
 # ---------------------------------------------------------------------------
+# get_space
+# ---------------------------------------------------------------------------
+
+
+class TestGetSpace:
+    """Tests for goodmem_get_space."""
+
+    def test_get_space_success(self, toolkit):
+        toolkit._session.get.return_value = _make_response(
+            json_data={
+                "spaceId": "sp-1",
+                "name": "My Space",
+                "spaceEmbedders": [{"embedderId": "emb-1"}],
+            }
+        )
+        result = toolkit.goodmem_get_space(space_id="sp-1")
+        assert result["spaceId"] == "sp-1"
+        assert result["name"] == "My Space"
+        # Verify GET doesn't include Content-Type
+        headers = toolkit._session.get.call_args[1]["headers"]
+        assert "Content-Type" not in headers
+        # Verify correct URL
+        url = toolkit._session.get.call_args[0][0]
+        assert url.endswith("/v1/spaces/sp-1")
+
+    def test_get_space_error_propagates(self, toolkit):
+        toolkit._session.get.return_value = _make_response(
+            raise_for_status=requests.HTTPError("404")
+        )
+        with pytest.raises(requests.HTTPError):
+            toolkit.goodmem_get_space(space_id="nonexistent")
+
+
+# ---------------------------------------------------------------------------
 # create_space
 # ---------------------------------------------------------------------------
 
@@ -390,6 +424,103 @@ class TestCreateSpace:
         )
         with pytest.raises(requests.HTTPError):
             toolkit.goodmem_create_space(name="fail", embedder_id="emb-1")
+
+
+# ---------------------------------------------------------------------------
+# update_space
+# ---------------------------------------------------------------------------
+
+
+class TestUpdateSpace:
+    """Tests for goodmem_update_space."""
+
+    def test_update_space_name(self, toolkit):
+        toolkit._session.put.return_value = _make_response(
+            json_data={"spaceId": "sp-1", "name": "renamed"}
+        )
+        result = toolkit.goodmem_update_space(space_id="sp-1", name="renamed")
+        assert result["name"] == "renamed"
+        body = toolkit._session.put.call_args[1]["json"]
+        assert body["name"] == "renamed"
+        url = toolkit._session.put.call_args[0][0]
+        assert url.endswith("/v1/spaces/sp-1")
+
+    def test_update_space_public_read(self, toolkit):
+        toolkit._session.put.return_value = _make_response(
+            json_data={
+                "spaceId": "sp-1",
+                "publicRead": True,
+            }
+        )
+        toolkit.goodmem_update_space(space_id="sp-1", public_read=True)
+        body = toolkit._session.put.call_args[1]["json"]
+        assert body["publicRead"] is True
+
+    def test_update_space_replace_labels(self, toolkit):
+        toolkit._session.put.return_value = _make_response(
+            json_data={"spaceId": "sp-1"}
+        )
+        toolkit.goodmem_update_space(
+            space_id="sp-1",
+            replace_labels_json='{"env": "prod"}',
+        )
+        body = toolkit._session.put.call_args[1]["json"]
+        assert body["replaceLabels"] == {"env": "prod"}
+
+    def test_update_space_merge_labels(self, toolkit):
+        toolkit._session.put.return_value = _make_response(
+            json_data={"spaceId": "sp-1"}
+        )
+        toolkit.goodmem_update_space(
+            space_id="sp-1",
+            merge_labels_json='{"team": "ml"}',
+        )
+        body = toolkit._session.put.call_args[1]["json"]
+        assert body["mergeLabels"] == {"team": "ml"}
+
+    def test_update_space_both_labels_returns_error(self, toolkit):
+        result = toolkit.goodmem_update_space(
+            space_id="sp-1",
+            replace_labels_json='{"a": "b"}',
+            merge_labels_json='{"c": "d"}',
+        )
+        assert result["success"] is False
+        assert "Cannot use both" in result["error"]
+        toolkit._session.put.assert_not_called()
+
+    def test_update_space_error_propagates(self, toolkit):
+        toolkit._session.put.return_value = _make_response(
+            raise_for_status=requests.HTTPError("404")
+        )
+        with pytest.raises(requests.HTTPError):
+            toolkit.goodmem_update_space(space_id="nonexistent", name="x")
+
+
+# ---------------------------------------------------------------------------
+# delete_space
+# ---------------------------------------------------------------------------
+
+
+class TestDeleteSpace:
+    """Tests for goodmem_delete_space."""
+
+    def test_delete_space_success(self, toolkit):
+        toolkit._session.delete.return_value = _make_response(json_data={})
+        result = toolkit.goodmem_delete_space(space_id="sp-1")
+        assert result["success"] is True
+        assert result["spaceId"] == "sp-1"
+        # Verify DELETE doesn't include Content-Type
+        headers = toolkit._session.delete.call_args[1]["headers"]
+        assert "Content-Type" not in headers
+        url = toolkit._session.delete.call_args[0][0]
+        assert url.endswith("/v1/spaces/sp-1")
+
+    def test_delete_space_error_propagates(self, toolkit):
+        toolkit._session.delete.return_value = _make_response(
+            raise_for_status=requests.HTTPError("404")
+        )
+        with pytest.raises(requests.HTTPError):
+            toolkit.goodmem_delete_space(space_id="nonexistent")
 
 
 # ---------------------------------------------------------------------------
@@ -766,6 +897,74 @@ class TestRetrieveMemories:
 
 
 # ---------------------------------------------------------------------------
+# list_memories
+# ---------------------------------------------------------------------------
+
+
+class TestListMemories:
+    """Tests for goodmem_list_memories."""
+
+    def test_list_memories_dict_response(self, toolkit):
+        toolkit._session.get.return_value = _make_response(
+            json_data={
+                "memories": [
+                    {"memoryId": "mem-1"},
+                    {"memoryId": "mem-2"},
+                ]
+            }
+        )
+        result = toolkit.goodmem_list_memories(space_id="sp-1")
+        assert len(result) == 2
+        assert result[0]["memoryId"] == "mem-1"
+        url = toolkit._session.get.call_args[0][0]
+        assert url.endswith("/v1/spaces/sp-1/memories")
+
+    def test_list_memories_list_response(self, toolkit):
+        toolkit._session.get.return_value = _make_response(
+            json_data=[{"memoryId": "mem-1"}]
+        )
+        result = toolkit.goodmem_list_memories(space_id="sp-1")
+        assert result == [{"memoryId": "mem-1"}]
+
+    def test_list_memories_empty(self, toolkit):
+        toolkit._session.get.return_value = _make_response(
+            json_data={"memories": []}
+        )
+        result = toolkit.goodmem_list_memories(space_id="sp-1")
+        assert result == []
+
+    def test_list_memories_with_params(self, toolkit):
+        toolkit._session.get.return_value = _make_response(
+            json_data={"memories": []}
+        )
+        toolkit.goodmem_list_memories(
+            space_id="sp-1",
+            status_filter="COMPLETED",
+            sort_by="created_at",
+            sort_order="DESCENDING",
+        )
+        params = toolkit._session.get.call_args[1]["params"]
+        assert params["statusFilter"] == "COMPLETED"
+        assert params["sortBy"] == "created_at"
+        assert params["sortOrder"] == "DESCENDING"
+
+    def test_list_memories_no_params_by_default(self, toolkit):
+        toolkit._session.get.return_value = _make_response(
+            json_data={"memories": []}
+        )
+        toolkit.goodmem_list_memories(space_id="sp-1")
+        params = toolkit._session.get.call_args[1]["params"]
+        assert params == {}
+
+    def test_list_memories_error_propagates(self, toolkit):
+        toolkit._session.get.return_value = _make_response(
+            raise_for_status=requests.HTTPError("404")
+        )
+        with pytest.raises(requests.HTTPError):
+            toolkit.goodmem_list_memories(space_id="nonexistent")
+
+
+# ---------------------------------------------------------------------------
 # get_memory
 # ---------------------------------------------------------------------------
 
@@ -916,9 +1115,9 @@ class TestDeleteMemory:
 class TestGetTools:
     """Tests for get_tools."""
 
-    def test_get_tools_returns_seven_tools(self, toolkit):
+    def test_get_tools_returns_eleven_tools(self, toolkit):
         tools = toolkit.get_tools()
-        assert len(tools) == 7
+        assert len(tools) == 11
 
     def test_get_tools_correct_names(self, toolkit):
         tools = toolkit.get_tools()
@@ -926,8 +1125,12 @@ class TestGetTools:
         expected = [
             "goodmem_list_embedders",
             "goodmem_list_spaces",
+            "goodmem_get_space",
             "goodmem_create_space",
+            "goodmem_update_space",
+            "goodmem_delete_space",
             "goodmem_create_memory",
+            "goodmem_list_memories",
             "goodmem_retrieve_memories",
             "goodmem_get_memory",
             "goodmem_delete_memory",
