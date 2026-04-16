@@ -47,8 +47,7 @@ _MIME_TYPES: Dict[str, str] = {
     ),
     "xls": "application/vnd.ms-excel",
     "xlsx": (
-        "application/vnd.openxmlformats-officedocument"
-        ".spreadsheetml.sheet"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     ),
     "ppt": "application/vnd.ms-powerpoint",
     "pptx": (
@@ -155,7 +154,7 @@ class GoodMemToolkit(BaseToolkit):
     # List Embedders
     # ------------------------------------------------------------------
 
-    def list_embedders(self) -> List[Dict[str, Any]]:
+    def goodmem_list_embedders(self) -> List[Dict[str, Any]]:
         r"""Lists all available embedder models.
 
         Embedders convert text into vector representations for
@@ -196,7 +195,7 @@ class GoodMemToolkit(BaseToolkit):
     # List Spaces
     # ------------------------------------------------------------------
 
-    def list_spaces(self) -> List[Dict[str, Any]]:
+    def goodmem_list_spaces(self) -> List[Dict[str, Any]]:
         r"""Lists all existing spaces.
 
         A space is a logical container for organizing related memories
@@ -227,7 +226,7 @@ class GoodMemToolkit(BaseToolkit):
     # Create Space
     # ------------------------------------------------------------------
 
-    def create_space(
+    def goodmem_create_space(
         self,
         name: str,
         embedder_id: str,
@@ -246,7 +245,7 @@ class GoodMemToolkit(BaseToolkit):
         Args:
             name (str): A unique name for the space.
             embedder_id (str): The ID of the embedder model to use.
-                Use :meth:`list_embedders` to find available IDs.
+                Use :meth:`goodmem_list_embedders` to find available IDs.
             chunk_size (int): Number of characters per chunk when
                 splitting documents. (default: :obj:`256`)
             chunk_overlap (int): Number of overlapping characters
@@ -265,7 +264,7 @@ class GoodMemToolkit(BaseToolkit):
         """
         # Check if a space with the same name already exists.
         try:
-            spaces = self.list_spaces()
+            spaces = self.goodmem_list_spaces()
             for space in spaces:
                 if space.get("name") == name:
                     actual_embedder_id = embedder_id
@@ -326,7 +325,7 @@ class GoodMemToolkit(BaseToolkit):
     # Create Memory
     # ------------------------------------------------------------------
 
-    def create_memory(
+    def goodmem_create_memory(
         self,
         space_id: str,
         text_content: Optional[str] = None,
@@ -410,7 +409,7 @@ class GoodMemToolkit(BaseToolkit):
     # ------------------------------------------------------------------
 
     @manual_timeout
-    def retrieve_memories(
+    def goodmem_retrieve_memories(
         self,
         query: str,
         space_ids: List[str],
@@ -544,36 +543,25 @@ class GoodMemToolkit(BaseToolkit):
                 try:
                     item = json.loads(json_str)
                     if item.get("resultSetBoundary"):
-                        result_set_id = (
-                            item["resultSetBoundary"].get(
-                                "resultSetId", ""
-                            )
+                        result_set_id = item["resultSetBoundary"].get(
+                            "resultSetId", ""
                         )
                     elif item.get("memoryDefinition"):
                         memories.append(item["memoryDefinition"])
                     elif item.get("abstractReply"):
                         abstract_reply = item["abstractReply"]
                     elif item.get("retrievedItem"):
-                        chunk_data = (
-                            item["retrievedItem"]
-                            .get("chunk", {})
-                        )
+                        chunk_data = item["retrievedItem"].get("chunk", {})
                         chunk_inner = chunk_data.get("chunk", {})
                         results.append(
                             {
                                 "chunkId": chunk_inner.get("chunkId"),
-                                "chunkText": chunk_inner.get(
-                                    "chunkText"
-                                ),
-                                "memoryId": chunk_inner.get(
-                                    "memoryId"
-                                ),
+                                "chunkText": chunk_inner.get("chunkText"),
+                                "memoryId": chunk_inner.get("memoryId"),
                                 "relevanceScore": chunk_data.get(
                                     "relevanceScore"
                                 ),
-                                "memoryIndex": chunk_data.get(
-                                    "memoryIndex"
-                                ),
+                                "memoryIndex": chunk_data.get("memoryIndex"),
                             }
                         )
                 except json.JSONDecodeError:
@@ -608,7 +596,7 @@ class GoodMemToolkit(BaseToolkit):
     # Get Memory
     # ------------------------------------------------------------------
 
-    def get_memory(
+    def goodmem_get_memory(
         self,
         memory_id: str,
         include_content: bool = True,
@@ -652,16 +640,14 @@ class GoodMemToolkit(BaseToolkit):
                     headers=self._headers(include_content_type=False),
                 )
                 content_response.raise_for_status()
-                content_type = content_response.headers.get(
-                    "Content-Type", ""
-                )
+                content_type = content_response.headers.get("Content-Type", "")
                 if "text" in content_type:
                     result["content"] = content_response.text
                 else:
                     result["content"] = content_response.content
-            except requests.RequestException as req_err:
+            except requests.RequestException as request_error:
                 result["contentError"] = (
-                    f"Failed to fetch content: {req_err}"
+                    f"Failed to fetch content: {request_error}"
                 )
 
         return result
@@ -670,7 +656,7 @@ class GoodMemToolkit(BaseToolkit):
     # Delete Memory
     # ------------------------------------------------------------------
 
-    def delete_memory(self, memory_id: str) -> Dict[str, Any]:
+    def goodmem_delete_memory(self, memory_id: str) -> Dict[str, Any]:
         r"""Permanently deletes a memory and its associated data.
 
         Removes the memory record along with all its chunks and vector
@@ -706,11 +692,11 @@ class GoodMemToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(self.list_embedders),
-            FunctionTool(self.list_spaces),
-            FunctionTool(self.create_space),
-            FunctionTool(self.create_memory),
-            FunctionTool(self.retrieve_memories),
-            FunctionTool(self.get_memory),
-            FunctionTool(self.delete_memory),
+            FunctionTool(self.goodmem_list_embedders),
+            FunctionTool(self.goodmem_list_spaces),
+            FunctionTool(self.goodmem_create_space),
+            FunctionTool(self.goodmem_create_memory),
+            FunctionTool(self.goodmem_retrieve_memories),
+            FunctionTool(self.goodmem_get_memory),
+            FunctionTool(self.goodmem_delete_memory),
         ]
