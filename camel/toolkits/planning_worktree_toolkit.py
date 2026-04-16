@@ -340,11 +340,6 @@ class PlanningWorktreeToolkit(BaseToolkit):
                     working_directory=str(self.working_directory),
                 )
 
-            self.working_directory = main_repo_path
-            self.current_worktree_path = None
-            if self.switch_process_cwd:
-                os.chdir(main_repo_path)
-
             remove_result = self._run_git(
                 "worktree",
                 "remove",
@@ -358,6 +353,11 @@ class PlanningWorktreeToolkit(BaseToolkit):
                     or "Failed to remove worktree.",
                     working_directory=str(self.working_directory),
                 )
+
+            self.working_directory = main_repo_path
+            self.current_worktree_path = None
+            if self.switch_process_cwd:
+                os.chdir(main_repo_path)
 
             if branch_name:
                 self._run_git(
