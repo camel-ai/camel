@@ -115,10 +115,7 @@ class PlanningWorktreeToolkit(BaseToolkit):
             try:
                 if not plan_file.exists():
                     plan_file.write_text(
-                        "# Plan\n\n"
-                        "- Objective:\n"
-                        "- Constraints:\n"
-                        "- Steps:\n",
+                        "# Plan\n\n- Objective:\n- Constraints:\n- Steps:\n",
                         encoding="utf-8",
                     )
             except OSError as exc:
