@@ -351,7 +351,7 @@ def sanitize_and_enforce_required(parameters_dict):
         if isinstance(obj, dict):
             if (
                 obj.get("type") == "object"
-                and obj.get("additionalProperties") is not False
+                and "additionalProperties" not in obj
             ):
                 obj["additionalProperties"] = False
 

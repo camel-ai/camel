@@ -496,6 +496,17 @@ class OpenAICompatibleModel(BaseModelBackend):
             **request_config,
         )
 
+    def _prepare_request_config(
+        self,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        request_config = super()._prepare_request_config(tools)
+        if request_config.get("tools"):
+            self._enforce_object_additional_properties_false(
+                request_config["tools"]
+            )
+        return request_config
+
     # ------------------------------------------------------------------
     # Responses API helpers
     # ------------------------------------------------------------------
@@ -527,11 +538,16 @@ class OpenAICompatibleModel(BaseModelBackend):
 
     @staticmethod
     def _enforce_object_additional_properties_false(schema: Any) -> None:
-        r"""Recursively enforce strict object schema for Responses API."""
+        r"""Recursively force ``additionalProperties: false`` on every object
+        subschema. Overrides existing values that aren't already ``False`` so
+        that e.g. ``Dict[str, str]`` (which produces
+        ``additionalProperties: {"type": "string"}``) still satisfies strict
+        providers like Groq and OpenAI's strict tool schema mode.
+        """
         if isinstance(schema, dict):
             if (
                 schema.get("type") == "object"
-                and "additionalProperties" not in schema
+                and schema.get("additionalProperties") is not False
             ):
                 schema["additionalProperties"] = False
 
