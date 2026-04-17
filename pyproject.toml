@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.91a0"
+version = "0.2.91a1"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.15"
@@ -201,6 +201,7 @@ model_platforms = [
     "fish-audio-sdk>=1.0.0",
     "ibm-watsonx-ai>=1.3.11",
     "boto3>=1.42.64",
+    "xai_sdk>=1.11.0",
 ]
 huggingface = [
     "transformers>=4,<5",
@@ -465,6 +466,7 @@ all = [
     "scipy>=1.15.3",
     "statsmodels>=0.14.6",
     "av<16",
+    "xai_sdk>=1.11.0",
 ]
 earth-science = [
     "numpy>=1.2,<=2.2",
@@ -717,6 +719,7 @@ module = [
     "markitdown",
     "httplib2",
     "serpapi.*",
+    "xai_sdk",
 ]
 
 ignore_missing_imports = true
