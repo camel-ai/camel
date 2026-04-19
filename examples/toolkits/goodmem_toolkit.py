@@ -33,7 +33,8 @@ Prerequisites:
 
 Usage::
 
-    # 1. Set environment variables
+    # 1. Set environment variables. Either export them directly, or
+    #    store them in a .env file at the repository root.
     export OPENAI_API_KEY="sk-..."
     export GOODMEM_API_KEY="gm_..."
     export GOODMEM_BASE_URL="https://localhost:8080"
@@ -46,19 +47,83 @@ Note:
     CAMEL-supported provider works.  Swap the ``ModelFactory.create``
     call and set the provider's API key instead.
 
-    For self-signed certificates (e.g. local dev), set
-    ``verify_ssl=False`` in the ``GoodMemToolkit`` constructor.
+    Optional environment variable:
+
+        GOODMEM_VERIFY_SSL
+            Whether to verify the GoodMem server's TLS certificate.
+            Defaults to ``"true"``. Set it to ``"false"`` only when
+            connecting to a server that uses a self-signed
+            certificate (e.g. a local dev instance on
+            ``https://localhost``). Keep it ``"true"`` in production
+            or anywhere the server uses a CA-signed certificate.
 """
 
 from __future__ import annotations
 
+import os
 import sys
 import time
+
+import requests
+import urllib3
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.toolkits import GoodMemToolkit
 from camel.types import ModelPlatformType, ModelType
+
+REQUIRED_ENV_VARS = [
+    (
+        "GOODMEM_API_KEY",
+        "GoodMem API key (sent as X-API-Key).",
+    ),
+    (
+        "GOODMEM_BASE_URL",
+        "Base URL of your GoodMem server, e.g. https://localhost:8080.",
+    ),
+    (
+        "OPENAI_API_KEY",
+        "OpenAI API key used by the CAMEL default model. "
+        "Swap the ModelFactory.create call to use a different "
+        "provider.",
+    ),
+]
+
+
+def check_env_vars() -> None:
+    """Exit with a helpful message if required env vars are missing."""
+    missing = [
+        (name, desc)
+        for name, desc in REQUIRED_ENV_VARS
+        if not os.environ.get(name)
+    ]
+    if not missing:
+        return
+
+    lines = [
+        "Error: missing required environment variables:",
+        "",
+    ]
+    for name, desc in missing:
+        lines.append(f"  - {name}: {desc}")
+    lines.extend(
+        [
+            "",
+            "Set them before running, e.g.:",
+            "",
+            "  bash:",
+            "    export GOODMEM_API_KEY='gm_...'",
+            "    export GOODMEM_BASE_URL='https://localhost:8080'",
+            "    export OPENAI_API_KEY='sk-...'",
+            "",
+            "  PowerShell:",
+            "    $env:GOODMEM_API_KEY='gm_...'",
+            "    $env:GOODMEM_BASE_URL='https://localhost:8080'",
+            "    $env:OPENAI_API_KEY='sk-...'",
+        ]
+    )
+    sys.exit("\n".join(lines))
+
 
 # =========================================================================
 # Configuration
@@ -128,14 +193,23 @@ def section(title: str) -> None:
 
 def main() -> None:
     """Run the full GoodMem + CAMEL agent example end-to-end."""
+    check_env_vars()
 
     print("=" * 60)
     print("  GoodMem + CAMEL Agent Example")
     print("=" * 60)
 
     # --- Configuration ---
-    # Set verify_ssl=False for self-signed certificates in local dev.
-    goodmem_toolkit = GoodMemToolkit(verify_ssl=False)
+    # verify_ssl comes from GOODMEM_VERIFY_SSL env var; defaults to
+    # True so the safe behaviour is the default in production.
+    verify_ssl = (
+        os.environ.get("GOODMEM_VERIFY_SSL", "true").lower() != "false"
+    )
+    if not verify_ssl:
+        # Suppress the matching urllib3 warning so the output stays clean.
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    goodmem_toolkit = GoodMemToolkit(verify_ssl=verify_ssl)
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
@@ -155,7 +229,45 @@ def main() -> None:
 
     # ---- Step 1: Discover embedders ----
     section("Step 1: Discovering embedders")
-    embedders = goodmem_toolkit.goodmem_list_embedders()
+    try:
+        embedders = goodmem_toolkit.goodmem_list_embedders()
+    except requests.HTTPError as http_error:
+        status = (
+            http_error.response.status_code
+            if http_error.response is not None
+            else None
+        )
+        if status == 401:
+            sys.exit(
+                "Error: GoodMem rejected the request with 401 "
+                "Unauthorized.\n"
+                "Your GOODMEM_API_KEY is set but invalid or expired. "
+                "Double-check the value in your environment or .env "
+                "file."
+            )
+        if status == 403:
+            sys.exit(
+                "Error: GoodMem rejected the request with 403 "
+                "Forbidden.\n"
+                "Your GOODMEM_API_KEY is valid but does not have "
+                "permission for this operation."
+            )
+        raise
+    except requests.exceptions.SSLError:
+        sys.exit(
+            "Error: TLS certificate verification failed for "
+            f"{goodmem_toolkit.base_url}.\n"
+            "If the server uses a self-signed certificate (e.g. a "
+            "local dev instance), set GOODMEM_VERIFY_SSL=false."
+        )
+    except requests.ConnectionError:
+        sys.exit(
+            "Error: could not connect to the GoodMem server at "
+            f"{goodmem_toolkit.base_url}.\n"
+            "Verify GOODMEM_BASE_URL is correct and the server is "
+            "running."
+        )
+
     if not embedders:
         sys.exit(
             "Error: No embedders found on the GoodMem server.\n"
