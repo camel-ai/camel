@@ -286,16 +286,50 @@ res = ",".join(l)"""
     assert execution_res == "2,3,5,7,11"
 
 
-def test_expression_not_support(interpreter: InternalPythonInterpreter):
+def test_augassign_add(interpreter: InternalPythonInterpreter):
     code = """x = 1
 x += 1"""
-    with pytest.raises(InterpreterError) as e:
-        interpreter.execute(code, keep_state=False)
-    exec_msg = e.value.args[0]
-    assert exec_msg == (
-        "Evaluation of the code stopped at node 1. See:"
-        "\nAugAssign is not supported."
-    )
+    result = interpreter.execute(code, keep_state=False)
+    assert result == 2
+
+
+def test_augassign_operators(interpreter: InternalPythonInterpreter):
+    code = """x = 10
+x -= 3"""
+    result = interpreter.execute(code, keep_state=False)
+    assert result == 7
+
+    code = """x = 3
+x *= 4"""
+    result = interpreter.execute(code, keep_state=False)
+    assert result == 12
+
+    code = """x = 10
+x //= 3"""
+    result = interpreter.execute(code, keep_state=False)
+    assert result == 3
+
+    code = """x = 2
+x **= 3"""
+    result = interpreter.execute(code, keep_state=False)
+    assert result == 8
+
+    code = """x = 10
+x %= 3"""
+    result = interpreter.execute(code, keep_state=False)
+    assert result == 1
+
+
+def test_annassign(interpreter: InternalPythonInterpreter):
+    code = "x: int = 5"
+    result = interpreter.execute(code, keep_state=False)
+    assert result == 5
+
+
+def test_annassign_no_value(interpreter: InternalPythonInterpreter):
+    code = "x: int"
+    result = interpreter.execute(code, keep_state=False)
+    assert result is None
 
 
 def test_allow_builtins(interpreter: InternalPythonInterpreter):
