@@ -767,9 +767,7 @@ class XAIModel(BaseModelBackend):
                 # messages are genuinely new.  ChatAgent's streaming
                 # path may also record duplicate assistant messages,
                 # so filtering by role is the safest approach.
-                delta = [
-                    m for m in delta if m.get("role") != "assistant"
-                ]
+                delta = [m for m in delta if m.get("role") != "assistant"]
                 if delta:
                     return delta
 
