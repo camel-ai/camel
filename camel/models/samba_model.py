@@ -49,7 +49,7 @@ except (ImportError, AttributeError):
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -171,7 +171,7 @@ class SambaModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(  # type: ignore[misc]
         self,
         messages: List[OpenAIMessage],
@@ -199,7 +199,6 @@ class SambaModel(BaseModelBackend):
             model_parameters=self.model_config_dict,
         )
 
-        self._log_and_trace()
 
         if self.model_config_dict.get("stream") is True:
             return await self._arun_streaming(messages, tools)
@@ -210,7 +209,7 @@ class SambaModel(BaseModelBackend):
             )
             return response
 
-    @observe(as_type="generation")
+    @observe()
     def _run(  # type: ignore[misc]
         self,
         messages: List[OpenAIMessage],
@@ -236,7 +235,6 @@ class SambaModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         if self.model_config_dict.get("stream") is True:
             return self._run_streaming(messages, tools)

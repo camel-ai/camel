@@ -40,7 +40,7 @@ from camel.utils import (
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -290,7 +290,7 @@ class CohereModel(BaseModelBackend):
 
         return request_config
 
-    @observe(as_type="generation")
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -313,7 +313,6 @@ class CohereModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         from cohere.core.api_error import ApiError
 
@@ -360,7 +359,7 @@ class CohereModel(BaseModelBackend):
 
         return openai_response
 
-    @observe(as_type="generation")
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -383,7 +382,6 @@ class CohereModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         from cohere.core.api_error import ApiError
 
