@@ -39,6 +39,7 @@ from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models._utils import list_openai_model_ids
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -122,9 +123,12 @@ class OpenAIModel(BaseModelBackend):
             Ignored if custom clients are provided.
     """
 
+    _API_KEY_ENV_VAR: str = "OPENAI_API_KEY"
+    _BASE_URL_ENV_VAR: str = "OPENAI_API_BASE_URL"
+
     @api_keys_required(
         [
-            ("api_key", "OPENAI_API_KEY"),
+            ("api_key", _API_KEY_ENV_VAR),
         ]
     )
     def __init__(
@@ -145,8 +149,8 @@ class OpenAIModel(BaseModelBackend):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
-        api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        url = url or os.environ.get("OPENAI_API_BASE_URL")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
+        url = url or os.environ.get(self._BASE_URL_ENV_VAR)
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         if api_mode not in {"chat_completions", "responses"}:
             raise ValueError(
@@ -971,6 +975,35 @@ class OpenAIModel(BaseModelBackend):
             model=self.model_type,
             response_format=response_format,
             **request_config,
+        )
+
+    @classmethod
+    def list_available_models(
+        cls,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        timeout: int = 30,
+    ) -> List[str]:
+        r"""List available model IDs from the OpenAI API.
+
+        Args:
+            api_key (Optional[str], optional): The API key. If not
+                provided, reads from ``OPENAI_API_KEY``.
+                (default: :obj:`None`)
+            url (Optional[str], optional): The base URL.
+                (default: :obj:`None`)
+            timeout (int, optional): Timeout in seconds.
+                (default: :obj:`30`)
+
+        Returns:
+            List[str]: A sorted list of available model ID strings.
+        """
+        api_key = api_key or os.environ.get(cls._API_KEY_ENV_VAR)
+        url = url or os.environ.get(cls._BASE_URL_ENV_VAR)
+        return list_openai_model_ids(
+            api_key=api_key,
+            url=url,
+            timeout=timeout,
         )
 
     @property
