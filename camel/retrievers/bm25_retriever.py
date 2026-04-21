@@ -46,7 +46,9 @@ class BM25Retriever(BaseRetriever):
 
         self.bm25: BM25Okapi = None
         self.content_input_path: str = ""
-        self.unstructured_modules: UnstructuredIO = UnstructuredIO()
+        self.unstructured_modules: UnstructuredIO = (
+            UnstructuredIO()
+        )
 
     def process(
         self,
@@ -69,9 +71,7 @@ class BM25Retriever(BaseRetriever):
 
         # Load and preprocess documents
         self.content_input_path = content_input_path
-        elements = self.unstructured_modules.parse_file_or_url(
-            content_input_path, **kwargs
-        )
+        elements = self.unstructured_modules.load(content_input_path, **kwargs)
         if elements:
             self.chunks = self.unstructured_modules.chunk_elements(
                 chunk_type=chunk_type, elements=elements
