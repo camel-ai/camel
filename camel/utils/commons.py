@@ -686,8 +686,15 @@ def _has_rate_limit_signal(error: Exception) -> bool:
 
     # ---- message keywords ----
     msg = str(error).lower()
-    if any(kw in msg for kw in ("rate limit", "rate_limit", "ratelimit",
-                                "too many requests")):
+    if any(
+        kw in msg
+        for kw in (
+            "rate limit",
+            "rate_limit",
+            "ratelimit",
+            "too many requests",
+        )
+    ):
         return True
 
     return False
@@ -759,8 +766,9 @@ def is_rate_limit_error(error: Exception) -> bool:
         from mistralai.models.sdkerror import SDKError
 
         if isinstance(error, SDKError):
-            if getattr(error, "status_code", None) == 429 and \
-                    _has_rate_limit_signal(error):
+            if getattr(
+                error, "status_code", None
+            ) == 429 and _has_rate_limit_signal(error):
                 return True
     except ImportError:
         pass
