@@ -20,6 +20,7 @@ Skills are discovered from filesystem roots and loaded on-demand.
 def __init__(
     self,
     working_directory: Optional[str] = None,
+    allowed_skills: Optional[Set[str]] = None,
     timeout: Optional[float] = None
 ):
 ```

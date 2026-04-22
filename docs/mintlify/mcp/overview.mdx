@@ -2,6 +2,10 @@
 title: 'Overview'
 description: 'Introduction to MCP: what it is, why it matters, and how it transforms agent integration.'
 icon: 'play'
+
+doc_code_map:
+  - "camel/toolkits/mcp_toolkit.py"
+  - "camel/utils/mcp_client.py"
 ---
 
 ## What is MCP all about?

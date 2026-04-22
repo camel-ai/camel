@@ -268,6 +268,23 @@ Examples:
   logger.debug(f"User input: {user_input}")
   ```
 
+For model request/response JSON logs during development or debugging,
+you can use:
+
+```bash
+export CAMEL_MODEL_LOG_ENABLED=true
+export CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED=true
+export CAMEL_LOG_DIR=camel_logs
+```
+
+- `CAMEL_MODEL_LOG_ENABLED`: Enables model request/response log files.
+- `CAMEL_MODEL_LOG_MODEL_CONFIG_ENABLED`: Controls whether
+  `model_config_dict` is added to `request.model_config_dict`.
+  When unset, it defaults to the same value as
+  `CAMEL_MODEL_LOG_ENABLED`.
+- `CAMEL_LOG_DIR`: Sets the output directory for those logs.
+- Logs are written in UTF-8 JSON so multilingual text stays readable.
+
 
 ### Board Item Create Workflow 🛠️
 At CAMEL, we manage our project through a structured workflow that ensures efficiency and clarity in our development process. Our workflow includes stages for issue creation and pull requests (PRs), sprint planning, and reviews.

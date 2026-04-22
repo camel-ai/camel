@@ -2,6 +2,9 @@
 title: "Societies"
 description: "Collaborative agent frameworks in CAMEL: autonomous social behaviors, role-based task solving, and turn-based agent societies."
 icon: people-group
+
+doc_code_map:
+  - "camel/societies/**/*.py"
 ---
 
 <Note type="info" title="What is the Society Module?">
