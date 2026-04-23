@@ -541,6 +541,7 @@ class GoodMemToolkit(BaseToolkit):
         relevance_threshold: Optional[float] = None,
         llm_temperature: Optional[float] = None,
         chronological_resort: bool = False,
+        metadata_filter: Optional[str] = None,
     ) -> Dict[str, Any]:
         r"""Performs similarity-based semantic retrieval across spaces.
 
@@ -581,6 +582,13 @@ class GoodMemToolkit(BaseToolkit):
             chronological_resort (bool): Reorder results by creation
                 time instead of relevance score.
                 (default: :obj:`False`)
+            metadata_filter (Optional[str]): A SQL-style JSONPath
+                expression applied server-side to narrow results by
+                metadata. Example: ``CAST(val('$.category') AS
+                TEXT) = 'feat'`` returns only memories whose
+                ``metadata.category`` equals ``feat``. When set, the
+                same filter is applied to every space in
+                ``space_ids``. (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: A dictionary with keys ``success``,
@@ -588,12 +596,17 @@ class GoodMemToolkit(BaseToolkit):
                 ``totalResults``, ``query``, and optionally
                 ``abstractReply``.
         """
-        space_keys = [{"spaceId": sid} for sid in space_ids if sid]
+        space_keys: List[Dict[str, Any]] = [
+            {"spaceId": sid} for sid in space_ids if sid
+        ]
         if not space_keys:
             return {
                 "success": False,
                 "error": "At least one space must be provided.",
             }
+        if metadata_filter:
+            for space_key in space_keys:
+                space_key["filter"] = metadata_filter
 
         request_body: Dict[str, Any] = {
             "message": query,
