@@ -17,6 +17,7 @@ from .function_tool import (
     get_openai_function_schema,
     get_openai_tool_schema,
     generate_docstring,
+    tool,
 )
 from .open_api_specs.security_config import openapi_security_config
 
@@ -65,7 +66,7 @@ from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
 from .browser_toolkit import BrowserToolkit
 from .async_browser_toolkit import AsyncBrowserToolkit
-from .file_toolkit import FileToolkit, FileWriteToolkit
+from .file_toolkit import FileToolkit
 from .pptx_toolkit import PPTXToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
@@ -100,11 +101,18 @@ from .minimax_mcp_toolkit import MinimaxMCPToolkit
 from .imap_mail_toolkit import IMAPMailToolkit
 from .microsoft_outlook_mail_toolkit import OutlookMailToolkit
 from .earth_science_toolkit import EarthScienceToolkit
+from .skill_toolkit import SkillToolkit
+from .headless_browser_search_toolkit import HeadlessBrowserSearchToolkit
+from .agent_toolkit import AgentToolkit
+from .planning_worktree_toolkit import PlanningWorktreeToolkit
+from .todo_toolkit import TodoItem, TodoToolkit
+from .web_fetch_toolkit import WebFetchToolkit
 
 __all__ = [
     'BaseToolkit',
     'manual_timeout',
     'FunctionTool',
+    'tool',
     'get_openai_function_schema',
     'get_openai_tool_schema',
     "generate_docstring",
@@ -153,7 +161,6 @@ __all__ = [
     'BrowserToolkit',
     'AsyncBrowserToolkit',
     'FileToolkit',
-    'FileWriteToolkit',  # Deprecated, use FileToolkit instead
     'PPTXToolkit',
     'TerminalToolkit',
     'PubMedToolkit',
@@ -191,4 +198,11 @@ __all__ = [
     'IMAPMailToolkit',
     "OutlookMailToolkit",
     'EarthScienceToolkit',
+    'SkillToolkit',
+    'HeadlessBrowserSearchToolkit',
+    'AgentToolkit',
+    'PlanningWorktreeToolkit',
+    'TodoItem',
+    'TodoToolkit',
+    'WebFetchToolkit',
 ]

@@ -49,6 +49,7 @@ from typing import (
     cast,
 )
 
+from json_repair import repair_json
 from openai import (
     AsyncStream,
     RateLimitError,
@@ -84,6 +85,7 @@ from camel.models import (
     ModelManager,
     ModelProcessingError,
 )
+from camel.models._utils import extract_thinking_from_content
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
 from camel.storages import JsonStorage
@@ -104,6 +106,7 @@ from camel.utils import (
 )
 from camel.utils.commons import dependencies_required
 from camel.utils.context_utils import ContextUtility
+from camel.utils.langfuse import set_current_agent_session_id
 from camel.utils.tool_result import ToolResult
 
 if TYPE_CHECKING:
@@ -137,7 +140,12 @@ except (ImportError, AttributeError):
     from camel.utils import track_agent
 
 # Langfuse decorator setting
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+if os.environ.get("LOGFIRE_TOKEN") is not None:
+    import logfire
+
+    logfire.configure(scrubbing=False)
+    observe = logfire.instrument
+elif os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
         from langfuse.decorators import observe
     except ImportError:
@@ -451,6 +459,15 @@ class ChatAgent(BaseAgent):
         step_timeout (Optional[float], optional): Timeout in seconds for the
             entire step operation. If None, no timeout is applied.
             (default: :obj:`None`)
+        step_timeout_max_retries (int, optional): Maximum number of retry
+            attempts when a step times out. Set to 0 to disable retries.
+            (default: :obj:`0`)
+        on_request_usage (Optional[Callable[[Dict[str, Any]], Any]],
+            optional): Callback triggered after each LLM request completes.
+            Useful for real-time token metering within a single step loop.
+            The callback receives a payload with per-request usage and
+            cumulative step usage.
+            (default: :obj:`None`)
         stream_accumulate (Optional[bool], optional): When True, partial
             streaming updates return accumulated content. When False, partial
             updates return only the incremental delta (recommended).
@@ -506,6 +523,8 @@ class ChatAgent(BaseAgent):
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        step_timeout_max_retries: int = 0,
+        on_request_usage: Optional[Callable[[Dict[str, Any]], Any]] = None,
         stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
     ) -> None:
@@ -618,6 +637,8 @@ class ChatAgent(BaseAgent):
         self.retry_attempts = max(1, retry_attempts)
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
+        self.step_timeout_max_retries = max(0, step_timeout_max_retries)
+        self.on_request_usage = on_request_usage
         self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
 
@@ -635,6 +656,9 @@ class ChatAgent(BaseAgent):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
+        # Snapshot-clean cache is per-conversation state and must not survive
+        # agent reuse (e.g. pooled workers across different tasks).
+        self._tool_output_history.clear()
         for terminator in self.response_terminators:
             terminator.reset()
 
@@ -657,10 +681,9 @@ class ChatAgent(BaseAgent):
 
         total_tokens = prompt_tokens + completion_tokens
         context_creator = self.memory.get_context_creator()
-        if hasattr(context_creator, 'set_cached_token_count'):
-            context_creator.set_cached_token_count(
-                total_tokens, message_count + 1
-            )
+        set_cached = getattr(context_creator, "set_cached_token_count", None)
+        if callable(set_cached):
+            set_cached(total_tokens, message_count + 1)
 
     def _resolve_models(
         self,
@@ -838,14 +861,70 @@ class ChatAgent(BaseAgent):
         r"""Set the agent memory.
 
         When setting a new memory, the system message is automatically
-        re-added to ensure it's not lost.
+        added after existing system messages, while preserving existing
+        memory data.
 
         Args:
             value (AgentMemory): The new agent memory to use.
         """
         self._memory = value
-        # Ensure the new memory has the system message
-        self.init_messages()
+
+        # Reset summary state for the new memory
+        self._reset_summary_state()
+
+        # Clear token cache for the new memory
+        context_creator = self.memory.get_context_creator()
+        clear_cache = getattr(context_creator, "clear_cache", None)
+        if callable(clear_cache):
+            clear_cache()
+
+        if self.system_message is None:
+            return
+
+        # Get existing records from new memory
+        existing_records = self.memory.retrieve()
+
+        # Fast path: empty memory, just write system message
+        if not existing_records:
+            self.memory.write_record(
+                MemoryRecord(
+                    message=self.system_message,
+                    role_at_backend=OpenAIBackendRole.SYSTEM,
+                    timestamp=time.time_ns() / 1_000_000_000,
+                    agent_id=self.agent_id,
+                )
+            )
+            return
+
+        # Separate system messages and other messages in one pass
+        existing_system_records = []
+        other_records = []
+        for r in existing_records:
+            if r.memory_record.role_at_backend == OpenAIBackendRole.SYSTEM:
+                existing_system_records.append(r.memory_record)
+            else:
+                other_records.append(r.memory_record)
+
+        # Clear and rewrite in correct order
+        self.memory.clear()
+
+        # 1. Write existing system messages first
+        if existing_system_records:
+            self.memory.write_records(existing_system_records)
+
+        # 2. Write current agent's system message
+        self.memory.write_record(
+            MemoryRecord(
+                message=self.system_message,
+                role_at_backend=OpenAIBackendRole.SYSTEM,
+                timestamp=time.time_ns() / 1_000_000_000,
+                agent_id=self.agent_id,
+            )
+        )
+
+        # 3. Write other records
+        if other_records:
+            self.memory.write_records(other_records)
 
     def set_context_utility(
         self, context_utility: Optional[ContextUtility]
@@ -1247,7 +1326,7 @@ class ChatAgent(BaseAgent):
 
         def save_quoted(match):
             quoted_parts.append(match.group(0))
-            return f'__QUOTED_{len(quoted_parts)-1}__'
+            return f'__QUOTED_{len(quoted_parts) - 1}__'
 
         line = re.sub(r'"[^"]*"', save_quoted, line)
         line = re.sub(r'\s*\[[^\]]+\]\s*', ' ', line)
@@ -1277,8 +1356,6 @@ class ChatAgent(BaseAgent):
             The cleaned content with deduplicated lines.
         """
         try:
-            import json
-
             data = json.loads(content)
             modified = False
 
@@ -1449,10 +1526,29 @@ class ChatAgent(BaseAgent):
                 return
 
             existing_records = storage.load()
+            existing_record_uuids = {
+                str(record.get("uuid"))
+                for record in existing_records
+                if record.get("uuid") is not None
+            }
+            matched_uuids = [
+                record_uuid
+                for record_uuid in entry.record_uuids
+                if record_uuid in existing_record_uuids
+            ]
+
+            if not matched_uuids:
+                # Record no longer exists in current memory (e.g. after reset).
+                # Skip rewriting to avoid injecting orphan tool messages.
+                entry.cached = True
+                entry.record_uuids = []
+                entry.record_timestamps = []
+                return
+
             updated_records = [
                 record
                 for record in existing_records
-                if record["uuid"] not in entry.record_uuids
+                if str(record.get("uuid")) not in matched_uuids
             ]
             new_record = MemoryRecord(
                 message=cleaned_message,
@@ -1733,6 +1829,7 @@ class ChatAgent(BaseAgent):
                     agent_id=f"{self.agent_id}_context_summarizer",
                     token_limit=self.token_limit,
                     summarize_threshold=None,
+                    on_request_usage=self.on_request_usage,
                 )
             else:
                 self._context_summary_agent.reset()
@@ -1776,7 +1873,7 @@ class ChatAgent(BaseAgent):
                 return result
 
             # handle structured output if response_format was provided
-            structured_output = None
+            structured_output: BaseModel | dict[str, Any] | None = None
             if response_format and response.msgs[-1].parsed:
                 structured_output = response.msgs[-1].parsed
 
@@ -1784,19 +1881,22 @@ class ChatAgent(BaseAgent):
             # structured output, or generate timestamp
             if filename:
                 base_filename = filename
-            elif structured_output and hasattr(
-                structured_output, 'task_title'
-            ):
-                # use task_title from structured output for filename
-                task_title = structured_output.task_title
+            else:
+                task_title = ""
+                if isinstance(structured_output, BaseModel):
+                    task_title = str(getattr(structured_output, "task_title", ""))
+                elif isinstance(structured_output, dict):
+                    task_title = str(structured_output.get("task_title") or "")
+
+            if not filename and task_title:
                 clean_title = ContextUtility.sanitize_workflow_filename(
                     task_title
                 )
                 base_filename = (
                     f"{clean_title}_workflow" if clean_title else "workflow"
                 )
-            else:
-                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
+            elif not filename:
+                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
             base_filename = Path(base_filename).with_suffix("").name
 
@@ -1814,10 +1914,16 @@ class ChatAgent(BaseAgent):
                 # exclude operation_mode and target_workflow_filename
                 # if present (used for workflow save logic, not persisted)
                 exclude_fields = []
-                if hasattr(structured_output, 'operation_mode'):
-                    exclude_fields.append('operation_mode')
-                if hasattr(structured_output, 'target_workflow_filename'):
-                    exclude_fields.append('target_workflow_filename')
+                if isinstance(structured_output, BaseModel):
+                    if hasattr(structured_output, 'operation_mode'):
+                        exclude_fields.append('operation_mode')
+                    if hasattr(structured_output, 'target_workflow_filename'):
+                        exclude_fields.append('target_workflow_filename')
+                elif isinstance(structured_output, dict):
+                    if "operation_mode" in structured_output:
+                        exclude_fields.append("operation_mode")
+                    if "target_workflow_filename" in structured_output:
+                        exclude_fields.append("target_workflow_filename")
 
                 summary_content = context_util.structured_output_to_markdown(
                     structured_data=structured_output,
@@ -1925,8 +2031,6 @@ class ChatAgent(BaseAgent):
 
                     # Parse and format arguments for readability
                     try:
-                        import json
-
                         args_dict = json.loads(func_args_str)
                         args_formatted = ', '.join(
                             f"{k}={v}" for k, v in args_dict.items()
@@ -2026,6 +2130,7 @@ class ChatAgent(BaseAgent):
                     agent_id=f"{self.agent_id}_context_summarizer",
                     token_limit=self.token_limit,
                     summarize_threshold=None,
+                    on_request_usage=self.on_request_usage,
                 )
             else:
                 self._context_summary_agent.reset()
@@ -2171,6 +2276,7 @@ class ChatAgent(BaseAgent):
                     agent_id=f"{self.agent_id}_context_summarizer",
                     token_limit=self.token_limit,
                     summarize_threshold=None,
+                    on_request_usage=self.on_request_usage,
                 )
             else:
                 self._context_summary_agent.reset()
@@ -2243,7 +2349,7 @@ class ChatAgent(BaseAgent):
                     f"{clean_title}_workflow" if clean_title else "workflow"
                 )
             else:
-                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
+                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
             base_filename = Path(base_filename).with_suffix("").name
 
@@ -2328,8 +2434,9 @@ class ChatAgent(BaseAgent):
 
         # Reset token cache when memory is cleared
         context_creator = self.memory.get_context_creator()
-        if hasattr(context_creator, 'clear_cache'):
-            context_creator.clear_cache()
+        clear_cache = getattr(context_creator, "clear_cache", None)
+        if callable(clear_cache):
+            clear_cache()
 
         if self.system_message is not None:
             self.memory.write_record(
@@ -2773,19 +2880,47 @@ class ChatAgent(BaseAgent):
 
         # Execute with timeout if configured
         if self.step_timeout is not None:
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=1
-            ) as executor:
-                future = executor.submit(
-                    self._step_impl, input_message, response_format
-                )
-                try:
-                    return future.result(timeout=self.step_timeout)
-                except concurrent.futures.TimeoutError:
-                    future.cancel()
-                    raise TimeoutError(
-                        f"Step timed out after {self.step_timeout}s"
+            # Retry loop for timeout errors
+            max_retries = self.step_timeout_max_retries
+            last_error: Optional[TimeoutError] = None
+
+            for attempt in range(max_retries + 1):
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=1
+                ) as executor:
+                    future = executor.submit(
+                        self._step_impl, input_message, response_format
                     )
+                    try:
+                        return future.result(timeout=self.step_timeout)
+                    except concurrent.futures.TimeoutError:
+                        future.cancel()
+                        if attempt < max_retries:
+                            logger.warning(
+                                f"Step timed out after {self.step_timeout}s "
+                                f"(attempt {attempt + 1}/{max_retries + 1}), "
+                                f"retrying in 5 seconds..."
+                            )
+                            import time
+
+                            time.sleep(5)
+                        else:
+                            # All retries exhausted
+                            if max_retries > 0:
+                                last_error = TimeoutError(
+                                    f"Step timed out after {self.step_timeout}s"
+                                    f" (exhausted {max_retries + 1} attempts)"
+                                )
+                            else:
+                                last_error = TimeoutError(
+                                    f"Step timed out after {self.step_timeout}s"
+                                )
+                            raise last_error
+
+            # This should not be reached, but just in case
+            if last_error:
+                raise last_error
+            raise RuntimeError("Unexpected state in step retry loop")
         else:
             return self._step_impl(input_message, response_format)
 
@@ -2801,12 +2936,7 @@ class ChatAgent(BaseAgent):
         set_current_agent_id(self.agent_id)
 
         # Set Langfuse session_id using agent_id for trace grouping
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
+        set_current_agent_session_id(self.agent_id)
 
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
@@ -2840,6 +2970,10 @@ class ChatAgent(BaseAgent):
         step_token_usage = self._create_token_usage_tracker()
         iteration_count: int = 0
         prev_num_openai_messages: int = 0
+
+        # Track if we've recorded tool calls for the current response
+        # to avoid duplicate assistant message recording
+        recorded_tool_calls = False
 
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
@@ -2878,6 +3012,12 @@ class ChatAgent(BaseAgent):
             self._update_token_usage_tracker(
                 step_token_usage, response.usage_dict
             )
+            self._emit_request_usage(
+                usage_dict=response.usage_dict,
+                step_usage=step_token_usage.copy(),
+                request_index=iteration_count,
+                response_id=response.response_id,
+            )
 
             # Update token cache from LLM response
             self._update_token_cache(response.usage_dict, len(openai_messages))
@@ -2894,8 +3034,12 @@ class ChatAgent(BaseAgent):
                     "termination_triggered",
                 )
 
+            # Reset flag for each iteration
+            recorded_tool_calls = False
+
             if tool_call_requests := response.tool_call_requests:
-                # Process all tool calls
+                # Separate internal and external tool calls
+                internal_tool_requests = []
                 for tool_call_request in tool_call_requests:
                     if (
                         tool_call_request.tool_name
@@ -2905,17 +3049,33 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
-                        if (
-                            self.pause_event is not None
-                            and not self.pause_event.is_set()
-                        ):
-                            if isinstance(self.pause_event, threading.Event):
-                                self.pause_event.wait()
-                            else:
-                                while not self.pause_event.is_set():
-                                    time.sleep(0.001)
-                        result = self._execute_tool(tool_call_request)
-                        tool_call_records.append(result)
+                        internal_tool_requests.append(tool_call_request)
+
+                # Record the assistant message with ALL tool calls (internal +
+                # external)
+                response_content = ""
+                if response.output_messages:
+                    response_content = (
+                        response.output_messages[0].content or ""
+                    )
+                self._record_assistant_tool_calls_from_requests(
+                    tool_call_requests, content=response_content
+                )
+                recorded_tool_calls = True
+
+                # Execute internal tools only
+                for tool_call_request in internal_tool_requests:
+                    if (
+                        self.pause_event is not None
+                        and not self.pause_event.is_set()
+                    ):
+                        if isinstance(self.pause_event, threading.Event):
+                            self.pause_event.wait()
+                        else:
+                            while not self.pause_event.is_set():
+                                time.sleep(0.001)
+                    result = self._execute_tool(tool_call_request)
+                    tool_call_records.append(result)
 
                 # If we found external tool calls, break the loop
                 if external_tool_call_requests:
@@ -2978,7 +3138,10 @@ class ChatAgent(BaseAgent):
                 response, original_response_format
             )
 
-        self._record_final_output(response.output_messages)
+        # Only record final output if we haven't already recorded tool calls
+        # for this response (to avoid duplicate assistant messages)
+        if not recorded_tool_calls:
+            self._record_final_output(response.output_messages)
 
         # Clean tool call messages from memory after response generation
         if self.prune_tool_calls_from_memory and tool_call_records:
@@ -3036,13 +3199,7 @@ class ChatAgent(BaseAgent):
 
         set_current_agent_id(self.agent_id)
 
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
-
+        set_current_agent_session_id(self.agent_id)
         stream = self.model_backend.model_config_dict.get("stream", False)
         if stream:
             # Return wrapped async generator that is awaitable
@@ -3050,17 +3207,46 @@ class ChatAgent(BaseAgent):
             return AsyncStreamingChatAgentResponse(async_generator)
         else:
             if self.step_timeout is not None:
-                try:
-                    return await asyncio.wait_for(
-                        self._astep_non_streaming_task(
-                            input_message, response_format
-                        ),
-                        timeout=self.step_timeout,
-                    )
-                except asyncio.TimeoutError:
-                    raise asyncio.TimeoutError(
-                        f"Async step timed out after {self.step_timeout}s"
-                    )
+                # Retry loop for timeout errors
+                max_retries = self.step_timeout_max_retries
+                last_error: Optional[asyncio.TimeoutError] = None
+
+                for attempt in range(max_retries + 1):
+                    try:
+                        return await asyncio.wait_for(
+                            self._astep_non_streaming_task(
+                                input_message, response_format
+                            ),
+                            timeout=self.step_timeout,
+                        )
+                    except asyncio.TimeoutError as e:
+                        last_error = e
+                        if attempt < max_retries:
+                            logger.warning(
+                                f"Async step timed out after "
+                                f"{self.step_timeout}s "
+                                f"(attempt {attempt + 1}/{max_retries + 1}), "
+                                f"retrying in 5 seconds..."
+                            )
+                            await asyncio.sleep(5)
+                        else:
+                            # All retries exhausted
+                            if max_retries > 0:
+                                raise asyncio.TimeoutError(
+                                    f"Async step timed out after "
+                                    f"{self.step_timeout}s "
+                                    f"(exhausted {max_retries + 1} attempts)"
+                                ) from last_error
+                            else:
+                                raise asyncio.TimeoutError(
+                                    f"Async step timed out after "
+                                    f"{self.step_timeout}s"
+                                ) from last_error
+
+                # This should not be reached, but just in case
+                if last_error:
+                    raise last_error
+                raise RuntimeError("Unexpected state in astep retry loop")
             else:
                 return await self._astep_non_streaming_task(
                     input_message, response_format
@@ -3077,13 +3263,7 @@ class ChatAgent(BaseAgent):
 
         set_current_agent_id(self.agent_id)
 
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
-
+        set_current_agent_session_id(self.agent_id)
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
         disable_tools = self._is_called_from_registered_toolkit()
@@ -3113,6 +3293,10 @@ class ChatAgent(BaseAgent):
         step_token_usage = self._create_token_usage_tracker()
         iteration_count: int = 0
         prev_num_openai_messages: int = 0
+
+        # Track if we've recorded tool calls for the current response
+        # to avoid duplicate assistant message recording
+        recorded_tool_calls = False
 
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
@@ -3150,6 +3334,12 @@ class ChatAgent(BaseAgent):
             self._update_token_usage_tracker(
                 step_token_usage, response.usage_dict
             )
+            await self._aemit_request_usage(
+                usage_dict=response.usage_dict,
+                step_usage=step_token_usage.copy(),
+                request_index=iteration_count,
+                response_id=response.response_id,
+            )
 
             # Update token cache from LLM response
             self._update_token_cache(response.usage_dict, len(openai_messages))
@@ -3166,8 +3356,12 @@ class ChatAgent(BaseAgent):
                     "termination_triggered",
                 )
 
+            # Reset flag for each iteration
+            recorded_tool_calls = False
+
             if tool_call_requests := response.tool_call_requests:
-                # Process all tool calls
+                # Separate internal and external tool calls
+                internal_tool_requests = []
                 for tool_call_request in tool_call_requests:
                     if (
                         tool_call_request.tool_name
@@ -3177,21 +3371,37 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
-                        if (
-                            self.pause_event is not None
-                            and not self.pause_event.is_set()
-                        ):
-                            if isinstance(self.pause_event, asyncio.Event):
-                                await self.pause_event.wait()
-                            elif isinstance(self.pause_event, threading.Event):
-                                loop = asyncio.get_event_loop()
-                                await loop.run_in_executor(
-                                    None, self.pause_event.wait
-                                )
-                        tool_call_record = await self._aexecute_tool(
-                            tool_call_request
-                        )
-                        tool_call_records.append(tool_call_record)
+                        internal_tool_requests.append(tool_call_request)
+
+                # Record the assistant message with ALL tool calls (internal +
+                # external) BEFORE executing any tools.
+                response_content = ""
+                if response.output_messages:
+                    response_content = (
+                        response.output_messages[0].content or ""
+                    )
+                self._record_assistant_tool_calls_from_requests(
+                    tool_call_requests, content=response_content
+                )
+                recorded_tool_calls = True
+
+                # Execute internal tools only
+                for tool_call_request in internal_tool_requests:
+                    if (
+                        self.pause_event is not None
+                        and not self.pause_event.is_set()
+                    ):
+                        if isinstance(self.pause_event, asyncio.Event):
+                            await self.pause_event.wait()
+                        elif isinstance(self.pause_event, threading.Event):
+                            loop = asyncio.get_event_loop()
+                            await loop.run_in_executor(
+                                None, self.pause_event.wait
+                            )
+                    tool_call_record = await self._aexecute_tool(
+                        tool_call_request
+                    )
+                    tool_call_records.append(tool_call_record)
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
@@ -3253,7 +3463,10 @@ class ChatAgent(BaseAgent):
                 response, original_response_format
             )
 
-        self._record_final_output(response.output_messages)
+        # Only record final output if we haven't already recorded tool calls
+        # for this response (to avoid duplicate assistant messages)
+        if not recorded_tool_calls:
+            self._record_final_output(response.output_messages)
 
         # Clean tool call messages from memory after response generation
         if self.prune_tool_calls_from_memory and tool_call_records:
@@ -3291,6 +3504,83 @@ class ChatAgent(BaseAgent):
             usage_dict.get("completion_tokens") or 0
         )
         tracker["total_tokens"] += usage_dict.get("total_tokens") or 0
+
+    def _emit_request_usage(
+        self,
+        usage_dict: Dict[str, Any],
+        step_usage: Dict[str, int],
+        request_index: int,
+        response_id: str,
+    ) -> None:
+        if self.on_request_usage is None:
+            return
+
+        payload = self._build_request_usage_payload(
+            usage_dict=usage_dict,
+            step_usage=step_usage,
+            request_index=request_index,
+            response_id=response_id,
+        )
+        try:
+            callback_result = self.on_request_usage(payload)
+            if inspect.isawaitable(callback_result):
+                logger.warning(
+                    "on_request_usage returned awaitable in sync step. "
+                    "Use a sync callback for `step`, or use `astep`."
+                )
+                if inspect.iscoroutine(callback_result):
+                    callback_result.close()
+        except Exception as exc:
+            logger.warning(
+                f"on_request_usage callback failed at request "
+                f"{request_index}: {exc}"
+            )
+
+    async def _aemit_request_usage(
+        self,
+        usage_dict: Dict[str, Any],
+        step_usage: Dict[str, int],
+        request_index: int,
+        response_id: str,
+    ) -> None:
+        if self.on_request_usage is None:
+            return
+
+        payload = self._build_request_usage_payload(
+            usage_dict=usage_dict,
+            step_usage=step_usage,
+            request_index=request_index,
+            response_id=response_id,
+        )
+        try:
+            callback_result = self.on_request_usage(payload)
+            if inspect.isawaitable(callback_result):
+                await callback_result
+        except Exception as exc:
+            logger.warning(
+                f"on_request_usage callback failed at request "
+                f"{request_index}: {exc}"
+            )
+
+    def _build_request_usage_payload(
+        self,
+        usage_dict: Dict[str, Any],
+        step_usage: Dict[str, int],
+        request_index: int,
+        response_id: str,
+    ) -> Dict[str, Any]:
+        usage = usage_dict or {}
+        return {
+            "agent_id": self.agent_id,
+            "request_index": request_index,
+            "response_id": response_id,
+            "request_usage": {
+                "prompt_tokens": int(usage.get("prompt_tokens") or 0),
+                "completion_tokens": int(usage.get("completion_tokens") or 0),
+                "total_tokens": int(usage.get("total_tokens") or 0),
+            },
+            "step_usage": step_usage,
+        }
 
     def _convert_to_chatagent_response(
         self,
@@ -3684,6 +3974,16 @@ class ChatAgent(BaseAgent):
         Returns:
             _ModelResponse: parsed model response.
         """
+        if response.choices is None:
+            return ModelResponse(
+                response=response,
+                tool_call_requests=None,
+                output_messages=[],
+                finish_reasons=[],
+                usage_dict={},
+                response_id=response.id or "",
+            )
+
         output_messages: List[BaseMessage] = []
         for choice in response.choices:
             # Skip messages with no meaningful content
@@ -3722,20 +4022,24 @@ class ChatAgent(BaseAgent):
 
         tool_call_requests: Optional[List[ToolCallRequest]] = None
         if tool_calls := response.choices[0].message.tool_calls:
-            tool_call_requests = []
-            for tool_call in tool_calls:
-                tool_name = tool_call.function.name  # type: ignore[union-attr]
-                tool_call_id = tool_call.id
-                args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
-                extra_content = getattr(tool_call, 'extra_content', None)
+            try:
+                tool_call_requests = []
+                for tool_call in tool_calls:
+                    tool_name = tool_call.function.name  # type: ignore[union-attr]
+                    tool_call_id = tool_call.id
+                    args = json.loads(repair_json(tool_call.function.arguments or "{}")) # type: ignore[union-attr] some models return '' as {}
+                    extra_content = getattr(tool_call, 'extra_content', None)
 
-                tool_call_request = ToolCallRequest(
-                    tool_name=tool_name,
-                    args=args,
-                    tool_call_id=tool_call_id,
-                    extra_content=extra_content,
-                )
-                tool_call_requests.append(tool_call_request)
+                    tool_call_request = ToolCallRequest(
+                        tool_name=tool_name,
+                        args=args,
+                        tool_call_id=tool_call_id,
+                        extra_content=extra_content,
+                    )
+                    tool_call_requests.append(tool_call_request)
+            except (AttributeError, IndexError, json.JSONDecodeError, TypeError) as e:
+                logger.warning(f"Error parsing tool calls: {e!s}. Raw tool calls: {tool_calls!s}")
+                raise e
 
         return ModelResponse(
             response=response,
@@ -3839,6 +4143,7 @@ class ChatAgent(BaseAgent):
             extra_content=tool_call_request.extra_content,
         )
 
+    @observe()
     async def _aexecute_tool(
         self,
         tool_call_request: ToolCallRequest,
@@ -3858,19 +4163,21 @@ class ChatAgent(BaseAgent):
         else:
             try:
                 # Try different invocation paths in order of preference
-                if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
+                tool_func = getattr(tool, "func", None)
+                func_async_call = getattr(tool_func, "async_call", None)
+                tool_async_call = getattr(tool, "async_call", None)
+
+                if callable(func_async_call):
                     # Case: FunctionTool wrapping an MCP tool
-                    raw_result = await tool.func.async_call(**args)
+                    raw_result = await func_async_call(**args)
 
-                elif hasattr(tool, 'async_call') and callable(tool.async_call):
+                elif callable(tool_async_call):
                     # Case: tool itself has async_call
-                    raw_result = await tool.async_call(**args)
+                    raw_result = await tool_async_call(**args)
 
-                elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
-                    tool.func
-                ):
+                elif asyncio.iscoroutinefunction(tool_func):
                     # Case: tool wraps a direct async function
-                    raw_result = await tool.func(**args)
+                    raw_result = await tool_func(**args)
 
                 elif asyncio.iscoroutinefunction(tool):
                     # Case: tool is itself a coroutine function
@@ -3918,8 +4225,11 @@ class ChatAgent(BaseAgent):
         mask_output: bool = False,
         extra_content: Optional[Dict[str, Any]] = None,
     ):
-        r"""Record the tool calling information in the memory, and return the
-        tool calling record.
+        r"""Record the tool result in the memory.
+
+        Note: The assistant message with tool_calls should be recorded BEFORE
+        calling this method (via _record_assistant_tool_calls_from_requests).
+        This method only records the tool result message.
 
         Args:
             func_name (str): The name of the tool function called.
@@ -3944,16 +4254,9 @@ class ChatAgent(BaseAgent):
         )
         result_for_memory = truncated_result if was_truncated else result
 
-        assist_msg = FunctionCallingMessage(
-            role_name=self.role_name,
-            role_type=self.role_type,
-            meta_dict=None,
-            content="",
-            func_name=func_name,
-            args=args,
-            tool_call_id=tool_call_id,
-            extra_content=extra_content,
-        )
+        # Create the tool response message
+        # Note: assistant message with tool_calls is already recorded by
+        # _record_assistant_tool_calls_from_requests
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
             role_type=self.role_type,
@@ -3966,25 +4269,10 @@ class ChatAgent(BaseAgent):
             extra_content=extra_content,
         )
 
-        # Use precise timestamps to ensure correct ordering
-        # This ensures the assistant message (tool call) always appears before
-        # the function message (tool result) in the conversation context
-        # Use time.time_ns() for nanosecond precision to avoid collisions
-        current_time_ns = time.time_ns()
-        base_timestamp = current_time_ns / 1_000_000_000  # Convert to seconds
-
-        self.update_memory(
-            assist_msg,
-            OpenAIBackendRole.ASSISTANT,
-            timestamp=base_timestamp,
-            return_records=self._enable_snapshot_clean,
-        )
-
-        # Add minimal increment to ensure function message comes after
+        # Record only the tool result message
         func_records = self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
-            timestamp=base_timestamp + 1e-6,
             return_records=self._enable_snapshot_clean,
         )
 
@@ -4000,14 +4288,13 @@ class ChatAgent(BaseAgent):
 
         if isinstance(result, ToolResult) and result.images:
             try:
-                import base64
                 import io
 
                 try:
                     from PIL import Image
                 except ImportError:
                     logger.warning(
-                        f"Tool '{func_name}' returned images but PIL "
+                        f"Tool '{func_name}' returned images but Pillow "
                         "is not installed. Install with: pip install "
                         "Pillow. Skipping visual context injection."
                     )
@@ -4040,12 +4327,10 @@ class ChatAgent(BaseAgent):
                             image_list=pil_images,
                         )
 
-                        # Inject into conversation context with slight
-                        # timestamp increment
+                        # Inject into conversation context
                         self.update_memory(
                             visual_msg,
                             OpenAIBackendRole.USER,
-                            timestamp=base_timestamp + 2e-6,
                             return_records=False,
                         )
                         logger.info(
@@ -4088,6 +4373,13 @@ class ChatAgent(BaseAgent):
                 content, tool calls, and other information as they become
                 available.
         """
+        # Handle response format compatibility with non-strict tools
+        input_message, response_format, _ = (
+            self._handle_response_format_with_non_strict_tools(
+                input_message, response_format
+            )
+        )
+
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
@@ -4196,20 +4488,28 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__iter__')
                     and hasattr(response, '__enter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
+                request_token_usage = self._create_token_usage_tracker()
                 (
                     stream_completed,
                     tool_calls_complete,
+                    request_response_id,
                 ) = yield from self._process_stream_chunks_with_accumulator(
                     response,  # type: ignore[arg-type]
                     content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
+                    request_token_usage,
                     step_token_usage,
                     response_format,
+                )
+                self._emit_request_usage(
+                    usage_dict=request_token_usage,
+                    step_usage=step_token_usage.copy(),
+                    request_index=iteration_count,
+                    response_id=request_response_id,
                 )
 
                 if tool_calls_complete:
@@ -4243,8 +4543,12 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif hasattr(response, '__enter__') and not hasattr(
+                response, '__iter__'
+            ):
+                request_token_usage = self._create_token_usage_tracker()
                 # Handle structured output stream (ChatCompletionStreamManager)
+                # This catches context managers that aren't iterators
                 with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
@@ -4252,7 +4556,7 @@ class ChatAgent(BaseAgent):
                         if event.type == "content.delta":
                             if getattr(event, "delta", None):
                                 # Use accumulator for proper content management
-                                partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
+                                partial_response = self._create_streaming_response_with_accumulator(
                                     content_accumulator,
                                     getattr(event, "delta", ""),
                                     step_token_usage,
@@ -4299,17 +4603,27 @@ class ChatAgent(BaseAgent):
 
                         self.record_message(final_message)
 
-                        # Create final response
+                        request_usage = (
+                            safe_model_dump(final_completion.usage)
+                            if final_completion.usage
+                            else {}
+                        )
+                        self._update_token_usage_tracker(
+                            request_token_usage,
+                            request_usage,
+                        )
+                        self._update_token_usage_tracker(
+                            step_token_usage,
+                            request_usage,
+                        )
+
+                        # Create final response with cumulative step usage.
                         final_response = ChatAgentResponse(
                             msgs=[final_message],
                             terminated=False,
                             info={
                                 "id": final_completion.id or "",
-                                "usage": safe_model_dump(
-                                    final_completion.usage
-                                )
-                                if final_completion.usage
-                                else {},
+                                "usage": step_token_usage.copy(),
                                 "finish_reasons": [
                                     choice.finish_reason or "stop"
                                     for choice in final_completion.choices
@@ -4321,7 +4635,16 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
+                        )
+                        self._emit_request_usage(
+                            usage_dict=request_token_usage,
+                            step_usage=step_token_usage.copy(),
+                            request_index=iteration_count,
+                            response_id=final_completion.id or "",
                         )
                         yield final_response
                         break
@@ -4337,14 +4660,23 @@ class ChatAgent(BaseAgent):
                 model_response = self._handle_batch_response(
                     response  # type: ignore[arg-type]
                 )
+                self._update_token_usage_tracker(
+                    step_token_usage, model_response.usage_dict
+                )
+                self._emit_request_usage(
+                    usage_dict=model_response.usage_dict,
+                    step_usage=step_token_usage.copy(),
+                    request_index=iteration_count,
+                    response_id=model_response.response_id,
+                )
                 yield self._convert_to_chatagent_response(
                     model_response,
                     tool_call_records,
                     num_tokens,
                     None,
-                    model_response.usage_dict.get("prompt_tokens", 0),
-                    model_response.usage_dict.get("completion_tokens", 0),
-                    model_response.usage_dict.get("total_tokens", 0),
+                    step_token_usage["prompt_tokens"],
+                    step_token_usage["completion_tokens"],
+                    step_token_usage["total_tokens"],
                 )
                 accumulated_tool_calls.clear()
                 break
@@ -4355,15 +4687,18 @@ class ChatAgent(BaseAgent):
         content_accumulator: StreamContentAccumulator,
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
+        request_token_usage: Dict[str, int],
         step_token_usage: Dict[str, int],
         response_format: Optional[Type[BaseModel]] = None,
-    ) -> Generator[ChatAgentResponse, None, Tuple[bool, bool]]:
+    ) -> Generator[ChatAgentResponse, None, Tuple[bool, bool, str]]:
         r"""Process streaming chunks with content accumulator."""
 
         tool_calls_complete = False
         stream_completed = False
+        last_response_id = ""
 
         for chunk in stream:
+            last_response_id = getattr(chunk, 'id', '') or last_response_id
             has_choices = bool(chunk.choices and len(chunk.choices) > 0)
 
             # Process chunk delta
@@ -4372,12 +4707,10 @@ class ChatAgent(BaseAgent):
                 delta = choice.delta
 
                 # Handle reasoning content streaming (for DeepSeek reasoner)
-                if (
-                    hasattr(delta, 'reasoning_content')
-                    and delta.reasoning_content
-                ):
+                reasoning_delta = getattr(delta, "reasoning_content", None)
+                if reasoning_delta:
                     content_accumulator.add_reasoning_content(
-                        delta.reasoning_content
+                        reasoning_delta
                     )
                     # Yield partial response with reasoning content
                     partial_response = (
@@ -4387,7 +4720,7 @@ class ChatAgent(BaseAgent):
                             step_token_usage,
                             getattr(chunk, 'id', ''),
                             tool_call_records.copy(),
-                            reasoning_delta=delta.reasoning_content,
+                            reasoning_delta=reasoning_delta,
                         )
                     )
                     yield partial_response
@@ -4415,7 +4748,6 @@ class ChatAgent(BaseAgent):
                 # Check if stream is complete
                 if choice.finish_reason:
                     stream_completed = True
-
                     # If we have complete tool calls, execute them with
                     # sync status updates
                     if accumulated_tool_calls:
@@ -4442,6 +4774,16 @@ class ChatAgent(BaseAgent):
                             content_accumulator.get_full_reasoning_content()
                             or None
                         )
+
+                        # Extract <think> tags from accumulated
+                        # streaming content when reasoning_content
+                        # is not already set by the model.
+                        final_content, final_reasoning = (
+                            extract_thinking_from_content(
+                                final_content, final_reasoning
+                            )
+                        )
+
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
@@ -4461,6 +4803,9 @@ class ChatAgent(BaseAgent):
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
                 self._update_token_usage_tracker(
+                    request_token_usage, safe_model_dump(chunk.usage)
+                )
+                self._update_token_usage_tracker(
                     step_token_usage, safe_model_dump(chunk.usage)
                 )
 
@@ -4473,6 +4818,16 @@ class ChatAgent(BaseAgent):
                             content_accumulator.get_full_reasoning_content()
                             or None
                         )
+
+                        # Extract <think> tags from accumulated
+                        # streaming content when reasoning_content
+                        # is not already set by the model.
+                        final_content, final_reasoning = (
+                            extract_thinking_from_content(
+                                final_content, final_reasoning
+                            )
+                        )
+
                         # In delta mode, final response content should be empty
                         # since all content was already yielded incrementally
                         display_content = (
@@ -4509,6 +4864,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         yield final_response
@@ -4518,7 +4876,7 @@ class ChatAgent(BaseAgent):
                 # consuming remaining chunks to capture final metadata.
                 continue
 
-        return stream_completed, tool_calls_complete
+        return stream_completed, tool_calls_complete, last_response_id
 
     def _accumulate_tool_calls(
         self,
@@ -4663,6 +5021,9 @@ class ChatAgent(BaseAgent):
             return
             yield  # Make this a generator
 
+        # Record the assistant message with ALL tool calls
+        self._record_assistant_tool_calls_message(accumulated_tool_calls)
+
         # Execute tools using ThreadPoolExecutor for proper timeout handling
         # Use max_workers=len() for parallel execution, with min of 1
         with concurrent.futures.ThreadPoolExecutor(
@@ -4722,7 +5083,12 @@ class ChatAgent(BaseAgent):
     def _execute_tool_from_stream_data(
         self, tool_call_data: Dict[str, Any]
     ) -> Optional[ToolCallingRecord]:
-        r"""Execute a tool from accumulated stream data."""
+        r"""Execute a tool from accumulated stream data.
+
+        Note: The assistant message with tool_calls should be recorded BEFORE
+        calling this method (via _record_assistant_tool_calls_message).
+        This method only records the tool result message.
+        """
 
         try:
             function_name = tool_call_data['function']['name']
@@ -4755,20 +5121,9 @@ class ChatAgent(BaseAgent):
                         truncated_result if was_truncated else result
                     )
 
-                    # First, create and record the assistant message with tool
-                    # call
-                    assist_msg = FunctionCallingMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict=None,
-                        content="",
-                        func_name=function_name,
-                        args=args,
-                        tool_call_id=tool_call_id,
-                        extra_content=extra_content,
-                    )
-
-                    # Then create the tool response message
+                    # Create the tool response message
+                    # Note: assistant message with tool_calls is already
+                    # recorded by _record_assistant_tool_calls_message
                     func_msg = FunctionCallingMessage(
                         role_name=self.role_name,
                         role_type=self.role_type,
@@ -4781,23 +5136,8 @@ class ChatAgent(BaseAgent):
                         extra_content=extra_content,
                     )
 
-                    # Record both messages with precise timestamps to ensure
-                    # correct ordering
-                    current_time_ns = time.time_ns()
-                    base_timestamp = (
-                        current_time_ns / 1_000_000_000
-                    )  # Convert to seconds
-
-                    self.update_memory(
-                        assist_msg,
-                        OpenAIBackendRole.ASSISTANT,
-                        timestamp=base_timestamp,
-                    )
-                    self.update_memory(
-                        func_msg,
-                        OpenAIBackendRole.FUNCTION,
-                        timestamp=base_timestamp + 1e-6,
-                    )
+                    # Record only the tool result message
+                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
@@ -4872,7 +5212,12 @@ class ChatAgent(BaseAgent):
     async def _aexecute_tool_from_stream_data(
         self, tool_call_data: Dict[str, Any]
     ) -> Optional[ToolCallingRecord]:
-        r"""Async execute a tool from accumulated stream data."""
+        r"""Async execute a tool from accumulated stream data.
+
+        Note: The assistant message with tool_calls should be recorded BEFORE
+        calling this method (via _record_assistant_tool_calls_message).
+        This method only records the tool result message.
+        """
 
         try:
             function_name = tool_call_data['function']['name']
@@ -4881,44 +5226,24 @@ class ChatAgent(BaseAgent):
             extra_content = tool_call_data.get('extra_content')
 
             if function_name in self._internal_tools:
-                # Create the tool call message
-                assist_msg = FunctionCallingMessage(
-                    role_name=self.role_name,
-                    role_type=self.role_type,
-                    meta_dict=None,
-                    content="",
-                    func_name=function_name,
-                    args=args,
-                    tool_call_id=tool_call_id,
-                    extra_content=extra_content,
-                )
-                assist_ts = time.time_ns() / 1_000_000_000
-                self.update_memory(
-                    assist_msg,
-                    OpenAIBackendRole.ASSISTANT,
-                    timestamp=assist_ts,
-                )
-
                 tool = self._internal_tools[function_name]
                 try:
                     # Try different invocation paths in order of preference
-                    if hasattr(tool, 'func') and hasattr(
-                        tool.func, 'async_call'
-                    ):
+                    tool_func = getattr(tool, "func", None)
+                    func_async_call = getattr(tool_func, "async_call", None)
+                    tool_async_call = getattr(tool, "async_call", None)
+
+                    if callable(func_async_call):
                         # Case: FunctionTool wrapping an MCP tool
-                        result = await tool.func.async_call(**args)
+                        result = await func_async_call(**args)
 
-                    elif hasattr(tool, 'async_call') and callable(
-                        tool.async_call
-                    ):
+                    elif callable(tool_async_call):
                         # Case: tool itself has async_call
-                        result = await tool.async_call(**args)
+                        result = await tool_async_call(**args)
 
-                    elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
-                        tool.func
-                    ):
+                    elif asyncio.iscoroutinefunction(tool_func):
                         # Case: tool wraps a direct async function
-                        result = await tool.func(**args)
+                        result = await tool_func(**args)
 
                     elif asyncio.iscoroutinefunction(tool):
                         # Case: tool is itself a coroutine function
@@ -4953,6 +5278,8 @@ class ChatAgent(BaseAgent):
                     )
 
                     # Create the tool response message
+                    # Note: assistant message with tool_calls is already
+                    # recorded by _record_assistant_tool_calls_message
                     func_msg = FunctionCallingMessage(
                         role_name=self.role_name,
                         role_type=self.role_type,
@@ -4964,12 +5291,7 @@ class ChatAgent(BaseAgent):
                         mask_output=self.mask_tool_output,
                         extra_content=extra_content,
                     )
-                    func_ts = time.time_ns() / 1_000_000_000
-                    self.update_memory(
-                        func_msg,
-                        OpenAIBackendRole.FUNCTION,
-                        timestamp=func_ts,
-                    )
+                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
@@ -4998,12 +5320,7 @@ class ChatAgent(BaseAgent):
                         tool_call_id=tool_call_id,
                         extra_content=extra_content,
                     )
-                    func_ts = time.time_ns() / 1_000_000_000
-                    self.update_memory(
-                        func_msg,
-                        OpenAIBackendRole.FUNCTION,
-                        timestamp=func_ts,
-                    )
+                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
@@ -5160,12 +5477,13 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__aiter__')
                     and hasattr(response, '__aenter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
+                request_token_usage = self._create_token_usage_tracker()
                 stream_completed = False
                 tool_calls_complete = False
+                request_response_id = ""
 
                 # Process chunks and forward them
                 async for (
@@ -5175,17 +5493,28 @@ class ChatAgent(BaseAgent):
                     content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
+                    request_token_usage,
                     step_token_usage,
                     response_format,
                 ):
                     if isinstance(item, tuple):
-                        # This is the final return value (stream_completed,
-                        # tool_calls_complete)
-                        stream_completed, tool_calls_complete = item
+                        # This is the final return value
+                        # (stream_completed, tool_calls_complete, response_id)
+                        (
+                            stream_completed,
+                            tool_calls_complete,
+                            request_response_id,
+                        ) = item
                         break
                     else:
                         # This is a ChatAgentResponse to be yielded
                         yield item
+                await self._aemit_request_usage(
+                    usage_dict=request_token_usage,
+                    step_usage=step_token_usage.copy(),
+                    request_index=iteration_count,
+                    response_id=request_response_id,
+                )
 
                 if tool_calls_complete:
                     # Clear completed tool calls
@@ -5218,9 +5547,13 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif hasattr(response, '__aenter__') and not hasattr(
+                response, '__aiter__'
+            ):
+                request_token_usage = self._create_token_usage_tracker()
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
+                # Catches async context managers that aren't async iterators
                 async with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
@@ -5228,7 +5561,7 @@ class ChatAgent(BaseAgent):
                         if event.type == "content.delta":
                             if getattr(event, "delta", None):
                                 # Use accumulator for proper content management
-                                partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
+                                partial_response = self._create_streaming_response_with_accumulator(
                                     content_accumulator,
                                     getattr(event, "delta", ""),
                                     step_token_usage,
@@ -5275,17 +5608,27 @@ class ChatAgent(BaseAgent):
 
                         self.record_message(final_message)
 
-                        # Create final response
+                        request_usage = (
+                            safe_model_dump(final_completion.usage)
+                            if final_completion.usage
+                            else {}
+                        )
+                        self._update_token_usage_tracker(
+                            request_token_usage,
+                            request_usage,
+                        )
+                        self._update_token_usage_tracker(
+                            step_token_usage,
+                            request_usage,
+                        )
+
+                        # Create final response with cumulative step usage.
                         final_response = ChatAgentResponse(
                             msgs=[final_message],
                             terminated=False,
                             info={
                                 "id": final_completion.id or "",
-                                "usage": safe_model_dump(
-                                    final_completion.usage
-                                )
-                                if final_completion.usage
-                                else {},
+                                "usage": step_token_usage.copy(),
                                 "finish_reasons": [
                                     choice.finish_reason or "stop"
                                     for choice in final_completion.choices
@@ -5297,7 +5640,16 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
+                        )
+                        await self._aemit_request_usage(
+                            usage_dict=request_token_usage,
+                            step_usage=step_token_usage.copy(),
+                            request_index=iteration_count,
+                            response_id=final_completion.id or "",
                         )
                         yield final_response
                         break
@@ -5315,14 +5667,23 @@ class ChatAgent(BaseAgent):
                 model_response = self._handle_batch_response(
                     response  # type: ignore[arg-type]
                 )
+                self._update_token_usage_tracker(
+                    step_token_usage, model_response.usage_dict
+                )
+                await self._aemit_request_usage(
+                    usage_dict=model_response.usage_dict,
+                    step_usage=step_token_usage.copy(),
+                    request_index=iteration_count,
+                    response_id=model_response.response_id,
+                )
                 yield self._convert_to_chatagent_response(
                     model_response,
                     tool_call_records,
                     num_tokens,
                     None,
-                    model_response.usage_dict.get("prompt_tokens", 0),
-                    model_response.usage_dict.get("completion_tokens", 0),
-                    model_response.usage_dict.get("total_tokens", 0),
+                    step_token_usage["prompt_tokens"],
+                    step_token_usage["completion_tokens"],
+                    step_token_usage["total_tokens"],
                 )
                 accumulated_tool_calls.clear()
                 break
@@ -5338,7 +5699,10 @@ class ChatAgent(BaseAgent):
         # Create a BaseMessage with tool_calls information in meta_dict
         # This will be converted to the proper OpenAI format when needed
         tool_calls_list = []
-        for tool_call_data in accumulated_tool_calls.values():
+        for key, tool_call_data in accumulated_tool_calls.items():
+            # Skip internal mapping key
+            if key == '_index_to_key_map':
+                continue
             if tool_call_data.get('complete', False):
                 tool_call_dict = {
                     "id": tool_call_data["id"],
@@ -5355,7 +5719,56 @@ class ChatAgent(BaseAgent):
                     ]
                 tool_calls_list.append(tool_call_dict)
 
+        # Early return if no tool calls to record
+        if not tool_calls_list:
+            return
+
         # Create an assistant message with tool calls
+        assist_msg = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={"tool_calls": tool_calls_list},
+            content=content or "",
+        )
+
+        # Record this assistant message
+        self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
+
+    def _record_assistant_tool_calls_from_requests(
+        self, tool_call_requests: List["ToolCallRequest"], content: str = ""
+    ) -> None:
+        r"""Record assistant message with tool calls from requests.
+
+        This method creates and records an assistant message that includes
+        all the tool calls from a list of ToolCallRequest objects.
+        Used for non-streaming tool execution to ensure proper message
+        sequence.
+
+        Args:
+            tool_call_requests: List of tool call requests from model response.
+            content: Optional content to include in the assistant message.
+        """
+        import json
+
+        tool_calls_list = []
+        for request in tool_call_requests:
+            tool_call_dict = {
+                "id": request.tool_call_id,
+                "type": "function",
+                "function": {
+                    "name": request.tool_name,
+                    "arguments": json.dumps(request.args, ensure_ascii=False),
+                },
+            }
+            # Include extra_content if present
+            if request.extra_content:
+                tool_call_dict["extra_content"] = request.extra_content
+            tool_calls_list.append(tool_call_dict)
+
+        if not tool_calls_list:
+            return
+
+        # Create an assistant message with all tool calls
         assist_msg = BaseMessage(
             role_name=self.role_name,
             role_type=self.role_type,
@@ -5375,17 +5788,22 @@ class ChatAgent(BaseAgent):
         content_accumulator: StreamContentAccumulator,
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
+        request_token_usage: Dict[str, int],
         step_token_usage: Dict[str, int],
         response_format: Optional[Type[BaseModel]] = None,
-    ) -> AsyncGenerator[Union[ChatAgentResponse, Tuple[bool, bool]], None]:
+    ) -> AsyncGenerator[
+        Union[ChatAgentResponse, Tuple[bool, bool, str]], None
+    ]:
         r"""Async version of process streaming chunks with
         content accumulator.
         """
 
         tool_calls_complete = False
         stream_completed = False
+        last_response_id = ""
 
         async for chunk in stream:
+            last_response_id = getattr(chunk, 'id', '') or last_response_id
             has_choices = bool(chunk.choices and len(chunk.choices) > 0)
 
             # Process chunk delta
@@ -5394,12 +5812,10 @@ class ChatAgent(BaseAgent):
                 delta = choice.delta
 
                 # Handle reasoning content streaming (for DeepSeek reasoner)
-                if (
-                    hasattr(delta, 'reasoning_content')
-                    and delta.reasoning_content
-                ):
+                reasoning_delta = getattr(delta, "reasoning_content", None)
+                if reasoning_delta:
                     content_accumulator.add_reasoning_content(
-                        delta.reasoning_content
+                        reasoning_delta
                     )
                     # Yield partial response with reasoning content
                     partial_response = (
@@ -5409,7 +5825,7 @@ class ChatAgent(BaseAgent):
                             step_token_usage,
                             getattr(chunk, 'id', ''),
                             tool_call_records.copy(),
-                            reasoning_delta=delta.reasoning_content,
+                            reasoning_delta=reasoning_delta,
                         )
                     )
                     yield partial_response
@@ -5462,11 +5878,26 @@ class ChatAgent(BaseAgent):
                     # will handle message recording.
                     final_content = content_accumulator.get_full_content()
                     if final_content.strip() and not accumulated_tool_calls:
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
+
+                        # Extract <think> tags from accumulated
+                        # streaming content when reasoning_content
+                        # is not already set by the model.
+                        final_content, final_reasoning = (
+                            extract_thinking_from_content(
+                                final_content, final_reasoning
+                            )
+                        )
+
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
                             content=final_content,
+                            reasoning_content=final_reasoning,
                         )
 
                         if response_format:
@@ -5480,6 +5911,9 @@ class ChatAgent(BaseAgent):
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
                 self._update_token_usage_tracker(
+                    request_token_usage, safe_model_dump(chunk.usage)
+                )
+                self._update_token_usage_tracker(
                     step_token_usage, safe_model_dump(chunk.usage)
                 )
 
@@ -5492,6 +5926,16 @@ class ChatAgent(BaseAgent):
                             content_accumulator.get_full_reasoning_content()
                             or None
                         )
+
+                        # Extract <think> tags from accumulated
+                        # streaming content when reasoning_content
+                        # is not already set by the model.
+                        final_content, final_reasoning = (
+                            extract_thinking_from_content(
+                                final_content, final_reasoning
+                            )
+                        )
+
                         # In delta mode, final response content should be empty
                         # since all content was already yielded incrementally
                         display_content = (
@@ -5528,6 +5972,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         yield final_response
@@ -5536,7 +5983,7 @@ class ChatAgent(BaseAgent):
                 continue
 
         # Yield the final status as a tuple
-        yield (stream_completed, tool_calls_complete)
+        yield (stream_completed, tool_calls_complete, last_response_id)
 
     async def _execute_tools_async_with_status_accumulator(
         self,
@@ -5548,6 +5995,10 @@ class ChatAgent(BaseAgent):
         r"""Execute multiple tools asynchronously with
         proper content accumulation."""
         import asyncio
+
+        # Record the assistant message with ALL tool calls
+        # Note: _record_assistant_tool_calls_message has early return if empty
+        self._record_assistant_tool_calls_message(accumulated_tool_calls)
 
         # Phase 1: Start all tools and yield "Calling function"
         # statuses immediately
@@ -5676,6 +6127,9 @@ class ChatAgent(BaseAgent):
                 "external_tool_requests": None,
                 "streaming": True,
                 "partial": True,
+                "stream_accumulate_mode": "accumulate"
+                if self.stream_accumulate
+                else "delta",
             },
         )
 
@@ -5760,7 +6214,19 @@ class ChatAgent(BaseAgent):
             tool_execution_timeout=self.tool_execution_timeout,
             pause_event=self.pause_event,
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
-            stream_accumulate=self.stream_accumulate,
+            on_request_usage=self.on_request_usage,
+            stream_accumulate=(
+                self.stream_accumulate
+                if self._stream_accumulate_explicit
+                else None
+            ),
+            summarize_threshold=self.summarize_threshold,
+            mask_tool_output=self.mask_tool_output,
+            enable_snapshot_clean=self._enable_snapshot_clean,
+            retry_attempts=self.retry_attempts,
+            retry_delay=self.retry_delay,
+            step_timeout=self.step_timeout,
+            summary_window_ratio=self.summary_window_ratio,
         )
 
         # Copy memory if requested
@@ -5794,16 +6260,14 @@ class ChatAgent(BaseAgent):
 
         for tool in self._internal_tools.values():
             # Check if this tool is a method bound to a toolkit instance
-            if hasattr(tool.func, '__self__'):
-                toolkit_instance = tool.func.__self__
+            toolkit_instance = getattr(getattr(tool, "func", None), "__self__", None)
+            if toolkit_instance is not None:
                 toolkit_id = id(toolkit_instance)
 
                 if toolkit_id not in cloned_toolkits:
                     # Check if the toolkit has a clone method
                     if hasattr(toolkit_instance, 'clone_for_new_session'):
                         try:
-                            import uuid
-
                             new_session_id = str(uuid.uuid4())[:8]
                             new_toolkit = (
                                 toolkit_instance.clone_for_new_session(
@@ -5819,7 +6283,7 @@ class ChatAgent(BaseAgent):
                             cloned_toolkits[toolkit_id] = new_toolkit
                         except Exception as e:
                             logger.warning(
-                                f"Failed to clone toolkit {toolkit_instance.__class__.__name__}: {e}"  # noqa:E501
+                                f"Failed to clone toolkit {toolkit_instance.__class__.__name__}: {e}"
                             )
                             # Use original toolkit if cloning fails
                             cloned_toolkits[toolkit_id] = toolkit_instance
@@ -5955,6 +6419,7 @@ class ChatAgent(BaseAgent):
                     "DynamicResponseFormat", response_format
                 )
             response = await agent_instance.astep(message, format_cls)
+            response = cast(ChatAgentResponse, response)
             return {
                 "status": "success",
                 "messages": [msg.to_dict() for msg in response.msgs],
@@ -6002,10 +6467,11 @@ class ChatAgent(BaseAgent):
                     "content": msg.get("content", ""),
                 }
                 # Include function calls if present
-                if "function_call" in msg:
+                function_call = msg.get("function_call")
+                if isinstance(function_call, dict):
                     msg_dict["function_call"] = {
-                        "name": msg["function_call"].get("name", ""),
-                        "arguments": msg["function_call"].get("arguments", ""),
+                        "name": function_call.get("name", ""),
+                        "arguments": function_call.get("arguments", ""),
                     }
                 messages.append(msg_dict)
             return messages

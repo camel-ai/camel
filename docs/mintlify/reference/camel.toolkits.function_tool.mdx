@@ -1,5 +1,49 @@
 <a id="camel.toolkits.function_tool"></a>
 
+<a id="camel.toolkits.function_tool._annotation_accepts"></a>
+
+## _annotation_accepts
+
+```python
+def _annotation_accepts(annotation: Any, value: Any):
+```
+
+Quick structural check: could *annotation* plausibly apply to *value*?
+
+Used by the Union handler to skip branches that clearly don't match
+before attempting (potentially failing) coercion.
+
+<a id="camel.toolkits.function_tool._coerce_arg"></a>
+
+## _coerce_arg
+
+```python
+def _coerce_arg(value: Any, annotation: Any):
+```
+
+Coerce *value* so that plain dicts become Pydantic model instances
+where the function signature expects them.
+
+Handles `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4__`,
+`__INLINE_CODE_5____INLINE_CODE_6____INLINE_CODE_7__` annotations recursively.
+Non-model annotations are returned unchanged.
+
+<a id="camel.toolkits.function_tool._coerce_arguments"></a>
+
+## _coerce_arguments
+
+```python
+def _coerce_arguments(func: Callable, args: tuple, kwargs: Dict[str, Any]):
+```
+
+Coerce positional and keyword arguments to match Pydantic model
+type annotations in *func*'s signature.
+
+This bridges the gap between the JSON dicts that the LLM produces (via
+`__INLINE_CODE_0__`) and the Pydantic models that toolkit authors declare in
+their function signatures.  Plain values and non-model parameters are
+passed through unchanged.
+
 <a id="camel.toolkits.function_tool._remove_a_key"></a>
 
 ## _remove_a_key
@@ -460,3 +504,35 @@ the method will raise :obj:`jsonschema.exceptions.SchemaError`.
 **Parameters:**
 
 - **value** (Dict[str, Any]): the new dictionary value for the function's parameters.
+
+<a id="camel.toolkits.function_tool.tool"></a>
+
+## tool
+
+```python
+def tool(func: Optional[Callable] = None):
+```
+
+A decorator that converts a Python function into a FunctionTool
+instance.
+
+This decorator can be used with or without parentheses:
+- @tool - without parentheses, uses default settings
+- @tool() - with parentheses, uses default settings
+- @tool(synthesize_output=True) - with custom settings
+
+**Parameters:**
+
+- **func** (Optional[Callable], optional): The function to be decorated. This is automatically passed when using @tool without parentheses. (default: :obj:`None`)
+- **openai_tool_schema** (Optional[Dict[str, Any]], optional): A user-defined OpenAI tool schema to override the default result. (default: :obj:`None`)
+- **synthesize_schema** (bool, optional): Whether to enable schema synthesis. (default: :obj:`False`)
+- **synthesize_schema_model** (Optional[BaseModelBackend], optional): Model to use for schema synthesis. (default: :obj:`None`)
+- **synthesize_schema_max_retries** (int, optional): Maximum number of retries for schema synthesis. (default: :obj:`2`)
+- **synthesize_output** (bool, optional): Whether to enable output synthesis. (default: :obj:`False`)
+- **synthesize_output_model** (Optional[BaseModelBackend], optional): Model to use for output synthesis. (default: :obj:`None`)
+- **synthesize_output_format** (Optional[Type[BaseModel]], optional): Format for synthesized output. (default: :obj:`None`)
+
+**Returns:**
+
+  Callable[[Callable], FunctionTool]: A decorator function that converts
+the decorated function into a FunctionTool instance.

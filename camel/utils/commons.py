@@ -28,6 +28,7 @@ from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -40,6 +41,9 @@ from typing import (
     TypeVar,
     cast,
 )
+
+if TYPE_CHECKING:
+    from camel.responses.agent_responses import ChatAgentResponse
 from urllib.parse import urlparse
 
 import pydantic
@@ -51,6 +55,7 @@ from camel.types import TaskType
 from .constants import Constants
 
 F = TypeVar('F', bound=Callable[..., Any])
+T = TypeVar('T', bound=BaseModel)
 
 logger = logging.getLogger(__name__)
 
@@ -309,57 +314,37 @@ def api_keys_required(
                 if not value or value.strip() == "":
                     missing_keys.append(env_var_name)
 
-            key_way = "the official website"
-            if env_var_name == 'ANTHROPIC_API_KEY':
-                key_way = (
-                    "https://docs.anthropic.com/zh-CN/api/getting-started"
-                )
-            elif env_var_name == 'AIML_API_KEY':
-                key_way = "https://aimlapi.com/"
-            elif env_var_name == 'COHERE_API_KEY':
-                key_way = "https://cohere.com/"
-            elif env_var_name == 'COMETAPI_KEY':
-                key_way = "https://api.cometapi.com/console/token"
-            elif env_var_name == 'DEEPSEEK_API_KEY':
-                key_way = "https://www.deepseek.com/"
-            elif env_var_name == 'AZURE_OPENAI_API_KEY':
-                key_way = "https://portal.azure.com/"
-            elif env_var_name == 'OPENAI_API_KEY':
-                key_way = "https://platform.openai.com/docs/overview"
-            elif env_var_name == 'FISHAUDIO_API_KEY':
-                key_way = "https://fish.audio/"
-            elif env_var_name == 'GEMINI_API_KEY':
-                key_way = "https://gemini.google.com/"
-            elif env_var_name == 'INTERNLM_API_KEY':
-                key_way = "https://internlm-chat.intern-ai.org.cn/puyu/api/v1"
-            elif env_var_name == 'GROQ_API_KEY':
-                key_way = "https://api.groq.com/openai/v1"
-            elif env_var_name == 'MISTRAL_API_KEY':
-                key_way = "https://mistral.ai/"
-            elif env_var_name == 'MOONSHOT_API_KEY':
-                key_way = "https://api.moonshot.cn/v1"
-            elif env_var_name == 'NVIDIA_API_KEY':
-                key_way = "https://integrate.api.nvidia.com/"
-            elif env_var_name == 'OPENAI_COMPATIBILITY_API_KEY':
-                key_way = "https://platform.openai.com/docs/overview"
-            elif env_var_name == 'QWEN_API_KEY':
-                key_way = "https://tongyi.aliyun.com/"
-            elif env_var_name == 'REKA_API_KEY':
-                key_way = "https://docs.reka.ai/quick-start"
-            elif env_var_name == 'SAMBA_API_KEY':
-                key_way = "https://community.sambanova.ai/t/looking-for-api-key-and-url-for-sambanova/576"
-            elif env_var_name == 'TOGETHER_API_KEY':
-                key_way = "https://docs.together.ai/docs/quickstart"
-            elif env_var_name == 'YI_API_KEY':
-                key_way = "https://platform.lingyiwanwu.com/docs"
-            elif env_var_name == 'ZHIPUAI_API_KEY':
-                key_way = "https://www.zhipuai.cn/"
-            elif env_var_name == 'KLAVIS_API_KEY':
-                key_way = "https://www.klavis.ai/docs"
-            elif env_var_name == 'XAI_API_KEY':
-                key_way = "https://api.x.ai/v1"
-
             if missing_keys:
+                env_key_urls = {
+                    'ANTHROPIC_API_KEY': "https://platform.claude.com/docs/en/api/overview",
+                    'AIML_API_KEY': "https://aimlapi.com/",
+                    'COHERE_API_KEY': "https://cohere.com/",
+                    'COMETAPI_KEY': "https://api.cometapi.com/console/token",
+                    'DEEPSEEK_API_KEY': "https://www.deepseek.com/",
+                    'AZURE_OPENAI_API_KEY': "https://portal.azure.com/",
+                    'OPENAI_API_KEY': "https://platform.openai.com/docs/overview",
+                    'FISHAUDIO_API_KEY': "https://fish.audio/",
+                    'GEMINI_API_KEY': "https://gemini.google.com/",
+                    'INTERNLM_API_KEY': "https://internlm.intern-ai.org.cn/api/tokens",
+                    'GROQ_API_KEY': "https://console.groq.com/keys",
+                    'MISTRAL_API_KEY': "https://mistral.ai/",
+                    'MOONSHOT_API_KEY': "platform.moonshot.ai/console",
+                    'NVIDIA_API_KEY': "https://build.nvidia.com/settings/api-keys",
+                    'OPENAI_COMPATIBILITY_API_KEY': "https://platform.openai.com/docs/overview",
+                    'QWEN_API_KEY': "https://tongyi.aliyun.com/",
+                    'REKA_API_KEY': "https://docs.reka.ai/quick-start",
+                    'SAMBA_API_KEY': "cloud.sambanova.ai/apis",
+                    'TOGETHER_API_KEY': "https://docs.together.ai/docs/quickstart",
+                    'YI_API_KEY': "https://platform.lingyiwanwu.com/docs",
+                    'ZHIPUAI_API_KEY': "https://www.zhipuai.cn/",
+                    'KLAVIS_API_KEY': "https://www.klavis.ai/docs",
+                    'XAI_API_KEY': "https://docs.x.ai/docs/overview",
+                    'AVIAN_API_KEY': "https://avian.io",
+                    'QUERIT_API_KEY': "https://www.querit.ai/en/dashboard/home",
+                }
+                key_way = env_key_urls.get(
+                    missing_keys[0], "the official website"
+                )
                 raise ValueError(
                     "Missing or empty required API keys in "
                     f"environment variables: {', '.join(missing_keys)}.\n"
@@ -704,7 +689,7 @@ def retry_on_error(
                 except Exception as e:
                     last_exception = e
                     if attempt == max_retries:
-                        logger.error(
+                        logger.warning(
                             f"Failed after {max_retries} retries: {e!s}"
                         )
                         raise
@@ -959,6 +944,65 @@ def generate_prompt_for_structured_output(
     {user_prompt}
     """
     return final_prompt
+
+
+def safe_extract_parsed(
+    response: "ChatAgentResponse",
+    schema: Type[T],
+) -> Optional[T]:
+    r"""Safely extract a parsed structured output from a ChatAgentResponse.
+
+    Handles the common cases where ``response.msg`` is ``None`` (empty or
+    multi-message response) or ``msg.parsed`` is ``None`` (model failed to
+    produce valid structured output). When the parsed value is a dict, it
+    attempts to construct the schema from it.
+
+    Args:
+        response (ChatAgentResponse): The agent response to extract from.
+        schema (Type[T]): The expected Pydantic model class.
+
+    Returns:
+        Optional[T]: The parsed and validated result, or ``None`` if
+            extraction fails for any reason.
+    """
+    msg = response.msg
+    # Empty or multi-message response (len(msgs) != 1)
+    if msg is None:
+        logger.error(
+            f"safe_extract_parsed: response.msg is None "
+            f"(msgs count: {len(response.msgs)}), "
+            f"cannot extract {schema.__name__}"
+        )
+        return None
+    parsed = msg.parsed
+    # Already the expected Pydantic model
+    if isinstance(parsed, schema):
+        return parsed
+    # TODO: Unify backend parsing so parsed is always a model instance,
+    # removing the need for this dict fallback.
+    # LiteLLM or non-OpenAI backends may return raw dict instead of model
+    if isinstance(parsed, dict):
+        try:
+            return schema(**parsed)
+        except Exception as e:
+            logger.error(
+                f"safe_extract_parsed: failed to construct "
+                f"{schema.__name__} from dict: {e}"
+            )
+            return None
+    # Model did not produce structured output
+    if parsed is None:
+        logger.error(
+            f"safe_extract_parsed: msg.parsed is None, "
+            f"model did not produce valid {schema.__name__}"
+        )
+    # Unexpected type
+    else:
+        logger.error(
+            f"safe_extract_parsed: msg.parsed is "
+            f"{type(parsed).__name__}, expected {schema.__name__}"
+        )
+    return None
 
 
 def with_timeout(timeout=None):

@@ -37,6 +37,7 @@ from .commons import (
     print_text_animated,
     retry_on_error,
     run_async,
+    safe_extract_parsed,
     text_extract_from_web,
     to_pascal,
     track_agent,
@@ -56,6 +57,11 @@ from .langfuse import (
 )
 from .mcp import MCPServer
 from .response_format import get_pydantic_model, model_from_json_schema
+from .stream_utils import (
+    consume_response_content,
+    consume_response_content_async,
+    is_streaming_response,
+)
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
@@ -107,6 +113,7 @@ __all__ = [
     "sanitize_filename",
     "browser_toolkit_save_auth_cookie",
     "run_async",
+    "safe_extract_parsed",
     "configure_langfuse",
     "is_langfuse_available",
     "get_current_agent_session_id",
@@ -116,4 +123,7 @@ __all__ = [
     "get_langfuse_status",
     "get_current_agent_id",
     "set_current_agent_id",
+    "is_streaming_response",
+    "consume_response_content",
+    "consume_response_content_async",
 ]

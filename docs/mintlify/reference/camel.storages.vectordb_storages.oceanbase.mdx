@@ -18,8 +18,7 @@ OceanBase Vector Database.
 - **uri** (str): Connection URI for OceanBase (host:port). (default: :obj:`"127.0.0.1:2881"`)
 - **user** (str): Username for connecting to OceanBase. (default: :obj:`"root@test"`)
 - **password** (str): Password for the user. (default: :obj:`""`) (default: `""`)
-- **db_name** (str): Database name in OceanBase. (default: :obj:`"test"`)
-- **distance** (`Literal["l2", "cosine"], optional`): The distance metric for vector comparison. Options: "l2", "cosine". (default: :obj:`"l2"`)
+- **db_name** (str): Database name in OceanBase. (default: :obj:`"test"`) distance (Literal["l2", "cosine", "inner_product", "negative_inner_product"], optional): The distance metric for vector comparison. Options: "l2", "cosine", "inner_product", "negative_inner_product". (default: :obj:`"l2"`)
 - **delete_table_on_del** (bool, optional): Flag to determine if the table should be deleted upon object destruction. (default: :obj:`False`) **kwargs (Any): Additional keyword arguments for initializing `ObVecClient`.
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.__init__"></a>
@@ -35,7 +34,7 @@ def __init__(
     user: str = 'root@test',
     password: str = '',
     db_name: str = 'test',
-    distance: Literal['l2', 'cosine'] = 'l2',
+    distance: Literal['l2', 'cosine', 'inner_product', 'negative_inner_product'] = 'l2',
     delete_table_on_del: bool = False,
     **kwargs: Any
 ):
@@ -103,7 +102,12 @@ def status(self):
 ### query
 
 ```python
-def query(self, query: VectorDBQuery, **kwargs: Any):
+def query(
+    self,
+    query: VectorDBQuery,
+    where_clause: Optional[List[Any]] = None,
+    **kwargs: Any
+):
 ```
 
 Searches for similar vectors in the storage based on the
@@ -111,12 +115,34 @@ provided query.
 
 **Parameters:**
 
-- **query** (VectorDBQuery): The query object containing the search vector and the number of top similar vectors to retrieve. **kwargs (Any): Additional keyword arguments.
+- **query** (VectorDBQuery): The query object containing the search vector and the number of top similar vectors to retrieve.
+- **where_clause** (Optional[List[Any]], optional): A list of SQLAlchemy expressions to filter the query results. These are passed directly to pyobvector's ann_search(). Use sqlalchemy.text() for raw SQL conditions. Example: `__INLINE_CODE_0____INLINE_CODE_1__None`) **kwargs (Any): Additional keyword arguments.
 
 **Returns:**
 
   List[VectorDBQueryResult]: A list of vectors retrieved from the
 storage based on similarity to the query vector.
+
+<a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage._stable_sigmoid"></a>
+
+### _stable_sigmoid
+
+```python
+def _stable_sigmoid(self, x: float):
+```
+
+Computes sigmoid function in a numerically stable way.
+
+Uses the identity: sigmoid(x) = exp(x) / (1 + exp(x)) for x < 0
+and sigmoid(x) = 1 / (1 + exp(-x)) for x `>= 0`, to avoid overflow.
+
+**Parameters:**
+
+- **x** (float): The input value.
+
+**Returns:**
+
+  float: The sigmoid of x, in the range (0, 1).
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage._convert_distance_to_similarity"></a>
 
@@ -126,7 +152,23 @@ storage based on similarity to the query vector.
 def _convert_distance_to_similarity(self, distance: float):
 ```
 
-Converts distance to similarity score based on distance metric.
+Converts distance/score to similarity score based on distance
+metric.
+
+For L2 and cosine distance, lower values mean more similar, so we
+clamp negative distances to 0 before conversion.
+
+For inner product metrics, the raw score can be negative (indicating
+opposite directions), so we do NOT clamp the distance and use sigmoid
+to map the full range to [0, 1].
+
+**Parameters:**
+
+- **distance** (float): The distance or score value from the query.
+
+**Returns:**
+
+  float: A similarity score, typically in the range [0, 1].
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.clear"></a>
 

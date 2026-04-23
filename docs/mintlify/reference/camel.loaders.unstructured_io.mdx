@@ -68,8 +68,8 @@ Loads a file or a URL and parses its contents into elements.
 
 **Returns:**
 
-  Union[List[Element],None]: List of elements after parsing the file
-or URL if success.
+  List[Element]: List of elements after parsing the file
+or URL. Returns an empty list if parsing fails.
 
 **Note:**
 
@@ -96,8 +96,8 @@ Parses a bytes stream and converts its contents into elements.
 
 **Returns:**
 
-  Union[List[Element], None]: List of elements after parsing the file
-if successful, otherwise `None`.
+  List[Element]: List of elements after parsing the file.
+Returns an empty list if parsing fails.
 
 **Note:**
 

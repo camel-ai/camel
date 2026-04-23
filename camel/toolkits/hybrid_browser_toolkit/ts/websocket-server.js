@@ -23,8 +23,9 @@ class WebSocketBrowserServer {
         console.log('Client connected');
 
         ws.on('message', async (message) => {
+          let data;
           try {
-            const data = JSON.parse(message.toString());
+            data = JSON.parse(message.toString());
             const { id, command, params } = data;
 
             console.log(`Received command: ${command} with id: ${id}`);
@@ -84,7 +85,9 @@ class WebSocketBrowserServer {
         let cdpUrl = params.cdpUrl || 'http://localhost:9222';
 
         // Extract base URL and port for validation
-        const baseUrl = cdpUrl.includes('/devtools/') ? cdpUrl.split('/devtools/')[0] : cdpUrl;
+        let baseUrl = cdpUrl.includes('/devtools/') ? cdpUrl.split('/devtools/')[0] : cdpUrl;
+        if (baseUrl.startsWith('ws://')) baseUrl = `http://${baseUrl.slice(5)}`;
+        if (baseUrl.startsWith('wss://')) baseUrl = `https://${baseUrl.slice(6)}`;
 
         // Validate CDP URL to prevent SSRF - only allow localhost
         const parsed = new URL(baseUrl);
@@ -157,13 +160,52 @@ class WebSocketBrowserServer {
 
       case 'get_som_screenshot': {
         if (!this.toolkit) throw new Error('Toolkit not initialized');
-        console.log('Starting screenshot...');
+        const overlay = params?.overlay !== undefined ? Boolean(params.overlay) : true;
+        if (overlay) {
+          try {
+            console.log('Starting SoM screenshot...');
+            const startTime = Date.now();
+            const result = await this.toolkit.getSomScreenshot();
+            const endTime = Date.now();
+            console.log(`Screenshot completed in ${endTime - startTime}ms`);
+            return result;
+          } catch (error) {
+            // Can happen early in CDP mode before a context/page exists.
+            return {
+              text: `SoM screenshot skipped: ${error?.message || String(error)}`,
+              images: [],
+              timing: null,
+            };
+          }
+        }
+        try {
+          const { buffer, timing } = await this.toolkit.session.takeScreenshot();
+          const base64Image = buffer.toString('base64');
+          return {
+            text: 'Raw webpage screenshot captured (no SoM overlay).',
+            images: [`data:image/png;base64,${base64Image}`],
+            timing,
+          };
+        } catch (error) {
+          // Can happen early in CDP mode before a context/page exists.
+          return {
+            text: `Raw screenshot skipped: ${error?.message || String(error)}`,
+            images: [],
+            timing: null,
+          };
+        }
+      }
+
+      case 'get_screenshot': {
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        console.log('Starting plain screenshot (no SOM)...');
         const startTime = Date.now();
-        const result = await this.toolkit.getSomScreenshot();
+        const result = await this.toolkit.getScreenshot();
         const endTime = Date.now();
-        console.log(`Screenshot completed in ${endTime - startTime}ms`);
+        console.log(`Plain screenshot completed in ${endTime - startTime}ms`);
         return result;
       }
+
       case 'click':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.click(params.ref);
@@ -197,11 +239,28 @@ class WebSocketBrowserServer {
 
       case 'mouse_drag':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
-        return await this.toolkit.mouseDrag(params.from_ref, params.to_ref);
+        return await this.toolkit.mouseDrag(params);
 
       case 'press_key':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.pressKeys(params.keys);
+
+      case 'upload_file':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.uploadFile({
+          filePath: params.filePath,
+          ref: params.ref,
+          x: params.x,
+          y: params.y
+        });
+
+      case 'download_file':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.downloadFile({
+          ref: params.ref,
+          x: params.x,
+          y: params.y
+        });
 
       case 'batch_keyboard_input':
         if (!this.toolkit) throw new Error('Toolkit not initialized');

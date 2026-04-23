@@ -1,0 +1,21 @@
+{
+  "type": "pre_capture",
+  "index": 5,
+  "prefix": "pre_step_0005",
+  "captured_at": "2026-02-03T21:01:52.455706",
+  "next_action": "type",
+  "next_action_args": {
+    "args": [
+      "e827",
+      "Vienna VIE"
+    ],
+    "kwargs": {}
+  },
+  "tab_id": "tab-002",
+  "url": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAhIIL20vMDVxdGoaDnIMCAISCC9tLzA1cXRqQAFAAUgBcAGCAQsI____________AZgBAQ&tfu=KgIIAw",
+  "snapshot_sha1": "58d77a1ede6e0e4099e7206608d6d0e27591e708",
+  "screenshot_sha1": "7e804fb96122deb549b865fd585ad0caac327d63",
+  "timing": {
+    "screenshot_time_ms": 123
+  }
+}

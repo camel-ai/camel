@@ -569,6 +569,31 @@ user message.
 
   str: A prompt string for the LLM.
 
+<a id="camel.utils.commons.safe_extract_parsed"></a>
+
+## safe_extract_parsed
+
+```python
+def safe_extract_parsed(response: 'ChatAgentResponse', schema: Type[T]):
+```
+
+Safely extract a parsed structured output from a ChatAgentResponse.
+
+Handles the common cases where `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2__` (empty or
+multi-message response) or `__INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5__` (model failed to
+produce valid structured output). When the parsed value is a dict, it
+attempts to construct the schema from it.
+
+**Parameters:**
+
+- **response** (ChatAgentResponse): The agent response to extract from.
+- **schema** (Type[T]): The expected Pydantic model class.
+
+**Returns:**
+
+  Optional[T]: The parsed and validated result, or `__INLINE_CODE_0__` if
+extraction fails for any reason.
+
 <a id="camel.utils.commons.with_timeout"></a>
 
 ## with_timeout

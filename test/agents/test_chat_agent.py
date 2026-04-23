@@ -15,7 +15,7 @@ import asyncio
 import json
 from copy import deepcopy
 from io import BytesIO
-from typing import List
+from typing import List, Literal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -30,12 +30,21 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import StreamContentAccumulator, ToolCallingRecord
+from camel.agents.chat_agent import (
+    StreamContentAccumulator,
+    ToolCallingRecord,
+    _ToolOutputHistoryEntry,
+)
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
-from camel.models import AnthropicModel, ModelFactory, OpenAIModel
+from camel.models import (
+    AnthropicModel,
+    BaseModelBackend,
+    ModelFactory,
+    OpenAIModel,
+)
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
     FunctionTool,
@@ -90,6 +99,18 @@ parametrize = pytest.mark.parametrize(
 )
 
 
+class DummyModel(BaseModelBackend):
+    @property
+    def token_counter(self):
+        return self._token_counter
+
+    def _run(self, messages, response_format=None, tools=None):
+        raise NotImplementedError
+
+    async def _arun(self, messages, response_format=None, tools=None):
+        raise NotImplementedError
+
+
 @parametrize
 def test_chat_agent(model, step_call_count=3):
     model = model
@@ -103,7 +124,7 @@ def test_chat_agent(model, step_call_count=3):
     assistant_without_sys_msg = ChatAgent(model=model)
 
     assert str(assistant_with_sys_msg) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.DEFAULT})"
+        f"ChatAgent(doctor, RoleType.ASSISTANT, {ModelType.DEFAULT})"
     )
     assert str(assistant_without_sys_msg) == (
         "ChatAgent(assistant, "
@@ -129,14 +150,69 @@ def test_chat_agent(model, step_call_count=3):
         for i in range(step_call_count):
             for user_msg in [user_msg_bm, user_msg_str]:
                 response = assistant.step(user_msg)
-                assert isinstance(response.msgs, list), f"Error in round {i+1}"
-                assert len(response.msgs) > 0, f"Error in round {i+1}"
+                assert isinstance(
+                    response.msgs, list
+                ), f"Error in round {i + 1}"
+                assert len(response.msgs) > 0, f"Error in round {i + 1}"
                 assert isinstance(
                     response.terminated, bool
-                ), f"Error in round {i+1}"
-                assert response.terminated is False, f"Error in round {i+1}"
-                assert isinstance(response.info, dict), f"Error in round {i+1}"
-                assert response.info['id'] is not None, f"Error in round {i+1}"
+                ), f"Error in round {i + 1}"
+                assert response.terminated is False, f"Error in round {i + 1}"
+                assert isinstance(
+                    response.info, dict
+                ), f"Error in round {i + 1}"
+                assert (
+                    response.info['id'] is not None
+                ), f"Error in round {i + 1}"
+
+
+def test_chat_agent_reset_clears_tool_output_history():
+    model = DummyModel(ModelType.GPT_4O_MINI)
+    assistant = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        enable_snapshot_clean=True,
+    )
+    assistant._tool_output_history = [
+        _ToolOutputHistoryEntry(
+            tool_name="tool_a",
+            tool_call_id="call_a",
+            result_text="old",
+            record_uuids=["uuid_a"],
+            record_timestamps=[1.0],
+        )
+    ]
+
+    assistant.reset()
+
+    assert assistant._tool_output_history == []
+
+
+def test_clean_snapshot_in_memory_skips_missing_records():
+    model = DummyModel(ModelType.GPT_4O_MINI)
+    assistant = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        enable_snapshot_clean=True,
+    )
+    entry = _ToolOutputHistoryEntry(
+        tool_name="browser_get_page_snapshot",
+        tool_call_id="call_missing",
+        result_text="- button [ref=1]",
+        record_uuids=["missing_uuid"],
+        record_timestamps=[123.0],
+    )
+
+    chat_history_block = getattr(assistant.memory, "_chat_history_block", None)
+    storage = getattr(chat_history_block, "storage", None)
+    assert storage is not None
+    records_before = storage.load()
+
+    assistant._clean_snapshot_in_memory(entry)
+
+    records_after = storage.load()
+    assert records_after == records_before
+    assert entry.cached is True
 
 
 @pytest.mark.model_backend
@@ -227,13 +303,13 @@ def test_chat_agent_step_with_structure_response(step_call_count=3):
         response_content_keys = set(response_content_json.keys())
 
         assert joke_response_keys.issubset(response_content_keys), (
-            f"Error in calling round {i+1}: "
+            f"Error in calling round {i + 1}: "
             f"Missing keys: {joke_response_keys - response_content_keys}"
         )
 
         for key in joke_response_keys:
             assert key in response_content_json, (
-                f"Error in calling round {i+1}: "
+                f"Error in calling round {i + 1}: "
                 f"Key {key} not found in response content"
             )
 
@@ -366,7 +442,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
         ]
         assert (
             external_tool_call_requests[0].tool_name == "math_subtract"
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
 
 
 @pytest.mark.model_backend
@@ -510,7 +586,352 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
         ]
         assert (
             external_tool_call_requests[0].tool_name == "math_subtract"
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
+
+
+def _mock_completion_with_usage(
+    response_id: str,
+    *,
+    finish_reason: Literal[
+        "stop", "length", "tool_calls", "content_filter", "function_call"
+    ],
+    content: str | None,
+    created: int,
+    prompt_tokens: int,
+    completion_tokens: int,
+    total_tokens: int,
+    tool_call: ChatCompletionMessageFunctionToolCall | None = None,
+) -> ChatCompletion:
+    return ChatCompletion(
+        id=response_id,
+        choices=[
+            Choice(
+                finish_reason=finish_reason,
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content=content,
+                    role="assistant",
+                    function_call=None,
+                    tool_calls=[tool_call] if tool_call else None,
+                ),
+            )
+        ],
+        created=created,
+        model="gpt-5-mini",
+        object="chat.completion",
+        usage=CompletionUsage(
+            completion_tokens=completion_tokens,
+            prompt_tokens=prompt_tokens,
+            total_tokens=total_tokens,
+        ),
+    )
+
+
+def _assert_request_usage_event(
+    event: dict,
+    *,
+    request_index: int,
+    response_id: str,
+    request_total_tokens: int,
+    step_total_tokens: int,
+) -> None:
+    assert event["request_index"] == request_index
+    assert event["response_id"] == response_id
+    assert event["request_usage"]["total_tokens"] == request_total_tokens
+    assert event["step_usage"]["total_tokens"] == step_total_tokens
+
+
+@pytest.mark.model_backend
+def test_chat_agent_step_on_request_usage_callback():
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+
+    def add(a: int, b: int) -> int:
+        return a + b
+
+    request_events = []
+
+    first_response = _mock_completion_with_usage(
+        "mock_step_usage_1",
+        finish_reason="tool_calls",
+        content=None,
+        created=123456789,
+        prompt_tokens=10,
+        completion_tokens=3,
+        total_tokens=13,
+        tool_call=ChatCompletionMessageFunctionToolCall(
+            id="call_mock_add_1",
+            function=Function(arguments='{"a": 1, "b": 2}', name="add"),
+            type="function",
+        ),
+    )
+    second_response = _mock_completion_with_usage(
+        "mock_step_usage_2",
+        finish_reason="stop",
+        content="The result is 3.",
+        created=123456790,
+        prompt_tokens=20,
+        completion_tokens=4,
+        total_tokens=24,
+    )
+    model.run = MagicMock(side_effect=[first_response, second_response])
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        tools=[FunctionTool(add)],
+        on_request_usage=lambda payload: request_events.append(payload),
+    )
+    response = agent.step("Please add 1 and 2.")
+
+    assert len(request_events) == 2
+    _assert_request_usage_event(
+        request_events[0],
+        request_index=1,
+        response_id="mock_step_usage_1",
+        request_total_tokens=13,
+        step_total_tokens=13,
+    )
+    _assert_request_usage_event(
+        request_events[1],
+        request_index=2,
+        response_id="mock_step_usage_2",
+        request_total_tokens=24,
+        step_total_tokens=37,
+    )
+    assert response.info["usage"]["total_tokens"] == 37
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_astep_on_request_usage_callback():
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+
+    def add(a: int, b: int) -> int:
+        return a + b
+
+    request_events = []
+
+    async def on_request_usage(payload):
+        request_events.append(payload)
+
+    first_response = _mock_completion_with_usage(
+        "mock_astep_usage_1",
+        finish_reason="tool_calls",
+        content=None,
+        created=123456791,
+        prompt_tokens=12,
+        completion_tokens=5,
+        total_tokens=17,
+        tool_call=ChatCompletionMessageFunctionToolCall(
+            id="call_mock_add_2",
+            function=Function(arguments='{"a": 2, "b": 3}', name="add"),
+            type="function",
+        ),
+    )
+    second_response = _mock_completion_with_usage(
+        "mock_astep_usage_2",
+        finish_reason="stop",
+        content="The result is 5.",
+        created=123456792,
+        prompt_tokens=18,
+        completion_tokens=6,
+        total_tokens=24,
+    )
+    model.arun = AsyncMock(side_effect=[first_response, second_response])
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        tools=[FunctionTool(add)],
+        on_request_usage=on_request_usage,
+    )
+    response = await agent.astep("Please add 2 and 3.")
+
+    assert len(request_events) == 2
+    _assert_request_usage_event(
+        request_events[0],
+        request_index=1,
+        response_id="mock_astep_usage_1",
+        request_total_tokens=17,
+        step_total_tokens=17,
+    )
+    _assert_request_usage_event(
+        request_events[1],
+        request_index=2,
+        response_id="mock_astep_usage_2",
+        request_total_tokens=24,
+        step_total_tokens=41,
+    )
+    assert response.info["usage"]["total_tokens"] == 41
+
+
+@pytest.mark.model_backend
+def test_chat_agent_stream_step_on_request_usage_callback():
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+    request_events = []
+
+    chunks = [
+        ChatCompletionChunk(
+            id="mock_stream_usage_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="Hello", role="assistant"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="mock_stream_usage_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content=" world"),
+                    index=0,
+                    finish_reason="stop",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "prompt_tokens": 10,
+                "completion_tokens": 3,
+                "total_tokens": 13,
+            },
+        ),
+    ]
+
+    def mock_stream():
+        for chunk in chunks:
+            yield chunk
+
+    model.run = MagicMock(return_value=mock_stream())
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        on_request_usage=lambda payload: request_events.append(payload),
+    )
+
+    responses = list(agent.step("Say hello"))
+    assert len(responses) > 0
+    assert responses[-1].info["usage"]["total_tokens"] == 13
+    assert len(request_events) == 1
+    _assert_request_usage_event(
+        request_events[0],
+        request_index=1,
+        response_id="mock_stream_usage_1",
+        request_total_tokens=13,
+        step_total_tokens=13,
+    )
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_on_request_usage_callback():
+    from typing import AsyncGenerator
+
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+    request_events = []
+
+    async def on_request_usage(payload):
+        request_events.append(payload)
+
+    chunks = [
+        ChatCompletionChunk(
+            id="mock_async_stream_usage_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="Hello", role="assistant"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="mock_async_stream_usage_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content=" world"),
+                    index=0,
+                    finish_reason="stop",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "prompt_tokens": 11,
+                "completion_tokens": 4,
+                "total_tokens": 15,
+            },
+        ),
+    ]
+
+    async def mock_async_stream() -> AsyncGenerator[ChatCompletionChunk, None]:
+        for chunk in chunks:
+            yield chunk
+
+    model.arun = AsyncMock(return_value=mock_async_stream())
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        on_request_usage=on_request_usage,
+    )
+
+    responses = []
+    streaming_response = await agent.astep("Say hello")
+    async for response in streaming_response:
+        responses.append(response)
+
+    assert len(responses) > 0
+    assert responses[-1].info["usage"]["total_tokens"] == 15
+    assert len(request_events) == 1
+    _assert_request_usage_event(
+        request_events[0],
+        request_index=1,
+        response_id="mock_async_stream_usage_1",
+        request_total_tokens=15,
+        step_total_tokens=15,
+    )
 
 
 @pytest.mark.model_backend
@@ -588,8 +1009,8 @@ def test_chat_agent_step_exceed_token_number(step_call_count=3):
 
     for i in range(step_call_count):
         response = assistant.step(user_msg)
-        assert len(response.msgs) == 0, f"Error in calling round {i+1}"
-        assert response.terminated, f"Error in calling round {i+1}"
+        assert len(response.msgs) == 0, f"Error in calling round {i + 1}"
+        assert response.terminated, f"Error in calling round {i + 1}"
 
 
 @pytest.mark.model_backend
@@ -653,16 +1074,16 @@ def test_chat_agent_multiple_return_messages(n, step_call_count=3):
     for i in range(step_call_count):
         assert (
             assistant_with_sys_msg_response.msgs is not None
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
         assert (
             len(assistant_with_sys_msg_response.msgs) == n
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
         assert (
             assistant_without_sys_msg_response.msgs is not None
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
         assert (
             len(assistant_without_sys_msg_response.msgs) == n
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
 
 
 @pytest.mark.model_backend
@@ -744,20 +1165,20 @@ def test_chat_agent_stream_output(step_call_count=3):
         stream_assistant_response = stream_assistant.step(user_msg)
 
         for msg in stream_assistant_response.msgs:
-            assert len(msg.content) > 0, f"Error in calling round {i+1}"
+            assert len(msg.content) > 0, f"Error in calling round {i + 1}"
 
         stream_usage = stream_assistant_response.info["usage"]
         assert (
             stream_usage["completion_tokens"] > 0
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
         assert (
             stream_usage["prompt_tokens"] > 0
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
         assert (
             stream_usage["total_tokens"]
             == stream_usage["completion_tokens"]
             + stream_usage["prompt_tokens"]
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
 
 
 @pytest.mark.model_backend
@@ -1032,19 +1453,19 @@ def test_tool_calling_sync(step_call_count=3):
             call for call in agent_response.info['tool_calls']
         ]
 
-        assert len(tool_calls) > 0, f"Error in calling round {i+1}"
+        assert len(tool_calls) > 0, f"Error in calling round {i + 1}"
         assert str(tool_calls[0]).startswith(
             "Tool Execution"
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
         assert (
             tool_calls[0].tool_name == "math_multiply"
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
         assert tool_calls[0].args == {
             "a": 2,
             "b": 8,
             'decimal_places': 0,
-        }, f"Error in calling round {i+1}"
-        assert tool_calls[0].result == 16, f"Error in calling round {i+1}"
+        }, f"Error in calling round {i + 1}"
+        assert tool_calls[0].result == 16, f"Error in calling round {i + 1}"
 
 
 @pytest.mark.model_backend
@@ -1161,13 +1582,13 @@ async def test_tool_calling_math_async(step_call_count=3):
 
         assert (
             tool_calls[0].tool_name == "math_multiply"
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
         assert tool_calls[0].args == {
             "a": 2,
             "b": 8,
             'decimal_places': 0,
-        }, f"Error in calling round {i+1}"
-        assert tool_calls[0].result == 16, f"Error in calling round {i+1}"
+        }, f"Error in calling round {i + 1}"
+        assert tool_calls[0].result == 16, f"Error in calling round {i + 1}"
 
 
 @pytest.mark.model_backend
@@ -1247,18 +1668,18 @@ async def test_tool_calling_async(step_call_count=3):
 
         tool_calls = agent_response.info['tool_calls']
 
-        assert tool_calls, f"Error in calling round {i+1}"
+        assert tool_calls, f"Error in calling round {i + 1}"
         assert str(tool_calls[0]).startswith(
             "Tool Execution"
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
 
         assert (
             tool_calls[0].tool_name == "async_sleep"
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
         assert tool_calls[0].args == {
             'second': 1
-        }, f"Error in calling round {i+1}"
-        assert tool_calls[0].result == 1, f"Error in calling round {i+1}"
+        }, f"Error in calling round {i + 1}"
+        assert tool_calls[0].result == 1, f"Error in calling round {i + 1}"
 
 
 def test_response_words_termination(step_call_count=3):
@@ -1286,11 +1707,11 @@ def test_response_words_termination(step_call_count=3):
     for i in range(step_call_count):
         agent_response = agent.step(user_msg)
 
-        assert agent.terminated, f"Error in calling round {i+1}"
-        assert agent_response.terminated, f"Error in calling round {i+1}"
+        assert agent.terminated, f"Error in calling round {i + 1}"
+        assert agent_response.terminated, f"Error in calling round {i + 1}"
         assert (
             "goodbye" in agent_response.info['termination_reasons'][0]
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
 
 
 def test_chat_agent_vision(step_call_count=3):
@@ -1358,7 +1779,7 @@ def test_chat_agent_vision(step_call_count=3):
         agent_response = agent.step(user_msg)
         assert (
             agent_response.msgs[0].content == "Yes."
-        ), f"Error in calling round {i+1}"
+        ), f"Error in calling round {i + 1}"
 
 
 @pytest.mark.model_backend
@@ -1381,21 +1802,21 @@ def test_chat_agent_creation_methods():
     # Method 3: Initialize with a tuple of strings (platform, model)
     agent_3 = ChatAgent(
         "You are a helpful assistant.",
-        model=("anthropic", "claude-3-5-sonnet-latest"),
+        model=("anthropic", "claude-3-7-sonnet-latest"),
     )
-    assert agent_3.model_type.value == "claude-3-5-sonnet-latest"
+    assert agent_3.model_type.value == "claude-3-7-sonnet-latest"
     assert (
         agent_3.model_backend.models[0].model_type.value
-        == "claude-3-5-sonnet-latest"
+        == "claude-3-7-sonnet-latest"
     )
     assert isinstance(agent_3.model_backend.models[0], AnthropicModel)
 
     # Method 4: Initialize with a tuple of enums
     agent_4 = ChatAgent(
         "You are a helpful assistant.",
-        model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET),
+        model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_HAIKU_4_5),
     )
-    assert agent_4.model_type.value == "claude-3-5-sonnet-latest"
+    assert agent_4.model_type.value == "claude-haiku-4-5"
     assert isinstance(agent_4.model_backend.models[0], AnthropicModel)
 
     # Method 5: Default model when none is specified
@@ -1759,3 +2180,75 @@ async def test_chat_agent_async_stream_with_async_generator_tool_calls():
                 break
 
     assert tool_calls_found, "Tool calls should be found in responses"
+
+
+@pytest.mark.model_backend
+def test_chat_agent_stream_with_structured_output():
+    r"""Test streaming with structured output (response_format).
+
+    This is an e2e test for the fix that properly detects and handles
+    ChatCompletionStreamManager returned by OpenAI when using
+    streaming + structured output together.
+    """
+
+    class MathResult(BaseModel):
+        answer: int = Field(description="The numerical answer")
+        explanation: str = Field(description="Brief explanation")
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4_1,
+        model_config_dict={"stream": True},
+    )
+
+    agent = ChatAgent(
+        system_message="You are a helpful math assistant.",
+        model=model,
+    )
+
+    # Stream with structured output - this triggers ChatCompletionStreamManager
+    responses = []
+    for response in agent.step("What is 2 + 2?", response_format=MathResult):
+        responses.append(response)
+
+    assert len(responses) > 1, "Should receive multiple streaming chunks"
+    assert responses[-1].msg.parsed.answer == 4
+    assert responses[-1].msg.parsed.explanation
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_with_structured_output():
+    r"""Test async streaming with structured output (response_format).
+
+    This is an e2e test for the fix that properly detects and handles
+    AsyncChatCompletionStreamManager returned by OpenAI when using
+    async streaming + structured output together.
+    """
+
+    class MathResult(BaseModel):
+        answer: int = Field(description="The numerical answer")
+        explanation: str = Field(description="Brief explanation")
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4_1,
+        model_config_dict={"stream": True},
+    )
+
+    agent = ChatAgent(
+        system_message="You are a helpful math assistant.",
+        model=model,
+    )
+
+    # Async stream with structured output - triggers
+    # AsyncChatCompletionStreamManager
+    responses = []
+    async for response in await agent.astep(
+        "What is 3 + 3?", response_format=MathResult
+    ):
+        responses.append(response)
+
+    assert len(responses) > 1, "Should receive multiple streaming chunks"
+    assert responses[-1].msg.parsed.answer == 6
+    assert responses[-1].msg.parsed.explanation

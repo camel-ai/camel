@@ -1,0 +1,20 @@
+{
+  "type": "pre_capture",
+  "index": 6,
+  "prefix": "pre_step_0006",
+  "captured_at": "2026-02-03T21:01:57.934413",
+  "next_action": "click",
+  "next_action_args": {
+    "args": [
+      "e1012"
+    ],
+    "kwargs": {}
+  },
+  "tab_id": "tab-002",
+  "url": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAhIIL20vMDVxdGoaDnIMCAISCC9tLzA1cXRqQAFAAUgBcAGCAQsI____________AZgBAQ&tfu=KgIIAw",
+  "snapshot_sha1": "56dce697a27e48a9010807197661c9fe3a1fdbfc",
+  "screenshot_sha1": "50682fa410d2bec16b34f6fba3ae2d57172e9904",
+  "timing": {
+    "screenshot_time_ms": 122
+  }
+}

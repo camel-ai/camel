@@ -2,6 +2,9 @@
 title: "Agents"
 description: "Learn about CAMEL's agent types, with a focus on ChatAgent and advanced agent architectures for AI-powered automation."
 icon: user-helmet-safety
+
+doc_code_map:
+  - "camel/agents/**/*.py"
 ---
 
 
@@ -99,7 +102,7 @@ agent_3 = ChatAgent("You are a helpful assistant.", model=("openai", "gpt-4o-min
 # Method 4: Using a tuple of enums
 agent_4 = ChatAgent(
     "You are a helpful assistant.",
-    model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET),
+    model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_HAIKU_4_5),
 )
 
 # Method 5: Using default model platform and default model type when none is specified

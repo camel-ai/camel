@@ -1,0 +1,239 @@
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+"""Utilities for validating and using doc_code_map in Mintlify docs."""
+
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable
+
+
+DEFAULT_DOC_ROOTS = (
+    Path("docs/mintlify/key_modules"),
+    Path("docs/mintlify/mcp"),
+)
+
+
+@dataclass
+class DocMap:
+    doc_path: Path
+    patterns: list[str]
+
+
+def _iter_docs(roots: Iterable[Path]) -> list[Path]:
+    docs: list[Path] = []
+    for root in roots:
+        if not root.exists():
+            continue
+        docs.extend(sorted(root.glob("*.mdx")))
+    return docs
+
+
+def _extract_doc_code_map(doc_path: Path) -> list[str]:
+    text = doc_path.read_text(encoding="utf-8")
+    if not text.startswith("---\n"):
+        return []
+    end = text.find("\n---\n", 4)
+    if end == -1:
+        return []
+    frontmatter = text[4:end].splitlines()
+
+    patterns: list[str] = []
+    in_block = False
+    for line in frontmatter:
+        if not in_block:
+            if line.startswith("doc_code_map:"):
+                in_block = True
+            continue
+        if line.startswith("  - "):
+            item = line[4:].strip()
+            if (
+                len(item) >= 2
+                and item[0] == item[-1]
+                and item[0] in ('"', "'")
+            ):
+                item = item[1:-1]
+            if item:
+                patterns.append(item)
+            continue
+        break
+    return patterns
+
+
+def _collect_doc_maps(roots: Iterable[Path]) -> list[DocMap]:
+    docs = _iter_docs(roots)
+    return [DocMap(doc, _extract_doc_code_map(doc)) for doc in docs]
+
+
+def _run_git_diff(base_ref: str, head_ref: str) -> list[str]:
+    cmd = ["git", "diff", "--name-only", f"{base_ref}..{head_ref}"]
+    try:
+        out = subprocess.check_output(cmd, text=True, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as exc:
+        print(f"git diff failed (exit {exc.returncode}): {exc.stderr.strip()}")
+        raise SystemExit(1) from exc
+    except FileNotFoundError as exc:
+        print("git is not available on PATH. Please install git.")
+        raise SystemExit(1) from exc
+    return [line.strip() for line in out.splitlines() if line.strip()]
+
+
+def _read_path_list(path: Path) -> list[str]:
+    """Read a text file containing one path per line."""
+    return [
+        line.strip()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
+def _verify(doc_maps: list[DocMap], repo_root: Path) -> int:
+    errors: list[str] = []
+    checked = 0
+    for doc_map in doc_maps:
+        checked += 1
+        if not doc_map.patterns:
+            errors.append(
+                f"{doc_map.doc_path}: missing or empty doc_code_map block"
+            )
+            continue
+
+        for pattern in doc_map.patterns:
+            matches = list(repo_root.glob(pattern))
+            if not matches:
+                errors.append(
+                    f"{doc_map.doc_path}: pattern has no matches -> {pattern}"
+                )
+
+    if errors:
+        print("doc_code_map verification failed:")
+        for err in errors:
+            print(f"- {err}")
+        return 1
+
+    print(f"doc_code_map verification passed for {checked} documents.")
+    return 0
+
+
+def _impacted_docs(
+    doc_maps: list[DocMap],
+    changed_files: list[str],
+    repo_root: Path,
+) -> list[Path]:
+    changed = {str(Path(p).as_posix()) for p in changed_files}
+    impacted: list[Path] = []
+    for doc_map in doc_maps:
+        matched = False
+        for pattern in doc_map.patterns:
+            for path in repo_root.glob(pattern):
+                rel = str(path.resolve().relative_to(repo_root).as_posix())
+                if rel in changed:
+                    matched = True
+                    break
+            if matched:
+                break
+        if matched:
+            impacted.append(doc_map.doc_path)
+    return sorted(impacted)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    subparsers = parser.add_subparsers(dest="command")
+
+    verify_p = subparsers.add_parser(
+        "verify", help="Verify doc_code_map blocks and pattern matches."
+    )
+    verify_p.add_argument(
+        "--docs-root",
+        action="append",
+        default=[],
+        help="Root directory containing .mdx docs. Can be passed multiple times.",
+    )
+
+    impacted_p = subparsers.add_parser(
+        "impacted",
+        help="Print impacted docs based on changed files or git refs.",
+    )
+    impacted_p.add_argument(
+        "--docs-root",
+        action="append",
+        default=[],
+        help="Root directory containing .mdx docs. Can be passed multiple times.",
+    )
+    impacted_p.add_argument(
+        "--base-ref",
+        default=None,
+        help="Base git ref for diff, used with --head-ref.",
+    )
+    impacted_p.add_argument(
+        "--head-ref",
+        default="HEAD",
+        help="Head git ref for diff.",
+    )
+    impacted_p.add_argument(
+        "--changed-file",
+        action="append",
+        default=[],
+        help="Changed file path. Can be passed multiple times.",
+    )
+    impacted_p.add_argument(
+        "--changed-files-file",
+        default=None,
+        help="Path to a text file listing changed files (one per line).",
+    )
+
+    args = parser.parse_args()
+    if not args.command:
+        parser.print_help()
+        return 0
+
+    repo_root = Path(".").resolve()
+
+    roots = [Path(p) for p in args.docs_root] if args.docs_root else list(
+        DEFAULT_DOC_ROOTS
+    )
+    doc_maps = _collect_doc_maps(roots)
+
+    if args.command == "verify":
+        return _verify(doc_maps, repo_root)
+
+    changed_files: list[str] = []
+    if args.changed_file:
+        changed_files.extend(args.changed_file)
+    if args.changed_files_file:
+        changed_files.extend(_read_path_list(Path(args.changed_files_file)))
+    if not changed_files and args.base_ref:
+        changed_files.extend(_run_git_diff(args.base_ref, args.head_ref))
+    if not changed_files and not args.changed_file and not args.changed_files_file and not args.base_ref:
+        parser.error(
+            "impacted requires --changed-file, --changed-files-file, or "
+            "--base-ref/--head-ref."
+        )
+
+    impacted = _impacted_docs(doc_maps, changed_files, repo_root)
+    for doc in impacted:
+        print(str(doc))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

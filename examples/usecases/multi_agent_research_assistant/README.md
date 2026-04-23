@@ -10,7 +10,7 @@ A powerful, AI-driven research assistant built using the [CAMEL-AI](https://www.
   - `ArxivToolkit` for accessing preprints.
   - `AskNewsToolkit` for fetching relevant news articles.
   - `ThinkingToolkit` for planning and synthesis.
-  - `FileWriteToolkit` for saving reports locally.
+  - `FileToolkit` for saving reports locally.
   - `LinkedInToolkit` for potential dissemination.
   - `OpenAIImageToolkit` for generating illustrative images.
 - **Streamlit Interface**: Provides an intuitive web interface for users to input topics and receive generated reports.

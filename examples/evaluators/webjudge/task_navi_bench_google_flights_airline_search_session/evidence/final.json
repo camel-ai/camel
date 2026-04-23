@@ -1,0 +1,11 @@
+{
+  "type": "final_pre_capture",
+  "captured_at": "2026-02-03T21:03:21.765832",
+  "tab_id": "tab-002",
+  "url": "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTA3LTI4agcIARIDVklFcgcIARIDTUNPGh4SCjIwMjYtMDctMzFqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB",
+  "snapshot_sha1": "62df94b4fcf20b51c849a5d9b9c8f623a07caf39",
+  "screenshot_sha1": "2364941ba0418d8643c93fde2c9045b42d1bf23f",
+  "timing": {
+    "screenshot_time_ms": 119
+  }
+}

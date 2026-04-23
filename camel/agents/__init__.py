@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import BaseAgent
-from .chat_agent import ChatAgent
+from .chat_agent import ChatAgent, observe
 from .critic_agent import CriticAgent
 from .embodied_agent import EmbodiedAgent
 from .knowledge_graph_agent import KnowledgeGraphAgent
@@ -31,18 +31,19 @@ from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
 
 __all__ = [
     'BaseAgent',
-    'ChatAgent',
-    'TaskSpecifyAgent',
-    'TaskPlannerAgent',
-    'TaskCreationAgent',
-    'TaskPrioritizationAgent',
-    'CriticAgent',
     'BaseToolAgent',
-    'HuggingFaceToolAgent',
+    'ChatAgent',
+    'CriticAgent',
     'EmbodiedAgent',
-    'RoleAssignmentAgent',
-    'SearchAgent',
+    'HuggingFaceToolAgent',
     'KnowledgeGraphAgent',
     'MCPAgent',
     'RepoAgent',
+    'RoleAssignmentAgent',
+    'SearchAgent',
+    'TaskCreationAgent',
+    'TaskPlannerAgent',
+    'TaskPrioritizationAgent',
+    'TaskSpecifyAgent',
+    'observe',
 ]

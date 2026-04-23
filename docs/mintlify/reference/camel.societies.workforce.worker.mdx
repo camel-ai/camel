@@ -48,6 +48,19 @@ def _get_dep_tasks_info(dependencies: List[Task]):
 def set_channel(self, channel: TaskChannel):
 ```
 
+<a id="camel.societies.workforce.worker.Worker.set_stream_callback"></a>
+
+### set_stream_callback
+
+```python
+def set_stream_callback(
+    self,
+    stream_callback: Optional[Callable[['ChatAgentResponse', str, str], Optional[Awaitable[None]]]]
+):
+```
+
+Set streaming callback for worker token/chunk updates.
+
 <a id="camel.societies.workforce.worker.Worker.stop"></a>
 
 ### stop

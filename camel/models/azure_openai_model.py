@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-import copy
 import os
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Type, Union
@@ -345,16 +344,10 @@ class AzureOpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
+        request_config = self._prepare_request_config(tools)
 
-        if tools:
-            request_config["tools"] = tools
-        else:
-            # Remove parallel_tool_calls if no tools are specified
-            # as OpenAI API only allows it when tools are present
-            request_config.pop("parallel_tool_calls", None)
-
-        return self._client.chat.completions.create(
+        return self._call_client(
+            self._client.chat.completions.create,
             messages=messages,
             model=str(self.model_type),
             **request_config,
@@ -365,16 +358,10 @@ class AzureOpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
+        request_config = self._prepare_request_config(tools)
 
-        if tools:
-            request_config["tools"] = tools
-        else:
-            # Remove parallel_tool_calls if no tools are specified
-            # as OpenAI API only allows it when tools are present
-            request_config.pop("parallel_tool_calls", None)
-
-        return await self._async_client.chat.completions.create(
+        return await self._acall_client(
+            self._async_client.chat.completions.create,
             messages=messages,
             model=str(self.model_type),
             **request_config,
@@ -386,20 +373,14 @@ class AzureOpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         request_config["response_format"] = response_format
         # Remove stream from request config since OpenAI does not support it
         # with structured response
         request_config.pop("stream", None)
-        if tools:
-            request_config["tools"] = tools
-        else:
-            # Remove parallel_tool_calls if no tools are specified
-            # as OpenAI API only allows it when tools are present
-            request_config.pop("parallel_tool_calls", None)
 
-        return self._client.beta.chat.completions.parse(
+        return self._call_client(
+            self._client.beta.chat.completions.parse,
             messages=messages,
             model=str(self.model_type),
             **request_config,
@@ -411,20 +392,14 @@ class AzureOpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         request_config["response_format"] = response_format
         # Remove stream from request config since OpenAI does not support it
         # with structured response
         request_config.pop("stream", None)
-        if tools:
-            request_config["tools"] = tools
-        else:
-            # Remove parallel_tool_calls if no tools are specified
-            # as OpenAI API only allows it when tools are present
-            request_config.pop("parallel_tool_calls", None)
 
-        return await self._async_client.beta.chat.completions.parse(
+        return await self._acall_client(
+            self._async_client.beta.chat.completions.parse,
             messages=messages,
             model=str(self.model_type),
             **request_config,
@@ -440,21 +415,12 @@ class AzureOpenAIModel(BaseModelBackend):
 
         Note: This uses OpenAI's beta streaming API for structured outputs.
         """
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
-
-        if tools:
-            request_config["tools"] = tools
-        else:
-            # Remove parallel_tool_calls if no tools are specified
-            # as OpenAI API only allows it when tools are present
-            request_config.pop("parallel_tool_calls", None)
-
         # Use the beta streaming API for structured outputs
-        return self._client.beta.chat.completions.stream(
+        return self._call_client(
+            self._client.beta.chat.completions.stream,
             messages=messages,
             model=str(self.model_type),
             response_format=response_format,
@@ -471,21 +437,12 @@ class AzureOpenAIModel(BaseModelBackend):
 
         Note: This uses OpenAI's beta streaming API for structured outputs.
         """
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
-
-        if tools:
-            request_config["tools"] = tools
-        else:
-            # Remove parallel_tool_calls if no tools are specified
-            # as OpenAI API only allows it when tools are present
-            request_config.pop("parallel_tool_calls", None)
-
         # Use the beta streaming API for structured outputs
-        return self._async_client.beta.chat.completions.stream(
+        return self._call_client(
+            self._async_client.beta.chat.completions.stream,
             messages=messages,
             model=str(self.model_type),
             response_format=response_format,

@@ -23,12 +23,12 @@ from typing import (
     Dict,
     List,
     Tuple,
-    TypedDict,
     Union,
     cast,
 )
 
 from PIL import Image, ImageDraw, ImageFont
+from typing_extensions import TypedDict
 
 # Constants
 TOP_NO_LABEL_ZONE = 20

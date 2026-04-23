@@ -15,6 +15,9 @@ from .aihubmix_model import AihubMixModel
 from .aiml_model import AIMLModel
 from .amd_model import AMDModel
 from .anthropic_model import AnthropicModel
+from .atlascloud_model import AtlasCloudModel
+from .avian_model import AvianModel
+from .aws_bedrock_converse_model import AWSBedrockConverseModel
 from .aws_bedrock_model import AWSBedrockModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
@@ -59,6 +62,7 @@ from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .volcano_model import VolcanoModel
 from .watsonx_model import WatsonXModel
+from .xai_model import XAIModel
 from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
 
@@ -66,6 +70,7 @@ __all__ = [
     'BaseModelBackend',
     'OpenAIModel',
     'OpenRouterModel',
+    'AtlasCloudModel',
     'AzureOpenAIModel',
     'AnthropicModel',
     'AMDModel',
@@ -96,6 +101,7 @@ __all__ = [
     'YiModel',
     'QwenModel',
     'AWSBedrockModel',
+    'AWSBedrockConverseModel',
     'ModelProcessingError',
     'NebiusModel',
     'DeepSeekModel',
@@ -114,4 +120,6 @@ __all__ = [
     'CrynuxModel',
     'AihubMixModel',
     'FunctionGemmaModel',
+    'AvianModel',
+    'XAIModel',
 ]

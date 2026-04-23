@@ -12,9 +12,23 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import copy
+import json
 import os
+import warnings
 from json import JSONDecodeError
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Literal,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 from openai import AsyncOpenAI, AsyncStream, BadRequestError, OpenAI, Stream
 from openai.lib.streaming.chat import (
@@ -35,6 +49,7 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
+    get_current_agent_session_id,
     is_langfuse_available,
 )
 
@@ -87,6 +102,9 @@ class OpenAICompatibleModel(BaseModelBackend):
             OpenAI-compatible client instance. If provided, this client will
             be used instead of creating a new one. The client should implement
             the AsyncOpenAI client interface. (default: :obj:`None`)
+        api_mode (Literal["chat_completions", "responses"], optional):
+            API mode to use. Supported values:
+            `"chat_completions"` (default) and `"responses"`.
         **kwargs (Any): Additional arguments to pass to the
             OpenAI client initialization. These can include parameters like
             'organization', 'default_headers', 'http_client', etc.
@@ -104,11 +122,22 @@ class OpenAICompatibleModel(BaseModelBackend):
         max_retries: int = 3,
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,
+        api_mode: Literal["chat_completions", "responses"] = (
+            "chat_completions"
+        ),
         **kwargs: Any,
     ) -> None:
         api_key = api_key or os.environ.get("OPENAI_COMPATIBILITY_API_KEY")
         url = url or os.environ.get("OPENAI_COMPATIBILITY_API_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
+        if api_mode not in {"chat_completions", "responses"}:
+            raise ValueError(
+                "api_mode must be 'chat_completions' or 'responses', "
+                f"got: {api_mode}"
+            )
+        self._api_mode = api_mode
+        self._responses_previous_response_id_by_session: Dict[str, str] = {}
+        self._responses_last_message_count_by_session: Dict[str, int] = {}
 
         super().__init__(
             model_type,
@@ -208,15 +237,34 @@ class OpenAICompatibleModel(BaseModelBackend):
 
         if response_format:
             if is_streaming:
-                # Use streaming parse for structured output
+                if self._api_mode == "responses":
+                    return cast(
+                        Stream[ChatCompletionChunk],
+                        self._request_responses_stream(
+                            messages, response_format, tools
+                        ),
+                    )
                 return self._request_stream_parse(
                     messages, response_format, tools
                 )
             else:
-                # Use non-streaming parse for structured output
+                if self._api_mode == "responses":
+                    return self._request_responses(
+                        messages, response_format, tools
+                    )
                 return self._request_parse(messages, response_format, tools)
         else:
-            result = self._request_chat_completion(messages, tools)
+            result: Union[ChatCompletion, Stream[ChatCompletionChunk]]
+            if self._api_mode == "responses":
+                if is_streaming:
+                    result = cast(
+                        Stream[ChatCompletionChunk],
+                        self._request_responses_stream(messages, None, tools),
+                    )
+                else:
+                    result = self._request_responses(messages, None, tools)
+            else:
+                result = self._request_chat_completion(messages, tools)
 
         return result
 
@@ -260,17 +308,43 @@ class OpenAICompatibleModel(BaseModelBackend):
 
         if response_format:
             if is_streaming:
-                # Use streaming parse for structured output
+                if self._api_mode == "responses":
+                    return cast(
+                        AsyncStream[ChatCompletionChunk],
+                        await self._arequest_responses_stream(
+                            messages, response_format, tools
+                        ),
+                    )
                 return await self._arequest_stream_parse(
                     messages, response_format, tools
                 )
             else:
-                # Use non-streaming parse for structured output
+                if self._api_mode == "responses":
+                    return await self._arequest_responses(
+                        messages, response_format, tools
+                    )
                 return await self._arequest_parse(
                     messages, response_format, tools
                 )
         else:
-            result = await self._arequest_chat_completion(messages, tools)
+            result: Union[
+                ChatCompletion,
+                AsyncStream[ChatCompletionChunk],
+            ]
+            if self._api_mode == "responses":
+                if is_streaming:
+                    result = cast(
+                        AsyncStream[ChatCompletionChunk],
+                        await self._arequest_responses_stream(
+                            messages, None, tools
+                        ),
+                    )
+                else:
+                    result = await self._arequest_responses(
+                        messages, None, tools
+                    )
+            else:
+                result = await self._arequest_chat_completion(messages, tools)
 
         return result
 
@@ -279,12 +353,10 @@ class OpenAICompatibleModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
+        request_config = self._prepare_request_config(tools)
 
-        if tools:
-            request_config["tools"] = tools
-
-        return self._client.chat.completions.create(
+        return self._call_client(
+            self._client.chat.completions.create,
             messages=messages,
             model=self.model_type,
             **request_config,
@@ -295,12 +367,10 @@ class OpenAICompatibleModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
+        request_config = self._prepare_request_config(tools)
 
-        if tools:
-            request_config["tools"] = tools
-
-        return await self._async_client.chat.completions.create(
+        return await self._acall_client(
+            self._async_client.chat.completions.create,
             messages=messages,
             model=self.model_type,
             **request_config,
@@ -312,18 +382,15 @@ class OpenAICompatibleModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
+        request_config = self._prepare_request_config(tools)
         # Remove stream from request_config since OpenAI does not support it
         # when structured response is used
         request_config["response_format"] = response_format
         request_config.pop("stream", None)
-        if tools is not None:
-            request_config["tools"] = tools
 
         try:
-            return self._client.beta.chat.completions.parse(
+            return self._call_client(
+                self._client.beta.chat.completions.parse,
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -336,7 +403,8 @@ class OpenAICompatibleModel(BaseModelBackend):
             try_modify_message_with_format(messages[-1], response_format)
             request_config["response_format"] = {"type": "json_object"}
             try:
-                return self._client.beta.chat.completions.parse(
+                return self._call_client(
+                    self._client.beta.chat.completions.parse,
                     messages=messages,
                     model=self.model_type,
                     **request_config,
@@ -351,18 +419,15 @@ class OpenAICompatibleModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
+        request_config = self._prepare_request_config(tools)
         # Remove stream from request_config since OpenAI does not support it
         # when structured response is used
         request_config["response_format"] = response_format
         request_config.pop("stream", None)
-        if tools is not None:
-            request_config["tools"] = tools
 
         try:
-            return await self._async_client.beta.chat.completions.parse(
+            return await self._acall_client(
+                self._async_client.beta.chat.completions.parse,
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -375,7 +440,8 @@ class OpenAICompatibleModel(BaseModelBackend):
             try_modify_message_with_format(messages[-1], response_format)
             request_config["response_format"] = {"type": "json_object"}
             try:
-                return await self._async_client.beta.chat.completions.parse(
+                return await self._acall_client(
+                    self._async_client.beta.chat.completions.parse,
                     messages=messages,
                     model=self.model_type,
                     **request_config,
@@ -394,18 +460,13 @@ class OpenAICompatibleModel(BaseModelBackend):
 
         Note: This uses OpenAI's beta streaming API for structured outputs.
         """
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
 
-        if tools is not None:
-            request_config["tools"] = tools
-
         # Use the beta streaming API for structured outputs
-        return self._client.beta.chat.completions.stream(
+        return self._call_client(
+            self._client.beta.chat.completions.stream,
             messages=messages,
             model=self.model_type,
             response_format=response_format,
@@ -422,22 +483,442 @@ class OpenAICompatibleModel(BaseModelBackend):
 
         Note: This uses OpenAI's beta streaming API for structured outputs.
         """
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
 
-        if tools is not None:
-            request_config["tools"] = tools
-
         # Use the beta streaming API for structured outputs
-        return self._async_client.beta.chat.completions.stream(
+        return self._call_client(
+            self._async_client.beta.chat.completions.stream,
             messages=messages,
             model=self.model_type,
             response_format=response_format,
             **request_config,
+        )
+
+    # ------------------------------------------------------------------
+    # Responses API helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _normalize_tools_for_responses_api(
+        tools: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        r"""Convert chat-completions style function tools to Responses style.
+
+        Input:
+            {"type":"function","function":{"name":"foo",...}}
+        Output:
+            {"type":"function","name":"foo",...}
+        """
+        normalized_tools: List[Dict[str, Any]] = []
+        for tool in tools:
+            if (
+                isinstance(tool, dict)
+                and tool.get("type") == "function"
+                and isinstance(tool.get("function"), dict)
+            ):
+                normalized_tools.append(
+                    {"type": "function", **tool["function"]}
+                )
+            else:
+                normalized_tools.append(tool)
+        return normalized_tools
+
+    @staticmethod
+    def _enforce_object_additional_properties_false(schema: Any) -> None:
+        r"""Recursively enforce strict object schema for Responses API."""
+        if isinstance(schema, dict):
+            if (
+                schema.get("type") == "object"
+                and "additionalProperties" not in schema
+            ):
+                schema["additionalProperties"] = False
+
+            for value in schema.values():
+                OpenAICompatibleModel._enforce_object_additional_properties_false(
+                    value
+                )
+        elif isinstance(schema, list):
+            for item in schema:
+                OpenAICompatibleModel._enforce_object_additional_properties_false(
+                    item
+                )
+
+    def _get_response_chain_session_key(self) -> str:
+        return get_current_agent_session_id() or "__default__"
+
+    def _clear_response_chain_state(self, session_key: str) -> None:
+        self._responses_previous_response_id_by_session.pop(session_key, None)
+        self._responses_last_message_count_by_session.pop(session_key, None)
+
+    @staticmethod
+    def _responses_chain_enabled(request_config: Dict[str, Any]) -> bool:
+        return request_config.get("store") is not False
+
+    def _prepare_responses_input_and_chain(
+        self,
+        messages: List[OpenAIMessage],
+        chain_enabled: bool = True,
+    ) -> Dict[str, Any]:
+        session_key = self._get_response_chain_session_key()
+        if chain_enabled:
+            previous_response_id = (
+                self._responses_previous_response_id_by_session.get(
+                    session_key
+                )
+            )
+            last_message_count = (
+                self._responses_last_message_count_by_session.get(
+                    session_key, 0
+                )
+            )
+        else:
+            self._clear_response_chain_state(session_key)
+            previous_response_id = None
+            last_message_count = 0
+
+        # If memory was reset/truncated, reset chain and send full context.
+        if len(messages) < last_message_count:
+            previous_response_id = None
+            last_message_count = 0
+            self._clear_response_chain_state(session_key)
+
+        if previous_response_id and last_message_count > 0:
+            delta_messages = messages[last_message_count:]
+            # Filter out ALL assistant messages from the delta.
+            # The server already knows every assistant turn via
+            # previous_response_id.  Only tool results and user
+            # messages are genuinely new.  ChatAgent's streaming
+            # path may also record duplicate assistant messages,
+            # so filtering by role is the safest approach.
+            delta_messages = [
+                m for m in delta_messages if m.get("role") != "assistant"
+            ]
+            input_messages = (
+                delta_messages if delta_messages else [messages[-1]]
+            )
+        else:
+            input_messages = messages
+
+        input_items = self._convert_messages_to_responses_input(input_messages)
+
+        return {
+            "session_key": session_key,
+            "previous_response_id": previous_response_id,
+            "input_messages": input_items,
+            "message_count": len(messages),
+        }
+
+    @staticmethod
+    def _convert_messages_to_responses_input(
+        messages: List[OpenAIMessage],
+    ) -> List[Dict[str, Any]]:
+        r"""Convert chat-completions style messages to Responses input items.
+
+        This specifically rewrites tool-calling history:
+        - assistant message with `tool_calls` -> one or more `function_call`
+          items (+ optional assistant message when content exists)
+        - tool message -> `function_call_output` item
+        """
+        input_items: List[Dict[str, Any]] = []
+        for message in messages:
+            role = message.get("role")
+            content = message.get("content", "")
+
+            if role == "tool":
+                input_items.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": message.get("tool_call_id", "null"),
+                        "output": content
+                        if isinstance(content, str)
+                        else str(content),
+                    }
+                )
+                continue
+
+            if role == "assistant" and message.get("tool_calls"):
+                if content not in (None, "", []):
+                    input_items.append(
+                        {
+                            "role": "assistant",
+                            "content": content,
+                        }
+                    )
+
+                tool_calls = message.get("tool_calls", [])
+                if not isinstance(tool_calls, list):
+                    tool_calls = [tool_calls]
+                for tool_call in tool_calls:
+                    function_data = (
+                        tool_call.get("function", {})
+                        if isinstance(tool_call, dict)
+                        else {}
+                    )
+                    if not isinstance(function_data, dict):
+                        continue
+                    arguments = function_data.get("arguments", "{}")
+                    if not isinstance(arguments, str):
+                        arguments = json.dumps(arguments, ensure_ascii=False)
+                    input_items.append(
+                        {
+                            "type": "function_call",
+                            "call_id": (
+                                tool_call.get("id", "null")
+                                if isinstance(tool_call, dict)
+                                else "null"
+                            ),
+                            "name": function_data.get("name", ""),
+                            "arguments": arguments,
+                        }
+                    )
+                continue
+
+            input_items.append(
+                {
+                    "role": role,
+                    "content": content,
+                }
+            )
+
+        return input_items
+
+    def _save_response_chain_state(
+        self,
+        session_key: str,
+        response_id: Optional[str],
+        message_count: int,
+    ) -> None:
+        if response_id:
+            self._responses_previous_response_id_by_session[session_key] = (
+                response_id
+            )
+        self._responses_last_message_count_by_session[session_key] = (
+            message_count
+        )
+
+    def _prepare_responses_request_config(
+        self,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        response_format: Optional[Type[BaseModel]] = None,
+        stream: bool = False,
+    ) -> Dict[str, Any]:
+        request_config = self._prepare_request_config(tools)
+
+        # Translate chat-completions style parameters to responses style.
+        max_tokens = request_config.pop("max_tokens", None)
+        if (
+            max_tokens is not None
+            and "max_output_tokens" not in request_config
+        ):
+            request_config["max_output_tokens"] = max_tokens
+
+        # `n` is unsupported in responses. Keep backward compatibility.
+        if request_config.get("n") not in (None, 1):
+            warnings.warn(
+                "OpenAI Responses API does not support `n`; "
+                "ignoring configured value.",
+                UserWarning,
+            )
+        request_config.pop("n", None)
+
+        request_config.pop("response_format", None)
+        request_config.pop("stream_options", None)
+        request_config["stream"] = stream
+        # previous_response_id chaining requires stored responses.
+        # Only force store=True when not explicitly set by the user.
+        if "store" not in request_config:
+            request_config["store"] = True
+        elif request_config.get("store") is False:
+            warnings.warn(
+                "Setting `store=False` will disable "
+                "`previous_response_id` chaining.",
+                UserWarning,
+            )
+
+        if request_config.get("tools"):
+            request_config["tools"] = self._normalize_tools_for_responses_api(
+                request_config["tools"]
+            )
+
+        if response_format is not None:
+            schema = copy.deepcopy(response_format.model_json_schema())
+            self._enforce_object_additional_properties_false(schema)
+            request_config["text"] = {
+                "format": {
+                    "type": "json_schema",
+                    "name": response_format.__name__,
+                    "schema": schema,
+                }
+            }
+
+        return request_config
+
+    # ------------------------------------------------------------------
+    # Responses API request methods
+    # ------------------------------------------------------------------
+
+    def _request_responses(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        from camel.models.openai_responses_adapter import (
+            response_to_chat_completion,
+        )
+
+        request_config = self._prepare_responses_request_config(
+            tools=tools, response_format=response_format, stream=False
+        )
+        chain_enabled = self._responses_chain_enabled(request_config)
+        chain_state = self._prepare_responses_input_and_chain(
+            messages, chain_enabled=chain_enabled
+        )
+        if chain_enabled and chain_state["previous_response_id"]:
+            request_config["previous_response_id"] = chain_state[
+                "previous_response_id"
+            ]
+        response = self._client.responses.create(
+            input=chain_state["input_messages"],
+            model=self.model_type,
+            **request_config,
+        )
+        if chain_enabled:
+            self._save_response_chain_state(
+                session_key=chain_state["session_key"],
+                response_id=getattr(response, "id", None)
+                if not isinstance(response, dict)
+                else response.get("id"),
+                message_count=chain_state["message_count"],
+            )
+        return response_to_chat_completion(
+            response=response,
+            model=str(self.model_type),
+            response_format=response_format,
+        )
+
+    async def _arequest_responses(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        from camel.models.openai_responses_adapter import (
+            response_to_chat_completion,
+        )
+
+        request_config = self._prepare_responses_request_config(
+            tools=tools, response_format=response_format, stream=False
+        )
+        chain_enabled = self._responses_chain_enabled(request_config)
+        chain_state = self._prepare_responses_input_and_chain(
+            messages, chain_enabled=chain_enabled
+        )
+        if chain_enabled and chain_state["previous_response_id"]:
+            request_config["previous_response_id"] = chain_state[
+                "previous_response_id"
+            ]
+        response = await self._async_client.responses.create(
+            input=chain_state["input_messages"],
+            model=self.model_type,
+            **request_config,
+        )
+        if chain_enabled:
+            self._save_response_chain_state(
+                session_key=chain_state["session_key"],
+                response_id=getattr(response, "id", None)
+                if not isinstance(response, dict)
+                else response.get("id"),
+                message_count=chain_state["message_count"],
+            )
+        return response_to_chat_completion(
+            response=response,
+            model=str(self.model_type),
+            response_format=response_format,
+        )
+
+    def _request_responses_stream(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Generator[ChatCompletionChunk, None, None]:
+        from camel.models.openai_responses_adapter import (
+            iter_response_events_to_chat_chunks,
+        )
+
+        request_config = self._prepare_responses_request_config(
+            tools=tools, response_format=response_format, stream=True
+        )
+        chain_enabled = self._responses_chain_enabled(request_config)
+        chain_state = self._prepare_responses_input_and_chain(
+            messages, chain_enabled=chain_enabled
+        )
+        if chain_enabled and chain_state["previous_response_id"]:
+            request_config["previous_response_id"] = chain_state[
+                "previous_response_id"
+            ]
+        event_stream = self._client.responses.create(
+            input=chain_state["input_messages"],
+            model=self.model_type,
+            **request_config,
+        )
+
+        def _on_response_completed(response_id: str) -> None:
+            if chain_enabled:
+                self._save_response_chain_state(
+                    session_key=chain_state["session_key"],
+                    response_id=response_id,
+                    message_count=chain_state["message_count"],
+                )
+
+        return iter_response_events_to_chat_chunks(
+            event_stream=event_stream,
+            model=str(self.model_type),
+            on_response_completed=_on_response_completed,
+        )
+
+    async def _arequest_responses_stream(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> AsyncGenerator[ChatCompletionChunk, None]:
+        from camel.models.openai_responses_adapter import (
+            aiter_response_events_to_chat_chunks,
+        )
+
+        request_config = self._prepare_responses_request_config(
+            tools=tools, response_format=response_format, stream=True
+        )
+        chain_enabled = self._responses_chain_enabled(request_config)
+        chain_state = self._prepare_responses_input_and_chain(
+            messages, chain_enabled=chain_enabled
+        )
+        if chain_enabled and chain_state["previous_response_id"]:
+            request_config["previous_response_id"] = chain_state[
+                "previous_response_id"
+            ]
+        event_stream = await self._async_client.responses.create(
+            input=chain_state["input_messages"],
+            model=self.model_type,
+            **request_config,
+        )
+
+        def _on_response_completed(response_id: str) -> None:
+            if chain_enabled:
+                self._save_response_chain_state(
+                    session_key=chain_state["session_key"],
+                    response_id=response_id,
+                    message_count=chain_state["message_count"],
+                )
+
+        return aiter_response_events_to_chat_chunks(
+            event_stream=event_stream,
+            model=str(self.model_type),
+            on_response_completed=_on_response_completed,
         )
 
     @property

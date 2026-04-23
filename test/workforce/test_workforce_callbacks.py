@@ -27,6 +27,7 @@ from camel.societies.workforce.events import (
     TaskDecomposedEvent,
     TaskFailedEvent,
     TaskStartedEvent,
+    TaskUpdatedEvent,
     WorkerCreatedEvent,
     WorkerDeletedEvent,
     WorkforceEvent,
@@ -59,6 +60,9 @@ class _NonMetricsCallback(WorkforceCallback):
         self.events.append(event)
 
     def log_task_started(self, event: TaskStartedEvent) -> None:
+        self.events.append(event)
+
+    def log_task_updated(self, event: TaskUpdatedEvent) -> None:
         self.events.append(event)
 
     def log_task_completed(self, event: TaskCompletedEvent) -> None:
@@ -121,6 +125,9 @@ class _MetricsCallback(WorkforceCallback, WorkforceMetrics):
     def log_task_started(self, event: TaskStartedEvent) -> None:
         self.events.append(event)
 
+    def log_task_updated(self, event: TaskUpdatedEvent) -> None:
+        self.events.append(event)
+
     def log_task_completed(self, event: TaskCompletedEvent) -> None:
         self.events.append(event)
 
@@ -179,7 +186,9 @@ def test_workforce_callback_registration_and_metrics_handling():
         Workforce("CB Test - Invalid", callbacks=[object()])
 
 
-def assert_event_sequence(events: list[str], min_worker_count: int):
+def assert_event_sequence(
+    events: list[type[WorkforceEvent]], min_worker_count: int
+):
     """
     Validate that the given event sequence follows the expected logical order.
     This version is flexible to handle:
@@ -191,7 +200,7 @@ def assert_event_sequence(events: list[str], min_worker_count: int):
 
     # 1. Expect at least min_worker_count WorkerCreatedEvent events first
     initial_worker_count = 0
-    while idx < n and events[idx] == "WorkerCreatedEvent":
+    while idx < n and events[idx] == WorkerCreatedEvent:
         initial_worker_count += 1
         idx += 1
     assert initial_worker_count >= min_worker_count, (
@@ -200,8 +209,8 @@ def assert_event_sequence(events: list[str], min_worker_count: int):
     )
 
     # 2. Expect one main TaskCreatedEvent
-    assert idx < n and events[idx] == "TaskCreatedEvent", (
-        f"Event {idx} should be TaskCreatedEvent, got "
+    assert idx < n and events[idx] == TaskCreatedEvent, (
+        f"Event {idx} should be {TaskCreatedEvent.__name__}, got "
         f"{events[idx] if idx < n else 'END'}"
     )
     idx += 1
@@ -210,49 +219,55 @@ def assert_event_sequence(events: list[str], min_worker_count: int):
     # (depends on coordinator behavior)
     # If the coordinator can't parse stub responses, it may skip
     # decomposition
-    has_decomposition = idx < n and events[idx] == "TaskDecomposedEvent"
+    has_decomposition = idx < n and events[idx] == TaskDecomposedEvent
     if has_decomposition:
         idx += 1
 
     # 4. Count all event types in the remaining events
     all_events = events[idx:]
-    task_assigned_count = all_events.count("TaskAssignedEvent")
-    task_started_count = all_events.count("TaskStartedEvent")
-    task_completed_count = all_events.count("TaskCompletedEvent")
-    all_tasks_completed_count = all_events.count("AllTasksCompletedEvent")
+    task_assigned_count = sum(e is TaskAssignedEvent for e in all_events)
+    task_started_count = sum(e is TaskStartedEvent for e in all_events)
+    task_completed_count = sum(e is TaskCompletedEvent for e in all_events)
+    all_tasks_completed_count = sum(
+        e is AllTasksCompletedEvent for e in all_events
+    )
 
     # 5. Validate basic invariants
     # At minimum, the main task should be assigned and processed
-    assert (
-        task_assigned_count >= 1
-    ), f"Expected at least 1 TaskAssignedEvent, got {task_assigned_count}"
-    assert (
-        task_started_count >= 1
-    ), f"Expected at least 1 TaskStartedEvent, got {task_started_count}"
-    assert (
-        task_completed_count >= 1
-    ), f"Expected at least 1 TaskCompletedEvent, got {task_completed_count}"
+    assert task_assigned_count >= 1, (
+        f"Expected at least 1 {TaskAssignedEvent.__name__}, "
+        f"got {task_assigned_count}"
+    )
+    assert task_started_count >= 1, (
+        f"Expected at least 1 {TaskStartedEvent.__name__}, "
+        f"got {task_started_count}"
+    )
+    assert task_completed_count >= 1, (
+        f"Expected at least 1 {TaskCompletedEvent.__name__}, "
+        f"got {task_completed_count}"
+    )
 
     # 6. Expect exactly one AllTasksCompletedEvent at the end
     assert all_tasks_completed_count == 1, (
-        f"Expected exactly 1 AllTasksCompletedEvent, got "
+        f"Expected exactly 1 {AllTasksCompletedEvent.__name__}, got "
         f"{all_tasks_completed_count}"
     )
     assert (
-        events[-1] == "AllTasksCompletedEvent"
-    ), "Last event should be AllTasksCompletedEvent"
+        events[-1] == AllTasksCompletedEvent
+    ), f"Last event should be {AllTasksCompletedEvent.__name__}"
 
     # 7. All events should be of expected types
     allowed_events = {
-        "WorkerCreatedEvent",
-        "WorkerDeletedEvent",
-        "TaskCreatedEvent",
-        "TaskDecomposedEvent",
-        "TaskAssignedEvent",
-        "TaskStartedEvent",
-        "TaskCompletedEvent",
-        "TaskFailedEvent",
-        "AllTasksCompletedEvent",
+        WorkerCreatedEvent,
+        WorkerDeletedEvent,
+        TaskCreatedEvent,
+        TaskDecomposedEvent,
+        TaskAssignedEvent,
+        TaskStartedEvent,
+        TaskUpdatedEvent,
+        TaskCompletedEvent,
+        TaskFailedEvent,
+        AllTasksCompletedEvent,
     }
     for i, e in enumerate(events):
         assert e in allowed_events, f"Unexpected event type at {i}: {e}"
@@ -348,7 +363,7 @@ def test_workforce_emits_expected_event_sequence():
     workforce.process_task(human_task)
 
     # test that the event sequence is as expected
-    actual_events = [e.__class__.__name__ for e in cb.events]
+    actual_events = [e.__class__ for e in cb.events]
     assert_event_sequence(actual_events, min_worker_count=3)
 
     # test that metrics callback methods work as expected

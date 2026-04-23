@@ -12,15 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import itertools
 import os
 import platform
 import re
+import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
 import venv
-from typing import Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 from camel.logger import get_logger
 
@@ -33,7 +35,142 @@ _CMD_PATTERN = re.compile(
 _QUOTED_STRING_PATTERN = re.compile(r'''["'][^"']*["']''')
 # Match cd command with optional quoted or unquoted path
 # Handles: cd path, cd "path with spaces", cd 'path with spaces'
-_CD_PATTERN = re.compile(r'\bcd\s+(["\'][^"\']*["\']|[^\s;|&]+)')
+_CD_PATTERN = re.compile(r'\bcd\s+(?:--\s+)?(["\'][^"\']*["\']|[^\s;|&]+)')
+_PUSHD_PATTERN = re.compile(
+    r'\bpushd\s+(?:--\s+)?(["\'][^"\']*["\']|[^\s;|&]+)'
+)
+_SHELL_SUBSTITUTION_PATTERN = re.compile(r'`|(?<!\\)\$\(')
+_CONTROL_FLOW_PATTERN = re.compile(r';|&&|\|\||[|&]')
+_SHELL_COMMANDS = {'bash', 'sh', 'zsh', 'dash', 'ksh', 'ash'}
+_SEPARATORS = {';', '&&', '||', '|', '&'}
+_CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE = (
+    "Cannot 'cd' outside of the working directory in safe mode. "
+    "Allowed root: '{working_dir}'. "
+    "To modify files there, copy them (for example with `cp`) "
+    "into '{working_dir}' first."
+)
+_MULTIPLE_CD_IN_CHAIN_MESSAGE = (
+    "Multiple 'cd'/'pushd' commands chained with shell operators "
+    "(;, &&, ||, |, &) are not allowed in safe mode, because the "
+    "runtime execution flow cannot be determined statically. "
+    "Please run each directory change as a separate command. "
+    "For example, instead of 'cd subdir && cd ..', run 'cd subdir' "
+    "first, then run subsequent commands separately."
+)
+
+# Public list for downstream customization/import.
+DANGEROUS_COMMANDS: List[str] = [
+    # System administration
+    'sudo',
+    'su',
+    'reboot',
+    'shutdown',
+    'halt',
+    'poweroff',
+    'init',
+    # File system manipulation
+    'rm',
+    'chown',
+    'chgrp',
+    'umount',
+    'mount',
+    # Disk operations
+    'dd',
+    'mkfs',
+    'fdisk',
+    'parted',
+    'fsck',
+    'mkswap',
+    'swapon',
+    'swapoff',
+    # Process management
+    'service',
+    'systemctl',
+    'systemd',
+    # Network configuration
+    'iptables',
+    'ip6tables',
+    'ifconfig',
+    'route',
+    'iptables-save',
+    # Cron and scheduling
+    'crontab',
+    'at',
+    'batch',
+    # User management
+    'useradd',
+    'userdel',
+    'usermod',
+    'passwd',
+    'chpasswd',
+    'newgrp',
+    # Kernel modules
+    'modprobe',
+    'rmmod',
+    'insmod',
+    'lsmod',
+]
+
+
+def _normalize_command_name(command: str) -> str:
+    r"""Normalize command names for safer matching."""
+    normalized = os.path.basename(command).lower()
+    if normalized.endswith('.exe'):
+        normalized = normalized[:-4]
+    return normalized
+
+
+def _split_command_segments(command: str) -> Optional[List[List[str]]]:
+    r"""Split command by shell separators while preserving quoted content."""
+    try:
+        lexer = shlex.shlex(command, posix=True, punctuation_chars=';&|')
+        lexer.whitespace_split = True
+        tokens = list(lexer)
+    except ValueError:
+        return None
+
+    segments: List[List[str]] = []
+    current: List[str] = []
+    for token in tokens:
+        if token in _SEPARATORS:
+            if current:
+                segments.append(current)
+                current = []
+        else:
+            current.append(token)
+    if current:
+        segments.append(current)
+    return segments
+
+
+def _extract_shell_c_payloads(command: str) -> List[str]:
+    r"""Extract payloads from shell wrapper commands like `bash -c "<cmd>"`."""
+    segments = _split_command_segments(command)
+    if segments is None:
+        return []
+
+    payloads: List[str] = []
+    for segment in segments:
+        if not segment:
+            continue
+
+        if _normalize_command_name(segment[0]) not in _SHELL_COMMANDS:
+            continue
+
+        args = segment[1:]
+        for i, arg in enumerate(args):
+            is_explicit_c = arg in {'-c', '--command'}
+            is_combined_short_flag = (
+                arg.startswith('-')
+                and not arg.startswith('--')
+                and 'c' in arg[1:]
+            )
+            if is_explicit_c or is_combined_short_flag:
+                if i + 1 < len(args):
+                    payloads.append(args[i + 1])
+                break
+
+    return payloads
 
 
 def check_command_safety(
@@ -53,58 +190,12 @@ def check_command_safety(
     if not command.strip():
         return False, "Empty command is not allowed."
 
-    # Dangerous commands list - including ALL rm operations
-    dangerous_commands = [
-        # System administration
-        'sudo',
-        'su',
-        'reboot',
-        'shutdown',
-        'halt',
-        'poweroff',
-        'init',
-        # File system manipulation
-        'rm',
-        'chown',
-        'chgrp',
-        'umount',
-        'mount',
-        # Disk operations
-        'dd',
-        'mkfs',
-        'fdisk',
-        'parted',
-        'fsck',
-        'mkswap',
-        'swapon',
-        'swapoff',
-        # Process management
-        'service',
-        'systemctl',
-        'systemd',
-        # Network configuration
-        'iptables',
-        'ip6tables',
-        'ifconfig',
-        'route',
-        'iptables-save',
-        # Cron and scheduling
-        'crontab',
-        'at',
-        'batch',
-        # User management
-        'useradd',
-        'userdel',
-        'usermod',
-        'passwd',
-        'chpasswd',
-        'newgrp',
-        # Kernel modules
-        'modprobe',
-        'rmmod',
-        'insmod',
-        'lsmod',
-    ]
+    # Recursively inspect shell-wrapper payloads to prevent bypasses such as
+    # `bash -c "rm -rf /"` where the dangerous sub-command is quoted.
+    for payload in _extract_shell_c_payloads(command):
+        is_safe, reason = check_command_safety(payload, allowed_commands)
+        if not is_safe:
+            return False, reason
 
     # Remove quoted strings to avoid false positives
     clean_command = _QUOTED_STRING_PATTERN.sub(' ', command)
@@ -122,7 +213,7 @@ def check_command_safety(
         return True, ""
 
     # Check for dangerous commands
-    for cmd in dangerous_commands:
+    for cmd in DANGEROUS_COMMANDS:
         pattern = rf'(?:^|;|\||&&)\s*\b{re.escape(cmd)}\b'
         if re.search(pattern, clean_command, re.IGNORECASE):
             return False, f"Command '{cmd}' is blocked for safety."
@@ -157,16 +248,82 @@ def sanitize_command(
     if not is_safe:
         return False, reason
 
-    # Additional check for local backend: prevent cd outside working directory
-    if not use_docker_backend and working_dir and 'cd ' in command:
-        # Extract cd commands and check their targets
-        # Normalize working_dir to ensure consistent comparison
+    # Additional check for local backend: prevent cd/pushd outside working
+    # directory
+    if (
+        not use_docker_backend
+        and working_dir
+        and (
+            'cd ' in command
+            or 'cd\t' in command
+            or 'pushd ' in command
+            or 'pushd\t' in command
+        )
+    ):
         normalized_working_dir = os.path.normpath(os.path.abspath(working_dir))
-        for match in _CD_PATTERN.finditer(command):
-            target_path = match.group(1).strip('\'"')
-            target_dir = os.path.normpath(
-                os.path.abspath(os.path.join(working_dir, target_path))
+
+        quoted_ranges = [
+            (m.start(), m.end())
+            for m in _QUOTED_STRING_PATTERN.finditer(command)
+        ]
+
+        def _inside_quotes(pos: int) -> bool:
+            return any(s <= pos < e for s, e in quoted_ranges)
+
+        # Collect all cd/pushd matches, keeping only those whose keyword
+        # is NOT inside a quoted string.
+        cd_matches = [
+            (name, m)
+            for name, m in itertools.chain(
+                (('cd', m) for m in _CD_PATTERN.finditer(command)),
+                (('pushd', m) for m in _PUSHD_PATTERN.finditer(command)),
             )
+            if not _inside_quotes(m.start())
+        ]
+
+        if not cd_matches:
+            return True, command
+
+        # Detect control-flow operators outside of quoted strings.
+        unquoted_command = _QUOTED_STRING_PATTERN.sub(' ', command)
+        has_control_flow = bool(_CONTROL_FLOW_PATTERN.search(unquoted_command))
+
+        # If there are multiple cd/pushd AND the command contains
+        # control flow operators, reject.
+        if len(cd_matches) > 1 and has_control_flow:
+            return False, _MULTIPLE_CD_IN_CHAIN_MESSAGE
+
+        # Exactly one cd/pushd, or multiple without operators
+        for cmd_name, match in cd_matches:
+            target_path = match.group(1).strip('\'"')
+
+            # Block 'cd -' since $OLDPWD may point outside workdir
+            if target_path == '-':
+                return (
+                    False,
+                    _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE.format(
+                        working_dir=normalized_working_dir
+                    ),
+                )
+
+            if _SHELL_SUBSTITUTION_PATTERN.search(target_path):
+                return (
+                    False,
+                    "Command substitution is not allowed in "
+                    f"'{cmd_name}' paths.",
+                )
+
+            expanded_target = os.path.expanduser(
+                os.path.expandvars(target_path)
+            )
+            if os.path.isabs(expanded_target):
+                resolved_target = expanded_target
+            else:
+                resolved_target = os.path.join(
+                    normalized_working_dir, expanded_target
+                )
+
+            target_dir = os.path.normpath(os.path.abspath(resolved_target))
             # Use os.path.commonpath for safe path comparison
             try:
                 common = os.path.commonpath(
@@ -175,11 +332,18 @@ def sanitize_command(
                 if common != normalized_working_dir:
                     return (
                         False,
-                        "Cannot 'cd' outside of the working directory.",
+                        _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE.format(
+                            working_dir=normalized_working_dir
+                        ),
                     )
             except ValueError:
                 # Different drives on Windows or other path issues
-                return False, "Cannot 'cd' outside of the working directory."
+                return (
+                    False,
+                    _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE.format(
+                        working_dir=normalized_working_dir
+                    ),
+                )
 
     return True, command
 
@@ -297,6 +461,17 @@ def setup_initial_env_with_uv(
 ) -> bool:
     r"""Set up initial environment using uv."""
     try:
+        if platform.system() == 'Windows':
+            python_path = os.path.join(env_path, "Scripts", "python.exe")
+        else:
+            python_path = os.path.join(env_path, "bin", "python")
+
+        if os.path.exists(python_path):
+            if update_callback:
+                update_callback(
+                    "[UV] Environment already exists, skipping creation\n"
+                )
+            return True
         # Create virtual environment with Python 3.10 using uv
         subprocess.run(
             [uv_path, "venv", "--python", "3.10", env_path],
@@ -305,12 +480,6 @@ def setup_initial_env_with_uv(
             cwd=working_dir,
             timeout=300,
         )
-
-        # Get the python path from the new environment
-        if platform.system() == 'Windows':
-            python_path = os.path.join(env_path, "Scripts", "python.exe")
-        else:
-            python_path = os.path.join(env_path, "bin", "python")
 
         # Install essential packages using uv
         essential_packages = [
@@ -356,6 +525,20 @@ def setup_initial_env_with_venv(
 ) -> bool:
     r"""Set up initial environment using standard venv."""
     try:
+        # Get pip path
+        if platform.system() == 'Windows':
+            pip_path = os.path.join(env_path, "Scripts", "pip.exe")
+        else:
+            pip_path = os.path.join(env_path, "bin", "pip")
+
+        # Check if environment already exists
+        if os.path.exists(pip_path):
+            if update_callback:
+                update_callback(
+                    "Environment already exists, skipping creation\n"
+                )
+            return True
+
         # Create virtual environment with system Python
         try:
             venv.create(
@@ -365,20 +548,17 @@ def setup_initial_env_with_venv(
                 symlinks=True,
             )
         except Exception:
+            # Clean up partial environment
+            if os.path.exists(env_path):
+                shutil.rmtree(env_path)
             # Fallback to symlinks=False if symlinks=True fails
-            # (e.g., on some Windows configurations)
+            # (e.g., on some Windows configurations or macOS Beta)
             venv.create(
                 env_path,
                 with_pip=True,
                 system_site_packages=False,
                 symlinks=False,
             )
-
-        # Get pip path
-        if platform.system() == 'Windows':
-            pip_path = os.path.join(env_path, "Scripts", "pip.exe")
-        else:
-            pip_path = os.path.join(env_path, "bin", "pip")
 
         # Upgrade pip and install essential packages
         essential_packages = [
@@ -542,6 +722,9 @@ def clone_current_environment(
             try:
                 venv.create(env_path, with_pip=True, symlinks=True)
             except Exception:
+                # Clean up partial environment
+                if os.path.exists(env_path):
+                    shutil.rmtree(env_path)
                 # Fallback to symlinks=False if symlinks=True fails
                 venv.create(env_path, with_pip=True, symlinks=False)
 

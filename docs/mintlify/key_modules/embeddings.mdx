@@ -1,6 +1,9 @@
 ---
 title: "Embeddings"
 icon: vector-square
+
+doc_code_map:
+  - "camel/embeddings/**/*.py"
 ---
 
 <Card title="What Are Embeddings??" icon="file-vector">

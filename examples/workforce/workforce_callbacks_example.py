@@ -20,11 +20,14 @@ Includes:
   `Workforce`.
 """
 
-import asyncio
+import json
 
 from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
+from camel.societies.workforce import FailureHandlingConfig
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
     LogEvent,
@@ -34,19 +37,50 @@ from camel.societies.workforce.events import (
     TaskDecomposedEvent,
     TaskFailedEvent,
     TaskStartedEvent,
+    TaskUpdatedEvent,
     WorkerCreatedEvent,
     WorkerDeletedEvent,
 )
 from camel.societies.workforce.workforce import Workforce
 from camel.societies.workforce.workforce_callback import WorkforceCallback
 from camel.societies.workforce.workforce_logger import WorkforceLogger
+from camel.tasks import Task
 from camel.types import ModelPlatformType, ModelType
 
 logger = get_logger(__name__)
 
 
+def _extract_structured_content(raw_text: str) -> str:
+    r"""Extract ``content`` from structured-output JSON when possible."""
+    text = raw_text.strip()
+    if not text:
+        return ""
+
+    candidates = [text]
+    if text.startswith("```"):
+        lines = text.splitlines()
+        if len(lines) >= 3 and lines[-1].strip() == "```":
+            body = "\n".join(lines[1:-1]).strip()
+            if body.startswith("json"):
+                body = body[4:].lstrip()
+            candidates.insert(0, body)
+
+    for candidate in candidates:
+        try:
+            data = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(data, dict) and isinstance(data.get("content"), str):
+            return data["content"]
+
+    return text
+
+
 class PrintCallback(WorkforceCallback):
     r"""Simple callback printing events to logs to observe ordering."""
+
+    def __init__(self, stream_buffers: dict[tuple[str, str], list[str]]):
+        self._stream_buffers = stream_buffers
 
     def log_message(self, event: LogEvent) -> None:
         print(
@@ -78,11 +112,25 @@ class PrintCallback(WorkforceCallback):
             f"worker={event.worker_id}"
         )
 
+    def log_task_updated(self, event: TaskUpdatedEvent) -> None:
+        print(
+            f"[PrintCallback] task_updated: task={event.task_id}, "
+            f"worker={event.worker_id}"
+        )
+
     def log_task_completed(self, event: TaskCompletedEvent) -> None:
         print(
             f"[PrintCallback] task_completed: task={event.task_id}, "
             f"worker={event.worker_id}, took={event.processing_time_seconds}s"
         )
+        key = (event.worker_id, event.task_id)
+        chunks = self._stream_buffers.pop(key, [])
+        if chunks:
+            merged_text = "".join(chunks).strip()
+            if merged_text:
+                content = _extract_structured_content(merged_text)
+                print(f"\n[StreamMerged][{event.worker_id}][{event.task_id}]")
+                print(content)
 
     def log_task_failed(self, event: TaskFailedEvent) -> None:
         logger.warning(
@@ -106,48 +154,88 @@ class PrintCallback(WorkforceCallback):
         print("[PrintCallback] all_tasks_completed")
 
 
-def build_teacher_agent() -> ChatAgent:
+def main() -> None:
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
+        model_config_dict=ChatGPTConfig(stream=True).as_dict(),
     )
-    return ChatAgent(system_message="You are a teacher", model=model)
 
-
-def build_student_agent() -> ChatAgent:
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+    search_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Research Specialist",
+            content="You are a research specialist who excels at finding and "
+            "gathering information from the web.",
+        ),
+        model=model,
     )
-    return ChatAgent(system_message="You are a student", model=model)
 
+    analyst_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Business Analyst",
+            content="You are an expert business analyst. Your job is "
+            "to analyze research findings, identify key insights, "
+            "opportunities, and challenges.",
+        ),
+        model=model,
+    )
 
-async def run_demo() -> None:
-    logger_cb = WorkforceLogger('demo-logger')
-    print_cb = PrintCallback()
-    callbacks = [logger_cb, print_cb]
+    writer_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Report Writer",
+            content="You are a professional report writer. You take "
+            "analytical insights and synthesize them into a clear, "
+            "concise, and well-structured final report.",
+        ),
+        model=model,
+    )
+
+    # Buffer stream chunks per worker/task and print once when task completes.
+    stream_buffers: dict[tuple[str, str], list[str]] = {}
+
+    def on_worker_stream(
+        worker_id: str, task_id: str, text: str, _mode: str
+    ) -> None:
+        if not text:
+            return
+        key = (worker_id, task_id)
+        stream_buffers.setdefault(key, []).append(text)
 
     workforce = Workforce(
         "Workforce Callbacks Demo",
-        callbacks=callbacks,
+        callbacks=[
+            WorkforceLogger('demo-logger'),
+            PrintCallback(stream_buffers),
+        ],
+        stream_callback=on_worker_stream,
         use_structured_output_handler=True,
+        failure_handling_config=FailureHandlingConfig(enabled_strategies=[]),
+        default_model=model,
     )
 
-    teacher = build_teacher_agent()
-    student = build_student_agent()
-    workforce.add_single_agent_worker("Teacher Worker", teacher)
-    workforce.add_single_agent_worker("Student Worker", student)
-    workforce.add_main_task(
-        "The teacher set an exam question and had the students answer it."
+    workforce.add_single_agent_worker(
+        "A researcher who can search online for information.",
+        worker=search_agent,
+    ).add_single_agent_worker(
+        "An analyst who can process research findings.", worker=analyst_agent
+    ).add_single_agent_worker(
+        "A writer who can create a final report from the analysis.",
+        worker=writer_agent,
     )
 
-    # Start Workforce and wait for completion (timeout to avoid hanging)
-    wf_task = asyncio.create_task(workforce.start())
-    try:
-        await asyncio.wait_for(wf_task, timeout=30.0)
-    except asyncio.TimeoutError:
-        logger.warning("Workforce run timed out; stopping...")
-        workforce.stop()
+    # Use a simpler task to ensure fast and deterministic execution
+    human_task = Task(
+        content=(
+            "Create a simple report about electric scooters. "
+            "The report should have three sections: "
+            "1. Market overview "
+            "2. Target customers "
+            "3. Summary"
+        ),
+        id='0',
+    )
+
+    workforce.process_task(human_task)
 
     # Read KPIs and a simple "tree"
     print(f"KPIs: {workforce.get_workforce_kpis()}")
@@ -155,4 +243,4 @@ async def run_demo() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(run_demo())
+    main()

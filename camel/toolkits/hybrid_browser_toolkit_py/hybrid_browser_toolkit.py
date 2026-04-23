@@ -1421,7 +1421,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             }
 
     @action_logger
-    async def browser_get_page_snapshot(self) -> str:
+    async def browser_get_page_snapshot(
+        self, viewport_limit: Optional[bool] = None
+    ) -> str:
         r"""Gets a textual snapshot of the page's interactive elements.
 
         The snapshot lists elements like buttons, links, and inputs,
@@ -1436,6 +1438,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 '- link "Sign In" [ref=1]'
                 '- textbox "Username" [ref=2]'
         """
+        # Python-mode toolkit currently does not implement viewport-based
+        # filtering, but we accept the argument to stay compatible with tool
+        # schemas and to avoid hard failures from extra tool kwargs.
+        _ = viewport_limit
         logger.info("Capturing page snapshot")
 
         analysis_start = time.time()

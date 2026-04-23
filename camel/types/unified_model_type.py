@@ -110,6 +110,16 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_avian(self) -> bool:
+        r"""Returns whether the model is an Avian served model."""
+        return True
+
+    @property
+    def is_atlascloud(self) -> bool:
+        r"""Returns whether the model is a AtlasCloud served model."""
+        return True
+
+    @property
     def is_lmstudio(self) -> bool:
         r"""Returns whether the model is a LMStudio served model."""
         return True
