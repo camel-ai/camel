@@ -948,6 +948,22 @@ class TestListMemories:
         assert params["sortBy"] == "created_at"
         assert params["sortOrder"] == "DESCENDING"
 
+    def test_list_memories_include_content(self, toolkit):
+        toolkit._session.get.return_value = _make_response(
+            json_data={"memories": []}
+        )
+        toolkit.goodmem_list_memories(space_id="sp-1", include_content=True)
+        params = toolkit._session.get.call_args[1]["params"]
+        assert params["includeContent"] == "true"
+
+    def test_list_memories_include_content_false_omits_param(self, toolkit):
+        toolkit._session.get.return_value = _make_response(
+            json_data={"memories": []}
+        )
+        toolkit.goodmem_list_memories(space_id="sp-1", include_content=False)
+        params = toolkit._session.get.call_args[1]["params"]
+        assert "includeContent" not in params
+
     def test_list_memories_no_params_by_default(self, toolkit):
         toolkit._session.get.return_value = _make_response(
             json_data={"memories": []}

@@ -718,6 +718,7 @@ class GoodMemToolkit(BaseToolkit):
         self,
         space_id: str,
         status_filter: Optional[str] = None,
+        include_content: bool = False,
         sort_by: Optional[str] = None,
         sort_order: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
@@ -725,6 +726,8 @@ class GoodMemToolkit(BaseToolkit):
 
         Returns metadata for every memory stored in the given space,
         with optional filtering by processing status and sorting.
+        Set ``include_content=True`` to also receive each memory's
+        original document content in a single call.
 
         Args:
             space_id (str): The UUID of the space to list memories
@@ -733,6 +736,9 @@ class GoodMemToolkit(BaseToolkit):
                 status. One of ``PENDING``, ``PROCESSING``,
                 ``COMPLETED``, or ``FAILED``.
                 (default: :obj:`None`)
+            include_content (bool): Whether each returned memory
+                should include its original document content in
+                addition to metadata. (default: :obj:`False`)
             sort_by (Optional[str]): Field to sort by. One of
                 ``created_at`` or ``updated_at``.
                 (default: :obj:`None`)
@@ -744,6 +750,8 @@ class GoodMemToolkit(BaseToolkit):
             List[Dict[str, Any]]: A list of memory objects.
         """
         params: Dict[str, str] = {}
+        if include_content:
+            params["includeContent"] = "true"
         if status_filter:
             params["statusFilter"] = status_filter
         if sort_by:
