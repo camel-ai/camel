@@ -1685,6 +1685,8 @@ class ModelType(UnifiedModelType, Enum):
             return 1_048_576
         elif self in {
             ModelType.QWEN_3_CODER_PLUS,
+            ModelType.CLAUDE_SONNET_4_6,
+            ModelType.CLAUDE_OPUS_4_7,
         }:
             return 1_000_000
         elif self in {
