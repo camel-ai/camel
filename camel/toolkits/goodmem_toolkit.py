@@ -541,6 +541,7 @@ class GoodMemToolkit(BaseToolkit):
         relevance_threshold: Optional[float] = None,
         llm_temperature: Optional[float] = None,
         chronological_resort: bool = False,
+        metadata_filter: Optional[str] = None,
     ) -> Dict[str, Any]:
         r"""Performs similarity-based semantic retrieval across spaces.
 
@@ -581,6 +582,13 @@ class GoodMemToolkit(BaseToolkit):
             chronological_resort (bool): Reorder results by creation
                 time instead of relevance score.
                 (default: :obj:`False`)
+            metadata_filter (Optional[str]): A SQL-style JSONPath
+                expression applied server-side to narrow results by
+                metadata. Example: ``CAST(val('$.category') AS
+                TEXT) = 'feat'`` returns only memories whose
+                ``metadata.category`` equals ``feat``. When set, the
+                same filter is applied to every space in
+                ``space_ids``. (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: A dictionary with keys ``success``,
@@ -588,12 +596,17 @@ class GoodMemToolkit(BaseToolkit):
                 ``totalResults``, ``query``, and optionally
                 ``abstractReply``.
         """
-        space_keys = [{"spaceId": sid} for sid in space_ids if sid]
+        space_keys: List[Dict[str, Any]] = [
+            {"spaceId": sid} for sid in space_ids if sid
+        ]
         if not space_keys:
             return {
                 "success": False,
                 "error": "At least one space must be provided.",
             }
+        if metadata_filter:
+            for space_key in space_keys:
+                space_key["filter"] = metadata_filter
 
         request_body: Dict[str, Any] = {
             "message": query,
@@ -718,6 +731,7 @@ class GoodMemToolkit(BaseToolkit):
         self,
         space_id: str,
         status_filter: Optional[str] = None,
+        include_content: bool = False,
         sort_by: Optional[str] = None,
         sort_order: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
@@ -725,6 +739,8 @@ class GoodMemToolkit(BaseToolkit):
 
         Returns metadata for every memory stored in the given space,
         with optional filtering by processing status and sorting.
+        Set ``include_content=True`` to also receive each memory's
+        original document content in a single call.
 
         Args:
             space_id (str): The UUID of the space to list memories
@@ -733,6 +749,9 @@ class GoodMemToolkit(BaseToolkit):
                 status. One of ``PENDING``, ``PROCESSING``,
                 ``COMPLETED``, or ``FAILED``.
                 (default: :obj:`None`)
+            include_content (bool): Whether each returned memory
+                should include its original document content in
+                addition to metadata. (default: :obj:`False`)
             sort_by (Optional[str]): Field to sort by. One of
                 ``created_at`` or ``updated_at``.
                 (default: :obj:`None`)
@@ -744,6 +763,8 @@ class GoodMemToolkit(BaseToolkit):
             List[Dict[str, Any]]: A list of memory objects.
         """
         params: Dict[str, str] = {}
+        if include_content:
+            params["includeContent"] = "true"
         if status_filter:
             params["statusFilter"] = status_filter
         if sort_by:

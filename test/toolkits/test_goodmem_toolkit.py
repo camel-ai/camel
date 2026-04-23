@@ -852,6 +852,36 @@ class TestRetrieveMemories:
         assert cfg["llm_temp"] == 0.3
         assert cfg["chronological_resort"] is True
 
+    def test_retrieve_with_metadata_filter(self, toolkit):
+        """metadata_filter is attached to every space key server-side."""
+        toolkit._session.post.return_value = _make_response(
+            text=NDJSON_WITH_RESULTS
+        )
+        filter_expr = "CAST(val('$.category') AS TEXT) = 'feat'"
+        toolkit.goodmem_retrieve_memories(
+            query="new features",
+            space_ids=["sp-1", "sp-2"],
+            metadata_filter=filter_expr,
+            wait_for_indexing=False,
+        )
+        body = toolkit._session.post.call_args[1]["json"]
+        assert body["spaceKeys"] == [
+            {"spaceId": "sp-1", "filter": filter_expr},
+            {"spaceId": "sp-2", "filter": filter_expr},
+        ]
+
+    def test_retrieve_without_metadata_filter_omits_filter_key(self, toolkit):
+        toolkit._session.post.return_value = _make_response(
+            text=NDJSON_WITH_RESULTS
+        )
+        toolkit.goodmem_retrieve_memories(
+            query="test",
+            space_ids=["sp-1"],
+            wait_for_indexing=False,
+        )
+        body = toolkit._session.post.call_args[1]["json"]
+        assert body["spaceKeys"] == [{"spaceId": "sp-1"}]
+
     def test_retrieve_http_error_propagates(self, toolkit):
         toolkit._session.post.return_value = _make_response(
             raise_for_status=requests.HTTPError("500")
@@ -947,6 +977,22 @@ class TestListMemories:
         assert params["statusFilter"] == "COMPLETED"
         assert params["sortBy"] == "created_at"
         assert params["sortOrder"] == "DESCENDING"
+
+    def test_list_memories_include_content(self, toolkit):
+        toolkit._session.get.return_value = _make_response(
+            json_data={"memories": []}
+        )
+        toolkit.goodmem_list_memories(space_id="sp-1", include_content=True)
+        params = toolkit._session.get.call_args[1]["params"]
+        assert params["includeContent"] == "true"
+
+    def test_list_memories_include_content_false_omits_param(self, toolkit):
+        toolkit._session.get.return_value = _make_response(
+            json_data={"memories": []}
+        )
+        toolkit.goodmem_list_memories(space_id="sp-1", include_content=False)
+        params = toolkit._session.get.call_args[1]["params"]
+        assert "includeContent" not in params
 
     def test_list_memories_no_params_by_default(self, toolkit):
         toolkit._session.get.return_value = _make_response(
