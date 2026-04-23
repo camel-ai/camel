@@ -16,24 +16,26 @@ r"""GoodMem + CAMEL ChatAgent Example.
 Demonstrates how the GoodMem toolkit integrates with CAMEL's ChatAgent
 across four scenarios that highlight different ChatAgent capabilities:
 
-    Scenario 1 -- Conversational memory agent
-        A single ChatAgent runs a multi-turn conversation. The agent
-        uses GoodMem tools autonomously to store facts the user shares
-        and retrieve them when asked follow-up questions. Shows that
-        ChatAgent's own conversation history coexists cleanly with an
-        external semantic memory backend.
+    Scenario 1 -- Persistent project context
+        A team member shares project context (stack, conventions,
+        goals) with a ChatAgent across turns. The agent stores each
+        fact in GoodMem and retrieves them when asked follow-up
+        questions. Shows how GoodMem extends ChatAgent's own
+        conversation history into a persistent store.
 
-    Scenario 2 -- Cross-agent memory persistence
-        A brand-new ChatAgent (with zero conversation history) answers
-        questions about the user by querying GoodMem. This demonstrates
-        the core value of an external memory store: memory outlives
-        the agent instance.
+    Scenario 2 -- Two-agent team knowledge pipeline
+        A Scribe ChatAgent ingests team notes into GoodMem. A
+        separate Analyst ChatAgent then synthesizes answers from
+        those notes. Mirrors CAMEL's workforce pattern: specialized
+        agents collaborating through a shared memory store.
 
-    Scenario 3 -- Metadata-tagged memories
-        Stores memories tagged with a 'category' field via metadata_json,
-        then has an agent list the memories and filter by category.
-        Shows that structured metadata round-trips through GoodMem and
-        is available to agents for downstream reasoning.
+    Scenario 3 -- Structured team activity log
+        Stores team activity entries tagged with 'feat', 'fix',
+        'chore', or 'docs' (matching CAMEL's own PR label
+        convention) via metadata_json, then has an agent filter by
+        category. Shows that structured metadata round-trips
+        through GoodMem and is available to agents for downstream
+        reasoning.
 
     Scenario 4 -- Tool-call inspection
         Prints the tool calls the agent made via response.info.
@@ -148,26 +150,42 @@ def check_env_vars() -> None:
 SPACE_NAME = "camel-goodmem-chatagent-example"
 
 SCENARIO_1_TURNS = [
-    "I live in Austin, Texas.",
-    "My favorite database is AcmeDB.",
-    "What's my favorite database?",
-    "And where do I live?",
+    "I'm building a CAMEL-based customer support assistant for our "
+    "SaaS product.",
+    "The team uses Python 3.12 with FastAPI and Postgres.",
+    "For tests we use pytest with at least 80% coverage required.",
+    "Remind me what our coverage requirement is.",
 ]
 
-SCENARIO_2_QUESTION = "Tell me everything you know about the user."
+# Scenario 2 fixtures -- team notes the Scribe agent ingests, and
+# the question the Analyst agent answers from those notes.
+TEAM_NOTES = [
+    "Q2 goal: reduce customer support response time to under 2 hours.",
+    "Our main services are auth-service, billing-service, and "
+    "notifications-service.",
+    "Known issue: notifications-service occasionally drops messages "
+    "during high load.",
+    "Team retro: the CI pipeline is too slow; we should parallelize tests.",
+]
+
+SCENARIO_2_QUESTION = (
+    "What do we know about our services and current priorities?"
+)
 
 # Scenario 3 fixtures -- (content, category) pairs written directly
 # via the toolkit so the metadata is deterministic. An agent then
-# queries these and filters by the 'category' metadata field.
+# queries these and filters by the 'category' metadata field. The
+# categories match CAMEL's own PR label convention.
 TAGGED_FACTS = [
-    ("I work as a senior engineer at Acme Corp.", "work"),
-    ("My manager is named Sarah.", "work"),
-    ("I play guitar every Saturday morning.", "hobby"),
-    ("I run 5 miles every Sunday.", "hobby"),
-    ("I have a black cat named Luna.", "personal"),
+    ("Added user profile editing to the dashboard.", "feat"),
+    ("Built the CSV export feature.", "feat"),
+    ("Resolved slow login on the mobile app.", "fix"),
+    ("Fixed crash when opening large attachments.", "fix"),
+    ("Upgraded Python version across services.", "chore"),
+    ("Updated the API reference for billing endpoints.", "docs"),
 ]
 
-SCENARIO_3_QUESTION = "Show me only the facts whose category is 'hobby'."
+SCENARIO_3_QUESTION = "Show me the new features we've shipped."
 
 
 # =========================================================================
@@ -290,10 +308,11 @@ def scenario_1_conversational_agent(
 ) -> ChatAgent:
     """Run a multi-turn conversation on a single ChatAgent.
 
-    The agent has all 11 GoodMem tools. Over 4 turns it stores two
-    facts and then retrieves them in response to follow-up questions.
+    The agent has all 11 GoodMem tools. Over 4 turns it stores
+    project context the team member shares and then retrieves it
+    in response to follow-up questions.
     """
-    section("Scenario 1: Conversational memory agent (multi-turn)")
+    section("Scenario 1: Persistent project context (multi-turn)")
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
@@ -302,13 +321,15 @@ def scenario_1_conversational_agent(
 
     agent = ChatAgent(
         system_message=(
-            "You are a personal assistant with access to a semantic "
-            "memory store via GoodMem tools. When the user shares a "
-            "fact about themselves, store it as a memory in the "
-            f"GoodMem space with ID '{space_id}'. When the user asks "
-            "a question about themselves, search that same space "
-            "before answering. Always call a GoodMem tool rather "
-            "than relying on your own memory."
+            "You are an engineering team assistant whose long-term "
+            "memory is stored in GoodMem. When a team member "
+            "shares a fact about their project (stack, "
+            "conventions, goals, constraints), store it as a "
+            f"memory in the GoodMem space with ID '{space_id}'. "
+            "When they ask a question about the project, always "
+            "retrieve the answer from that space using GoodMem "
+            "tools. Do not answer from your own conversational "
+            "memory."
         ),
         model=model,
         tools=goodmem_toolkit.get_tools(),
@@ -320,50 +341,80 @@ def scenario_1_conversational_agent(
         response = agent.step(user_message)
         print(f"  Agent: {response.msgs[0].content}")
 
-        # Wait briefly after write turns so indexing catches up before
-        # the next read turn.
-        if turn_index in (1, 2):
-            time.sleep(3)
+        # Give indexing time to catch up before the final read turn.
+        if turn_index == len(SCENARIO_1_TURNS) - 1:
+            time.sleep(5)
 
     return agent
 
 
-def scenario_2_cross_agent_memory(
-    goodmem_toolkit: GoodMemToolkit, space_id: str
-):
-    """Prove GoodMem outlives the agent instance.
+def scenario_2_team_knowledge_pipeline(
+    goodmem_toolkit: GoodMemToolkit,
+) -> str:
+    """Two-agent pipeline sharing a dedicated GoodMem space.
 
-    Spins up a brand-new ChatAgent with an empty ChatHistoryMemory and
-    asks it what it knows about the user. The only way it can answer
-    is by calling goodmem_retrieve_memories against the shared space.
+    A Scribe ChatAgent ingests team notes one by one into an
+    isolated space. A separate Analyst ChatAgent (with its own
+    empty ChatHistoryMemory) then synthesizes an answer from those
+    notes. Mirrors CAMEL's workforce pattern: specialized agents
+    collaborating through a shared memory store. Returns the team
+    space ID so it can be cleaned up at the end.
     """
-    section("Scenario 2: Cross-agent memory persistence")
-    print("  (Building a fresh ChatAgent with no prior conversation history.)")
+    section("Scenario 2: Two-agent team knowledge pipeline")
+    print(
+        "  (Scribe writes team notes; Analyst answers from the shared space.)"
+    )
 
-    # A short wait lets any late-arriving indexing from Scenario 1
-    # finish before the reader agent queries.
-    time.sleep(3)
+    # Use a dedicated space so the Scribe/Analyst pipeline is
+    # self-contained and doesn't mix with Scenario 1's memories.
+    embedders = goodmem_toolkit.goodmem_list_embedders()
+    embedder_id = embedders[0]["embedderId"]
+    team_space_name = f"{SPACE_NAME}-team"
+    space_result = goodmem_toolkit.goodmem_create_space(
+        name=team_space_name, embedder_id=embedder_id
+    )
+    team_space_id = space_result["spaceId"]
+    print(f"  Using space '{team_space_name}': {team_space_id}")
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
         model_type=ModelType.DEFAULT,
     )
 
-    reader_agent = ChatAgent(
+    scribe_agent = ChatAgent(
         system_message=(
-            "You are a knowledge assistant. Use the GoodMem tools "
-            f"to search space '{space_id}' and answer questions "
-            "based on what you find there."
+            "You are a team Scribe. When the user gives you a team "
+            "note, store it verbatim in the GoodMem space with ID "
+            f"'{team_space_id}' using goodmem_create_memory. "
+            "Confirm storage briefly."
         ),
         model=model,
         tools=goodmem_toolkit.get_tools(),
     )
 
-    print(f"\n  User:  {SCENARIO_2_QUESTION}")
-    response = reader_agent.step(SCENARIO_2_QUESTION)
-    print(f"  Agent: {response.msgs[0].content}")
+    for note_index, note in enumerate(TEAM_NOTES, start=1):
+        print(f"\n  Scribe note {note_index}: {note}")
+        scribe_agent.step(note)
 
-    return response
+    # Let indexing catch up before the Analyst queries.
+    print("\n  Waiting for indexing to complete...")
+    time.sleep(5)
+
+    analyst_agent = ChatAgent(
+        system_message=(
+            "You are a team Analyst. Use the GoodMem tools to "
+            f"search space '{team_space_id}' and synthesize "
+            "answers based on the team notes stored there."
+        ),
+        model=model,
+        tools=goodmem_toolkit.get_tools(),
+    )
+
+    print(f"\n  User (to Analyst): {SCENARIO_2_QUESTION}")
+    response = analyst_agent.step(SCENARIO_2_QUESTION)
+    print(f"  Analyst: {response.msgs[0].content}")
+
+    return team_space_id
 
 
 def scenario_3_metadata_filtering(
@@ -371,15 +422,16 @@ def scenario_3_metadata_filtering(
 ) -> tuple[str, object]:
     """Demonstrate metadata-tagged memories.
 
-    Writes five memories with a 'category' metadata field directly via
-    the toolkit (deterministic), then has a ChatAgent list them and
-    filter by category. Returns the tagged space ID (for cleanup) and
-    the agent's response (so Scenario 4 can inspect it).
+    Writes activity log entries with a 'category' metadata field
+    directly via the toolkit (deterministic), then has a ChatAgent
+    list them and filter by category. Returns the tagged space ID
+    (for cleanup) and the agent's response (so Scenario 4 can
+    inspect it).
     """
-    section("Scenario 3: Metadata-tagged memories and filtering")
+    section("Scenario 3: Structured team activity log")
 
-    # Use a dedicated space so the tagged memories don't mix with
-    # Scenario 1's untagged ones.
+    # Use a dedicated space so the activity log doesn't mix with
+    # Scenarios 1 and 2.
     embedders = goodmem_toolkit.goodmem_list_embedders()
     embedder_id = embedders[0]["embedderId"]
     tagged_space_name = f"{SPACE_NAME}-tagged"
@@ -412,14 +464,19 @@ def scenario_3_metadata_filtering(
     )
     analyst_agent = ChatAgent(
         system_message=(
-            "You are a knowledge analyst with access to GoodMem tools. "
-            f"The memories live in space '{tagged_space_id}'. Each "
-            "memory has a 'category' field in its metadata (one of: "
-            "'work', 'hobby', 'personal'). When the user asks about a "
-            "specific category, use goodmem_list_memories to fetch "
-            "every memory in the space and filter by the "
-            "metadata.category field yourself. Do not rely on "
-            "semantic search alone."
+            "You are a release manager with access to GoodMem "
+            "tools. The team activity log lives in space "
+            f"'{tagged_space_id}'. Each memory has a 'category' "
+            "field in its metadata (one of: 'feat', 'fix', "
+            "'chore', 'docs'). To answer category-specific "
+            "questions, call goodmem_retrieve_memories with a "
+            "metadata_filter so GoodMem filters server-side. Use "
+            "a SQL-style JSONPath expression against the "
+            "'category' field. For example, to get 'feat' "
+            "entries, pass metadata_filter as: "
+            "CAST(val('$.category') AS TEXT) = 'feat'. Report "
+            "each returned result by its chunkText. Do not "
+            "invent entries."
         ),
         model=model,
         tools=goodmem_toolkit.get_tools(),
@@ -478,11 +535,12 @@ def main() -> None:
 
     subsection("Setup: Discovering embedder and creating space")
     space_id = setup_space(goodmem_toolkit)
+    team_space_id: str | None = None
     tagged_space_id: str | None = None
 
     try:
         scenario_1_conversational_agent(goodmem_toolkit, space_id)
-        scenario_2_cross_agent_memory(goodmem_toolkit, space_id)
+        team_space_id = scenario_2_team_knowledge_pipeline(goodmem_toolkit)
         tagged_space_id, analyst_response = scenario_3_metadata_filtering(
             goodmem_toolkit
         )
@@ -490,6 +548,8 @@ def main() -> None:
     finally:
         subsection("Cleanup")
         spaces_to_clean = [space_id]
+        if team_space_id:
+            spaces_to_clean.append(team_space_id)
         if tagged_space_id:
             spaces_to_clean.append(tagged_space_id)
         cleanup(goodmem_toolkit, spaces_to_clean)
