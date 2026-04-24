@@ -815,7 +815,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.91a1"
+version = "0.2.91a2"
 source = { editable = "." }
 dependencies = [
     { name = "astor" },
