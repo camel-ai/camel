@@ -754,9 +754,12 @@ async def test_arun_passes_output_config_tool_choice_and_extra_fields():
     assert request_kwargs["extra_headers"] == {"x-test-header": "1"}
     assert request_kwargs["extra_body"]["existing"] is True
     assert request_kwargs["output_config"]["format"]["type"] == "json_schema"
+    output_schema = request_kwargs["output_config"]["format"]["schema"]
+    assert output_schema["additionalProperties"] is False
+    assert "city" in output_schema["properties"]
     assert (
         request_kwargs["tools"][0]["input_schema"]["properties"]["location"][
-            "minLength"
+            "description"
         ]
-        == 3
+        == "{minLength: 3}"
     )

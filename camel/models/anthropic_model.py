@@ -350,6 +350,32 @@ class AnthropicModel(BaseModelBackend):
             }
         }
 
+    @staticmethod
+    def _normalize_type_list_for_anthropic_schema(schema: Any) -> Any:
+        r"""Convert JSON Schema type lists to Anthropic SDK-supported anyOf."""
+        if isinstance(schema, dict):
+            normalized = {
+                key: AnthropicModel._normalize_type_list_for_anthropic_schema(
+                    value
+                )
+                for key, value in schema.items()
+            }
+            type_value = schema.get("type")
+            if (
+                isinstance(type_value, list)
+                and "anyOf" not in schema
+                and all(isinstance(item, str) for item in type_value)
+            ):
+                normalized.pop("type", None)
+                normalized["anyOf"] = [{"type": item} for item in type_value]
+            return normalized
+        if isinstance(schema, list):
+            return [
+                AnthropicModel._normalize_type_list_for_anthropic_schema(item)
+                for item in schema
+            ]
+        return schema
+
     def _convert_anthropic_to_openai_response(
         self,
         response: Any,
@@ -669,6 +695,14 @@ class AnthropicModel(BaseModelBackend):
             if "function" in tool:
                 func = tool["function"]
                 input_schema = func.get("parameters", {})
+                if func.get("strict") is True and input_schema:
+                    from anthropic import transform_schema
+
+                    input_schema = transform_schema(
+                        self._normalize_type_list_for_anthropic_schema(
+                            input_schema
+                        )
+                    )
                 anthropic_tool = {
                     "name": func.get("name", ""),
                     "description": func.get("description", ""),
@@ -788,16 +822,9 @@ class AnthropicModel(BaseModelBackend):
         )
         if response_format is not None:
             extra_body.pop("output_config", None)
-            # Only use output_config when there are no tools.
-            # When tools are present the model must be free to emit
-            # tool_use blocks first; output_config constrains ALL text
-            # output to the JSON schema which can prevent tool calling.
-            # The upper-layer ChatAgent._format_response_if_needed will
-            # parse the final text into the requested format instead.
-            if not anthropic_tools:
-                request_params["output_config"] = self._build_output_config(
-                    response_format
-                )
+            request_params["output_config"] = self._build_output_config(
+                response_format
+            )
         if extra_body:
             request_params["extra_body"] = extra_body
 
@@ -935,11 +962,9 @@ class AnthropicModel(BaseModelBackend):
         )
         if response_format is not None:
             extra_body.pop("output_config", None)
-            # Only use output_config when there are no tools (see _run).
-            if not anthropic_tools:
-                request_params["output_config"] = self._build_output_config(
-                    response_format
-                )
+            request_params["output_config"] = self._build_output_config(
+                response_format
+            )
         if extra_body:
             request_params["extra_body"] = extra_body
 
