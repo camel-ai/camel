@@ -357,12 +357,21 @@ class PlanningWorktreeToolkit(BaseToolkit):
                 os.chdir(main_repo_path)
 
             if branch_name:
-                self._run_git(
+                branch_delete_result = self._run_git(
                     "branch",
                     "-d",
                     branch_name,
                     cwd=main_repo_path,
                 )
+                if branch_delete_result.returncode != 0:
+                    return self._error_result(
+                        branch_delete_result.stderr.strip()
+                        or branch_delete_result.stdout.strip()
+                        or f"Failed to delete branch '{branch_name}'.",
+                        removed_worktree=str(worktree_path),
+                        remaining_branch=branch_name,
+                        working_directory=str(self.working_directory),
+                    )
 
             return {
                 "removed_worktree": str(worktree_path),
