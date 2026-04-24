@@ -16,18 +16,16 @@ r"""GoodMem + CAMEL ChatAgent Example.
 Demonstrates how the GoodMem toolkit integrates with CAMEL's ChatAgent
 across four scenarios that highlight different ChatAgent capabilities:
 
-    Scenario 1 -- Persistent project context
-        A team member shares project context (stack, conventions,
-        goals) with a ChatAgent across turns. The agent stores each
-        fact in GoodMem and retrieves them when asked follow-up
-        questions. Shows how GoodMem extends ChatAgent's own
-        conversation history into a persistent store.
+    Scenario 1 -- Persistent project context across sessions
+        Agent stores project context over several turns, then is
+        reset before a recall question so the answer has to come
+        from GoodMem.
 
     Scenario 2 -- Two-agent team knowledge pipeline
-        A Scribe ChatAgent ingests team notes into GoodMem. A
-        separate Analyst ChatAgent then synthesizes answers from
-        those notes. Mirrors CAMEL's workforce pattern: specialized
-        agents collaborating through a shared memory store.
+        A Scribe ChatAgent writes team notes to GoodMem. A
+        separate Analyst ChatAgent reads them back. Mirrors
+        CAMEL's workforce pattern: specialized agents
+        collaborating through a shared memory store.
 
     Scenario 3 -- Structured team activity log
         Stores team activity entries tagged with 'feat', 'fix',
@@ -306,13 +304,12 @@ def cleanup(goodmem_toolkit: GoodMemToolkit, space_ids: list[str]) -> None:
 def scenario_1_conversational_agent(
     goodmem_toolkit: GoodMemToolkit, space_id: str
 ) -> ChatAgent:
-    """Run a multi-turn conversation on a single ChatAgent.
+    """Multi-turn conversation with GoodMem as the memory layer.
 
-    The agent has all 11 GoodMem tools. Over 4 turns it stores
-    project context the team member shares and then retrieves it
-    in response to follow-up questions.
+    The agent is reset between the write turns and the recall turn
+    so the final answer has to come from GoodMem.
     """
-    section("Scenario 1: Persistent project context (multi-turn)")
+    section("Scenario 1: Persistent project context across sessions")
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
@@ -341,9 +338,11 @@ def scenario_1_conversational_agent(
         response = agent.step(user_message)
         print(f"  Agent: {response.msgs[0].content}")
 
-        # Give indexing time to catch up before the final read turn.
+        # Before the recall turn, let indexing settle and clear the
+        # agent's chat history so it has to rely on GoodMem.
         if turn_index == len(SCENARIO_1_TURNS) - 1:
             time.sleep(5)
+            agent.reset()
 
     return agent
 
