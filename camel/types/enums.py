@@ -223,10 +223,12 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_SONNET_4_5 = "claude-sonnet-4-5"
     CLAUDE_OPUS_4_5 = "claude-opus-4-5"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
+    CLAUDE_SONNET_4_6 = "claude-sonnet-4-6"
     CLAUDE_HAIKU_4_5 = "claude-haiku-4-5"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
     CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
     CLAUDE_OPUS_4_6 = "claude-opus-4-6"
+    CLAUDE_OPUS_4_7 = "claude-opus-4-7"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -1683,6 +1685,8 @@ class ModelType(UnifiedModelType, Enum):
             return 1_048_576
         elif self in {
             ModelType.QWEN_3_CODER_PLUS,
+            ModelType.CLAUDE_SONNET_4_6,
+            ModelType.CLAUDE_OPUS_4_7,
         }:
             return 1_000_000
         elif self in {
@@ -1938,6 +1942,7 @@ class ModelPlatformType(Enum):
     FUNCTION_GEMMA = "function-gemma"
     AVIAN = "avian"
     ATLASCLOUD = "atlascloud"
+    XAI = "xai"
 
     @classmethod
     def from_name(cls, name):

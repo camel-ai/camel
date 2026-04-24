@@ -353,6 +353,7 @@ class AnthropicModel(BaseModelBackend):
             "total_tokens": input_tokens + output_tokens,
         }
 
+        # Prompt-caching fields are included only when actually set to int.
         cache_read = getattr(usage_obj, "cache_read_input_tokens", None)
         if isinstance(cache_read, int):
             usage["cache_read_input_tokens"] = cache_read
@@ -560,10 +561,13 @@ class AnthropicModel(BaseModelBackend):
                 # Initialize message
                 if hasattr(chunk, "message") and hasattr(chunk.message, "id"):
                     chunk_id = chunk.message.id
-                # message_start carries input/cache usage for prompt caching.
+                # Extract usage from message_start (contains cache
+                # fields like cache_read_input_tokens)
                 msg_usage = None
-                if hasattr(chunk, "message") and hasattr(
-                    chunk.message, "usage"
+                if (
+                    hasattr(chunk, "message")
+                    and hasattr(chunk.message, "usage")
+                    and chunk.message.usage
                 ):
                     msg_usage = self._extract_usage(chunk.message.usage)
                 return ChatCompletionChunk.construct(
