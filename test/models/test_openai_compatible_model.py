@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+from unittest.mock import MagicMock
+
 import pytest
 from httpx import URL
 from pytest import MonkeyPatch
@@ -61,3 +63,38 @@ def test_openai_compatible_model_apikey_from_env(monkeypatch: MonkeyPatch):
     assert model._client.base_url == URL(url)
     assert model._async_client.api_key == api_key
     assert model._async_client.base_url == URL(url)
+
+
+def test_openai_compatible_responses_use_agent_session_scope_without_langfuse(
+    monkeypatch,
+):
+    monkeypatch.setattr("camel.utils.langfuse._langfuse_configured", False)
+
+    model = OpenAICompatibleModel(
+        model_type="dummy-model",
+        api_key="dummy",
+        url="https://example.invalid",
+        api_mode="responses",
+        client=MagicMock(),
+        async_client=MagicMock(),
+    )
+
+    from camel.utils.langfuse import set_current_agent_session_id
+
+    set_current_agent_session_id("agent-a")
+    model._save_response_chain_state(
+        model._get_response_chain_session_key(), "resp_a", 2
+    )
+
+    set_current_agent_session_id("agent-b")
+    chain_state = model._prepare_responses_input_and_chain(
+        [
+            {"role": "system", "content": "system-b"},
+            {"role": "user", "content": "hello-b"},
+            {"role": "assistant", "content": "reply-b"},
+        ],
+        chain_enabled=True,
+    )
+
+    assert chain_state["session_key"] == "agent-b"
+    assert chain_state["previous_response_id"] is None

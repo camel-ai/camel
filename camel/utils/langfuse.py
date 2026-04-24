@@ -141,9 +141,7 @@ def get_current_agent_session_id() -> Optional[str]:
     Returns:
         Optional[str]: The session ID for the current agent.
     """
-    if is_langfuse_available():
-        return _agent_session_id_var.get()
-    return None
+    return _agent_session_id_var.get()
 
 
 def update_langfuse_trace(
