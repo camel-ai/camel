@@ -204,10 +204,8 @@ class DeepSeekModel(OpenAICompatibleModel):
         session_cache = self._tool_call_reasoning_by_session.get(
             self._get_reasoning_session_id(), {}
         )
-        assistant_reasoning_cache = (
-            self._assistant_reasoning_by_session.get(
-                self._get_reasoning_session_id(), {}
-            )
+        assistant_reasoning_cache = self._assistant_reasoning_by_session.get(
+            self._get_reasoning_session_id(), {}
         )
         if not session_cache:
             return messages
@@ -240,9 +238,9 @@ class DeepSeekModel(OpenAICompatibleModel):
                 content = self._get_message_content(message)
                 if content and content in assistant_reasoning_cache:
                     message = dict(message)
-                    message["reasoning_content"] = (
-                        assistant_reasoning_cache[content]
-                    )
+                    message["reasoning_content"] = assistant_reasoning_cache[
+                        content
+                    ]
 
             processed_messages.append(message)
 

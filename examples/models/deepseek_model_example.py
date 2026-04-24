@@ -36,8 +36,8 @@ model = ModelFactory.create(
 
 # Define system message
 sys_msg = (
-    "You are a helpful assistant. Use the provided math tools whenever "
-    "the user asks for arithmetic."
+    "You are a mission-control assistant for deep-space operations. Use the "
+    "provided math tools whenever the user asks for arithmetic."
 )
 
 # Set agent
@@ -61,12 +61,19 @@ def print_step_result(step_name: str, response) -> None:
 
 
 # Round 1: the model should call math tools and then return a final answer.
-user_msg = "Use the math tools to calculate (23 + 19) * 2."
+user_msg = (
+    "Mission control: a deep-space probe has 6 solar panels producing "
+    "42.5 kWh each and 3 backup cells producing 18.75 kWh each. Use the "
+    "math tools to calculate the total available energy."
+)
 response = camel_agent.step(user_msg)
 print_step_result("Round 1", response)
 
-# Round 2: keep the same agent memory. This verifies that DeepSeek thinking
-# mode can pass previous tool-call reasoning_content back across user turns.
-user_msg = "Using the previous result, subtract 17 with the math tools."
+# Round 2: keep the same agent memory.
+user_msg = (
+    "Using the previous total, reserve 15% for emergency power and subtract "
+    "38.5 kWh for the orbital relay. Use the math tools to calculate the "
+    "remaining science payload budget."
+)
 response = camel_agent.step(user_msg)
 print_step_result("Round 2", response)
