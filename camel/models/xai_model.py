@@ -523,6 +523,7 @@ class XAIModel(BaseModelBackend):
         """
         chunk_id = ""
         model = str(self.model_type)
+        response = None
         tool_calls_emitted = False
         for response, chunk in stream_iter:
             chunk_id = chunk_id or (response.id if response.id else "")
@@ -558,7 +559,7 @@ class XAIModel(BaseModelBackend):
             )
 
         # After stream ends, store state from the accumulated response
-        if response:
+        if response is not None:
             encrypted = response.encrypted_content
             reasoning = response.reasoning_content
             if encrypted:
@@ -767,9 +768,7 @@ class XAIModel(BaseModelBackend):
                 # messages are genuinely new.  ChatAgent's streaming
                 # path may also record duplicate assistant messages,
                 # so filtering by role is the safest approach.
-                delta = [
-                    m for m in delta if m.get("role") != "assistant"
-                ]
+                delta = [m for m in delta if m.get("role") != "assistant"]
                 if delta:
                     return delta
 
