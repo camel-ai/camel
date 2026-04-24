@@ -33,25 +33,6 @@ from camel.utils import (
     update_langfuse_trace,
 )
 
-ANTHROPIC_SUPPORTED_STRING_FORMATS = {
-    "date",
-    "date-time",
-    "time",
-}
-ANTHROPIC_UNSUPPORTED_SCHEMA_CONSTRAINTS = {
-    "minimum": "Must be greater than or equal to {value}.",
-    "maximum": "Must be less than or equal to {value}.",
-    "exclusiveMinimum": "Must be greater than {value}.",
-    "exclusiveMaximum": "Must be less than {value}.",
-    "multipleOf": "Must be a multiple of {value}.",
-    "minLength": "Must be at least {value} characters long.",
-    "maxLength": "Must be at most {value} characters long.",
-    "minItems": "Must contain at least {value} items.",
-    "maxItems": "Must contain at most {value} items.",
-    "minProperties": "Must contain at least {value} properties.",
-    "maxProperties": "Must contain at most {value} properties.",
-}
-
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
         from langfuse.decorators import observe
@@ -355,76 +336,13 @@ class AnthropicModel(BaseModelBackend):
 
         return system_message, anthropic_messages  # type: ignore[return-value]
 
-    @staticmethod
-    def _append_constraint_descriptions(
-        schema: Dict[str, Any], descriptions: List[str]
-    ) -> None:
-        r"""Append constraint descriptions to a schema node."""
-        if not descriptions:
-            return
-
-        description = schema.get("description")
-        suffix = " ".join(descriptions)
-        if isinstance(description, str) and description:
-            schema["description"] = f"{description} {suffix}"
-        else:
-            schema["description"] = suffix
-
-    @staticmethod
-    def _normalize_schema_for_anthropic(schema: Any) -> None:
-        r"""Normalize JSON Schema to Anthropic's supported subset.
-
-        This mirrors the documented SDK behavior at a minimal level by:
-        1. Removing unsupported validation constraints
-        2. Moving those constraints into descriptions
-        3. Enforcing ``additionalProperties: false`` for objects
-        4. Filtering unsupported string ``format`` values
-        """
-        if isinstance(schema, dict):
-            descriptions = []
-
-            for (
-                key,
-                template,
-            ) in ANTHROPIC_UNSUPPORTED_SCHEMA_CONSTRAINTS.items():
-                if key in schema:
-                    value = schema.pop(key)
-                    descriptions.append(template.format(value=value))
-
-            if schema.get("type") == "string":
-                string_format = schema.get("format")
-                if (
-                    isinstance(string_format, str)
-                    and string_format not in ANTHROPIC_SUPPORTED_STRING_FORMATS
-                ):
-                    schema.pop("format", None)
-
-            if (
-                schema.get("type") == "object"
-                and "additionalProperties" not in schema
-            ):
-                schema["additionalProperties"] = False
-
-            if schema.get("uniqueItems") is True:
-                schema.pop("uniqueItems", None)
-                descriptions.append("Items must be unique.")
-
-            AnthropicModel._append_constraint_descriptions(
-                schema, descriptions
-            )
-
-            for value in list(schema.values()):
-                AnthropicModel._normalize_schema_for_anthropic(value)
-        elif isinstance(schema, list):
-            for item in schema:
-                AnthropicModel._normalize_schema_for_anthropic(item)
-
     def _build_output_config(
         self, response_format: Type[BaseModel]
     ) -> Dict[str, Any]:
         r"""Build Anthropic output_config.format from a Pydantic model."""
-        schema = copy.deepcopy(response_format.model_json_schema())
-        self._normalize_schema_for_anthropic(schema)
+        from anthropic import transform_schema
+
+        schema = transform_schema(response_format.model_json_schema())
         return {
             "format": {
                 "type": "json_schema",
@@ -750,9 +668,7 @@ class AnthropicModel(BaseModelBackend):
         for tool in tools:
             if "function" in tool:
                 func = tool["function"]
-                input_schema = copy.deepcopy(func.get("parameters", {}))
-                if func.get("strict") is True:
-                    self._normalize_schema_for_anthropic(input_schema)
+                input_schema = func.get("parameters", {})
                 anthropic_tool = {
                     "name": func.get("name", ""),
                     "description": func.get("description", ""),
@@ -864,19 +780,27 @@ class AnthropicModel(BaseModelBackend):
         if extra_headers is not None:
             request_params["extra_headers"] = extra_headers
 
+        # Convert tools first so we know whether tools are present
+        anthropic_tools = self._convert_openai_tools_to_anthropic(tools)
+
         extra_body = copy.deepcopy(
             self.model_config_dict.get("extra_body") or {}
         )
         if response_format is not None:
             extra_body.pop("output_config", None)
-            request_params["output_config"] = self._build_output_config(
-                response_format
-            )
+            # Only use output_config when there are no tools.
+            # When tools are present the model must be free to emit
+            # tool_use blocks first; output_config constrains ALL text
+            # output to the JSON schema which can prevent tool calling.
+            # The upper-layer ChatAgent._format_response_if_needed will
+            # parse the final text into the requested format instead.
+            if not anthropic_tools:
+                request_params["output_config"] = self._build_output_config(
+                    response_format
+                )
         if extra_body:
             request_params["extra_body"] = extra_body
 
-        # Convert tools
-        anthropic_tools = self._convert_openai_tools_to_anthropic(tools)
         if anthropic_tools:
             request_params["tools"] = anthropic_tools
             tool_choice = self.model_config_dict.get("tool_choice")
@@ -1003,19 +927,22 @@ class AnthropicModel(BaseModelBackend):
         if extra_headers is not None:
             request_params["extra_headers"] = extra_headers
 
+        # Convert tools first so we know whether tools are present
+        anthropic_tools = self._convert_openai_tools_to_anthropic(tools)
+
         extra_body = copy.deepcopy(
             self.model_config_dict.get("extra_body") or {}
         )
         if response_format is not None:
             extra_body.pop("output_config", None)
-            request_params["output_config"] = self._build_output_config(
-                response_format
-            )
+            # Only use output_config when there are no tools (see _run).
+            if not anthropic_tools:
+                request_params["output_config"] = self._build_output_config(
+                    response_format
+                )
         if extra_body:
             request_params["extra_body"] = extra_body
 
-        # Convert tools
-        anthropic_tools = self._convert_openai_tools_to_anthropic(tools)
         if anthropic_tools:
             request_params["tools"] = anthropic_tools
             tool_choice = self.model_config_dict.get("tool_choice")

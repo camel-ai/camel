@@ -609,7 +609,7 @@ def test_convert_stream_chunk_message_stop():
     assert result.choices[0].finish_reason == "stop"
 
 
-def test_build_output_config_enforces_additional_properties_false():
+def test_build_output_config():
     """Test output_config generation for structured outputs."""
     model = AnthropicModel(
         ModelType.CLAUDE_HAIKU_4_5,
@@ -621,69 +621,7 @@ def test_build_output_config_enforces_additional_properties_false():
     assert output_config["format"]["type"] == "json_schema"
     schema = output_config["format"]["schema"]
     assert schema["type"] == "object"
-    assert schema["additionalProperties"] is False
     assert "city" in schema["properties"]
-
-
-def test_convert_openai_tools_to_anthropic_normalizes_strict_schema():
-    """Test strict tool schemas are normalized for Anthropic."""
-    model = AnthropicModel(
-        ModelType.CLAUDE_HAIKU_4_5,
-        api_key="dummy_api_key",
-    )
-
-    tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "plan_trip",
-                "description": "Plan a trip",
-                "strict": True,
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "email": {
-                            "type": "string",
-                            "format": "email",
-                            "minLength": 5,
-                        },
-                        "tags": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "uniqueItems": True,
-                        },
-                        "preferences": {
-                            "type": "object",
-                            "properties": {
-                                "season": {"type": "string"},
-                            },
-                        },
-                    },
-                    "required": ["email"],
-                },
-            },
-        }
-    ]
-
-    anthropic_tools = model._convert_openai_tools_to_anthropic(tools)
-    input_schema = anthropic_tools[0]["input_schema"]
-
-    assert input_schema["additionalProperties"] is False
-    assert (
-        input_schema["properties"]["preferences"]["additionalProperties"]
-        is False
-    )
-    assert "format" not in input_schema["properties"]["email"]
-    assert "minLength" not in input_schema["properties"]["email"]
-    assert (
-        "Must be at least 5 characters long."
-        in input_schema["properties"]["email"]["description"]
-    )
-    assert "uniqueItems" not in input_schema["properties"]["tags"]
-    assert (
-        "Items must be unique."
-        in input_schema["properties"]["tags"]["description"]
-    )
 
 
 def test_run_passes_output_config_tool_choice_and_extra_fields():
@@ -749,12 +687,6 @@ def test_run_passes_output_config_tool_choice_and_extra_fields():
     assert request_kwargs["extra_body"]["existing"] is True
     assert "output_config" not in request_kwargs["extra_body"]
     assert request_kwargs["output_config"]["format"]["type"] == "json_schema"
-    assert (
-        request_kwargs["output_config"]["format"]["schema"][
-            "additionalProperties"
-        ]
-        is False
-    )
     assert request_kwargs["tools"][0]["strict"] is True
     assert result.choices[0].message.content == '{"city":"Kyoto"}'
 
@@ -824,7 +756,7 @@ async def test_arun_passes_output_config_tool_choice_and_extra_fields():
     assert request_kwargs["output_config"]["format"]["type"] == "json_schema"
     assert (
         request_kwargs["tools"][0]["input_schema"]["properties"]["location"][
-            "description"
+            "minLength"
         ]
-        == "Must be at least 3 characters long."
+        == 3
     )
