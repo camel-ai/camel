@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import copy
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
@@ -49,15 +50,18 @@ else:
 
 logger = get_logger(__name__)
 
-REASONSER_UNSUPPORTED_PARAMS = [
-    "temperature",
-    "top_p",
-    "presence_penalty",
-    "frequency_penalty",
+DEEPSEEK_THINKING_MODE_MODELS = {
+    "deepseek-reasoner",
+    "deepseek-v4-flash",
+    "deepseek-v4-pro",
+}
+
+DEEPSEEK_THINKING_MODE_ERROR_PARAMS = [
     "logprobs",
     "top_logprobs",
-    "tools",
 ]
+
+DEFAULT_REASONING_SESSION_ID = "__default__"
 
 
 class DeepSeekModel(OpenAICompatibleModel):
@@ -124,6 +128,172 @@ class DeepSeekModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+        self._tool_call_reasoning_by_session: Dict[str, Dict[str, str]] = {}
+        self._assistant_reasoning_by_session: Dict[str, Dict[str, str]] = {}
+
+    def _get_reasoning_session_id(self) -> str:
+        r"""Get the current agent session ID for reasoning cache isolation."""
+        try:
+            from camel.utils.agent_context import get_current_agent_id
+
+            return get_current_agent_id() or DEFAULT_REASONING_SESSION_ID
+        except Exception:
+            return DEFAULT_REASONING_SESSION_ID
+
+    @staticmethod
+    def _get_tool_call_id(tool_call: Any) -> Optional[str]:
+        if isinstance(tool_call, dict):
+            tool_call_id = tool_call.get("id")
+        else:
+            tool_call_id = getattr(tool_call, "id", None)
+
+        return tool_call_id if isinstance(tool_call_id, str) else None
+
+    @staticmethod
+    def _get_message_content(message: Any) -> Optional[str]:
+        if isinstance(message, dict):
+            content = message.get("content")
+        else:
+            content = getattr(message, "content", None)
+
+        return content if isinstance(content, str) else None
+
+    def _cache_tool_call_reasoning(self, response: Any) -> None:
+        r"""Cache reasoning content for DeepSeek thinking-mode tool calls.
+
+        DeepSeek requires the assistant ``reasoning_content`` generated with a
+        tool call to be passed back in later requests. CAMEL memory stores the
+        OpenAI-compatible tool-call message, so the model layer keeps the
+        DeepSeek-specific field keyed by tool_call_id and injects it before
+        the next request.
+        """
+        if not isinstance(response, ChatCompletion):
+            return
+
+        session_id = self._get_reasoning_session_id()
+        session_cache = self._tool_call_reasoning_by_session.setdefault(
+            session_id, {}
+        )
+        assistant_reasoning_cache = (
+            self._assistant_reasoning_by_session.setdefault(session_id, {})
+        )
+
+        for choice in response.choices:
+            message = getattr(choice, "message", None)
+            if message is None:
+                continue
+
+            reasoning_content = getattr(message, "reasoning_content", None)
+            content = self._get_message_content(message)
+            if reasoning_content and content:
+                assistant_reasoning_cache[content] = reasoning_content
+
+            tool_calls = getattr(message, "tool_calls", None)
+            if not reasoning_content or not tool_calls:
+                continue
+
+            for tool_call in tool_calls:
+                tool_call_id = self._get_tool_call_id(tool_call)
+                if tool_call_id:
+                    session_cache[tool_call_id] = reasoning_content
+
+    def _inject_tool_call_reasoning(
+        self, messages: List[OpenAIMessage]
+    ) -> List[OpenAIMessage]:
+        r"""Inject cached reasoning into assistant tool-call messages."""
+        session_cache = self._tool_call_reasoning_by_session.get(
+            self._get_reasoning_session_id(), {}
+        )
+        assistant_reasoning_cache = (
+            self._assistant_reasoning_by_session.get(
+                self._get_reasoning_session_id(), {}
+            )
+        )
+        if not session_cache:
+            return messages
+
+        processed_messages: List[OpenAIMessage] = []
+        for message in messages:
+            if (
+                isinstance(message, dict)
+                and message.get("role") == "assistant"
+                and message.get("tool_calls")
+                and not message.get("reasoning_content")
+            ):
+                reasoning_content = None
+                tool_calls = message.get("tool_calls") or []
+                if isinstance(tool_calls, list):
+                    for tool_call in tool_calls:
+                        tool_call_id = self._get_tool_call_id(tool_call)
+                        if tool_call_id and tool_call_id in session_cache:
+                            reasoning_content = session_cache[tool_call_id]
+                            break
+
+                if reasoning_content:
+                    message = dict(message)
+                    message["reasoning_content"] = reasoning_content
+            elif (
+                isinstance(message, dict)
+                and message.get("role") == "assistant"
+                and not message.get("reasoning_content")
+            ):
+                content = self._get_message_content(message)
+                if content and content in assistant_reasoning_cache:
+                    message = dict(message)
+                    message["reasoning_content"] = (
+                        assistant_reasoning_cache[content]
+                    )
+
+            processed_messages.append(message)
+
+        return processed_messages
+
+    def preprocess_messages(
+        self, messages: List[OpenAIMessage]
+    ) -> List[OpenAIMessage]:
+        r"""Preprocess messages and restore DeepSeek tool-call reasoning."""
+        messages = super().preprocess_messages(messages)
+        return self._inject_tool_call_reasoning(messages)
+
+    def postprocess_response(self, response: Any) -> Any:
+        r"""Postprocess responses and cache DeepSeek tool-call reasoning."""
+        response = super().postprocess_response(response)
+        self._cache_tool_call_reasoning(response)
+        return response
+
+    def _normalize_thinking_config(
+        self, request_config: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        r"""Move top-level ``thinking`` into ``extra_body`` for OpenAI SDK."""
+        thinking = request_config.pop("thinking", None)
+        if thinking is None:
+            return request_config
+
+        extra_body = request_config.get("extra_body") or {}
+        if not isinstance(extra_body, dict):
+            raise ValueError("DeepSeek `extra_body` must be a dictionary.")
+
+        extra_body = copy.deepcopy(extra_body)
+        extra_body["thinking"] = thinking
+        request_config["extra_body"] = extra_body
+        return request_config
+
+    def _is_thinking_mode_enabled(
+        self, request_config: Dict[str, Any]
+    ) -> bool:
+        extra_body = request_config.get("extra_body") or {}
+        thinking = None
+        if isinstance(extra_body, dict):
+            thinking = extra_body.get("thinking")
+
+        if isinstance(thinking, dict):
+            thinking_type = thinking.get("type")
+            if thinking_type == "disabled":
+                return False
+            if thinking_type == "enabled":
+                return True
+
+        return str(self.model_type) in DEEPSEEK_THINKING_MODE_MODELS
 
     def _prepare_request(
         self,
@@ -131,28 +301,23 @@ class DeepSeekModel(OpenAICompatibleModel):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        request_config = self.model_config_dict.copy()
-
-        if self.model_type in [
-            ModelType.DEEPSEEK_REASONER,
-        ]:
-            logger.warning(
-                "Warning: You are using an DeepSeek Reasoner model, "
-                "which has certain limitations, reference: "
-                "`https://api-docs.deepseek.com/guides/reasoning_model"
-                "#api-parameters`.",
-            )
-            request_config = {
-                key: value
-                for key, value in request_config.items()
-                if key not in REASONSER_UNSUPPORTED_PARAMS
-            }
-        import copy
-
         request_config = copy.deepcopy(self.model_config_dict)
+        request_config = self._normalize_thinking_config(request_config)
+
+        if self._is_thinking_mode_enabled(request_config):
+            for param in DEEPSEEK_THINKING_MODE_ERROR_PARAMS:
+                if param in request_config:
+                    logger.warning(
+                        "`%s` is not supported by DeepSeek thinking mode "
+                        "and will be ignored.",
+                        param,
+                    )
+                    request_config.pop(param, None)
+
         # Remove strict from each tool's function parameters since DeepSeek
         # does not support them
         if tools:
+            tools = copy.deepcopy(tools)
             for tool in tools:
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
