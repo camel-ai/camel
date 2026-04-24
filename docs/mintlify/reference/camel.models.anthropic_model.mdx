@@ -42,7 +42,7 @@ Anthropic API in a unified BaseModelBackend interface.
 - **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
 - **client** (Optional[Any], optional): A custom synchronous Anthropic client instance. If provided, this client will be used instead of creating a new one. (default: :obj:`None`)
 - **async_client** (Optional[Any], optional): A custom asynchronous Anthropic client instance. If provided, this client will be used instead of creating a new one. (default: :obj:`None`)
-- **use_beta_for_structured_outputs** (bool, optional): Whether to use the beta API for structured outputs. (default: :obj:`False`) **kwargs (Any): Additional arguments to pass to the client initialization.
+- **kwargs** (Any): Additional arguments to pass to the client initialization.
 
 <a id="camel.models.anthropic_model.AnthropicModel.__init__"></a>
 
@@ -60,7 +60,6 @@ def __init__(
     max_retries: int = 3,
     client: Optional[Any] = None,
     async_client: Optional[Any] = None,
-    use_beta_for_structured_outputs: bool = False,
     **kwargs: Any
 ):
 ```

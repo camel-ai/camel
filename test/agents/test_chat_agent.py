@@ -111,6 +111,16 @@ class DummyModel(BaseModelBackend):
         raise NotImplementedError
 
 
+class DummyNativeStructuredOutputToolModel(DummyModel):
+    @property
+    def supports_tool_response_format(self) -> bool:
+        return True
+
+
+class TripSchema(BaseModel):
+    city: str
+
+
 @parametrize
 def test_chat_agent(model, step_call_count=3):
     model = model
@@ -164,6 +174,73 @@ def test_chat_agent(model, step_call_count=3):
                 assert (
                     response.info['id'] is not None
                 ), f"Error in round {i + 1}"
+
+
+def test_non_strict_tools_fall_back_to_prompt_formatting_by_default():
+    assistant = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=DummyModel(ModelType.GPT_4O_MINI),
+    )
+    assistant._get_full_tool_schemas = MagicMock(
+        return_value=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "search",
+                    "strict": False,
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                    },
+                },
+            }
+        ]
+    )
+
+    modified_message, modified_response_format, used_prompt_formatting = (
+        assistant._handle_response_format_with_non_strict_tools(
+            "Plan a trip",
+            TripSchema,
+        )
+    )
+
+    assert modified_response_format is None
+    assert used_prompt_formatting is True
+    assert isinstance(modified_message, str)
+    assert "Please respond in the following JSON format" in modified_message
+
+
+def test_native_structured_output_backend_keeps_response_format_with_tools():
+    assistant = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=DummyNativeStructuredOutputToolModel(ModelType.CLAUDE_HAIKU_4_5),
+    )
+    assistant._get_full_tool_schemas = MagicMock(
+        return_value=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "search",
+                    "strict": False,
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                    },
+                },
+            }
+        ]
+    )
+
+    modified_message, modified_response_format, used_prompt_formatting = (
+        assistant._handle_response_format_with_non_strict_tools(
+            "Plan a trip",
+            TripSchema,
+        )
+    )
+
+    assert modified_message == "Plan a trip"
+    assert modified_response_format is TripSchema
+    assert used_prompt_formatting is False
 
 
 def test_chat_agent_reset_clears_tool_output_history():
