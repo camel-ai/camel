@@ -12,10 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
+
 from camel.agents import ChatAgent
 from camel.configs import DeepSeekConfig
 from camel.models import ModelFactory
-from camel.toolkits import MathToolkit
+from camel.toolkits import TerminalToolkit
 from camel.types import ModelPlatformType, ModelType
 
 """
@@ -23,7 +25,12 @@ please set the below os environment:
 export DEEPSEEK_API_KEY=""
 """
 
-tools = MathToolkit().get_tools()
+base_dir = os.path.dirname(os.path.abspath(__file__))
+workspace_dir = os.path.join(
+    os.path.dirname(os.path.dirname(base_dir)), "workspace"
+)
+
+tools = TerminalToolkit(working_directory=workspace_dir).get_tools()
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEEPSEEK,
@@ -36,8 +43,8 @@ model = ModelFactory.create(
 
 # Define system message
 sys_msg = (
-    "You are a mission-control assistant for deep-space operations. Use the "
-    "provided math tools whenever the user asks for arithmetic."
+    "You are a mission-control system operator. Use the provided terminal "
+    "tools for filesystem and log tasks inside the workspace."
 )
 
 # Set agent
@@ -60,20 +67,20 @@ def print_step_result(step_name: str, response) -> None:
         print(message.content)
 
 
-# Round 1: the model should call math tools and then return a final answer.
+# Round 1: the model should call terminal tools and return a final answer.
 user_msg = (
-    "Mission control: a deep-space probe has 6 solar panels producing "
-    "42.5 kWh each and 3 backup cells producing 18.75 kWh each. Use the "
-    "math tools to calculate the total available energy."
+    f"Create a 'mission_control' directory in '{workspace_dir}', write "
+    "'probe=voyager-x status=nominal battery=84' into telemetry.txt inside "
+    "that directory, then list the directory contents. Use the terminal "
+    "tools."
 )
 response = camel_agent.step(user_msg)
 print_step_result("Round 1", response)
 
 # Round 2: keep the same agent memory.
 user_msg = (
-    "Using the previous total, reserve 15% for emergency power and subtract "
-    "38.5 kWh for the orbital relay. Use the math tools to calculate the "
-    "remaining science payload budget."
+    "Using the directory you just created, append 'relay=online' to "
+    "telemetry.txt and show the full file content. Use the terminal tools."
 )
 response = camel_agent.step(user_msg)
 print_step_result("Round 2", response)
