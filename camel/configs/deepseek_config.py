@@ -14,9 +14,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Type, Union
+from typing import Dict, Optional, Sequence, Type, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, JsonValue
 
 from camel.configs.base_config import BaseConfig
 
@@ -110,8 +110,8 @@ class DeepSeekConfig(BaseConfig):
     top_logprobs: Optional[int] = None
     stream_options: Optional[dict[str, bool]] = None
     reasoning_effort: Optional[str] = None
-    thinking: Optional[Dict[str, Any]] = None
-    extra_body: Optional[Dict[str, Any]] = None
+    thinking: Optional[Dict[str, JsonValue]] = None
+    extra_body: Optional[Dict[str, JsonValue]] = None
 
     def __init__(self, include_usage: bool = True, **kwargs):
         if kwargs.get("stream") and "stream_options" not in kwargs:
