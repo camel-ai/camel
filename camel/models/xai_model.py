@@ -523,6 +523,7 @@ class XAIModel(BaseModelBackend):
         """
         chunk_id = ""
         model = str(self.model_type)
+        response = None
         tool_calls_emitted = False
         for response, chunk in stream_iter:
             chunk_id = chunk_id or (response.id if response.id else "")
@@ -558,7 +559,7 @@ class XAIModel(BaseModelBackend):
             )
 
         # After stream ends, store state from the accumulated response
-        if response:
+        if response is not None:
             encrypted = response.encrypted_content
             reasoning = response.reasoning_content
             if encrypted:

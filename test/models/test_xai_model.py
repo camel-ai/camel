@@ -12,13 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.logger import disable_logging, enable_logging, set_log_level
+from types import MethodType
 
-__version__ = '0.2.91a2'
+from camel.models.xai_model import XAIModel
 
-__all__ = [
-    '__version__',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+
+def test_stream_to_chunks_handles_empty_stream():
+    model = XAIModel.__new__(XAIModel)
+    model.model_type = "grok-3"
+    model._last_encrypted_content = None
+    model._last_reasoning_content = None
+    model._save_response_chain = lambda *_args, **_kwargs: None
+    model._make_chunk = MethodType(lambda self, **kwargs: kwargs, model)
+
+    assert list(XAIModel._stream_to_chunks(model, iter([]), 0)) == []

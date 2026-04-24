@@ -41,7 +41,8 @@ Anthropic API in a unified BaseModelBackend interface.
 - **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
 - **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
 - **client** (Optional[Any], optional): A custom synchronous Anthropic client instance. If provided, this client will be used instead of creating a new one. (default: :obj:`None`)
-- **async_client** (Optional[Any], optional): A custom asynchronous Anthropic client instance. If provided, this client will be used instead of creating a new one. (default: :obj:`None`) **kwargs (Any): Additional arguments to pass to the client initialization.
+- **async_client** (Optional[Any], optional): A custom asynchronous Anthropic client instance. If provided, this client will be used instead of creating a new one. (default: :obj:`None`)
+- **kwargs** (Any): Additional arguments to pass to the client initialization.
 
 <a id="camel.models.anthropic_model.AnthropicModel.__init__"></a>
 
@@ -76,16 +77,6 @@ def token_counter(self):
   AnthropicTokenCounter: The token counter following the model's
 tokenization style.
 
-<a id="camel.models.anthropic_model.AnthropicModel.supports_tool_response_format"></a>
-
-### supports_tool_response_format
-
-```python
-def supports_tool_response_format(self):
-```
-
-Anthropic JSON outputs are independent from strict tool use.
-
 <a id="camel.models.anthropic_model.AnthropicModel._convert_openai_to_anthropic_messages"></a>
 
 ### _convert_openai_to_anthropic_messages
@@ -115,26 +106,6 @@ def _extract_usage(usage_obj: Any):
 ```
 
 Extract usage information from an Anthropic usage object.
-
-<a id="camel.models.anthropic_model.AnthropicModel._build_output_config"></a>
-
-### _build_output_config
-
-```python
-def _build_output_config(self, response_format: Type[BaseModel]):
-```
-
-Build Anthropic output_config.format from a Pydantic model.
-
-<a id="camel.models.anthropic_model.AnthropicModel._normalize_type_list_for_anthropic_schema"></a>
-
-### _normalize_type_list_for_anthropic_schema
-
-```python
-def _normalize_type_list_for_anthropic_schema(schema: Any):
-```
-
-Convert JSON Schema type lists to Anthropic SDK-supported anyOf.
 
 <a id="camel.models.anthropic_model.AnthropicModel._convert_anthropic_to_openai_response"></a>
 
@@ -217,7 +188,7 @@ Runs inference of Anthropic chat completion.
 **Parameters:**
 
 - **messages** (List[OpenAIMessage]): Message list with the chat history in OpenAI API format.
-- **response_format** (Optional[Type[BaseModel]]): The format of the response.
+- **response_format** (Optional[Type[BaseModel]]): The format of the response. (Not supported by Anthropic API directly)
 - **tools** (Optional[List[Dict[str, Any]]]): The schema of the tools to use for the request.
 
 **Returns:**
