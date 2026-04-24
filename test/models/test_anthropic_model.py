@@ -325,6 +325,42 @@ def test_convert_anthropic_response_text_only():
     assert result.usage.total_tokens == 15
 
 
+def test_convert_anthropic_response_preserves_cache_usage_fields():
+    """Test conversion preserves Anthropic prompt cache usage fields."""
+    model = AnthropicModel(
+        ModelType.CLAUDE_SONNET_4_5,
+        api_key="dummy_api_key",
+    )
+
+    mock_response = MagicMock()
+    mock_response.content = [{"type": "text", "text": "cached"}]
+    mock_response.stop_reason = "end_turn"
+    mock_response.id = "msg_cached"
+    mock_response.usage = MagicMock()
+    mock_response.usage.input_tokens = 20
+    mock_response.usage.output_tokens = 6
+    mock_response.usage.cache_read_input_tokens = 12
+    mock_response.usage.cache_creation_input_tokens = 8
+    mock_response.usage.cache_creation = {
+        "ephemeral_5m_input_tokens": 5,
+        "ephemeral_1h_input_tokens": 3,
+    }
+
+    result = model._convert_anthropic_to_openai_response(
+        mock_response, "claude-haiku-4-5"
+    )
+
+    assert result.usage.prompt_tokens == 20
+    assert result.usage.completion_tokens == 6
+    assert result.usage.total_tokens == 26
+    assert result.usage.cache_read_input_tokens == 12
+    assert result.usage.cache_creation_input_tokens == 8
+    assert result.usage.cache_creation == {
+        "ephemeral_5m_input_tokens": 5,
+        "ephemeral_1h_input_tokens": 3,
+    }
+
+
 def test_convert_anthropic_response_with_tool_use():
     """Test conversion of response with tool use."""
     model = AnthropicModel(
@@ -491,6 +527,33 @@ def test_convert_stream_chunk_message_start():
     assert result.id == "msg_123"
     assert result.choices[0].delta.content is None
     assert result.choices[0].finish_reason is None
+
+
+def test_convert_stream_chunk_message_start_preserves_cache_usage():
+    """Test message_start chunk conversion preserves prompt cache usage."""
+    model = AnthropicModel(
+        ModelType.CLAUDE_SONNET_4_5,
+        api_key="dummy_api_key",
+    )
+
+    mock_chunk = MagicMock()
+    mock_chunk.type = "message_start"
+    mock_chunk.message = MagicMock()
+    mock_chunk.message.id = "msg_cached"
+    mock_chunk.message.usage = MagicMock()
+    mock_chunk.message.usage.input_tokens = 30
+    mock_chunk.message.usage.output_tokens = 0
+    mock_chunk.message.usage.cache_read_input_tokens = 18
+
+    tool_call_index = {}
+    result = model._convert_anthropic_stream_to_openai_chunk(
+        mock_chunk, "claude-haiku-4-5", tool_call_index
+    )
+
+    assert result.usage.prompt_tokens == 30
+    assert result.usage.completion_tokens == 0
+    assert result.usage.total_tokens == 30
+    assert result.usage.cache_read_input_tokens == 18
 
 
 def test_convert_stream_chunk_content_block_delta_text():

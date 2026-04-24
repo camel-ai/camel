@@ -336,6 +336,41 @@ class AnthropicModel(BaseModelBackend):
 
         return system_message, anthropic_messages  # type: ignore[return-value]
 
+    @staticmethod
+    def _extract_usage(usage_obj: Any) -> Dict[str, Any]:
+        r"""Extract usage information from an Anthropic usage object."""
+
+        def _get_int(attr_name: str) -> int:
+            value = getattr(usage_obj, attr_name, 0)
+            return value if isinstance(value, int) else 0
+
+        input_tokens = _get_int("input_tokens")
+        output_tokens = _get_int("output_tokens")
+
+        usage: Dict[str, Any] = {
+            "prompt_tokens": input_tokens,
+            "completion_tokens": output_tokens,
+            "total_tokens": input_tokens + output_tokens,
+        }
+
+        cache_read = getattr(usage_obj, "cache_read_input_tokens", None)
+        if isinstance(cache_read, int):
+            usage["cache_read_input_tokens"] = cache_read
+
+        cache_creation = getattr(
+            usage_obj, "cache_creation_input_tokens", None
+        )
+        if isinstance(cache_creation, int):
+            usage["cache_creation_input_tokens"] = cache_creation
+
+        cache_creation_detail = getattr(usage_obj, "cache_creation", None)
+        if isinstance(cache_creation_detail, dict):
+            usage["cache_creation"] = cache_creation_detail
+        elif isinstance(cache_creation_detail, BaseModel):
+            usage["cache_creation"] = cache_creation_detail.model_dump()
+
+        return usage
+
     def _build_output_config(
         self, response_format: Type[BaseModel]
     ) -> Dict[str, Any]:
@@ -476,16 +511,7 @@ class AnthropicModel(BaseModelBackend):
         # Extract usage information
         usage = None
         if hasattr(response, "usage"):
-            usage = {
-                "prompt_tokens": getattr(response.usage, "input_tokens", 0),
-                "completion_tokens": getattr(
-                    response.usage, "output_tokens", 0
-                ),
-                "total_tokens": (
-                    getattr(response.usage, "input_tokens", 0)
-                    + getattr(response.usage, "output_tokens", 0)
-                ),
-            }
+            usage = self._extract_usage(response.usage)
 
         # Create ChatCompletion
         return ChatCompletion.construct(
@@ -534,12 +560,19 @@ class AnthropicModel(BaseModelBackend):
                 # Initialize message
                 if hasattr(chunk, "message") and hasattr(chunk.message, "id"):
                     chunk_id = chunk.message.id
+                # message_start carries input/cache usage for prompt caching.
+                msg_usage = None
+                if hasattr(chunk, "message") and hasattr(
+                    chunk.message, "usage"
+                ):
+                    msg_usage = self._extract_usage(chunk.message.usage)
                 return ChatCompletionChunk.construct(
                     id=chunk_id,
                     choices=[{"index": 0, "delta": {}, "finish_reason": None}],
                     created=int(time.time()),
                     model=model,
                     object="chat.completion.chunk",
+                    usage=msg_usage,
                 )
             elif chunk_type == "content_block_start":
                 # Content block starting
@@ -633,14 +666,7 @@ class AnthropicModel(BaseModelBackend):
                         finish_reason = "tool_calls"
                 # Extract usage info from message_delta
                 if hasattr(chunk, "usage") and chunk.usage:
-                    usage_obj = chunk.usage
-                    input_tokens = getattr(usage_obj, "input_tokens", 0)
-                    output_tokens = getattr(usage_obj, "output_tokens", 0)
-                    usage = {
-                        "prompt_tokens": input_tokens,
-                        "completion_tokens": output_tokens,
-                        "total_tokens": input_tokens + output_tokens,
-                    }
+                    usage = self._extract_usage(chunk.usage)
             elif chunk_type == "message_stop":
                 # Message finished - only set finish_reason if not already sent
                 # This prevents duplicate finish_reason triggers in chat_agent

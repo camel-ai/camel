@@ -123,7 +123,7 @@ def build_anthropic_model() -> AnthropicModel:
 
     base_url = os.environ.get("ANTHROPIC_API_BASE_URL")
     model_type = os.environ.get("ANTHROPIC_MODEL") or (
-        "anthropic/claude-sonnet-4.5"
+        ModelType.CLAUDE_SONNET_4_5
     )
 
     return AnthropicModel(
