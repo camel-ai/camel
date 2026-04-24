@@ -13,6 +13,8 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
+from typing import Literal
+
 import pytest
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
@@ -120,7 +122,9 @@ def test_deepseek_prepare_request_moves_thinking_to_extra_body():
 
 def _make_chat_completion(
     message: ChatCompletionMessage,
-    finish_reason: str,
+    finish_reason: Literal[
+        "stop", "length", "tool_calls", "content_filter", "function_call"
+    ],
 ) -> ChatCompletion:
     return ChatCompletion(
         id="mock_response_id",

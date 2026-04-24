@@ -14,7 +14,7 @@
 
 import copy
 import os
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
 
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
@@ -207,7 +207,7 @@ class DeepSeekModel(OpenAICompatibleModel):
         assistant_reasoning_cache = self._assistant_reasoning_by_session.get(
             self._get_reasoning_session_id(), {}
         )
-        if not session_cache:
+        if not session_cache and not assistant_reasoning_cache:
             return messages
 
         processed_messages: List[OpenAIMessage] = []
@@ -228,8 +228,9 @@ class DeepSeekModel(OpenAICompatibleModel):
                             break
 
                 if reasoning_content:
-                    message = dict(message)
-                    message["reasoning_content"] = reasoning_content
+                    message = self._with_reasoning_content(
+                        message, reasoning_content
+                    )
             elif (
                 isinstance(message, dict)
                 and message.get("role") == "assistant"
@@ -237,14 +238,23 @@ class DeepSeekModel(OpenAICompatibleModel):
             ):
                 content = self._get_message_content(message)
                 if content and content in assistant_reasoning_cache:
-                    message = dict(message)
-                    message["reasoning_content"] = assistant_reasoning_cache[
-                        content
-                    ]
+                    message = self._with_reasoning_content(
+                        message, assistant_reasoning_cache[content]
+                    )
 
             processed_messages.append(message)
 
         return processed_messages
+
+    def _with_reasoning_content(
+        self, message: OpenAIMessage, reasoning_content: str
+    ) -> OpenAIMessage:
+        r"""Return a copy of an OpenAI message with DeepSeek reasoning."""
+        message_with_reasoning: Dict[str, object] = dict(
+            cast(Mapping[str, object], message)
+        )
+        message_with_reasoning["reasoning_content"] = reasoning_content
+        return cast(OpenAIMessage, message_with_reasoning)
 
     def preprocess_messages(
         self, messages: List[OpenAIMessage]
