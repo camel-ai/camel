@@ -83,9 +83,10 @@ class DeepSeekConfig(BaseConfig):
         include_usage (bool, optional): When streaming, specifies whether to
             include usage information in `stream_options`.
             (default: :obj:`None`)
-        reasoning_effort (str, optional): Controls DeepSeek thinking effort,
-            such as :obj:`"low"`, :obj:`"medium"`, or :obj:`"high"`.
-            (default: :obj:`None`)
+        reasoning_effort (str, optional): Controls DeepSeek thinking effort.
+            Current DeepSeek values are :obj:`"high"` and :obj:`"max"`;
+            compatibility values such as :obj:`"low"`, :obj:`"medium"`,
+            and :obj:`"xhigh"` are mapped by DeepSeek. (default: :obj:`None`)
         thinking (dict, optional): DeepSeek thinking mode configuration,
             such as :obj:`{"type": "enabled"}` or
             :obj:`{"type": "disabled"}`. It will be moved into

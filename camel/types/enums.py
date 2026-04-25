@@ -1699,11 +1699,6 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 1_000_000
         elif self in {
-            ModelType.DEEPSEEK_V4_FLASH,
-            ModelType.DEEPSEEK_V4_PRO,
-        }:
-            return 1_000_000
-        elif self in {
             ModelType.QWEN_LONG,
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
