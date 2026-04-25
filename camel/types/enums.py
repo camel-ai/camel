@@ -334,6 +334,8 @@ class ModelType(UnifiedModelType, Enum):
     YI_LARGE_FC = "yi-large-fc"
 
     # DeepSeek models
+    DEEPSEEK_V4_FLASH = "deepseek-v4-flash"
+    DEEPSEEK_V4_PRO = "deepseek-v4-pro"
     DEEPSEEK_CHAT = "deepseek-chat"
     DEEPSEEK_REASONER = "deepseek-reasoner"
     # InternLM models
@@ -1001,6 +1003,8 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def is_deepseek(self) -> bool:
         return self in {
+            ModelType.DEEPSEEK_V4_FLASH,
+            ModelType.DEEPSEEK_V4_PRO,
             ModelType.DEEPSEEK_CHAT,
             ModelType.DEEPSEEK_REASONER,
         }
@@ -1687,6 +1691,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_3_CODER_PLUS,
             ModelType.CLAUDE_SONNET_4_6,
             ModelType.CLAUDE_OPUS_4_7,
+        }:
+            return 1_000_000
+        elif self in {
+            ModelType.DEEPSEEK_V4_FLASH,
+            ModelType.DEEPSEEK_V4_PRO,
         }:
             return 1_000_000
         elif self in {

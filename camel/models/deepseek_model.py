@@ -12,8 +12,21 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import copy
 import os
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Type,
+    Union,
+    cast,
+)
 
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
@@ -49,15 +62,18 @@ else:
 
 logger = get_logger(__name__)
 
-REASONSER_UNSUPPORTED_PARAMS = [
-    "temperature",
-    "top_p",
-    "presence_penalty",
-    "frequency_penalty",
+DEEPSEEK_THINKING_MODE_MODELS = {
+    "deepseek-reasoner",
+    "deepseek-v4-flash",
+    "deepseek-v4-pro",
+}
+
+DEEPSEEK_THINKING_MODE_ERROR_PARAMS = [
     "logprobs",
     "top_logprobs",
-    "tools",
 ]
+
+DEFAULT_REASONING_SESSION_ID = "__default__"
 
 
 class DeepSeekModel(OpenAICompatibleModel):
@@ -124,6 +140,312 @@ class DeepSeekModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+        self._tool_call_reasoning_by_session: Dict[str, Dict[str, str]] = {}
+        self._assistant_reasoning_by_session: Dict[str, Dict[str, str]] = {}
+
+    def _get_reasoning_session_id(self) -> str:
+        r"""Get the current agent session ID for reasoning cache isolation."""
+        try:
+            from camel.utils.agent_context import get_current_agent_id
+
+            return get_current_agent_id() or DEFAULT_REASONING_SESSION_ID
+        except Exception:
+            return DEFAULT_REASONING_SESSION_ID
+
+    @staticmethod
+    def _get_tool_call_id(tool_call: Any) -> Optional[str]:
+        if isinstance(tool_call, dict):
+            tool_call_id = tool_call.get("id")
+        else:
+            tool_call_id = getattr(tool_call, "id", None)
+
+        return tool_call_id if isinstance(tool_call_id, str) else None
+
+    @staticmethod
+    def _get_message_content(message: Any) -> Optional[str]:
+        if isinstance(message, dict):
+            content = message.get("content")
+        else:
+            content = getattr(message, "content", None)
+
+        return content if isinstance(content, str) else None
+
+    def _cache_tool_call_reasoning(self, response: Any) -> None:
+        r"""Cache reasoning content for DeepSeek thinking-mode tool calls.
+
+        DeepSeek requires the assistant ``reasoning_content`` generated with a
+        tool call to be passed back in later requests. CAMEL memory stores the
+        OpenAI-compatible tool-call message, so the model layer keeps the
+        DeepSeek-specific field keyed by tool_call_id and injects it before
+        the next request.
+        """
+        if not isinstance(response, ChatCompletion):
+            return
+
+        session_id = self._get_reasoning_session_id()
+        session_cache = self._tool_call_reasoning_by_session.setdefault(
+            session_id, {}
+        )
+        assistant_reasoning_cache = (
+            self._assistant_reasoning_by_session.setdefault(session_id, {})
+        )
+
+        for choice in response.choices:
+            message = getattr(choice, "message", None)
+            if message is None:
+                continue
+
+            reasoning_content = getattr(message, "reasoning_content", None)
+            content = self._get_message_content(message)
+            if reasoning_content and content:
+                assistant_reasoning_cache[content] = reasoning_content
+
+            tool_calls = getattr(message, "tool_calls", None)
+            if not reasoning_content or not tool_calls:
+                continue
+
+            for tool_call in tool_calls:
+                tool_call_id = self._get_tool_call_id(tool_call)
+                if tool_call_id:
+                    session_cache[tool_call_id] = reasoning_content
+
+    def _cache_reasoning_content(
+        self,
+        reasoning_content: Optional[str],
+        tool_call_ids: List[str],
+        content: Optional[str] = None,
+    ) -> None:
+        r"""Cache DeepSeek reasoning collected from a streamed response."""
+        if not reasoning_content:
+            return
+
+        session_id = self._get_reasoning_session_id()
+        if tool_call_ids:
+            session_cache = self._tool_call_reasoning_by_session.setdefault(
+                session_id, {}
+            )
+            for tool_call_id in tool_call_ids:
+                session_cache[tool_call_id] = reasoning_content
+
+        if content:
+            assistant_reasoning_cache = (
+                self._assistant_reasoning_by_session.setdefault(session_id, {})
+            )
+            assistant_reasoning_cache[content] = reasoning_content
+
+    def _collect_stream_reasoning(
+        self,
+        chunk: ChatCompletionChunk,
+        reasoning_parts: List[str],
+        content_parts: List[str],
+        tool_call_ids: Set[str],
+    ) -> None:
+        r"""Collect reasoning/content/tool ids from a streaming chunk."""
+        for choice in getattr(chunk, "choices", []) or []:
+            delta = getattr(choice, "delta", None)
+            if delta is None:
+                continue
+
+            reasoning_delta = getattr(delta, "reasoning_content", None)
+            if isinstance(reasoning_delta, str) and reasoning_delta:
+                reasoning_parts.append(reasoning_delta)
+
+            content_delta = getattr(delta, "content", None)
+            if isinstance(content_delta, str) and content_delta:
+                content_parts.append(content_delta)
+
+            tool_calls = getattr(delta, "tool_calls", None)
+            if not tool_calls:
+                continue
+
+            for tool_call in tool_calls:
+                tool_call_id = self._get_tool_call_id(tool_call)
+                if tool_call_id:
+                    tool_call_ids.add(tool_call_id)
+
+    @staticmethod
+    def _is_stream_response_complete(chunk: ChatCompletionChunk) -> bool:
+        r"""Return whether a streaming chunk completes one response."""
+        return any(
+            getattr(choice, "finish_reason", None)
+            for choice in getattr(chunk, "choices", []) or []
+        )
+
+    def _cache_collected_stream_reasoning(
+        self,
+        reasoning_parts: List[str],
+        content_parts: List[str],
+        tool_call_ids: Set[str],
+    ) -> None:
+        r"""Cache collected streaming reasoning once it is complete."""
+        self._cache_reasoning_content(
+            "".join(reasoning_parts) or None,
+            list(tool_call_ids),
+            "".join(content_parts) or None,
+        )
+
+    def _wrap_stream_reasoning_cache(
+        self, response: Stream[ChatCompletionChunk]
+    ) -> Iterator[ChatCompletionChunk]:
+        r"""Wrap a DeepSeek stream and cache reasoning after consumption."""
+        reasoning_parts: List[str] = []
+        content_parts: List[str] = []
+        tool_call_ids: Set[str] = set()
+        cached = False
+
+        try:
+            for chunk in response:
+                self._collect_stream_reasoning(
+                    chunk, reasoning_parts, content_parts, tool_call_ids
+                )
+                if self._is_stream_response_complete(chunk):
+                    self._cache_collected_stream_reasoning(
+                        reasoning_parts, content_parts, tool_call_ids
+                    )
+                    cached = True
+                yield chunk
+        finally:
+            if not cached:
+                self._cache_collected_stream_reasoning(
+                    reasoning_parts, content_parts, tool_call_ids
+                )
+
+    async def _wrap_async_stream_reasoning_cache(
+        self, response: AsyncStream[ChatCompletionChunk]
+    ) -> AsyncIterator[ChatCompletionChunk]:
+        r"""Wrap a DeepSeek async stream and cache reasoning after use."""
+        reasoning_parts: List[str] = []
+        content_parts: List[str] = []
+        tool_call_ids: Set[str] = set()
+        cached = False
+
+        try:
+            async for chunk in response:
+                self._collect_stream_reasoning(
+                    chunk, reasoning_parts, content_parts, tool_call_ids
+                )
+                if self._is_stream_response_complete(chunk):
+                    self._cache_collected_stream_reasoning(
+                        reasoning_parts, content_parts, tool_call_ids
+                    )
+                    cached = True
+                yield chunk
+        finally:
+            if not cached:
+                self._cache_collected_stream_reasoning(
+                    reasoning_parts, content_parts, tool_call_ids
+                )
+
+    def _inject_tool_call_reasoning(
+        self, messages: List[OpenAIMessage]
+    ) -> List[OpenAIMessage]:
+        r"""Inject cached reasoning into assistant tool-call messages."""
+        session_cache = self._tool_call_reasoning_by_session.get(
+            self._get_reasoning_session_id(), {}
+        )
+        assistant_reasoning_cache = self._assistant_reasoning_by_session.get(
+            self._get_reasoning_session_id(), {}
+        )
+        if not session_cache and not assistant_reasoning_cache:
+            return messages
+
+        processed_messages: List[OpenAIMessage] = []
+        for message in messages:
+            if (
+                isinstance(message, dict)
+                and message.get("role") == "assistant"
+                and message.get("tool_calls")
+                and not message.get("reasoning_content")
+            ):
+                reasoning_content = None
+                tool_calls = message.get("tool_calls") or []
+                if isinstance(tool_calls, list):
+                    for tool_call in tool_calls:
+                        tool_call_id = self._get_tool_call_id(tool_call)
+                        if tool_call_id and tool_call_id in session_cache:
+                            reasoning_content = session_cache[tool_call_id]
+                            break
+
+                if reasoning_content:
+                    message = self._with_reasoning_content(
+                        message, reasoning_content
+                    )
+            elif (
+                isinstance(message, dict)
+                and message.get("role") == "assistant"
+                and not message.get("reasoning_content")
+            ):
+                content = self._get_message_content(message)
+                if content and content in assistant_reasoning_cache:
+                    message = self._with_reasoning_content(
+                        message, assistant_reasoning_cache[content]
+                    )
+
+            processed_messages.append(message)
+
+        return processed_messages
+
+    def _with_reasoning_content(
+        self, message: OpenAIMessage, reasoning_content: str
+    ) -> OpenAIMessage:
+        r"""Return a copy of an OpenAI message with DeepSeek reasoning."""
+        message_with_reasoning: Dict[str, object] = dict(
+            cast(Mapping[str, object], message)
+        )
+        message_with_reasoning["reasoning_content"] = reasoning_content
+        return cast(OpenAIMessage, message_with_reasoning)
+
+    def preprocess_messages(
+        self, messages: List[OpenAIMessage]
+    ) -> List[OpenAIMessage]:
+        r"""Preprocess messages and restore DeepSeek tool-call reasoning."""
+        messages = super().preprocess_messages(messages)
+        return self._inject_tool_call_reasoning(messages)
+
+    def postprocess_response(self, response: Any) -> Any:
+        r"""Postprocess responses and cache DeepSeek tool-call reasoning."""
+        response = super().postprocess_response(response)
+        if isinstance(response, Stream):
+            return self._wrap_stream_reasoning_cache(response)
+        if isinstance(response, AsyncStream):
+            return self._wrap_async_stream_reasoning_cache(response)
+
+        self._cache_tool_call_reasoning(response)
+        return response
+
+    def _normalize_thinking_config(
+        self, request_config: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        r"""Move top-level ``thinking`` into ``extra_body`` for OpenAI SDK."""
+        thinking = request_config.pop("thinking", None)
+        if thinking is None:
+            return request_config
+
+        extra_body = request_config.get("extra_body") or {}
+        if not isinstance(extra_body, dict):
+            raise ValueError("DeepSeek `extra_body` must be a dictionary.")
+
+        extra_body = copy.deepcopy(extra_body)
+        extra_body["thinking"] = thinking
+        request_config["extra_body"] = extra_body
+        return request_config
+
+    def _is_thinking_mode_enabled(
+        self, request_config: Dict[str, Any]
+    ) -> bool:
+        extra_body = request_config.get("extra_body") or {}
+        thinking = None
+        if isinstance(extra_body, dict):
+            thinking = extra_body.get("thinking")
+
+        if isinstance(thinking, dict):
+            thinking_type = thinking.get("type")
+            if thinking_type == "disabled":
+                return False
+            if thinking_type == "enabled":
+                return True
+
+        return str(self.model_type) in DEEPSEEK_THINKING_MODE_MODELS
 
     def _prepare_request(
         self,
@@ -131,31 +453,21 @@ class DeepSeekModel(OpenAICompatibleModel):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        request_config = self.model_config_dict.copy()
-
-        if self.model_type in [
-            ModelType.DEEPSEEK_REASONER,
-        ]:
-            logger.warning(
-                "Warning: You are using an DeepSeek Reasoner model, "
-                "which has certain limitations, reference: "
-                "`https://api-docs.deepseek.com/guides/reasoning_model"
-                "#api-parameters`.",
-            )
-            request_config = {
-                key: value
-                for key, value in request_config.items()
-                if key not in REASONSER_UNSUPPORTED_PARAMS
-            }
-        import copy
-
         request_config = copy.deepcopy(self.model_config_dict)
-        # Remove strict from each tool's function parameters since DeepSeek
-        # does not support them
+        request_config = self._normalize_thinking_config(request_config)
+
+        if self._is_thinking_mode_enabled(request_config):
+            for param in DEEPSEEK_THINKING_MODE_ERROR_PARAMS:
+                if param in request_config:
+                    logger.warning(
+                        "`%s` is not supported by DeepSeek thinking mode "
+                        "and will be ignored.",
+                        param,
+                    )
+                    request_config.pop(param, None)
+
         if tools:
-            for tool in tools:
-                function_dict = tool.get('function', {})
-                function_dict.pop("strict", None)
+            tools = copy.deepcopy(tools)
             request_config["tools"] = tools
         elif response_format:
             try_modify_message_with_format(messages[-1], response_format)
@@ -193,6 +505,10 @@ class DeepSeekModel(OpenAICompatibleModel):
             model=self.model_type,
             **request_config,
         )
+        if isinstance(response, Stream):
+            return self._wrap_stream_reasoning_cache(  # type: ignore[return-value]
+                response
+            )
 
         return response
 
@@ -225,5 +541,9 @@ class DeepSeekModel(OpenAICompatibleModel):
             model=self.model_type,
             **request_config,
         )
+        if isinstance(response, AsyncStream):
+            return self._wrap_async_stream_reasoning_cache(  # type: ignore[return-value]
+                response
+            )
 
         return response
