@@ -52,6 +52,11 @@ class ModelType(UnifiedModelType, Enum):
     GPT_5_1 = "gpt-5.1"
     GPT_5_2 = "gpt-5.2"
     GPT_5_4 = "gpt-5.4"
+    GPT_5_4_MINI = "gpt-5.4-mini-2026-03-17"
+    GPT_5_4_NANO = "gpt-5.4-nano-2026-03-17"
+    GPT_5_4_PRO = "gpt-5.5-pro-2026-04-23"
+    GPT_5_5 = "gpt-5.5"
+    GPT_5_5_PRO = "gpt-5.5-pro-2026-04-23"
     GPT_5 = "gpt-5"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
@@ -638,6 +643,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_5_1,
             ModelType.GPT_5_2,
             ModelType.GPT_5_4,
+            ModelType.GPT_5_4_MINI,
+            ModelType.GPT_5_4_NANO,
+            ModelType.GPT_5_4_PRO,
+            ModelType.GPT_5_5,
+            ModelType.GPT_5_5_PRO,
         }
 
     @property
@@ -1652,10 +1662,10 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.GPT_5_1,
             ModelType.GPT_5_2,
-            ModelType.GPT_5_4,
             ModelType.GPT_5_MINI,
             ModelType.GPT_5_NANO,
-            ModelType.GPT_5,
+            ModelType.GPT_5_4_MINI,
+            ModelType.GPT_5_4_NANO,
         }:
             return 400_000
         elif self in {
@@ -1691,11 +1701,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_3_CODER_PLUS,
             ModelType.CLAUDE_SONNET_4_6,
             ModelType.CLAUDE_OPUS_4_7,
-        }:
-            return 1_000_000
-        elif self in {
             ModelType.DEEPSEEK_V4_FLASH,
             ModelType.DEEPSEEK_V4_PRO,
+            ModelType.GPT_5_4,
+            ModelType.GPT_5_4_PRO,
+            ModelType.GPT_5_5,
+            ModelType.GPT_5_5_PRO,
         }:
             return 1_000_000
         elif self in {
