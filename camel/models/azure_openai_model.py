@@ -13,48 +13,37 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Type, Union
-
-from openai import AsyncAzureOpenAI, AsyncStream, AzureOpenAI, Stream
-from openai.lib.streaming.chat import (
-    AsyncChatCompletionStreamManager,
-    ChatCompletionStreamManager,
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Union,
 )
-from pydantic import BaseModel
+
+from openai import AsyncAzureOpenAI, AzureOpenAI
 
 from camel.configs import ChatGPTConfig
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
-from camel.types import (
-    ChatCompletion,
-    ChatCompletionChunk,
-    ModelType,
-)
+from camel.models.openai_model import OpenAIModel
+from camel.types import ModelType
 from camel.utils import (
     BaseTokenCounter,
-    OpenAITokenCounter,
     is_langfuse_available,
 )
 
 AzureADTokenProvider = Callable[[], str]
 
 
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
-    try:
-        from traceroot import trace as observe  # type: ignore[import]
-    except ImportError:
-        from camel.utils import observe
-else:
-    from camel.utils import observe
-
-
-class AzureOpenAIModel(BaseModelBackend):
+class AzureOpenAIModel(OpenAIModel):
     r"""Azure OpenAI API in a unified BaseModelBackend interface.
+
+    Inherits all Responses API, chat completion, and streaming methods
+    from :obj:`OpenAIModel`. Only the client initialization and
+    Azure-specific configuration are different.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -100,6 +89,12 @@ class AzureOpenAIModel(BaseModelBackend):
             Use `model_type` parameter instead. This parameter is kept for
             backward compatibility and will be removed in a future version.
             (default: :obj:`None`)
+        api_mode (Literal["chat_completions", "responses"], optional):
+            Azure OpenAI API mode to use. Supported values:
+            `"chat_completions"` (default) and `"responses"`. The
+            `"responses"` mode uses the Azure OpenAI Responses API, which
+            supports stateful response chaining via
+            `previous_response_id`. (default: :obj:`"chat_completions"`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization. Ignored if custom clients are provided.
 
@@ -122,6 +117,9 @@ class AzureOpenAIModel(BaseModelBackend):
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,
         azure_deployment_name: Optional[str] = None,
+        api_mode: Literal["chat_completions", "responses"] = (
+            "chat_completions"
+        ),
         **kwargs: Any,
     ) -> None:
         # Handle deprecated azure_deployment_name parameter
@@ -145,13 +143,30 @@ class AzureOpenAIModel(BaseModelBackend):
                 stacklevel=2,
             )
 
+        if api_mode not in {"chat_completions", "responses"}:
+            raise ValueError(
+                "api_mode must be 'chat_completions' or 'responses', "
+                f"got: {api_mode}"
+            )
+        self._api_mode = api_mode
+        self._responses_previous_response_id_by_session: Dict[str, str] = {}
+        self._responses_last_message_count_by_session: Dict[str, int] = {}
+
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
         api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
         url = url or os.environ.get("AZURE_OPENAI_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
-        super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
+        # Skip OpenAIModel.__init__ (requires OPENAI_API_KEY) and create
+        # BaseModelBackend directly for Azure-specific setup.
+        BaseModelBackend.__init__(
+            self,
+            model_type,
+            model_config_dict,
+            api_key,
+            url,
+            token_counter,
+            timeout,
         )
 
         self.api_version = api_version or os.environ.get("AZURE_API_VERSION")
@@ -232,231 +247,12 @@ class AzureOpenAIModel(BaseModelBackend):
                     **kwargs,
                 )
 
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
+    def _sanitize_config(self, config_dict: Dict[str, Any]) -> Dict[str, Any]:
+        r"""No-op (Azure does not need)"""
+        return config_dict
 
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(self.model_type)
-        return self._token_counter
-
-    @observe()
-    def _run(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[
-        ChatCompletion,
-        Stream[ChatCompletionChunk],
-        ChatCompletionStreamManager[BaseModel],
-    ]:
-        r"""Runs inference of Azure OpenAI chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-            response_format (Optional[Type[BaseModel]]): The format of the
-                response.
-            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
-                use for the request.
-
-        Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
-                `ChatCompletionStreamManager[BaseModel]` for
-                structured output streaming.
-        """
-        self._log_and_trace()
-
-        response_format = response_format or self.model_config_dict.get(
-            "response_format", None
-        )
-        is_streaming = self.model_config_dict.get("stream", False)
-        if response_format:
-            if is_streaming:
-                return self._request_stream_parse(
-                    messages, response_format, tools
-                )
-            else:
-                return self._request_parse(messages, response_format, tools)
-        else:
-            result = self._request_chat_completion(messages, tools)
-
-        return result
-
-    @observe()
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[
-        ChatCompletion,
-        AsyncStream[ChatCompletionChunk],
-        AsyncChatCompletionStreamManager[BaseModel],
-    ]:
-        r"""Runs inference of Azure OpenAI chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-            response_format (Optional[Type[BaseModel]]): The format of the
-                response.
-            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
-                use for the request.
-
-        Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk],
-                  AsyncChatCompletionStreamManager[BaseModel]]:
-                `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
-                `AsyncChatCompletionStreamManager[BaseModel]` for
-                structured output streaming.
-        """
-        self._log_and_trace()
-
-        response_format = response_format or self.model_config_dict.get(
-            "response_format", None
-        )
-        is_streaming = self.model_config_dict.get("stream", False)
-        if response_format:
-            if is_streaming:
-                return await self._arequest_stream_parse(
-                    messages, response_format, tools
-                )
-            else:
-                return await self._arequest_parse(
-                    messages, response_format, tools
-                )
-        else:
-            result = await self._arequest_chat_completion(messages, tools)
-
-        return result
-
-    def _request_chat_completion(
-        self,
-        messages: List[OpenAIMessage],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        request_config = self._prepare_request_config(tools)
-
-        return self._call_client(
-            self._client.chat.completions.create,
-            messages=messages,
-            model=str(self.model_type),
-            **request_config,
-        )
-
-    async def _arequest_chat_completion(
-        self,
-        messages: List[OpenAIMessage],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        request_config = self._prepare_request_config(tools)
-
-        return await self._acall_client(
-            self._async_client.chat.completions.create,
-            messages=messages,
-            model=str(self.model_type),
-            **request_config,
-        )
-
-    def _request_parse(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Type[BaseModel],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> ChatCompletion:
-        request_config = self._prepare_request_config(tools)
-        request_config["response_format"] = response_format
-        # Remove stream from request config since OpenAI does not support it
-        # with structured response
-        request_config.pop("stream", None)
-
-        return self._call_client(
-            self._client.beta.chat.completions.parse,
-            messages=messages,
-            model=str(self.model_type),
-            **request_config,
-        )
-
-    async def _arequest_parse(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Type[BaseModel],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> ChatCompletion:
-        request_config = self._prepare_request_config(tools)
-        request_config["response_format"] = response_format
-        # Remove stream from request config since OpenAI does not support it
-        # with structured response
-        request_config.pop("stream", None)
-
-        return await self._acall_client(
-            self._async_client.beta.chat.completions.parse,
-            messages=messages,
-            model=str(self.model_type),
-            **request_config,
-        )
-
-    def _request_stream_parse(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Type[BaseModel],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> ChatCompletionStreamManager[BaseModel]:
-        r"""Request streaming structured output parsing.
-
-        Note: This uses OpenAI's beta streaming API for structured outputs.
-        """
-        request_config = self._prepare_request_config(tools)
-        # Remove stream from config as it's handled by the stream method
-        request_config.pop("stream", None)
-
-        # Use the beta streaming API for structured outputs
-        return self._call_client(
-            self._client.beta.chat.completions.stream,
-            messages=messages,
-            model=str(self.model_type),
-            response_format=response_format,
-            **request_config,
-        )
-
-    async def _arequest_stream_parse(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Type[BaseModel],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> AsyncChatCompletionStreamManager[BaseModel]:
-        r"""Request async streaming structured output parsing.
-
-        Note: This uses OpenAI's beta streaming API for structured outputs.
-        """
-        request_config = self._prepare_request_config(tools)
-        # Remove stream from config as it's handled by the stream method
-        request_config.pop("stream", None)
-
-        # Use the beta streaming API for structured outputs
-        return self._call_client(
-            self._async_client.beta.chat.completions.stream,
-            messages=messages,
-            model=str(self.model_type),
-            response_format=response_format,
-            **request_config,
-        )
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode,
-        which sends partial results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get("stream", False)
+    def _adapt_messages_for_o1_models(
+        self, messages: List[OpenAIMessage]
+    ) -> List[OpenAIMessage]:
+        r"""No-op (Azure does not need)"""
+        return messages
