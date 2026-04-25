@@ -17,6 +17,15 @@ from typing import Literal
 
 import pytest
 from openai.types.chat.chat_completion import Choice
+from openai.types.chat.chat_completion_chunk import (
+    ChatCompletionChunk,
+    ChoiceDelta,
+    ChoiceDeltaToolCall,
+    ChoiceDeltaToolCallFunction,
+)
+from openai.types.chat.chat_completion_chunk import (
+    Choice as ChunkChoice,
+)
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_function_tool_call import (
     ChatCompletionMessageFunctionToolCall,
@@ -42,7 +51,7 @@ from camel.utils import OpenAITokenCounter
 )
 def test_deepseek_model(model_type):
     model_config_dict = DeepSeekConfig().as_dict()
-    model = DeepSeekModel(model_type, model_config_dict)
+    model = DeepSeekModel(model_type, model_config_dict, api_key="test")
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
@@ -65,6 +74,7 @@ def test_deepseek_model_create(model_type: ModelType):
         model_platform=ModelPlatformType.DEEPSEEK,
         model_type=model_type,
         model_config_dict=DeepSeekConfig(temperature=1.3).as_dict(),
+        api_key="test",
     )
     assert model.model_type == model_type
 
@@ -116,7 +126,7 @@ def test_deepseek_prepare_request_moves_thinking_to_extra_body():
     assert "thinking" not in request_config
     assert request_config["extra_body"]["thinking"] == {"type": "disabled"}
     assert request_config["reasoning_effort"] == "high"
-    assert "strict" not in request_config["tools"][0]["function"]
+    assert request_config["tools"][0]["function"]["strict"] is True
     assert tools[0]["function"]["strict"] is True
 
 
@@ -144,6 +154,29 @@ def _make_chat_completion(
             prompt_tokens=20,
             total_tokens=30,
         ),
+    )
+
+
+def _make_chat_completion_chunk(
+    delta: ChoiceDelta,
+    finish_reason: Literal[
+        "stop", "length", "tool_calls", "content_filter", "function_call"
+    ]
+    | None = None,
+) -> ChatCompletionChunk:
+    return ChatCompletionChunk(
+        id="mock_chunk_id",
+        choices=[
+            ChunkChoice(
+                delta=delta,
+                finish_reason=finish_reason,
+                index=0,
+                logprobs=None,
+            )
+        ],
+        created=123456789,
+        model="deepseek-v4-pro",
+        object="chat.completion.chunk",
     )
 
 
@@ -191,6 +224,77 @@ def test_deepseek_model_injects_tool_call_reasoning_content():
     assert messages[1]["reasoning_content"] == (
         "Need the date before answering."
     )
+
+
+def test_deepseek_model_run_caches_streaming_tool_call_reasoning(
+    monkeypatch,
+):
+    model = DeepSeekModel(
+        ModelType.DEEPSEEK_V4_PRO,
+        DeepSeekConfig(stream=True).as_dict(),
+        api_key="test",
+    )
+    reasoning_delta = ChoiceDelta(content=None, role="assistant")
+    reasoning_delta.reasoning_content = "Need a streamed tool result."
+    tool_delta = ChoiceDelta(
+        content=None,
+        tool_calls=[
+            ChoiceDeltaToolCall(
+                index=0,
+                id="call_stream_run_123",
+                type="function",
+                function=ChoiceDeltaToolCallFunction(
+                    name="get_date", arguments="{}"
+                ),
+            )
+        ],
+    )
+    chunks = [
+        _make_chat_completion_chunk(reasoning_delta),
+        _make_chat_completion_chunk(tool_delta, finish_reason="tool_calls"),
+    ]
+
+    class FakeStream:
+        def __iter__(self):
+            return iter(chunks)
+
+    monkeypatch.setattr("camel.models.deepseek_model.Stream", FakeStream)
+
+    def fake_call_client(call, *args, **kwargs):
+        return FakeStream()
+
+    monkeypatch.setattr(model, "_call_client", fake_call_client)
+
+    response = model.run(messages=[{"role": "user", "content": "hello"}])
+    response_iter = iter(response)
+    next(response_iter)
+    next(response_iter)
+
+    messages = model.preprocess_messages(
+        [
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "call_stream_run_123",
+                        "type": "function",
+                        "function": {
+                            "name": "get_date",
+                            "arguments": "{}",
+                        },
+                    }
+                ],
+            },
+            {
+                "role": "tool",
+                "tool_call_id": "call_stream_run_123",
+                "content": "2026",
+            },
+        ]
+    )
+
+    assert messages[0]["reasoning_content"] == "Need a streamed tool result."
 
 
 def test_deepseek_model_injects_final_reasoning_after_tool_turn():

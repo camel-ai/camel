@@ -14,7 +14,19 @@
 
 import copy
 import os
-from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Type,
+    Union,
+    cast,
+)
 
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
@@ -197,6 +209,133 @@ class DeepSeekModel(OpenAICompatibleModel):
                 if tool_call_id:
                     session_cache[tool_call_id] = reasoning_content
 
+    def _cache_reasoning_content(
+        self,
+        reasoning_content: Optional[str],
+        tool_call_ids: List[str],
+        content: Optional[str] = None,
+    ) -> None:
+        r"""Cache DeepSeek reasoning collected from a streamed response."""
+        if not reasoning_content:
+            return
+
+        session_id = self._get_reasoning_session_id()
+        if tool_call_ids:
+            session_cache = self._tool_call_reasoning_by_session.setdefault(
+                session_id, {}
+            )
+            for tool_call_id in tool_call_ids:
+                session_cache[tool_call_id] = reasoning_content
+
+        if content:
+            assistant_reasoning_cache = (
+                self._assistant_reasoning_by_session.setdefault(session_id, {})
+            )
+            assistant_reasoning_cache[content] = reasoning_content
+
+    def _collect_stream_reasoning(
+        self,
+        chunk: ChatCompletionChunk,
+        reasoning_parts: List[str],
+        content_parts: List[str],
+        tool_call_ids: Set[str],
+    ) -> None:
+        r"""Collect reasoning/content/tool ids from a streaming chunk."""
+        for choice in getattr(chunk, "choices", []) or []:
+            delta = getattr(choice, "delta", None)
+            if delta is None:
+                continue
+
+            reasoning_delta = getattr(delta, "reasoning_content", None)
+            if isinstance(reasoning_delta, str) and reasoning_delta:
+                reasoning_parts.append(reasoning_delta)
+
+            content_delta = getattr(delta, "content", None)
+            if isinstance(content_delta, str) and content_delta:
+                content_parts.append(content_delta)
+
+            tool_calls = getattr(delta, "tool_calls", None)
+            if not tool_calls:
+                continue
+
+            for tool_call in tool_calls:
+                tool_call_id = self._get_tool_call_id(tool_call)
+                if tool_call_id:
+                    tool_call_ids.add(tool_call_id)
+
+    @staticmethod
+    def _is_stream_response_complete(chunk: ChatCompletionChunk) -> bool:
+        r"""Return whether a streaming chunk completes one response."""
+        return any(
+            getattr(choice, "finish_reason", None)
+            for choice in getattr(chunk, "choices", []) or []
+        )
+
+    def _cache_collected_stream_reasoning(
+        self,
+        reasoning_parts: List[str],
+        content_parts: List[str],
+        tool_call_ids: Set[str],
+    ) -> None:
+        r"""Cache collected streaming reasoning once it is complete."""
+        self._cache_reasoning_content(
+            "".join(reasoning_parts) or None,
+            list(tool_call_ids),
+            "".join(content_parts) or None,
+        )
+
+    def _wrap_stream_reasoning_cache(
+        self, response: Stream[ChatCompletionChunk]
+    ) -> Iterator[ChatCompletionChunk]:
+        r"""Wrap a DeepSeek stream and cache reasoning after consumption."""
+        reasoning_parts: List[str] = []
+        content_parts: List[str] = []
+        tool_call_ids: Set[str] = set()
+        cached = False
+
+        try:
+            for chunk in response:
+                self._collect_stream_reasoning(
+                    chunk, reasoning_parts, content_parts, tool_call_ids
+                )
+                if self._is_stream_response_complete(chunk):
+                    self._cache_collected_stream_reasoning(
+                        reasoning_parts, content_parts, tool_call_ids
+                    )
+                    cached = True
+                yield chunk
+        finally:
+            if not cached:
+                self._cache_collected_stream_reasoning(
+                    reasoning_parts, content_parts, tool_call_ids
+                )
+
+    async def _wrap_async_stream_reasoning_cache(
+        self, response: AsyncStream[ChatCompletionChunk]
+    ) -> AsyncIterator[ChatCompletionChunk]:
+        r"""Wrap a DeepSeek async stream and cache reasoning after use."""
+        reasoning_parts: List[str] = []
+        content_parts: List[str] = []
+        tool_call_ids: Set[str] = set()
+        cached = False
+
+        try:
+            async for chunk in response:
+                self._collect_stream_reasoning(
+                    chunk, reasoning_parts, content_parts, tool_call_ids
+                )
+                if self._is_stream_response_complete(chunk):
+                    self._cache_collected_stream_reasoning(
+                        reasoning_parts, content_parts, tool_call_ids
+                    )
+                    cached = True
+                yield chunk
+        finally:
+            if not cached:
+                self._cache_collected_stream_reasoning(
+                    reasoning_parts, content_parts, tool_call_ids
+                )
+
     def _inject_tool_call_reasoning(
         self, messages: List[OpenAIMessage]
     ) -> List[OpenAIMessage]:
@@ -266,6 +405,11 @@ class DeepSeekModel(OpenAICompatibleModel):
     def postprocess_response(self, response: Any) -> Any:
         r"""Postprocess responses and cache DeepSeek tool-call reasoning."""
         response = super().postprocess_response(response)
+        if isinstance(response, Stream):
+            return self._wrap_stream_reasoning_cache(response)
+        if isinstance(response, AsyncStream):
+            return self._wrap_async_stream_reasoning_cache(response)
+
         self._cache_tool_call_reasoning(response)
         return response
 
@@ -322,13 +466,8 @@ class DeepSeekModel(OpenAICompatibleModel):
                     )
                     request_config.pop(param, None)
 
-        # Remove strict from each tool's function parameters since DeepSeek
-        # does not support them
         if tools:
             tools = copy.deepcopy(tools)
-            for tool in tools:
-                function_dict = tool.get('function', {})
-                function_dict.pop("strict", None)
             request_config["tools"] = tools
         elif response_format:
             try_modify_message_with_format(messages[-1], response_format)
@@ -366,6 +505,10 @@ class DeepSeekModel(OpenAICompatibleModel):
             model=self.model_type,
             **request_config,
         )
+        if isinstance(response, Stream):
+            return self._wrap_stream_reasoning_cache(  # type: ignore[return-value]
+                response
+            )
 
         return response
 
@@ -398,5 +541,9 @@ class DeepSeekModel(OpenAICompatibleModel):
             model=self.model_type,
             **request_config,
         )
+        if isinstance(response, AsyncStream):
+            return self._wrap_async_stream_reasoning_cache(  # type: ignore[return-value]
+                response
+            )
 
         return response
