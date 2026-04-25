@@ -27,6 +27,10 @@ DeepSeek API.
 - **logprobs** (bool, optional): Whether to return log probabilities of the output tokens or not. If true, returns the log probabilities of each output token returned in the content of message. (default: :obj:`None`)
 - **top_logprobs** (int, optional): An integer between 0 and 20 specifying the number of most likely tokens to return at each token position, each with an associated log probability. logprobs must be set to true if this parameter is used. (default: :obj:`None`)
 - **include_usage** (bool, optional): When streaming, specifies whether to include usage information in `stream_options`. (default: :obj:`None`)
+- **reasoning_effort** (str, optional): Controls DeepSeek thinking effort. Current DeepSeek values are :obj:`"high"` and :obj:`"max"`; compatibility values such as :obj:`"low"`, :obj:`"medium"`,
+- **and**: obj:`"xhigh"` are mapped by DeepSeek. (default: :obj:`None`)
+- **thinking** (dict, optional): DeepSeek thinking mode configuration, such as :obj:`{"type": "enabled"}` or :obj:`{"type": "disabled"}`. It will be moved into :obj:`extra_body` by :obj:`DeepSeekModel` when using the OpenAI SDK. (default: :obj:`None`)
+- **extra_body** (dict, optional): Additional request body parameters passed through the OpenAI-compatible SDK. (default: :obj:`None`)
 
 <a id="camel.configs.deepseek_config.DeepSeekConfig.__init__"></a>
 
