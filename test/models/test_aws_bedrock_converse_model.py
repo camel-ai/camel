@@ -165,6 +165,84 @@ def test_parse_json_or_text_scalar_json_is_text():
 
 
 @pytest.mark.model_backend
+def test_parse_json_or_text_top_level_list_is_wrapped_in_object():
+    """Bedrock Converse rejects a top-level JSON list at
+    `toolResult.content[].json` -- the value must be a JSON object.
+    Tools that return a list (e.g. ``PubMedToolkit.search_papers`` returns
+    ``[]`` when nothing is found) must be wrapped in an object before being
+    placed under the ``json`` key. See issue #3962.
+    """
+    model = _make_model(bedrock_client=object())
+
+    result = model._parse_json_or_text([])
+    assert isinstance(result.get("json"), dict), (
+        "list payload must be wrapped in an object so Bedrock accepts it; "
+        f"got {result!r}"
+    )
+
+    result_str = model._parse_json_or_text("[]")
+    assert isinstance(result_str.get("json"), dict), (
+        "list parsed from a JSON-string payload must also be wrapped; "
+        f"got {result_str!r}"
+    )
+
+    result_nonempty = model._parse_json_or_text([{"id": 1}, {"id": 2}])
+    assert isinstance(result_nonempty.get("json"), dict)
+
+
+@pytest.mark.model_backend
+def test_converse_tool_message_with_list_payload_produces_object():
+    """End-to-end check: a `tool` message whose content is a JSON list
+    must produce a Bedrock `toolResult.content[0].json` whose value is a
+    JSON object (not a list). See issue #3962.
+    """
+    model = _make_model(bedrock_client=object())
+
+    request = model._build_converse_request(
+        messages=[
+            {"role": "user", "content": "find papers"},
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {
+                            "name": "search_papers",
+                            "arguments": "{}",
+                        },
+                    }
+                ],
+            },
+            {
+                "role": "tool",
+                "tool_call_id": "call_1",
+                "content": "[]",
+            },
+        ],
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "search_papers",
+                    "parameters": {"type": "object"},
+                },
+            }
+        ],
+    )
+
+    tool_result_block = request["messages"][2]["content"][0]
+    assert "toolResult" in tool_result_block
+    payload = tool_result_block["toolResult"]["content"][0]
+    assert "json" in payload, payload
+    assert isinstance(payload["json"], dict), (
+        "Bedrock requires a JSON object under `json`; "
+        f"got {type(payload['json']).__name__}: {payload['json']!r}"
+    )
+
+
+@pytest.mark.model_backend
 def test_converse_stream_is_supported():
     class DummyEventStream:
         def __init__(self, events):
