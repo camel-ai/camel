@@ -164,3 +164,7 @@ class AzureBlobStorage(BaseObjectStorage):
             bool: Whether the object exists in the container.
         """
         return self._client.get_blob_client(file_key).exists()
+
+    def _delete_file(self, remote_file_key: str) -> None:
+        r"""Delete a file from the Azure Blob Storage container."""
+        self._client.delete_blob(remote_file_key)

@@ -16,6 +16,7 @@ from .base import BaseEmbedding
 from .gemini_embedding import GeminiEmbedding
 from .jina_embedding import JinaEmbedding
 from .mistral_embedding import MistralEmbedding
+from .multimodal_adapter import MultimodalEmbeddingAdapter
 from .openai_compatible_embedding import OpenAICompatibleEmbedding
 from .openai_embedding import OpenAIEmbedding
 from .sentence_transformers_embeddings import SentenceTransformerEncoder
@@ -33,4 +34,5 @@ __all__ = [
     "JinaEmbedding",
     "TogetherEmbedding",
     "GeminiEmbedding",
+    "MultimodalEmbeddingAdapter",
 ]

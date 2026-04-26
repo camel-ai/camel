@@ -15,12 +15,17 @@
 from .agent_memories import (
     ChatHistoryMemory,
     LongtermAgentMemory,
+    MultimodalAgentMemory,
     VectorDBMemory,
 )
 from .base import AgentMemory, BaseContextCreator, MemoryBlock
 from .blocks.chat_history_block import ChatHistoryBlock
+from .blocks.multimodal_vectordb_block import MultimodalVectorDBBlock
 from .blocks.vectordb_block import VectorDBBlock
+from .context_creators.multimodal import MultimodalContextCreator
 from .context_creators.score_based import ScoreBasedContextCreator
+from .media_asset_store import MediaAssetStore
+from .multimodal_metadata import MultimodalMetadata
 from .records import ContextRecord, MemoryRecord
 
 __all__ = [
@@ -30,9 +35,14 @@ __all__ = [
     "AgentMemory",
     'BaseContextCreator',
     'ScoreBasedContextCreator',
+    'MultimodalContextCreator',
     'ChatHistoryMemory',
     'VectorDBMemory',
     'ChatHistoryBlock',
     'VectorDBBlock',
     'LongtermAgentMemory',
+    'MultimodalAgentMemory',
+    'MultimodalVectorDBBlock',
+    'MultimodalMetadata',
+    'MediaAssetStore',
 ]

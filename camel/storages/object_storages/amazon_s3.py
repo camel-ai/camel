@@ -205,3 +205,9 @@ class AmazonS3Storage(BaseObjectStorage):
             return True
         except self._client.exceptions.ClientError:
             return False
+
+    def _delete_file(self, remote_file_key: str) -> None:
+        r"""Delete a file from the Amazon S3 bucket."""
+        self._client.delete_object(
+            Bucket=self._bucket_name, Key=remote_file_key
+        )
