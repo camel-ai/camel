@@ -17,6 +17,12 @@ from typing import List, Optional
 
 from camel.memories.base import AgentMemory, BaseContextCreator
 from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
+from camel.memories.context_creators.multimodal import (
+    MultimodalContextCreator,
+)
+from camel.memories.blocks.multimodal_vectordb_block import (
+    MultimodalVectorDBBlock,
+)
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.key_value_storages.base import BaseKeyValueStorage
 from camel.storages.vectordb_storages.base import BaseVectorStorage
@@ -318,4 +324,155 @@ class LongtermAgentMemory(AgentMemory):
         self, indices: List[int]
     ) -> List[MemoryRecord]:
         r"""Removes records at specified indices from chat history."""
+        return self.chat_history_block.remove_records_by_indices(indices)
+
+
+class MultimodalAgentMemory(AgentMemory):
+    r"""Agent memory with full multimodal support.
+
+    Combines :obj:`ChatHistoryBlock` (recency-based) with
+    :obj:`MultimodalVectorDBBlock` (semantic multimodal retrieval).
+    Structurally similar to :obj:`LongtermAgentMemory` but uses
+    multimodal-aware components.
+
+    Args:
+        context_creator: A model context creator. Recommended:
+            :obj:`ScoreBasedContextCreator` for standard use.
+        chat_history_block: Chat history block.
+            (default: None → creates default :obj:`ChatHistoryBlock`)
+        multimodal_vector_block: Multimodal vector block.
+            (default: None → creates default :obj:`MultimodalVectorDBBlock`)
+        retrieve_limit: Max vector retrieval results. (default: 3)
+        agent_id: Agent identifier.
+    """
+
+    def __init__(
+        self,
+        context_creator: BaseContextCreator,
+        chat_history_block: Optional[ChatHistoryBlock] = None,
+        multimodal_vector_block: Optional[MultimodalVectorDBBlock] = None,
+        retrieve_limit: int = 3,
+        agent_id: Optional[str] = None,
+    ) -> None:
+        self.chat_history_block = chat_history_block or ChatHistoryBlock()
+        self.multimodal_vector_block = (
+            multimodal_vector_block or MultimodalVectorDBBlock()
+        )
+        self.retrieve_limit = retrieve_limit
+        self._context_creator = context_creator
+        if (
+            isinstance(self._context_creator, MultimodalContextCreator)
+            and self._context_creator.media_store is None
+            and self.multimodal_vector_block.media_store is not None
+        ):
+            self._context_creator.bind_media_store(
+                self.multimodal_vector_block.media_store
+            )
+        self._current_topic: str = ""
+        self._current_query_images: List = []
+        self._current_query_audio: Optional[bytes] = None
+        self._agent_id = agent_id
+
+    @property
+    def agent_id(self) -> Optional[str]:
+        return self._agent_id
+
+    @agent_id.setter
+    def agent_id(self, val: Optional[str]) -> None:
+        self._agent_id = val
+
+    def get_context_creator(self) -> BaseContextCreator:
+        r"""Returns the context creator used by the memory.
+
+        Returns:
+            BaseContextCreator: The context creator used by the memory.
+        """
+        return self._context_creator
+
+    def retrieve(self) -> List[ContextRecord]:
+        r"""Retrieve from both chat history and multimodal vector store.
+
+        Follows :obj:`LongtermAgentMemory` pattern:
+        chat[:1] + vector_results + chat[1:]
+
+        When the topic is empty but images exist, uses the first image
+        as the retrieval query for cross-modal recall.
+
+        Returns:
+            List[ContextRecord]: A list of context records.
+        """
+        chat_history = self.chat_history_block.retrieve()
+
+        # Choose query: prefer text topic, then images, then audio
+        if self._current_topic:
+            query = self._current_topic
+        elif self._current_query_images:
+            query = self._current_query_images[0]
+        elif self._current_query_audio:
+            query = self._current_query_audio
+        else:
+            query = " "
+
+        vector_results = self.multimodal_vector_block.retrieve(
+            query,
+            limit=self.retrieve_limit,
+        )
+
+        # Interleave: system message + vector results + remaining chat
+        system_msg = chat_history[:1]
+        rest = chat_history[1:]
+        return system_msg + vector_results + rest
+
+    def write_records(self, records: List[MemoryRecord]) -> None:
+        r"""Write records to both chat history and vector store.
+
+        Args:
+            records: Memory records to write.
+        """
+        # Track topic from USER messages
+        for record in records:
+            if record.role_at_backend == OpenAIBackendRole.USER:
+                if record.message.content and record.message.content.strip():
+                    self._current_topic = record.message.content
+                    self._current_query_images = []
+                    self._current_query_audio = None
+                elif record.message.image_list:
+                    self._current_topic = ""
+                    self._current_query_images = record.message.image_list
+                    self._current_query_audio = None
+                elif getattr(record.message, "audio_bytes", None):
+                    self._current_topic = ""
+                    self._current_query_images = []
+                    self._current_query_audio = record.message.audio_bytes
+
+            # Propagate agent_id
+            if record.agent_id == "" and self.agent_id is not None:
+                record.agent_id = self.agent_id
+
+        # Write to both stores
+        self.chat_history_block.write_records(records)
+        self.multimodal_vector_block.write_records(
+            records, agent_id=self._agent_id or ""
+        )
+
+    def clear(self) -> None:
+        r"""Remove all records from both stores."""
+        self.chat_history_block.clear()
+        self.multimodal_vector_block.clear()
+        self._current_topic = ""
+        self._current_query_images = []
+        self._current_query_audio = None
+
+    def close(self) -> None:
+        r"""Release resources owned by multimodal memory."""
+        self.multimodal_vector_block.close()
+
+    def pop_records(self, count: int) -> List[MemoryRecord]:
+        r"""Remove recent chat history records."""
+        return self.chat_history_block.pop_records(count)
+
+    def remove_records_by_indices(
+        self, indices: List[int]
+    ) -> List[MemoryRecord]:
+        r"""Remove records at specified indices from chat history."""
         return self.chat_history_block.remove_records_by_indices(indices)

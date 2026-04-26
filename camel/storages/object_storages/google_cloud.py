@@ -150,3 +150,7 @@ class GoogleCloudStorage(BaseObjectStorage):
             bool: Whether the object exists in the bucket.
         """
         return self._client.blob(file_key).exists()
+
+    def _delete_file(self, remote_file_key: str) -> None:
+        r"""Delete a file from the GCloud bucket."""
+        self._client.blob(remote_file_key).delete()

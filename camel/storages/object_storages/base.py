@@ -88,6 +88,15 @@ class BaseObjectStorage(ABC):
         file_key, _ = self.canonicalize_path(remote_file_path)
         self._download_file(local_file_path, file_key)
 
+    def delete_file(self, remote_file_path: PurePath) -> None:
+        r"""Delete a file from the object storage.
+
+        Args:
+            remote_file_path (PurePath): The path to the object in storage.
+        """
+        file_key, _ = self.canonicalize_path(remote_file_path)
+        self._delete_file(file_key)
+
     @abstractmethod
     def _put_file(self, file_key: str, file: File) -> None:
         pass
@@ -112,4 +121,8 @@ class BaseObjectStorage(ABC):
         local_file_path: Path,
         remote_file_key: str,
     ) -> None:
+        pass
+
+    @abstractmethod
+    def _delete_file(self, remote_file_key: str) -> None:
         pass

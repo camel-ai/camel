@@ -2430,6 +2430,13 @@ class ChatAgent(BaseAgent):
                 )
             )
 
+    def close(self) -> None:
+        r"""Release resources owned by the agent."""
+        self.memory.close()
+        if self._context_summary_agent is not None:
+            self._context_summary_agent.close()
+            self._context_summary_agent = None
+
     def _generate_system_message_for_output_language(
         self,
     ) -> Optional[BaseMessage]:

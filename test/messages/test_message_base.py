@@ -142,6 +142,27 @@ def test_base_message():
     }
 
 
+def test_base_message_audio_to_dict_and_openai_user_message():
+    message = BaseMessage(
+        role_name="test_user",
+        role_type=RoleType.USER,
+        meta_dict=None,
+        content="listen to this",
+        audio_bytes=b"audio bytes",
+        audio_format="mp3",
+    )
+
+    dictionary = message.to_dict()
+    assert dictionary["audio_bytes"] == "YXVkaW8gYnl0ZXM="
+    assert dictionary["audio_format"] == "mp3"
+
+    openai_user_message = message.to_openai_user_message()
+    assert openai_user_message["role"] == "user"
+    assert isinstance(openai_user_message["content"], list)
+    assert openai_user_message["content"][1]["type"] == "input_audio"
+    assert openai_user_message["content"][1]["input_audio"]["format"] == "mp3"
+
+
 @pytest.mark.model_backend
 def test_roleplay_sharegpt_conversion():
     model = ModelFactory.create(

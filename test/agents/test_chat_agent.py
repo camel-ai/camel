@@ -188,6 +188,23 @@ def test_chat_agent_reset_clears_tool_output_history():
     assert assistant._tool_output_history == []
 
 
+def test_chat_agent_close_closes_memory_and_summary_agent():
+    model = DummyModel(ModelType.GPT_4O_MINI)
+    assistant = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+    )
+    assistant._memory = MagicMock()
+    summary_agent = MagicMock()
+    assistant._context_summary_agent = summary_agent
+
+    assistant.close()
+
+    assistant.memory.close.assert_called_once()
+    summary_agent.close.assert_called_once()
+    assert assistant._context_summary_agent is None
+
+
 def test_clean_snapshot_in_memory_skips_missing_records():
     model = DummyModel(ModelType.GPT_4O_MINI)
     assistant = ChatAgent(
