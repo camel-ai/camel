@@ -27,12 +27,28 @@ _agent_session_id_var: ContextVar[Optional[str]] = ContextVar(
 # Global flag to track if Langfuse has been configured
 _langfuse_configured = False
 
+LANGFUSE_AVAILABLE = False
+_langfuse_context = None
+
 try:
-    from langfuse.decorators import langfuse_context
+    # Langfuse v3+: langfuse_context was removed from langfuse.decorators
+    # Check if v3 API is available (Langfuse class with auth_check)
+    from langfuse import Langfuse as _LangfuseClient  # noqa: F401
 
     LANGFUSE_AVAILABLE = True
+    _LANGFUSE_V3 = True
 except ImportError:
-    LANGFUSE_AVAILABLE = False
+    _LANGFUSE_V3 = False
+
+if not LANGFUSE_AVAILABLE:
+    try:
+        # Langfuse v2: uses langfuse_context from decorators
+        from langfuse.decorators import langfuse_context as _langfuse_context
+
+        LANGFUSE_AVAILABLE = True
+        _LANGFUSE_V3 = False
+    except ImportError:
+        pass
 
 
 @dependencies_required('langfuse')
@@ -100,14 +116,24 @@ def configure_langfuse(
         _langfuse_configured = False
 
     try:
-        # Configure langfuse_context with native method
-        langfuse_context.configure(
-            public_key=public_key,
-            secret_key=secret_key,
-            host=host,
-            debug=debug,
-            enabled=True,  # Always True here since we checked enabled above
-        )
+        if _LANGFUSE_V3:
+            # Langfuse v3+: configure via environment variables
+            # The @observe() decorator reads these automatically
+            os.environ["LANGFUSE_PUBLIC_KEY"] = public_key
+            os.environ["LANGFUSE_SECRET_KEY"] = secret_key
+            os.environ["LANGFUSE_HOST"] = host
+            os.environ["LANGFUSE_ENABLED"] = "true"
+            if debug:
+                os.environ["LANGFUSE_DEBUG"] = "true"
+        elif _langfuse_context is not None:
+            # Langfuse v2: configure via langfuse_context
+            _langfuse_context.configure(
+                public_key=public_key,
+                secret_key=secret_key,
+                host=host,
+                debug=debug,
+                enabled=True,
+            )
 
         logger.info("Langfuse tracing enabled for CAMEL models")
 
