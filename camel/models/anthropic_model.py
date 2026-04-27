@@ -1104,6 +1104,42 @@ class AnthropicModel(BaseModelBackend):
 
         return cast(AsyncStream[ChatCompletionChunk], _generate_chunks())
 
+    @classmethod
+    def list_available_models(
+        cls,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        timeout: int = 30,
+    ) -> List[str]:
+        r"""List available model IDs from the Anthropic API.
+
+        Uses the Anthropic SDK with pagination support.
+
+        Args:
+            api_key (Optional[str], optional): The API key. If not
+                provided, reads from ``ANTHROPIC_API_KEY``.
+                (default: :obj:`None`)
+            url (Optional[str], optional): The base URL.
+                (default: :obj:`None`)
+            timeout (int, optional): Timeout in seconds.
+                (default: :obj:`30`)
+
+        Returns:
+            List[str]: A sorted list of available model ID strings.
+        """
+        from anthropic import Anthropic
+
+        api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+        url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
+        client = Anthropic(
+            api_key=api_key,
+            base_url=url,
+            timeout=float(timeout),
+            max_retries=0,
+        )
+        page = client.models.list(limit=1000)
+        return sorted(m.id for m in page.data)
+
     @property
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode, which sends partial

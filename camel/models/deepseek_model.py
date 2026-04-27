@@ -106,6 +106,10 @@ class DeepSeekModel(OpenAICompatibleModel):
         https://api-docs.deepseek.com/
     """
 
+    _API_KEY_ENV_VAR: str = "DEEPSEEK_API_KEY"
+    _BASE_URL_ENV_VAR: str = "DEEPSEEK_API_BASE_URL"
+    _DEFAULT_BASE_URL: str = "https://api.deepseek.com"
+
     @api_keys_required(
         [
             ("api_key", "DEEPSEEK_API_KEY"),
@@ -124,10 +128,9 @@ class DeepSeekModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = DeepSeekConfig().as_dict()
-        api_key = api_key or os.environ.get("DEEPSEEK_API_KEY")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
         url = url or os.environ.get(
-            "DEEPSEEK_API_BASE_URL",
-            "https://api.deepseek.com",
+            self._BASE_URL_ENV_VAR, self._DEFAULT_BASE_URL
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(

@@ -50,6 +50,10 @@ class VolcanoModel(InterleavedThinkingMixin, OpenAICompatibleModel):
             initialization.
     """
 
+    _API_KEY_ENV_VAR: str = "VOLCANO_API_KEY"
+    _BASE_URL_ENV_VAR: str = "VOLCANO_API_BASE_URL"
+    _DEFAULT_BASE_URL: str = "https://ark.cn-beijing.volces.com/api/v3"
+
     @api_keys_required(
         [
             ("api_key", "VOLCANO_API_KEY"),
@@ -69,11 +73,11 @@ class VolcanoModel(InterleavedThinkingMixin, OpenAICompatibleModel):
         if model_config_dict is None:
             model_config_dict = {}
 
-        api_key = api_key or os.environ.get("VOLCANO_API_KEY")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
         url = (
             url
-            or os.environ.get("VOLCANO_API_BASE_URL")
-            or "https://ark.cn-beijing.volces.com/api/v3"
+            or os.environ.get(self._BASE_URL_ENV_VAR)
+            or self._DEFAULT_BASE_URL
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
