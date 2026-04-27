@@ -1182,3 +1182,177 @@ def test_search_querit_empty_results(mock_post, search_toolkit):
     assert "results" in result
     assert len(result["results"]) == 0
     assert result["search_id"] == 12348
+
+
+# ----- search_exa --------------------------------------------------------
+
+
+def _exa_response_fixture():
+    return {
+        "requestId": "req-123",
+        "resolvedSearchType": "neural",
+        "results": [
+            {
+                "id": "https://example.com/a",
+                "url": "https://example.com/a",
+                "title": "Example A",
+                "score": 0.9,
+                "publishedDate": "2026-01-01",
+                "text": "full text body",
+                "highlights": ["snippet"],
+                "summary": "short summary",
+            }
+        ],
+        "costDollars": {"total": 0.01},
+    }
+
+
+@patch('exa_py.Exa')
+def test_search_exa_forwards_parameters(mock_exa_cls, search_toolkit):
+    """search_exa should forward filter/date/location params to the SDK."""
+    mock_client = MagicMock()
+    mock_client.headers = {}
+    mock_client.search.return_value = _exa_response_fixture()
+    mock_exa_cls.return_value = mock_client
+
+    with patch.dict(os.environ, {'EXA_API_KEY': 'fake_key'}):
+        result = search_toolkit.search_exa(
+            query="quantum computing",
+            search_type="neural",
+            category="research paper",
+            include_domains=["arxiv.org"],
+            exclude_domains=["spam.com"],
+            include_text=["entanglement"],
+            exclude_text=["clickbait"],
+            start_published_date="2026-01-01",
+            end_published_date="2026-04-01",
+            user_location="US",
+            number_of_result_pages=5,
+        )
+
+    assert "error" not in result
+    mock_client.search.assert_called_once()
+    kwargs = mock_client.search.call_args.kwargs
+    assert kwargs["query"] == "quantum computing"
+    assert kwargs["type"] == "neural"
+    assert kwargs["category"] == "research paper"
+    assert kwargs["include_domains"] == ["arxiv.org"]
+    assert kwargs["exclude_domains"] == ["spam.com"]
+    assert kwargs["include_text"] == ["entanglement"]
+    assert kwargs["exclude_text"] == ["clickbait"]
+    assert kwargs["start_published_date"] == "2026-01-01"
+    assert kwargs["end_published_date"] == "2026-04-01"
+    assert kwargs["user_location"] == "US"
+    assert kwargs["num_results"] == 5
+    # Unset SDK params should not be forwarded.
+    assert "use_autoprompt" not in kwargs
+
+
+@patch('exa_py.Exa')
+def test_search_exa_combines_content_modes(mock_exa_cls, search_toolkit):
+    """text, highlights, and summary should all coexist under contents."""
+    mock_client = MagicMock()
+    mock_client.headers = {}
+    mock_client.search.return_value = _exa_response_fixture()
+    mock_exa_cls.return_value = mock_client
+
+    with patch.dict(os.environ, {'EXA_API_KEY': 'fake_key'}):
+        search_toolkit.search_exa(
+            query="latency tuning",
+            text=True,
+            highlights=True,
+            summary=True,
+        )
+
+    contents = mock_client.search.call_args.kwargs["contents"]
+    assert contents == {
+        "text": True,
+        "highlights": True,
+        "summary": True,
+    }
+
+
+@patch('exa_py.Exa')
+def test_search_exa_summary_with_custom_query(mock_exa_cls, search_toolkit):
+    """A string summary should be sent as a custom-query summary spec."""
+    mock_client = MagicMock()
+    mock_client.headers = {}
+    mock_client.search.return_value = _exa_response_fixture()
+    mock_exa_cls.return_value = mock_client
+
+    with patch.dict(os.environ, {'EXA_API_KEY': 'fake_key'}):
+        search_toolkit.search_exa(
+            query="nvidia earnings",
+            summary="Summarize the revenue guidance",
+        )
+
+    contents = mock_client.search.call_args.kwargs["contents"]
+    assert contents == {"summary": {"query": "Summarize the revenue guidance"}}
+
+
+@patch('exa_py.Exa')
+def test_search_exa_omits_contents_when_unset(mock_exa_cls, search_toolkit):
+    """No contents kwarg should be sent when no content mode is requested."""
+    mock_client = MagicMock()
+    mock_client.headers = {}
+    mock_client.search.return_value = _exa_response_fixture()
+    mock_exa_cls.return_value = mock_client
+
+    with patch.dict(os.environ, {'EXA_API_KEY': 'fake_key'}):
+        search_toolkit.search_exa(query="anything")
+
+    assert "contents" not in mock_client.search.call_args.kwargs
+
+
+@patch('exa_py.Exa')
+def test_search_exa_sets_integration_header(mock_exa_cls, search_toolkit):
+    """The integration header must be set so Exa can attribute usage."""
+    mock_client = MagicMock()
+    mock_client.headers = {}
+    mock_client.search.return_value = _exa_response_fixture()
+    mock_exa_cls.return_value = mock_client
+
+    with patch.dict(os.environ, {'EXA_API_KEY': 'fake_key'}):
+        search_toolkit.search_exa(query="anything")
+
+    assert mock_client.headers.get("x-exa-integration") == "camel-ai"
+
+
+@patch('exa_py.Exa')
+def test_search_exa_use_autoprompt_warns_and_drops(
+    mock_exa_cls, search_toolkit
+):
+    """use_autoprompt is deprecated; it must warn and not reach the SDK."""
+    mock_client = MagicMock()
+    mock_client.headers = {}
+    mock_client.search.return_value = _exa_response_fixture()
+    mock_exa_cls.return_value = mock_client
+
+    with patch.dict(os.environ, {'EXA_API_KEY': 'fake_key'}):
+        with pytest.warns(DeprecationWarning):
+            search_toolkit.search_exa(query="anything", use_autoprompt=True)
+
+    assert "use_autoprompt" not in mock_client.search.call_args.kwargs
+
+
+@patch('exa_py.Exa')
+def test_search_exa_invalid_num_results(mock_exa_cls, search_toolkit):
+    """Out-of-range num_results returns an error dict and skips the call."""
+    mock_client = MagicMock()
+    mock_client.headers = {}
+    mock_exa_cls.return_value = mock_client
+
+    with patch.dict(os.environ, {'EXA_API_KEY': 'fake_key'}):
+        result = search_toolkit.search_exa(
+            query="anything", number_of_result_pages=0
+        )
+
+    assert "error" in result
+    mock_client.search.assert_not_called()
+
+
+def test_search_exa_disabled_without_api_key(search_toolkit):
+    """Without EXA_API_KEY, the api_keys_required decorator short-circuits."""
+    with patch.dict(os.environ, {}, clear=True):
+        with pytest.raises(ValueError, match="EXA_API_KEY"):
+            search_toolkit.search_exa(query="anything")
