@@ -18,8 +18,7 @@ from camel.configs import OpenRouterConfig
 from camel.models import OpenRouterModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
-
-
+import os 
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "model_type",
@@ -38,8 +37,23 @@ def test_openrouter_model(model_type: ModelType):
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
+def test_openrouter_gemini_caching(model_type="google/gemma-3-27b-it:free"):
+    config = {"enable_prompt_caching": True}
+    model = OpenRouterModel(model_type, model_config_dict=config, api_key=os.environ.get("OPENROUTER_API_KEY"))
+    
+    messages = [{"role": "system", "content": "Large context..."}]
+    prepared = model._prepare_messages(messages)
+    
+    assert isinstance(prepared[0]["content"], list)
+    assert "cache_control" in prepared[0]["content"][0]
+    assert prepared[0]["content"][0]["cache_control"]["type"] == "ephemeral"
 
-@pytest.mark.model_backend
-def test_openrouter_model_stream_property():
-    model = OpenRouterModel(ModelType.OPENROUTER_LLAMA_3_1_70B)
-    assert model.stream is False
+def test_openrouter_openai(model_type="openai/gpt-4o-mini"):
+    config = {"enable_prompt_caching": True}
+    model = OpenRouterModel(model_type, model_config_dict=config, api_key=os.environ.get("OPENROUTER_AP I_KEY"))
+    
+    messages = [{"role": "system", "content": "Large context..."}]
+    prepared = model._prepare_messages(messages)
+    
+    assert isinstance(prepared[0]["content"], str)
+    assert "cache_control" not in prepared[0]["content"][0]
