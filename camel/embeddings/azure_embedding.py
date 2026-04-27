@@ -22,7 +22,7 @@ from openai import AzureOpenAI
 
 from camel.embeddings.base import BaseEmbedding
 from camel.types import EmbeddingModelType
-from camel.utils import api_keys_required  # Add this import
+from camel.utils import api_keys_required, dependencies_required
 
 
 class AzureEmbedding(BaseEmbedding[str]):
@@ -52,6 +52,7 @@ class AzureEmbedding(BaseEmbedding[str]):
             ("url", 'AZURE_OPENAI_BASE_URL'),
         ]
     )
+    @dependencies_required('openai')
     def __init__(
         self,
         model_type: EmbeddingModelType = (

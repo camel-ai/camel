@@ -25,7 +25,7 @@ from PIL import Image
 
 from camel.embeddings import BaseEmbedding
 from camel.types.enums import EmbeddingModelType
-from camel.utils import api_keys_required
+from camel.utils import api_keys_required, dependencies_required
 
 
 class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
@@ -53,6 +53,7 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
     """
 
     @api_keys_required([("api_key", 'JINA_API_KEY')])
+    @dependencies_required('requests', 'PIL')
     def __init__(
         self,
         model_type: EmbeddingModelType = EmbeddingModelType.JINA_EMBEDDINGS_V3,

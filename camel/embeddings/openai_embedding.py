@@ -20,7 +20,7 @@ from openai import OpenAI
 
 from camel.embeddings.base import BaseEmbedding
 from camel.types import NOT_GIVEN, EmbeddingModelType, NotGiven
-from camel.utils import api_keys_required
+from camel.utils import api_keys_required, dependencies_required
 
 
 class OpenAIEmbedding(BaseEmbedding[str]):
@@ -46,6 +46,7 @@ class OpenAIEmbedding(BaseEmbedding[str]):
             ("api_key", 'OPENAI_API_KEY'),
         ]
     )
+    @dependencies_required('openai')
     def __init__(
         self,
         model_type: EmbeddingModelType = (

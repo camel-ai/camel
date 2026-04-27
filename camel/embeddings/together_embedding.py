@@ -18,7 +18,7 @@ from openai import OpenAI
 
 from camel.embeddings.base import BaseEmbedding
 from camel.logger import get_logger
-from camel.utils import api_keys_required
+from camel.utils import api_keys_required, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -42,6 +42,7 @@ class TogetherEmbedding(BaseEmbedding[str]):
     """
 
     @api_keys_required([("api_key", 'TOGETHER_API_KEY')])
+    @dependencies_required('openai')
     def __init__(
         self,
         model_type: str = "togethercomputer/m2-bert-80M-8k-retrieval",
