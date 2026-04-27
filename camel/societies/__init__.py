@@ -12,11 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from .babyagi_playing import BabyAGI
+from .map_reduce import MapReduceSociety
 from .role_playing import RolePlaying
 from .workforce import Workforce
 
 __all__ = [
     'RolePlaying',
     'BabyAGI',
+    'MapReduceSociety',
     'Workforce',
 ]
