@@ -1046,55 +1046,90 @@ class SearchToolkit(BaseToolkit):
     def search_exa(
         self,
         query: str,
-        search_type: Literal["auto", "neural", "keyword"] = "auto",
+        search_type: Literal[
+            "auto",
+            "neural",
+            "fast",
+            "instant",
+            "deep-lite",
+            "deep",
+            "deep-reasoning",
+        ] = "auto",
         category: Optional[
             Literal[
                 "company",
                 "research paper",
                 "news",
                 "pdf",
-                "github",
-                "tweet",
                 "personal site",
-                "linkedin profile",
                 "financial report",
+                "people",
             ]
         ] = None,
+        include_domains: Optional[List[str]] = None,
+        exclude_domains: Optional[List[str]] = None,
         include_text: Optional[List[str]] = None,
         exclude_text: Optional[List[str]] = None,
-        use_autoprompt: bool = True,
+        start_published_date: Optional[str] = None,
+        end_published_date: Optional[str] = None,
+        user_location: Optional[str] = None,
         text: bool = False,
+        highlights: bool = False,
+        summary: Union[bool, str] = False,
         number_of_result_pages: int = 10,
+        use_autoprompt: Optional[bool] = None,
     ) -> Dict[str, Any]:
         r"""Use Exa search API to perform intelligent web search with optional
         content extraction.
 
         Args:
             query (str): The search query string.
-            search_type (Literal["auto", "neural", "keyword"]): The type of
-                search to perform. "auto" automatically decides between keyword
-                and neural search. (default: :obj:`"auto"`)
-            category (Optional[Literal]): Category to focus the search on, such
-                as "research paper" or "news". (default: :obj:`None`)
-            include_text (Optional[List[str]]): Strings that must be present in
-                webpage text. Limited to 1 string of up to 5 words.
+            search_type (Literal): The search algorithm to use. ``"auto"``
+                (default) lets Exa pick; ``"neural"`` runs embedding-based
+                semantic search; ``"fast"`` and ``"instant"`` prioritize
+                latency; ``"deep-lite"``, ``"deep"``, and ``"deep-reasoning"``
+                run multi-step deep search. (default: :obj:`"auto"`)
+            category (Optional[Literal]): Category to focus the search on,
+                such as ``"research paper"`` or ``"news"``.
+                (default: :obj:`None`)
+            include_domains (Optional[List[str]]): Only include results from
+                these domains. (default: :obj:`None`)
+            exclude_domains (Optional[List[str]]): Exclude results from
+                these domains. (default: :obj:`None`)
+            include_text (Optional[List[str]]): Strings that must be present
+                in webpage text. Limited to 1 string of up to 5 words.
                 (default: :obj:`None`)
             exclude_text (Optional[List[str]]): Strings that must not be
-                present in webpage text. Limited to 1 string of up to 5 words.
+                present in webpage text. Limited to 1 string of up to 5
+                words. (default: :obj:`None`)
+            start_published_date (Optional[str]): Only return results
+                published after this ISO 8601 date.
                 (default: :obj:`None`)
-            use_autoprompt (bool): Whether to use Exa's autoprompt feature to
-                enhance the query. (default: :obj:`True`)
-            text (bool): Whether to include webpage contents in results.
+            end_published_date (Optional[str]): Only return results
+                published before this ISO 8601 date.
+                (default: :obj:`None`)
+            user_location (Optional[str]): Two-letter ISO country code used
+                to localize results (e.g. ``"US"``). (default: :obj:`None`)
+            text (bool): Whether to include full webpage text in results.
+                (default: :obj:`False`)
+            highlights (bool): Whether to include LLM-selected highlight
+                snippets in results. (default: :obj:`False`)
+            summary (Union[bool, str]): If ``True``, include an
+                LLM-generated summary of each result. If a string, use it
+                as a custom prompt directing the summary.
                 (default: :obj:`False`)
             number_of_result_pages (int): The number of result pages to
                 retrieve. Must be between 1 and 100. Adjust this based on
                 your task - use fewer results for focused searches and more
                 for comprehensive searches. (default: :obj:`10`)
+            use_autoprompt (Optional[bool]): Deprecated. The Exa API no
+                longer accepts ``use_autoprompt``; pass ``search_type="auto"``
+                instead. Setting this argument is ignored and emits a
+                ``DeprecationWarning``. (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: A dict containing search results and metadata:
                 - requestId (str): Unique identifier for the request
-                - autopromptString (str): Generated autoprompt if enabled
                 - autoDate (str): Timestamp of autoprompt generation
                 - resolvedSearchType (str): The actual search type used
                 - results (List[Dict]): List of search results with metadata
@@ -1105,8 +1140,18 @@ class SearchToolkit(BaseToolkit):
 
         EXA_API_KEY = os.getenv("EXA_API_KEY")
 
+        if use_autoprompt is not None:
+            warnings.warn(
+                "use_autoprompt is deprecated and ignored; the Exa API no "
+                "longer accepts it. Use search_type='auto' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         try:
             exa = Exa(EXA_API_KEY)
+            # Attribute API usage to this integration so Exa can track it.
+            exa.headers["x-exa-integration"] = "camel-ai"
 
             if (
                 number_of_result_pages is not None
@@ -1130,35 +1175,39 @@ class SearchToolkit(BaseToolkit):
                         "exclude_text string cannot be longer than 5 words"
                     )
 
-            # Call Exa API with direct parameters
+            # Build a single contents dict so text/highlights/summary can be
+            # combined in one request.
+            contents: Dict[str, Any] = {}
             if text:
-                results = cast(
-                    Dict[str, Any],
-                    exa.search_and_contents(
-                        query=query,
-                        type=search_type,
-                        category=category,
-                        num_results=number_of_result_pages,
-                        include_text=include_text,
-                        exclude_text=exclude_text,
-                        use_autoprompt=use_autoprompt,
-                        text=True,
-                    ),
-                )
-            else:
-                results = cast(
-                    Dict[str, Any],
-                    exa.search(
-                        query=query,
-                        type=search_type,
-                        category=category,
-                        num_results=number_of_result_pages,
-                        include_text=include_text,
-                        exclude_text=exclude_text,
-                        use_autoprompt=use_autoprompt,
-                    ),
+                contents["text"] = True
+            if highlights:
+                contents["highlights"] = True
+            if summary:
+                contents["summary"] = (
+                    {"query": summary} if isinstance(summary, str) else True
                 )
 
+            search_kwargs: Dict[str, Any] = {
+                "query": query,
+                "type": search_type,
+                "category": category,
+                "num_results": number_of_result_pages,
+                "include_domains": include_domains,
+                "exclude_domains": exclude_domains,
+                "include_text": include_text,
+                "exclude_text": exclude_text,
+                "start_published_date": start_published_date,
+                "end_published_date": end_published_date,
+                "user_location": user_location,
+            }
+            # Drop unset kwargs so the SDK uses its own defaults.
+            search_kwargs = {
+                k: v for k, v in search_kwargs.items() if v is not None
+            }
+            if contents:
+                search_kwargs["contents"] = contents
+
+            results = cast(Dict[str, Any], exa.search(**search_kwargs))
             return results
 
         except Exception as e:
