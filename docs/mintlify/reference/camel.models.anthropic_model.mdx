@@ -86,6 +86,124 @@ def supports_tool_response_format(self):
 
 Anthropic JSON outputs are independent from strict tool use.
 
+<a id="camel.models.anthropic_model.AnthropicModel._get_block_value"></a>
+
+### _get_block_value
+
+```python
+def _get_block_value(block: Any, key: str, default: Any = None):
+```
+
+Read a content block value from a dict or SDK object.
+
+<a id="camel.models.anthropic_model.AnthropicModel._content_block_to_dict"></a>
+
+### _content_block_to_dict
+
+```python
+def _content_block_to_dict(cls, block: Any):
+```
+
+Convert an Anthropic content block to a plain dictionary.
+
+<a id="camel.models.anthropic_model.AnthropicModel._extract_thinking_blocks_from_message"></a>
+
+### _extract_thinking_blocks_from_message
+
+```python
+def _extract_thinking_blocks_from_message(cls, message: OpenAIMessage):
+```
+
+Extract raw Anthropic thinking blocks from an OpenAI message.
+
+<a id="camel.models.anthropic_model.AnthropicModel._get_tool_call_id"></a>
+
+### _get_tool_call_id
+
+```python
+def _get_tool_call_id(tool_call: Any):
+```
+
+Extract an OpenAI-style tool call ID from a dict or SDK object.
+
+<a id="camel.models.anthropic_model.AnthropicModel._get_tool_call_extra_content"></a>
+
+### _get_tool_call_extra_content
+
+```python
+def _get_tool_call_extra_content(cls, tool_call: Any):
+```
+
+Extract non-standard extra content from a tool call.
+
+<a id="camel.models.anthropic_model.AnthropicModel._extract_thinking_blocks_from_tool_call"></a>
+
+### _extract_thinking_blocks_from_tool_call
+
+```python
+def _extract_thinking_blocks_from_tool_call(cls, tool_call: Any):
+```
+
+Extract raw Anthropic thinking blocks from tool extra content.
+
+<a id="camel.models.anthropic_model.AnthropicModel._get_cached_thinking_blocks_for_tool_calls"></a>
+
+### _get_cached_thinking_blocks_for_tool_calls
+
+```python
+def _get_cached_thinking_blocks_for_tool_calls(self, tool_calls: List[Any]):
+```
+
+Return cached thinking blocks for the first matching tool call.
+
+<a id="camel.models.anthropic_model.AnthropicModel._cache_thinking_blocks_for_tool_calls"></a>
+
+### _cache_thinking_blocks_for_tool_calls
+
+```python
+def _cache_thinking_blocks_for_tool_calls(
+    self,
+    thinking_blocks: List[Dict[str, Any]],
+    tool_calls: List[Any]
+):
+```
+
+Cache raw thinking blocks for Anthropic tool-use continuation.
+
+<a id="camel.models.anthropic_model.AnthropicModel._is_thinking_enabled"></a>
+
+### _is_thinking_enabled
+
+```python
+def _is_thinking_enabled(thinking: Any):
+```
+
+Return whether an Anthropic thinking config enables thinking.
+
+<a id="camel.models.anthropic_model.AnthropicModel._validate_tool_choice_for_thinking"></a>
+
+### _validate_tool_choice_for_thinking
+
+```python
+def _validate_tool_choice_for_thinking(self, thinking: Any, tool_choice: Any):
+```
+
+Validate Anthropic's tool-choice limitation for thinking.
+
+<a id="camel.models.anthropic_model.AnthropicModel._build_request_output_config"></a>
+
+### _build_request_output_config
+
+```python
+def _build_request_output_config(
+    self,
+    response_format: Optional[Type[BaseModel]],
+    extra_body: Dict[str, Any]
+):
+```
+
+Build Anthropic output_config from config and response_format.
+
 <a id="camel.models.anthropic_model.AnthropicModel._convert_openai_to_anthropic_messages"></a>
 
 ### _convert_openai_to_anthropic_messages
@@ -165,7 +283,8 @@ def _convert_anthropic_stream_to_openai_chunk(
     chunk: Any,
     model: str,
     tool_call_index: Dict[str, int],
-    finish_reason_sent: bool = False
+    finish_reason_sent: bool = False,
+    thinking_state: Optional[Dict[str, Any]] = None
 ):
 ```
 
