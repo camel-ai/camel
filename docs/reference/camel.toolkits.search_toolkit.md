@@ -12,7 +12,7 @@ A class representing a toolkit for web search.
 
 This class provides methods for searching information on the web using
 search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave,
-Querit.
+Perplexity.
 
 <a id="camel.toolkits.search_toolkit.SearchToolkit.__init__"></a>
 
@@ -597,6 +597,49 @@ such as site names, favicons, and page ages.
 - 'search_id' (int): A unique request reference ID.
 - 'took' (str): The server-side response time.
 - or 'error' (str): An error message if something went wrong.
+
+<a id="camel.toolkits.search_toolkit.SearchToolkit.search_perplexity"></a>
+
+### search_perplexity
+
+```python
+def search_perplexity(
+    self,
+    query: str,
+    max_results: int = 10,
+    max_tokens_per_page: Optional[int] = None,
+    country: Optional[str] = None,
+    search_recency_filter: Optional[Literal['hour', 'day', 'week', 'month', 'year']] = None,
+    search_domain_filter: Optional[List[str]] = None,
+    search_language_filter: Optional[List[str]] = None,
+    last_updated_after_filter: Optional[str] = None,
+    last_updated_before_filter: Optional[str] = None,
+    search_after_date_filter: Optional[str] = None,
+    search_before_date_filter: Optional[str] = None,
+) -> Dict[str, Any]:
+```
+
+Use Perplexity Search API to retrieve web search results.
+
+See https://docs.perplexity.ai/api-reference/search-post for details.
+
+**Parameters:**
+
+- **query** (str): The search query string.
+- **max_results** (int): Maximum number of results to return. Must be between 1 and 20. (default: :obj:`10`)
+- **max_tokens_per_page** (Optional[int]): Maximum number of tokens to include from each result page (between 1 and 1,000,000). (default: :obj:`None`)
+- **country** (Optional[str]): ISO 3166-1 alpha-2 country code used to bias results to a specific country. (default: :obj:`None`)
+- **search_recency_filter** (Optional[Literal['hour', 'day', 'week', 'month', 'year']]): Filter results by recency. (default: :obj:`None`)
+- **search_domain_filter** (Optional[List[str]]): Up to 20 domains to restrict the search to. (default: :obj:`None`)
+- **search_language_filter** (Optional[List[str]]): ISO 639-1 language codes to restrict the search to. (default: :obj:`None`)
+- **last_updated_after_filter** (Optional[str]): Only include results last updated after this date (format: `MM/DD/YYYY`). (default: :obj:`None`)
+- **last_updated_before_filter** (Optional[str]): Only include results last updated before this date (format: `MM/DD/YYYY`). (default: :obj:`None`)
+- **search_after_date_filter** (Optional[str]): Only include results published after this date (format: `MM/DD/YYYY`). (default: :obj:`None`)
+- **search_before_date_filter** (Optional[str]): Only include results published before this date (format: `MM/DD/YYYY`). (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: The Perplexity Search API response. On success, contains a `results` list (each entry includes `title`, `url`, `snippet`, `date`, `last_updated`) along with `id` and `server_time` fields. On failure, returns a dictionary with an `error` key.
 
 <a id="camel.toolkits.search_toolkit.SearchToolkit.get_tools"></a>
 
