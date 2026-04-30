@@ -379,6 +379,30 @@ class AnthropicModel(BaseModelBackend):
             "`tool_choice={'type': 'none'}`."
         )
 
+    def _validate_sampling_for_thinking(self, thinking: Any) -> None:
+        r"""Validate Anthropic sampling limitations for thinking."""
+        if not self._is_thinking_enabled(thinking):
+            return
+
+        if self.model_config_dict.get("temperature") is not None:
+            raise ValueError(
+                "Anthropic extended thinking is not compatible with "
+                "`temperature`."
+            )
+        if self.model_config_dict.get("top_k") is not None:
+            raise ValueError(
+                "Anthropic extended thinking is not compatible with `top_k`."
+            )
+
+        top_p = self.model_config_dict.get("top_p")
+        if top_p is None:
+            return
+        if not isinstance(top_p, (int, float)) or not 0.95 <= top_p <= 1:
+            raise ValueError(
+                "Anthropic extended thinking only supports `top_p` values "
+                "between 0.95 and 1."
+            )
+
     def _build_request_output_config(
         self,
         response_format: Optional[Type[BaseModel]],
@@ -1106,6 +1130,7 @@ class AnthropicModel(BaseModelBackend):
 
         thinking = self.model_config_dict.get("thinking")
         if thinking is not None:
+            self._validate_sampling_for_thinking(thinking)
             request_params["thinking"] = copy.deepcopy(thinking)
 
         # Convert tools first so we know whether tools are present
@@ -1251,6 +1276,7 @@ class AnthropicModel(BaseModelBackend):
 
         thinking = self.model_config_dict.get("thinking")
         if thinking is not None:
+            self._validate_sampling_for_thinking(thinking)
             request_params["thinking"] = copy.deepcopy(thinking)
 
         # Convert tools first so we know whether tools are present
