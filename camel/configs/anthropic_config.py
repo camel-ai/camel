@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from camel.configs.base_config import BaseConfig
 
@@ -63,6 +63,13 @@ class AnthropicConfig(BaseConfig):
         cache_control (Optional[Literal["5m", "1h"]], optional): The cache
             control TTL for prompt caching. Use '5m' for 5-minute cache or
             '1h' for 1-hour cache. (default: :obj:`None`)
+        thinking (dict, optional): Extended thinking configuration for Claude
+            models, such as :obj:`{"type": "enabled",
+            "budget_tokens": 1024}` or :obj:`{"type": "adaptive"}`.
+            (default: :obj:`None`)
+        output_config (dict, optional): Anthropic output configuration. This
+            can be used with adaptive thinking to set effort, or with
+            structured outputs. (default: :obj:`None`)
         extra_headers (Optional[dict], optional): Additional headers for the
             request. (default: :obj:`None`)
         extra_body (dict, optional): Extra body parameters to be passed to
@@ -78,6 +85,8 @@ class AnthropicConfig(BaseConfig):
     metadata: Optional[dict] = None
     tool_choice: Optional[dict] = None
     cache_control: Optional[Literal["5m", "1h"]] = None
+    thinking: Optional[Dict[str, Any]] = None
+    output_config: Optional[Dict[str, Any]] = None
     extra_headers: Optional[dict] = None
     extra_body: Optional[dict] = None
 
