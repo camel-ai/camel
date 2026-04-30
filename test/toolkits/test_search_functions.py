@@ -1182,3 +1182,152 @@ def test_search_querit_empty_results(mock_post, search_toolkit):
     assert "results" in result
     assert len(result["results"]) == 0
     assert result["search_id"] == 12348
+
+
+# ==================== Perplexity Search Tests ====================
+
+
+@patch('requests.post')
+def test_search_perplexity_success(mock_post, search_toolkit):
+    """Test successful Perplexity search."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "id": "abc123",
+        "server_time": "2026-04-30T00:00:00Z",
+        "results": [
+            {
+                "title": "CAMEL-AI",
+                "url": "https://www.camel-ai.org/",
+                "snippet": "CAMEL-AI is an open-source framework...",
+                "date": "2025-01-15",
+                "last_updated": "2025-03-01",
+            },
+            {
+                "title": "camel-ai/camel",
+                "url": "https://github.com/camel-ai/camel",
+                "snippet": "Multi-agent framework...",
+                "date": "2024-11-10",
+                "last_updated": "2025-04-01",
+            },
+        ],
+    }
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'PERPLEXITY_API_KEY': 'fake_api_key'}):
+        result = search_toolkit.search_perplexity(query="CAMEL-AI")
+
+    assert "results" in result
+    assert len(result["results"]) == 2
+    assert result["id"] == "abc123"
+    assert result["results"][0]["url"] == "https://www.camel-ai.org/"
+
+    mock_post.assert_called_once()
+    args, kwargs = mock_post.call_args
+    assert args[0] == "https://api.perplexity.ai/search"
+    assert kwargs['headers']['Authorization'] == 'Bearer fake_api_key'
+    assert kwargs['headers']['Content-Type'] == 'application/json'
+    # Attribution header must be present and use the camel-ai slug.
+    assert 'X-Pplx-Integration' in kwargs['headers']
+    assert kwargs['headers']['X-Pplx-Integration'].startswith('camel-ai/')
+    assert kwargs['json']['query'] == "CAMEL-AI"
+    assert kwargs['json']['max_results'] == 10
+    assert 'timeout' in kwargs
+
+
+@patch('requests.post')
+def test_search_perplexity_with_filters(mock_post, search_toolkit):
+    """Test Perplexity search with all filter parameters."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "id": "def456",
+        "server_time": "2026-04-30T00:00:00Z",
+        "results": [],
+    }
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'PERPLEXITY_API_KEY': 'fake_api_key'}):
+        search_toolkit.search_perplexity(
+            query="AI agents",
+            max_results=5,
+            max_tokens_per_page=2048,
+            country="US",
+            search_recency_filter="month",
+            search_domain_filter=["github.com"],
+            search_language_filter=["en"],
+            last_updated_after_filter="01/01/2025",
+            last_updated_before_filter="12/31/2025",
+            search_after_date_filter="01/01/2024",
+            search_before_date_filter="12/31/2025",
+        )
+
+    call_args = mock_post.call_args
+    payload = call_args[1]['json']
+
+    assert payload["query"] == "AI agents"
+    assert payload["max_results"] == 5
+    assert payload["max_tokens_per_page"] == 2048
+    assert payload["country"] == "US"
+    assert payload["search_recency_filter"] == "month"
+    assert payload["search_domain_filter"] == ["github.com"]
+    assert payload["search_language_filter"] == ["en"]
+    assert payload["last_updated_after_filter"] == "01/01/2025"
+    assert payload["last_updated_before_filter"] == "12/31/2025"
+    assert payload["search_after_date_filter"] == "01/01/2024"
+    assert payload["search_before_date_filter"] == "12/31/2025"
+
+
+@patch('requests.post')
+def test_search_perplexity_omits_unset_optional_params(
+    mock_post, search_toolkit
+):
+    """Test Perplexity search omits optional params when not set."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "id": "ghi789",
+        "server_time": "2026-04-30T00:00:00Z",
+        "results": [],
+    }
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'PERPLEXITY_API_KEY': 'fake_api_key'}):
+        search_toolkit.search_perplexity(query="test")
+
+    payload = mock_post.call_args[1]['json']
+    assert payload == {"query": "test", "max_results": 10}
+
+
+@patch('requests.post')
+def test_search_perplexity_http_error(mock_post, search_toolkit):
+    """Test HTTP error handling in Perplexity search."""
+    mock_response = MagicMock()
+    mock_response.status_code = 401
+    mock_response.text = '{"error": "Unauthorized"}'
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'PERPLEXITY_API_KEY': 'invalid_key'}):
+        result = search_toolkit.search_perplexity(query="test")
+
+    assert "error" in result
+    assert "401" in result["error"]
+
+
+@patch('requests.post')
+def test_search_perplexity_request_exception(mock_post, search_toolkit):
+    """Test request exception handling in Perplexity search."""
+    mock_post.side_effect = requests.exceptions.Timeout("Connection timed out")
+
+    with patch.dict(os.environ, {'PERPLEXITY_API_KEY': 'fake_key'}):
+        result = search_toolkit.search_perplexity(query="test")
+
+    assert "error" in result
+    assert "Perplexity search request failed" in result["error"]
+
+
+def test_search_perplexity_missing_api_key(search_toolkit):
+    """Test that missing PERPLEXITY_API_KEY raises a clear error."""
+    with patch.dict(os.environ, {}, clear=True):
+        with pytest.raises(ValueError):
+            search_toolkit.search_perplexity(query="test")
