@@ -12,6 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
+
 from camel.agents import ChatAgent
 from camel.configs import AnthropicConfig
 from camel.models import ModelFactory
@@ -32,6 +34,8 @@ def create_anthropic_model(stream: bool = False):
     return ModelFactory.create(
         model_platform=ModelPlatformType.ANTHROPIC,
         model_type=ModelType.CLAUDE_OPUS_4_7,
+        api_key=os.environ["ANTHROPIC_API_KEY"],
+        url="https://zenmux.ai/api/anthropic",
         model_config_dict=model_config,
     )
 
