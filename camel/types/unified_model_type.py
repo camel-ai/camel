@@ -19,6 +19,8 @@ from typing import TYPE_CHECKING, ClassVar, Dict, Union, cast
 if TYPE_CHECKING:
     from camel.types import ModelType
 
+logger = logging.getLogger(__name__)
+
 
 class UnifiedModelType(str):
     r"""Class used for support both :obj:`ModelType` and :obj:`str` to be used
@@ -31,6 +33,7 @@ class UnifiedModelType(str):
 
     _cache: ClassVar[Dict[str, "UnifiedModelType"]] = {}
     _lock: ClassVar[Lock] = Lock()
+    _token_limit_warning_emitted: ClassVar[bool] = False
 
     def __new__(cls, value: Union["ModelType", str]) -> "UnifiedModelType":
         if isinstance(value, Enum):
@@ -48,6 +51,19 @@ class UnifiedModelType(str):
 
     def __init__(self, value: Union["ModelType", str]) -> None:
         pass
+
+    @classmethod
+    def _warn_unknown_token_limit_once(cls, model_name: str) -> None:
+        with cls._lock:
+            if cls._token_limit_warning_emitted:
+                return
+            cls._token_limit_warning_emitted = True
+
+        logger.warning(
+            "Unknown model '%s': context window size not defined. "
+            "Defaulting to 999_999_999.",
+            model_name,
+        )
 
     def __repr__(self) -> str:
         return super().__str__()
@@ -67,11 +83,7 @@ class UnifiedModelType(str):
         For unknown model types not defined in ModelType enum, this returns
         a default value of 999_999_999 tokens.
         """
-        logging.warning(
-            "Unknown model '%s': context window size not defined. "
-            "Defaulting to 999_999_999.",
-            str(self),
-        )
+        self._warn_unknown_token_limit_once(str(self))
         return 999_999_999
 
     @property

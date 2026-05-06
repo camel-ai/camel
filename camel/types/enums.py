@@ -52,6 +52,11 @@ class ModelType(UnifiedModelType, Enum):
     GPT_5_1 = "gpt-5.1"
     GPT_5_2 = "gpt-5.2"
     GPT_5_4 = "gpt-5.4"
+    GPT_5_4_MINI = "gpt-5.4-mini-2026-03-17"
+    GPT_5_4_NANO = "gpt-5.4-nano-2026-03-17"
+    GPT_5_4_PRO = "gpt-5.5-pro-2026-04-23"
+    GPT_5_5 = "gpt-5.5"
+    GPT_5_5_PRO = "gpt-5.5-pro-2026-04-23"
     GPT_5 = "gpt-5"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
@@ -223,10 +228,12 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_SONNET_4_5 = "claude-sonnet-4-5"
     CLAUDE_OPUS_4_5 = "claude-opus-4-5"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
+    CLAUDE_SONNET_4_6 = "claude-sonnet-4-6"
     CLAUDE_HAIKU_4_5 = "claude-haiku-4-5"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
     CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
     CLAUDE_OPUS_4_6 = "claude-opus-4-6"
+    CLAUDE_OPUS_4_7 = "claude-opus-4-7"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -332,6 +339,8 @@ class ModelType(UnifiedModelType, Enum):
     YI_LARGE_FC = "yi-large-fc"
 
     # DeepSeek models
+    DEEPSEEK_V4_FLASH = "deepseek-v4-flash"
+    DEEPSEEK_V4_PRO = "deepseek-v4-pro"
     DEEPSEEK_CHAT = "deepseek-chat"
     DEEPSEEK_REASONER = "deepseek-reasoner"
     # InternLM models
@@ -634,6 +643,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_5_1,
             ModelType.GPT_5_2,
             ModelType.GPT_5_4,
+            ModelType.GPT_5_4_MINI,
+            ModelType.GPT_5_4_NANO,
+            ModelType.GPT_5_4_PRO,
+            ModelType.GPT_5_5,
+            ModelType.GPT_5_5_PRO,
         }
 
     @property
@@ -999,6 +1013,8 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def is_deepseek(self) -> bool:
         return self in {
+            ModelType.DEEPSEEK_V4_FLASH,
+            ModelType.DEEPSEEK_V4_PRO,
             ModelType.DEEPSEEK_CHAT,
             ModelType.DEEPSEEK_REASONER,
         }
@@ -1646,10 +1662,10 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.GPT_5_1,
             ModelType.GPT_5_2,
-            ModelType.GPT_5_4,
             ModelType.GPT_5_MINI,
             ModelType.GPT_5_NANO,
-            ModelType.GPT_5,
+            ModelType.GPT_5_4_MINI,
+            ModelType.GPT_5_4_NANO,
         }:
             return 400_000
         elif self in {
@@ -1683,6 +1699,14 @@ class ModelType(UnifiedModelType, Enum):
             return 1_048_576
         elif self in {
             ModelType.QWEN_3_CODER_PLUS,
+            ModelType.CLAUDE_SONNET_4_6,
+            ModelType.CLAUDE_OPUS_4_7,
+            ModelType.DEEPSEEK_V4_FLASH,
+            ModelType.DEEPSEEK_V4_PRO,
+            ModelType.GPT_5_4,
+            ModelType.GPT_5_4_PRO,
+            ModelType.GPT_5_5,
+            ModelType.GPT_5_5_PRO,
         }:
             return 1_000_000
         elif self in {
@@ -1938,6 +1962,7 @@ class ModelPlatformType(Enum):
     FUNCTION_GEMMA = "function-gemma"
     AVIAN = "avian"
     ATLASCLOUD = "atlascloud"
+    XAI = "xai"
 
     @classmethod
     def from_name(cls, name):

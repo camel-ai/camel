@@ -177,6 +177,39 @@ def test_worktree_reentry_returns_error():
         toolkit.worktree_remove_worktree()
 
 
+def test_worktree_remove_failure_preserves_state(monkeypatch, tmp_path):
+    repo = tmp_path / "repo"
+    worktree = tmp_path / "repo-worktree"
+    repo.mkdir()
+    worktree.mkdir()
+
+    toolkit = PlanningWorktreeToolkit(working_directory=str(worktree))
+    toolkit.current_worktree_path = worktree
+
+    def fake_run_git(*args, cwd=None):
+        if args == ("rev-parse", "--show-toplevel"):
+            return subprocess.CompletedProcess(args, 0, f"{repo}\n", "")
+        if args == ("rev-parse", "--abbrev-ref", "HEAD"):
+            return subprocess.CompletedProcess(args, 0, "camel/test\n", "")
+        if args == ("worktree", "list", "--porcelain"):
+            return subprocess.CompletedProcess(
+                args, 0, f"worktree {repo}\nworktree {worktree}\n", ""
+            )
+        if args[:2] == ("worktree", "remove"):
+            return subprocess.CompletedProcess(args, 1, "", "remove failed")
+        if args[:2] == ("branch", "-d"):
+            return subprocess.CompletedProcess(args, 0, "", "")
+        raise AssertionError(f"unexpected git call: {args} cwd={cwd}")
+
+    monkeypatch.setattr(toolkit, "_run_git", fake_run_git)
+
+    result = toolkit.worktree_remove_worktree()
+
+    assert "error" in result
+    assert toolkit.current_worktree_path == worktree
+    assert toolkit.working_directory == worktree.resolve()
+
+
 def test_concurrent_plan_mode_enter_exit():
     """Multiple agents can independently enter and exit plan mode."""
     with tempfile.TemporaryDirectory() as temp_dir:
