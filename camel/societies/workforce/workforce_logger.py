@@ -20,6 +20,7 @@ from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
     LogEvent,
     QueueStatusEvent,
+    StreamChunkEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -56,6 +57,17 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         r"""Logs a message to the console with color."""
         colored_message = self._get_color_message(event)
         print(colored_message)
+
+    def log_stream_chunk(self, event: StreamChunkEvent) -> None:
+        r"""Logs streaming chunk events."""
+        self._log_event(
+            event_type=event.event_type,
+            text=event.text,
+            stream_accumulate_mode=event.stream_accumulate_mode,
+            task_id=event.task_id,
+            worker_id=event.worker_id,
+            metadata=event.metadata or {},
+        )
 
     def _log_event(self, event_type: str, **kwargs: Any) -> None:
         r"""Internal method to create and store a log entry.

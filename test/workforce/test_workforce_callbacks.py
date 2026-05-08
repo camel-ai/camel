@@ -18,9 +18,11 @@ import pytest
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
+from camel.responses import ChatAgentResponse
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
     LogEvent,
+    StreamChunkEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -48,6 +50,9 @@ class _NonMetricsCallback(WorkforceCallback):
 
     def log_message(self, event: LogEvent) -> None:
         pass
+
+    def log_stream_chunk(self, event: StreamChunkEvent) -> None:
+        self.events.append(event)
 
     # Task events
     def log_task_created(self, event: TaskCreatedEvent) -> None:
@@ -95,6 +100,9 @@ class _MetricsCallback(WorkforceCallback, WorkforceMetrics):
 
     def log_message(self, event: LogEvent) -> None:
         pass
+
+    def log_stream_chunk(self, event: StreamChunkEvent) -> None:
+        self.events.append(event)
 
     # WorkforceMetrics interface
     def reset_task_data(self) -> None:
@@ -186,6 +194,92 @@ def test_workforce_callback_registration_and_metrics_handling():
         Workforce("CB Test - Invalid", callbacks=[object()])
 
 
+@pytest.mark.asyncio
+async def test_workforce_callback_receives_internal_stream_chunk_events():
+    callback = _NonMetricsCallback()
+    workforce = Workforce("CB Stream Test", callbacks=[callback])
+
+    first_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate"},
+    )
+    second_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello world",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate"},
+    )
+
+    workforce._on_stream_callback(
+        first_chunk,
+    )
+    workforce._on_stream_callback(
+        second_chunk,
+    )
+
+    stream_events = [
+        event
+        for event in callback.events
+        if isinstance(event, StreamChunkEvent)
+    ]
+    assert [
+        (
+            event.task_id,
+            event.worker_id,
+            event.text,
+            event.stream_accumulate_mode,
+        )
+        for event in stream_events
+    ] == [
+        (None, None, "Hello", "accumulate"),
+        (None, None, " world", "accumulate"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_workforce_callback_receives_worker_stream_chunk_events():
+    callback = _NonMetricsCallback()
+    workforce = Workforce("CB Worker Stream Test", callbacks=[callback])
+
+    chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="partial",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "delta"},
+    )
+
+    await workforce._on_worker_stream_chunk(chunk, "worker-1", "task-1")
+
+    stream_events = [
+        event
+        for event in callback.events
+        if isinstance(event, StreamChunkEvent)
+    ]
+    assert [
+        (
+            event.task_id,
+            event.worker_id,
+            event.text,
+            event.stream_accumulate_mode,
+        )
+        for event in stream_events
+    ] == [("task-1", "worker-1", "partial", "delta")]
+
+
 def assert_event_sequence(
     events: list[type[WorkforceEvent]], min_worker_count: int
 ):
@@ -260,6 +354,7 @@ def assert_event_sequence(
     allowed_events = {
         WorkerCreatedEvent,
         WorkerDeletedEvent,
+        StreamChunkEvent,
         TaskCreatedEvent,
         TaskDecomposedEvent,
         TaskAssignedEvent,
