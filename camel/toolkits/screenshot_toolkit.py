@@ -14,7 +14,7 @@
 
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from PIL import Image
 
@@ -25,6 +25,9 @@ from camel.toolkits.base import RegisteredAgentToolkit
 from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
+
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
 
 
 class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
@@ -63,6 +66,38 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
         self.ImageGrab = ImageGrab
         self.screenshots_dir = path
         self.screenshots_dir.mkdir(parents=True, exist_ok=True)
+        self._image_analysis_agent: Optional["ChatAgent"] = None
+        self._image_analysis_agent_model: Any = None
+        self._image_analysis_agent_language: Optional[str] = None
+
+    def _get_image_analysis_agent(self) -> Optional["ChatAgent"]:
+        r"""Get an isolated helper agent for screenshot image analysis."""
+        parent_agent = self.agent
+        if parent_agent is None:
+            return None
+
+        model = parent_agent.model_backend
+        output_language = parent_agent.output_language
+        if (
+            self._image_analysis_agent is not None
+            and self._image_analysis_agent_model is model
+            and self._image_analysis_agent_language == output_language
+        ):
+            return self._image_analysis_agent
+
+        from camel.agents import ChatAgent
+
+        self._image_analysis_agent = ChatAgent(
+            system_message=(
+                "You analyze screenshots and answer the user's prompt "
+                "using only the provided image."
+            ),
+            model=model,
+            output_language=output_language,
+        )
+        self._image_analysis_agent_model = model
+        self._image_analysis_agent_language = output_language
+        return self._image_analysis_agent
 
     def read_image(
         self,
@@ -86,7 +121,8 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
             str: The response after analyzing the image, which could be a
                  description, an answer, or a confirmation of an action.
         """
-        if self.agent is None:
+        analysis_agent = self._get_image_analysis_agent()
+        if analysis_agent is None:
             logger.error(
                 "Cannot record screenshot in memory: No agent registered. "
                 "Please pass this toolkit to ChatAgent via "
@@ -116,13 +152,16 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                 image_list=[img],
             )
 
-            # Record the message in agent's memory
-            response = self.agent.step(message)
+            # Analyze with an isolated helper agent to avoid re-entering the
+            # parent agent while it is executing this toolkit's tool call.
+            response = analysis_agent.step(message)
             return response.msgs[0].content
 
         except Exception as e:
             logger.error(f"Error reading screenshot: {e}")
             return f"Error reading screenshot: {e}"
+        finally:
+            analysis_agent.reset()
 
     def take_screenshot_and_read_image(
         self,
