@@ -1925,6 +1925,7 @@ class ModelPlatformType(Enum):
     NEBIUS = "nebius"
     COMETAPI = "cometapi"
     OPENROUTER = "openrouter"
+    ORCAROUTER = "orcarouter"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     LMSTUDIO = "lmstudio"
@@ -2004,6 +2005,11 @@ class ModelPlatformType(Enum):
     def is_openrouter(self) -> bool:
         r"""Returns whether this platform is openrouter."""
         return self is ModelPlatformType.OPENROUTER
+
+    @property
+    def is_orcarouter(self) -> bool:
+        r"""Returns whether this platform is orcarouter."""
+        return self is ModelPlatformType.ORCAROUTER
 
     @property
     def is_lmstudio(self) -> bool:
