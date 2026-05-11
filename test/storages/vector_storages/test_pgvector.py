@@ -104,9 +104,7 @@ def test_pgvector_score_to_similarity(
         patch("psycopg.connect", return_value=mock_conn),
         patch("pgvector.psycopg.register_vector"),
     ):
-        storage = PgVectorStorage(
-            4, {"host": "localhost"}, distance=distance
-        )
+        storage = PgVectorStorage(4, {"host": "localhost"}, distance=distance)
         assert storage._score_to_similarity(score) == pytest.approx(
             expected_similarity
         )
