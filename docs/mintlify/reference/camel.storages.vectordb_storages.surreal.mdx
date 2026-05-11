@@ -154,6 +154,16 @@ metric.
   List[VectorDBQueryResult]: Ranked list of matching records
 with similarity scores.
 
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage._distance_to_similarity"></a>
+
+### _distance_to_similarity
+
+```python
+def _distance_to_similarity(self, distance: float):
+```
+
+Convert a SurrealDB distance value to high-is-better similarity.
+
 <a id="camel.storages.vectordb_storages.surreal.SurrealStorage.add"></a>
 
 ### add

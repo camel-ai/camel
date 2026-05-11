@@ -96,11 +96,11 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         if not objs:
             raise ValueError("Input objs list is empty.")
 
-        image_processor_kwargs: Optional[dict] = kwargs.get(
-            'image_processor_kwargs', {}
+        image_processor_kwargs: dict = (
+            kwargs.get('image_processor_kwargs', {}) or {}
         )
-        tokenizer_kwargs: Optional[dict] = kwargs.get('tokenizer_kwargs', {})
-        model_kwargs: Optional[dict] = kwargs.get('model_kwargs', {})
+        tokenizer_kwargs: dict = kwargs.get('tokenizer_kwargs', {}) or {}
+        model_kwargs: dict = kwargs.get('model_kwargs', {}) or {}
 
         result_list = []
         for obj in objs:
@@ -112,11 +112,11 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                     images=obj,
                     return_tensors="pt",
                     padding=True,
-                    **image_processor_kwargs,
+                    **(image_processor_kwargs or {}),
                 )
                 image_feature = (
                     self.model.get_image_features(
-                        **image_input, **model_kwargs
+                        **image_input, **(model_kwargs or {})
                     )
                     .squeeze(dim=0)
                     .tolist()
@@ -127,10 +127,12 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                     text=obj,
                     return_tensors="pt",
                     padding=True,
-                    **tokenizer_kwargs,
+                    **(tokenizer_kwargs or {}),
                 )
                 text_feature = (
-                    self.model.get_text_features(**text_input, **model_kwargs)
+                    self.model.get_text_features(
+                        **text_input, **(model_kwargs or {})
+                    )
                     .squeeze(dim=0)
                     .tolist()
                 )
