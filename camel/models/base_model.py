@@ -317,6 +317,18 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         """
         pass
 
+    @property
+    def supports_tool_response_format(self) -> bool:
+        r"""Whether native ``response_format`` can coexist with non-strict
+        tools on this backend.
+
+        Returns:
+            bool: :obj:`True` when the backend can natively handle
+                ``response_format`` together with tools that are not marked
+                strict, otherwise :obj:`False`.
+        """
+        return False
+
     def _prepare_request_config(
         self,
         tools: Optional[List[Dict[str, Any]]] = None,

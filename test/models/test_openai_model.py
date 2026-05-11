@@ -372,6 +372,59 @@ def test_responses_mode_uses_previous_response_id_and_delta_input():
         assert second_call_kwargs["input"][-1]["content"] == "Continue"
 
 
+def test_responses_mode_uses_agent_session_scope_when_langfuse_is_disabled(
+    monkeypatch,
+):
+    monkeypatch.setattr("camel.utils.langfuse._langfuse_configured", False)
+
+    with patch("camel.models.openai_model.OpenAI") as mock_openai:
+        mock_client = MagicMock()
+        mock_openai.return_value = mock_client
+
+        mock_client.responses.create.return_value = {
+            "id": "resp_any",
+            "created_at": 1741294021,
+            "usage": {
+                "input_tokens": 1,
+                "output_tokens": 1,
+                "total_tokens": 2,
+            },
+            "output": [
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": "ok"}],
+                }
+            ],
+        }
+
+        model = OpenAIModel(
+            model_type=ModelType.GPT_4O_MINI,
+            api_mode="responses",
+            api_key="dummy",
+        )
+
+        from camel.utils.langfuse import set_current_agent_session_id
+
+        set_current_agent_session_id("agent-a")
+        model._save_response_chain_state(
+            model._get_response_chain_session_key(), "resp_a", 2
+        )
+
+        set_current_agent_session_id("agent-b")
+        chain_state = model._prepare_responses_input_and_chain(
+            [
+                {"role": "system", "content": "system-b"},
+                {"role": "user", "content": "hello-b"},
+                {"role": "assistant", "content": "reply-b"},
+            ],
+            chain_enabled=True,
+        )
+
+        assert chain_state["session_key"] == "agent-b"
+        assert chain_state["previous_response_id"] is None
+
+
 def test_responses_mode_normalizes_function_tools_schema():
     with patch("camel.models.openai_model.OpenAI") as mock_openai:
         mock_client = MagicMock()

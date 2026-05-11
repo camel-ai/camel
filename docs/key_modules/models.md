@@ -39,24 +39,21 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 
 | Model Provider   | Model Type(s) |
 | :--------------  | :------------ |
-| **OpenAI**       | gpt-4.5-preview<br/>gpt-4o, gpt-4o-mini<br/>o1, o1-preview, o1-mini<br/>o3-mini, o3-pro, o3<br/>o4-mini<br/>gpt-4.1, gpt-4.1-mini, gpt-4.1-nano<br/>gpt-5, gpt-5-mini, gpt-5-nano<br/>gpt-4-turbo, gpt-4, gpt-3.5-turbo |
-| **Azure OpenAI** | gpt-4o, gpt-4-turbo<br/>gpt-4, gpt-3.5-turbo |
+| **OpenAI**       | gpt-4.5-preview<br/>gpt-4o, gpt-4o-mini<br/>o1, o1-preview, o1-mini<br/>o3-mini, o3-pro, o3<br/>o4-mini<br/>gpt-4.1, gpt-4.1-mini-2025-04-14, gpt-4.1-nano-2025-04-14<br/>gpt-5, gpt-5-mini, gpt-5-nano<br/>gpt-5.1, gpt-5.2<br/>gpt-5.4, gpt-5.4-mini-2026-03-17, gpt-5.4-nano-2026-03-17<br/>gpt-5.5, gpt-5.5-pro-2026-04-23<br/>gpt-4-turbo, gpt-4, gpt-3.5-turbo |
+| **Azure OpenAI** | gpt-4.5-preview<br/>gpt-4o, gpt-4o-mini<br/>o1, o1-preview, o1-mini<br/>o3-mini, o3-pro, o3<br/>o4-mini<br/>gpt-4.1, gpt-4.1-mini-2025-04-14, gpt-4.1-nano-2025-04-14<br/>gpt-5<br/>gpt-4-turbo, gpt-4, gpt-3.5-turbo |
 | **Mistral AI**   | mistral-large-latest, pixtral-12b-2409<br/>ministral-8b-latest, ministral-3b-latest<br/>open-mistral-nemo, codestral-latest<br/>open-mistral-7b, open-mixtral-8x7b<br/>open-mixtral-8x22b, open-codestral-mamba<br/>mistral-small-2506, mistral-medium-2508<br/>magistral-small-1.2, magistral-medium-1.2 |
 | **Moonshot**     | kimi-k2-0905-Preview, kimi-k2.5, kimi-k2-turbo-preview<br/>kimi-k2-thinking, kimi-k2-thinking-turbo<br/>moonshot-v1-8k, moonshot-v1-32k, moonshot-v1-128k |
-| **Anthropic**    | claude-3-7-sonnet-latest<br/>claude-sonnet-4-5, claude-opus-4-5, claude-haiku-4-5<br/>claude-sonnet-4-20250514, claude-opus-4-20250514, claude-opus-4-1-20250805 |
-| **Gemini**       | gemini-3.1-pro-preview, gemini-3.1-flash-lite-preview<br/>gemini-3-pro-preview, gemini-3-flash-preview<br/>gemini-2.5-pro, gemini-2.5-flash<br/>gemini-2.0-flash, gemini-2.0-flash-thinking-exp<br/>gemini-2.0-flash-lite |
-| **Lingyiwanwu**  | yi-lightning, yi-large, yi-medium<br/>yi-large-turbo, yi-vision, yi-medium-200k<br/>yi-spark, yi-large-rag, yi-large-fc |
-| **Qwen**         | qwen3-coder-plus, qwq-32b-preview, qwq-plus, qvq-72b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long<br/>qwen-plus-latest, qwen-plus-2025-04-28, qwen-turbo-latest, qwen-turbo-2025-04-28<br/>qwen-vl-max, qwen-vl-plus, qwen-vl-72b-instruct, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo<br/>qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
-| **DeepSeek**     | deepseek-chat<br/>deepseek-reasoner |
-| **CometAPI**     | **All models available on [CometAPI](https://api.cometapi.com/pricing)**<br/>Including: gpt-5-chat-latest, gpt-5, gpt-5-mini, gpt-5-nano<br/>claude-opus-4-1-20250805, claude-sonnet-4-20250514, claude-3-7-sonnet-latest<br/>gemini-2.5-pro, gemini-2.5-flash, grok-4-0709, grok-3<br/>deepseek-v3.1, deepseek-v3, deepseek-r1-0528, qwen3-30b-a3b |
-| **Nebius**       | **All models available on [Nebius AI Studio](https://studio.nebius.com/)**<br/>Including: gpt-oss-120b, gpt-oss-20b, GLM-4.5<br/>DeepSeek V3 & R1, LLaMA, Mistral, and more |
-| **ZhipuAI**      | glm-4.7, glm-4.7-flash, glm-4.7-flashx<br/>glm-4.6, glm-4.6v, glm-4.6v-flash<br/>glm-4, glm-4v, glm-4v-flash<br/>glm-4v-plus-0111, glm-4-plus, glm-4-air<br/>glm-4-air-0111, glm-4-airx, glm-4-long<br/>glm-4-flashx, glm-4-flashx-250414<br/>glm-4-flash, glm-4-flash-250414<br/>glm-4.5-air, glm-4.5-airx, glm-4.5-flash<br/>glm-4.1v-thinking-flash, glm-4.1v-thinking-flashx<br/>glm-zero-preview, glm-3-turbo |
+| **Anthropic**    | claude-3-7-sonnet-latest<br/>claude-sonnet-4-5, claude-opus-4-5, claude-haiku-4-5<br/>claude-sonnet-4-6, claude-opus-4-6, claude-opus-4-7<br/>claude-sonnet-4-20250514, claude-opus-4-20250514, claude-opus-4-1-20250805 |
+| **Gemini**       | gemini-3.1-pro-preview, gemini-3.1-flash-lite-preview<br/>gemini-3-pro-preview, gemini-3-flash-preview<br/>gemini-2.5-pro, gemini-2.5-flash<br/>gemini-2.0-flash, gemini-2.0-flash-exp<br/>gemini-2.0-flash-thinking-exp, gemini-2.0-pro-exp-02-05<br/>gemini-2.0-flash-lite, gemini-2.0-flash-lite-preview-02-05 |
+| **Qwen**         | qwen3-coder-plus<br/>qwen-max, qwen-plus, qwen-turbo, qwen-long<br/>qwen-plus-latest, qwen-plus-2025-04-28, qwen-turbo-latest, qwen-turbo-2025-04-28<br/>qwen-vl-max, qwen-vl-plus, qwen2.5-vl-72b-instruct<br/>qwen-math-plus, qwen-math-turbo, qwen-coder-turbo<br/>qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct<br/>qwq-32b-preview, qwq-plus, qvq-72b-preview |
+| **DeepSeek**     | deepseek-v4-flash, deepseek-v4-pro<br/>deepseek-chat, deepseek-reasoner |
+| **ZhipuAI**      | glm-5, glm-4.7, glm-4.7-flash, glm-4.7-flashx<br/>glm-4.6, glm-4.6v, glm-4.6v-flash, glm-4.6v-flashx<br/>glm-4.5v, glm-4.5-air, glm-4.5-airx, glm-4.5-flash<br/>glm-4, glm-4v, glm-4v-flash<br/>glm-4v-plus-0111, glm-4-plus, glm-4-air<br/>glm-4-air-0111, glm-4-airx, glm-4-long<br/>glm-4-flashx, glm-4-flashx-250414<br/>glm-4-flash, glm-4-flash-250414<br/>glm-4.1v-thinking-flash, glm-4.1v-thinking-flashx<br/>glm-zero-preview, glm-3-turbo |
 | **InternLM**     | internlm3-latest, internlm3-8b-instruct<br/>internlm2.5-latest, internlm2-pro-chat |
 | **Reka**         | reka-core, reka-flash, reka-edge |
 | **COHERE**       | command-r-plus, command-r, command-light, command, command-nightly |
-| **ERNIE**        | ernie-x1-turbo-32k, ernie-x1-32k, ernie-x1-32k-preview<br/>ernie-4.5-turbo-128k, ernie-4.5-turbo-32k<br/>deepseek-v3, deepseek-r1, qwen3-235b-a22b |
+| **ERNIE**        | ernie-x1-turbo-32k, ernie-x1-32k, ernie-x1-32k-preview<br/>ernie-4.5-turbo-128k, ernie-4.5-turbo-32k<br/>ernie-5.0-thinking-latest, ernie-4.5-turbo-vl-latest<br/>deepseek-v3, deepseek-r1, qwen3-235b-a22b |
 | **MiniMax**      | MiniMax-M2.7, MiniMax-M2.7-highspeed, MiniMax-M2.5<br/>MiniMax-M2.1, MiniMax-M2.1-lightning, MiniMax-M2 |
-| **AtlasCloud**   | openai/gpt-oss-120b, zai-org/glm-4-7 |
+| **xAI**          | Grok models via the xAI SDK |
 
 
 ### API & Connector Platforms
@@ -67,9 +64,12 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **TOGETHER AI**  | [supported models](https://docs.together.ai/docs/dedicated-models) |
 | **SambaNova**    | [supported models](https://docs.sambanova.ai/cloud/docs/get-started/supported-models) |
 | **Ollama**       | [supported models](https://ollama.com/library) |
+| **CometAPI**     | [supported models](https://api.cometapi.com/pricing) |
+| **Nebius**       | [supported models](https://studio.nebius.com/) |
 | **OpenRouter**   | [supported models](https://openrouter.ai/models) |
 | **PPIO**         | [supported models](https://ppio.com/model-api/console) |
 | **LiteLLM**      | [supported models](https://docs.litellm.ai/docs/providers) |
+| **OpenAI Compatible** | custom OpenAI-compatible endpoints via `OPENAI_COMPATIBLE_MODEL` |
 | **LMStudio**     | [supported models](https://lmstudio.ai/models) |
 | **vLLM**         | [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
 | **SGLANG**       | [supported models](https://docs.sglang.ai/supported_models/generative_models.html ) |
@@ -85,8 +85,8 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **AMD**          | dvue-aoai-001-gpt-4.1 |
 | **Volcano**      | [supported models](https://console.volcengine.com/ark) |
 | **Qianfan**      | [supported models](https://cloud.baidu.com/doc/qianfan/s/rmh4stp0j) |
-
-
+| **AIHubMix**     | [supported models](https://aihubmix.com/) |
+| **AtlasCloud**   | openai/gpt-oss-120b, zai-org/glm-4-7 |
 
 ## How to Use Models via API Calls
 
