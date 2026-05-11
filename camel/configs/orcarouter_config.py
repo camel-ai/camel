@@ -23,7 +23,7 @@ class OrcaRouterConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using OpenAI
     compatibility via OrcaRouter.
 
-    Reference: https://orcarouter.ai
+    Reference: https://docs.orcarouter.ai/
 
     Args:
         temperature (float, optional): Sampling temperature to use, between
