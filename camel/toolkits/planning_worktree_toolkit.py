@@ -115,10 +115,7 @@ class PlanningWorktreeToolkit(BaseToolkit):
             try:
                 if not plan_file.exists():
                     plan_file.write_text(
-                        "# Plan\n\n"
-                        "- Objective:\n"
-                        "- Constraints:\n"
-                        "- Steps:\n",
+                        "# Plan\n\n- Objective:\n- Constraints:\n- Steps:\n",
                         encoding="utf-8",
                     )
             except OSError as exc:
@@ -340,11 +337,6 @@ class PlanningWorktreeToolkit(BaseToolkit):
                     working_directory=str(self.working_directory),
                 )
 
-            self.working_directory = main_repo_path
-            self.current_worktree_path = None
-            if self.switch_process_cwd:
-                os.chdir(main_repo_path)
-
             remove_result = self._run_git(
                 "worktree",
                 "remove",
@@ -359,13 +351,27 @@ class PlanningWorktreeToolkit(BaseToolkit):
                     working_directory=str(self.working_directory),
                 )
 
+            self.working_directory = main_repo_path
+            self.current_worktree_path = None
+            if self.switch_process_cwd:
+                os.chdir(main_repo_path)
+
             if branch_name:
-                self._run_git(
+                branch_delete_result = self._run_git(
                     "branch",
                     "-d",
                     branch_name,
                     cwd=main_repo_path,
                 )
+                if branch_delete_result.returncode != 0:
+                    return self._error_result(
+                        branch_delete_result.stderr.strip()
+                        or branch_delete_result.stdout.strip()
+                        or f"Failed to delete branch '{branch_name}'.",
+                        removed_worktree=str(worktree_path),
+                        remaining_branch=branch_name,
+                        working_directory=str(self.working_directory),
+                    )
 
             return {
                 "removed_worktree": str(worktree_path),
