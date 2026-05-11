@@ -377,3 +377,26 @@ class TestSemanticCache:
         mock_vector_storage.delete.assert_not_called()
         # New entry should still be added
         mock_vector_storage.add.assert_called_once()
+
+    def test_distance_metric_inversion(
+        self, mock_vector_storage, mock_embedding_model
+    ):
+        """Test that distances are inverted when is_distance_metric=True."""
+        cache = SemanticCache(
+            embedding_model=mock_embedding_model,
+            vector_storage=mock_vector_storage,
+            similarity_threshold=0.85,
+            is_distance_metric=True,
+        )
+
+        # A distance of 0.0 should invert to 1.0
+        assert cache._normalize_similarity(0.0) == 1.0
+
+        # A distance of 0.25 should invert to 0.8
+        assert cache._normalize_similarity(0.25) == 0.8
+
+        # A distance of 1.0 should invert to 0.5
+        assert cache._normalize_similarity(1.0) == 0.5
+
+        # A distance of 9.0 should invert to 0.1
+        assert cache._normalize_similarity(9.0) == 0.1
