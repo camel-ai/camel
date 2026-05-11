@@ -37,7 +37,9 @@ def test_read_image_uses_helper_agent_instead_of_registered_parent_agent(
     toolkit = ScreenshotToolkit(working_directory=str(tmp_path))
     toolkit.register_agent(parent_agent)
 
-    with patch("camel.agents.ChatAgent", return_value=helper_agent):
+    with patch(
+        "camel.agents.ChatAgent", return_value=helper_agent
+    ) as chat_agent:
         result = toolkit.read_image(str(image_path), "read it")
 
     assert result == "visible text"
@@ -45,9 +47,14 @@ def test_read_image_uses_helper_agent_instead_of_registered_parent_agent(
     helper_agent.step.assert_called_once()
     helper_agent.reset.assert_called_once()
 
+    chat_agent.assert_called_once()
+    _, kwargs = chat_agent.call_args
+    assert kwargs["model"] is parent_agent.model_backend
+    assert kwargs["output_language"] == "Chinese"
 
-def test_read_image_reuses_helper_agent_for_same_parent_agent(tmp_path):
-    r"""Test image reading reuses a reset helper agent for stable config."""
+
+def test_read_image_creates_isolated_helper_agent_for_each_read(tmp_path):
+    r"""Test each image read gets a fresh helper agent."""
     first_path = tmp_path / "first.png"
     second_path = tmp_path / "second.png"
     Image.new("RGB", (1, 1)).save(first_path)
@@ -57,18 +64,21 @@ def test_read_image_reuses_helper_agent_for_same_parent_agent(tmp_path):
     parent_agent.model_backend = MagicMock()
     parent_agent.output_language = None
 
-    helper_agent = MagicMock()
-    helper_agent.step.return_value.msgs = [MagicMock(content="ok")]
+    first_helper = MagicMock()
+    first_helper.step.return_value.msgs = [MagicMock(content="first")]
+    second_helper = MagicMock()
+    second_helper.step.return_value.msgs = [MagicMock(content="second")]
 
     toolkit = ScreenshotToolkit(working_directory=str(tmp_path))
     toolkit.register_agent(parent_agent)
 
     with patch(
         "camel.agents.ChatAgent",
-        return_value=helper_agent,
-    ) as mock_chat_agent:
-        assert toolkit.read_image(str(first_path)) == "ok"
-        assert toolkit.read_image(str(second_path)) == "ok"
+        side_effect=[first_helper, second_helper],
+    ) as chat_agent:
+        assert toolkit.read_image(str(first_path)) == "first"
+        assert toolkit.read_image(str(second_path)) == "second"
 
-    assert mock_chat_agent.call_count == 1
-    assert helper_agent.reset.call_count == 2
+    assert chat_agent.call_count == 2
+    first_helper.reset.assert_called_once()
+    second_helper.reset.assert_called_once()
