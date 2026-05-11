@@ -378,25 +378,48 @@ class TestSemanticCache:
         # New entry should still be added
         mock_vector_storage.add.assert_called_once()
 
-    def test_distance_metric_inversion(
-        self, mock_vector_storage, mock_embedding_model
+    def test_normalize_similarity_clamps_score(self, cache):
+        """Test that similarity scores are clamped to the expected range."""
+        assert cache._normalize_similarity(-0.5) == 0.0
+        assert cache._normalize_similarity(0.25) == 0.25
+        assert cache._normalize_similarity(1.5) == 1.0
+
+    def test_storage_normalized_distance_score_hits_cache(
+        self, cache, mock_vector_storage
     ):
-        """Test that distances are inverted when is_distance_metric=True."""
-        cache = SemanticCache(
-            embedding_model=mock_embedding_model,
-            vector_storage=mock_vector_storage,
-            similarity_threshold=0.85,
-            is_distance_metric=True,
-        )
+        """Test cache hit with storage-normalized similarity."""
+        mock_result = MagicMock()
+        mock_result.similarity = 1.0
+        mock_result.record.payload = {
+            "query": "What is Python?",
+            "response": "A programming language.",
+            "created_at": "2026-01-01T00:00:00",
+            "metadata": {},
+        }
+        mock_result.record.id = "test-id"
+        mock_vector_storage.query.return_value = [mock_result]
 
-        # A distance of 0.0 should invert to 1.0
-        assert cache._normalize_similarity(0.0) == 1.0
+        response = cache.get("What is Python?")
 
-        # A distance of 0.25 should invert to 0.8
-        assert cache._normalize_similarity(0.25) == 0.8
+        assert response == "A programming language."
+        assert cache.stats["hits"] == 1
 
-        # A distance of 1.0 should invert to 0.5
-        assert cache._normalize_similarity(1.0) == 0.5
+    def test_raw_distance_score_misses_without_storage_normalization(
+        self, cache, mock_vector_storage
+    ):
+        """Test raw distance scores are not interpreted in cache layer."""
+        mock_result = MagicMock()
+        mock_result.similarity = 0.0
+        mock_result.record.payload = {
+            "query": "What is Python?",
+            "response": "A programming language.",
+            "created_at": "2026-01-01T00:00:00",
+            "metadata": {},
+        }
+        mock_result.record.id = "test-id"
+        mock_vector_storage.query.return_value = [mock_result]
 
-        # A distance of 9.0 should invert to 0.1
-        assert cache._normalize_similarity(9.0) == 0.1
+        response = cache.get("What is Python?")
+
+        assert response is None
+        assert cache.stats["misses"] == 1

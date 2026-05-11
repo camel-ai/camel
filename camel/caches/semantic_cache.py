@@ -64,7 +64,6 @@ class SemanticCache(BaseCache):
         vector_storage: BaseVectorStorage,
         similarity_threshold: float = 0.85,
         cache_enabled: bool = True,
-        is_distance_metric: bool = False,
     ) -> None:
         r"""Initialize the semantic cache.
 
@@ -73,8 +72,6 @@ class SemanticCache(BaseCache):
             vector_storage (BaseVectorStorage): The vector storage backend.
             similarity_threshold (float): Minimum similarity for cache hit.
             cache_enabled (bool): Whether the cache is enabled initially.
-            is_distance_metric (bool): Whether the vector storage returns
-                a distance metric (lower is better) instead of similarity.
         """
         if not 0.0 <= similarity_threshold <= 1.0:
             raise ValueError(
@@ -86,7 +83,6 @@ class SemanticCache(BaseCache):
         self._vector_storage = vector_storage
         self._similarity_threshold = similarity_threshold
         self._cache_enabled = cache_enabled
-        self._is_distance_metric = is_distance_metric
         self._cache_hits = 0
         self._cache_misses = 0
         self._stats_lock = Lock()
@@ -251,26 +247,16 @@ class SemanticCache(BaseCache):
         r"""Normalize similarity score to 0.0-1.0 range.
 
         Different vector storage backends may return similarity scores in
-        different ranges, or return distance metrics where lower is better.
-        This method converts distance to similarity (if applicable) and
-        ensures consistent behavior by clamping scores to the expected
-        0.0-1.0 range.
+        different ranges. This method ensures consistent behavior by clamping
+        scores to the expected 0.0-1.0 range.
 
         Args:
-            score (float): Raw similarity or distance score from
-                storage backend.
+            score (float): Raw similarity score from storage backend.
 
         Returns:
             float: Normalized similarity score between 0.0 and 1.0.
         """
-        if self._is_distance_metric:
-            # Simple inversion for distance metrics (lower is better).
-            # 1.0 / (1.0 + distance) maps [0, inf) -> (0, 1]
-            similarity = 1.0 / (1.0 + max(0.0, score))
-        else:
-            similarity = score
-
-        return max(0.0, min(1.0, similarity))
+        return max(0.0, min(1.0, score))
 
     def get(self, query: str) -> Optional[str]:
         r"""Retrieve a cached response for a semantically similar query.
