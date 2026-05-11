@@ -130,6 +130,12 @@ class MemoryRecord(BaseModel):
 
             data["video_bytes"] = base64.b64decode(data["video_bytes"])
 
+        # Deserialize audio_bytes from base64 string
+        if "audio_bytes" in data and data["audio_bytes"] is not None:
+            import base64
+
+            data["audio_bytes"] = base64.b64decode(data["audio_bytes"])
+
         # Get valid constructor parameters (cached)
         valid_params = cls._get_constructor_params(message_cls)
 

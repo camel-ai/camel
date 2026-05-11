@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from pathlib import PurePosixPath, PureWindowsPath
+from unittest.mock import MagicMock
 
 from camel.storages.object_storages import GoogleCloudStorage
 
@@ -28,9 +29,20 @@ def test_canonicalize_path():
 
     assert win_key == 'relative/path/to/file.pdf'
     assert win_filename == 'file.pdf'
-
     assert posix_key == 'relative/path/to/file.pdf'
     assert posix_filename == 'file.pdf'
+
+
+def test_delete_file_calls_client():
+    storage = GoogleCloudStorage.__new__(GoogleCloudStorage)
+    blob = MagicMock()
+    storage._client = MagicMock()
+    storage._client.blob.return_value = blob
+
+    storage.delete_file(PurePosixPath("path/to/file.pdf"))
+
+    storage._client.blob.assert_called_once_with("path/to/file.pdf")
+    blob.delete.assert_called_once()
 
 
 def test_canonicalize_tricky_path():

@@ -13,9 +13,11 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .chat_history_block import ChatHistoryBlock
+from .multimodal_vectordb_block import MultimodalVectorDBBlock
 from .vectordb_block import VectorDBBlock
 
 __all__ = [
     'ChatHistoryBlock',
+    'MultimodalVectorDBBlock',
     'VectorDBBlock',
 ]

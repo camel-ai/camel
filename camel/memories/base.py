@@ -76,6 +76,14 @@ class MemoryBlock(ABC):
         r"""Clears all messages from the memory."""
         pass
 
+    def close(self) -> None:
+        r"""Release resources owned by the memory block.
+
+        Subclasses can override this when they manage explicit resources
+        such as thread pools, network clients, or file handles.
+        """
+        pass
+
 
 class BaseContextCreator(ABC):
     r"""An abstract base class defining the interface for context creation
@@ -182,6 +190,10 @@ class AgentMemory(MemoryBlock, ABC):
         does nothing, maintaining backward compatibility.
         """
         pass
+
+    def close(self) -> None:
+        r"""Release resources owned by the agent memory."""
+        super().close()
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the AgentMemory.

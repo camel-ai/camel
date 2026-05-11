@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from pathlib import PurePosixPath, PureWindowsPath
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -49,5 +50,19 @@ def test_canonicalize_tricky_path():
 
 
 def test_not_accessible_bucket():
+    pytest.importorskip("botocore.session")
     with pytest.raises(PermissionError):
         AmazonS3Storage(bucket_name='amazon')
+
+
+def test_delete_file_calls_client():
+    storage = AmazonS3Storage.__new__(AmazonS3Storage)
+    storage._bucket_name = "bucket"
+    storage._client = MagicMock()
+
+    storage.delete_file(PurePosixPath("path/to/file.pdf"))
+
+    storage._client.delete_object.assert_called_once_with(
+        Bucket="bucket",
+        Key="path/to/file.pdf",
+    )

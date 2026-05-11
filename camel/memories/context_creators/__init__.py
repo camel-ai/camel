@@ -12,8 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from .multimodal import MultimodalContextCreator
 from .score_based import ScoreBasedContextCreator
 
 __all__ = [
     'ScoreBasedContextCreator',
+    'MultimodalContextCreator',
 ]

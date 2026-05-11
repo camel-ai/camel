@@ -64,6 +64,10 @@ class BaseMessage:
         content (str): The content of the message.
         video_bytes (Optional[bytes]): Optional bytes of a video associated
             with the message. (default: :obj:`None`)
+        audio_bytes (Optional[bytes]): Optional bytes of an audio clip
+            associated with the message. (default: :obj:`None`)
+        audio_format (Optional[str]): Audio format for ``audio_bytes``
+            such as ``"wav"`` or ``"mp3"``. (default: :obj:`None`)
         image_list (Optional[List[Union[Image.Image, str]]]): Optional list of
             PIL Image objects or image URLs (strings) associated with the
             message. (default: :obj:`None`)
@@ -83,6 +87,8 @@ class BaseMessage:
     content: str
 
     video_bytes: Optional[bytes] = None
+    audio_bytes: Optional[bytes] = None
+    audio_format: Optional[str] = None
     image_list: Optional[List[Union[Image.Image, str]]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "auto"
@@ -96,6 +102,8 @@ class BaseMessage:
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
+        audio_bytes: Optional[bytes] = None,
+        audio_format: Optional[str] = None,
         image_list: Optional[List[Union[Image.Image, str]]] = None,
         image_detail: Union[
             OpenAIVisionDetailType, str
@@ -113,6 +121,9 @@ class BaseMessage:
                 dictionary for the message.
             video_bytes (Optional[bytes]): Optional bytes of a video
                 associated with the message.
+            audio_bytes (Optional[bytes]): Optional bytes of an audio clip
+                associated with the message.
+            audio_format (Optional[str]): Audio format for ``audio_bytes``.
             image_list (Optional[List[Union[Image.Image, str]]]): Optional list
                 of PIL Image objects or image URLs (strings) associated with
                 the message.
@@ -130,6 +141,8 @@ class BaseMessage:
             meta_dict,
             content,
             video_bytes,
+            audio_bytes,
+            audio_format,
             image_list,
             OpenAIVisionDetailType(image_detail).value,
             OpenAIVisionDetailType(video_detail).value,
@@ -142,6 +155,8 @@ class BaseMessage:
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
+        audio_bytes: Optional[bytes] = None,
+        audio_format: Optional[str] = None,
         image_list: Optional[List[Union[Image.Image, str]]] = None,
         image_detail: Union[
             OpenAIVisionDetailType, str
@@ -159,6 +174,9 @@ class BaseMessage:
                 dictionary for the message.
             video_bytes (Optional[bytes]): Optional bytes of a video
                 associated with the message.
+            audio_bytes (Optional[bytes]): Optional bytes of an audio clip
+                associated with the message.
+            audio_format (Optional[str]): Audio format for ``audio_bytes``.
             image_list (Optional[List[Union[Image.Image, str]]]): Optional list
                 of PIL Image objects or image URLs (strings) associated with
                 the message.
@@ -176,6 +194,8 @@ class BaseMessage:
             meta_dict,
             content,
             video_bytes,
+            audio_bytes,
+            audio_format,
             image_list,
             OpenAIVisionDetailType(image_detail).value,
             OpenAIVisionDetailType(video_detail).value,
@@ -223,6 +243,8 @@ class BaseMessage:
             meta_dict=self.meta_dict,
             content=content,
             video_bytes=self.video_bytes,
+            audio_bytes=self.audio_bytes,
+            audio_format=self.audio_format,
             image_list=self.image_list,
             image_detail=self.image_detail,
             video_detail=self.video_detail,
@@ -585,6 +607,19 @@ class BaseMessage:
 
                 hybrid_content.append(item)
 
+        if self.audio_bytes:
+            hybrid_content.append(
+                {
+                    "type": "input_audio",
+                    "input_audio": {
+                        "data": base64.b64encode(self.audio_bytes).decode(
+                            "utf-8"
+                        ),
+                        "format": self._get_audio_format(),
+                    },
+                }
+            )
+
         if len(hybrid_content) > 1:
             return {
                 "role": "user",
@@ -633,7 +668,6 @@ class BaseMessage:
         # Include image/video fields if present
         if self.image_list is not None:
             # Handle both PIL Images and URL strings
-            import base64
             from io import BytesIO
 
             image_data_list = []
@@ -675,9 +709,13 @@ class BaseMessage:
             result["image_list"] = image_data_list
 
         if self.video_bytes is not None:
-            import base64
-
             result["video_bytes"] = base64.b64encode(self.video_bytes).decode()
+
+        if self.audio_bytes is not None:
+            result["audio_bytes"] = base64.b64encode(self.audio_bytes).decode()
+            result["audio_format"] = self._get_audio_format()
+        elif self.audio_format is not None:
+            result["audio_format"] = self.audio_format
 
         if self.image_detail is not None:
             result["image_detail"] = self.image_detail
@@ -686,3 +724,7 @@ class BaseMessage:
             result["video_detail"] = self.video_detail
 
         return result
+
+    def _get_audio_format(self) -> str:
+        r"""Return the normalized audio format for serialized audio data."""
+        return (self.audio_format or "wav").lower()

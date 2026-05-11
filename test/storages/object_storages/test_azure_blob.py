@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from pathlib import PurePosixPath, PureWindowsPath
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -45,3 +46,12 @@ def test_canonicalize_tricky_path():
 
     assert win_key == 'relative/path/to/file.pdf'
     assert win_filename == 'file.pdf'
+
+
+def test_delete_file_calls_client():
+    storage = AzureBlobStorage.__new__(AzureBlobStorage)
+    storage._client = MagicMock()
+
+    storage.delete_file(PurePosixPath("path/to/file.pdf"))
+
+    storage._client.delete_blob.assert_called_once_with("path/to/file.pdf")
