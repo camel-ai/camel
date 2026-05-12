@@ -220,6 +220,20 @@ def token_counter(self):
   BaseTokenCounter: The token counter following the model's
 tokenization style.
 
+<a id="camel.models.base_model.BaseModelBackend.supports_tool_response_format"></a>
+
+### supports_tool_response_format
+
+```python
+def supports_tool_response_format(self):
+```
+
+**Returns:**
+
+  bool: :obj:`True` when the backend can natively handle
+`__INLINE_CODE_1__` together with tools that are not marked
+strict, otherwise :obj:`False`.
+
 <a id="camel.models.base_model.BaseModelBackend._prepare_request_config"></a>
 
 ### _prepare_request_config

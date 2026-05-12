@@ -60,6 +60,7 @@ from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.volcano_model import VolcanoModel
 from camel.models.watsonx_model import WatsonXModel
+from camel.models.xai_model import XAIModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
@@ -121,6 +122,7 @@ class ModelFactory:
         ModelPlatformType.AIHUBMIX: AihubMixModel,
         ModelPlatformType.AVIAN: AvianModel,
         ModelPlatformType.FUNCTION_GEMMA: FunctionGemmaModel,
+        ModelPlatformType.XAI: XAIModel,
     }
 
     @staticmethod

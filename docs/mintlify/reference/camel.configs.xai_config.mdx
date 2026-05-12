@@ -1,0 +1,27 @@
+<a id="camel.configs.xai_config"></a>
+
+<a id="camel.configs.xai_config.XAIConfig"></a>
+
+## XAIConfig
+
+```python
+class XAIConfig(BaseConfig):
+```
+
+Defines the parameters for generating chat completions using the
+xAI native SDK (gRPC).
+
+**Parameters:**
+
+- **temperature** (float, optional): Sampling temperature to use, between :obj:`0` and :obj:`2`. Higher values make the output more random, while lower values make it more focused and deterministic. (default: :obj:`None`)
+- **top_p** (float, optional): An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So :obj:`0.1` means only the tokens comprising the top 10% probability mass are considered. (default: :obj:`None`)
+- **max_tokens** (int, optional): The maximum number of tokens to generate in the chat completion. (default: :obj:`None`)
+- **stop** (str or list, optional): Up to :obj:`4` sequences where the API will stop generating further tokens. (default: :obj:`None`)
+- **stream** (bool, optional): If True, partial message deltas will be sent as they become available. (default: :obj:`None`)
+- **response_format** (object, optional): An object specifying the format that the model must output. Setting to a Pydantic BaseModel enables JSON schema mode for structured outputs. (default: :obj:`None`)
+- **tool_choice** (Union[dict[str, str], str], optional): Controls which (if any) tool is called by the model. :obj:`"none"` means the model will not call any tool. :obj:`"auto"` means the model can pick between generating a message or calling one or more tools. :obj:`"required"` means the model must call one or more tools. (default: :obj:`None`)
+- **reasoning_effort** (str, optional): Controls the reasoning effort for reasoning models. Valid values: :obj:`"low"`, :obj:`"medium"`, :obj:`"high"`. (default: :obj:`None`)
+- **use_encrypted_content** (bool, optional): If True, encrypted reasoning traces will be returned and preserved across conversation turns. This is required for multi-turn reasoning with thinking models. (default: :obj:`None`)
+- **store_messages** (bool, optional): If True, request/response history is stored on xAI's servers for up to 30 days, enabling conversation chaining via previous_response_id. If False, history is managed locally. (default: :obj:`None`)
+- **frequency_penalty** (float, optional): Penalizes new tokens based on their existing frequency in the text so far. Values between :obj:`-2.0` and :obj:`2.0`. (default: :obj:`None`)
+- **presence_penalty** (float, optional): Penalizes new tokens based on whether they appear in the text so far. Values between :obj:`-2.0` and :obj:`2.0`. (default: :obj:`None`)
