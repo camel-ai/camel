@@ -21,6 +21,7 @@ from PIL import Image
 
 from camel.embeddings import BaseEmbedding
 from camel.logger import get_logger
+from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
 
@@ -36,6 +37,7 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         RuntimeError: If an unsupported model type is specified.
     """
 
+    @dependencies_required('transformers', 'PIL')
     def __init__(
         self, model_name: str = "openai/clip-vit-base-patch32"
     ) -> None:
@@ -94,11 +96,11 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         if not objs:
             raise ValueError("Input objs list is empty.")
 
-        image_processor_kwargs: Optional[dict] = kwargs.get(
-            'image_processor_kwargs', {}
+        image_processor_kwargs: dict = (
+            kwargs.get('image_processor_kwargs', {}) or {}
         )
-        tokenizer_kwargs: Optional[dict] = kwargs.get('tokenizer_kwargs', {})
-        model_kwargs: Optional[dict] = kwargs.get('model_kwargs', {})
+        tokenizer_kwargs: dict = kwargs.get('tokenizer_kwargs', {}) or {}
+        model_kwargs: dict = kwargs.get('model_kwargs', {}) or {}
 
         result_list = []
         for obj in objs:

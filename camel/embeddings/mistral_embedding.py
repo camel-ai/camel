@@ -18,7 +18,7 @@ from typing import Any
 
 from camel.embeddings.base import BaseEmbedding
 from camel.types import EmbeddingModelType
-from camel.utils import api_keys_required
+from camel.utils import api_keys_required, dependencies_required
 
 
 class MistralEmbedding(BaseEmbedding[str]):
@@ -37,6 +37,7 @@ class MistralEmbedding(BaseEmbedding[str]):
         RuntimeError: If an unsupported model type is specified.
     """
 
+    @dependencies_required('mistralai')
     @api_keys_required(
         [
             ("api_key", 'MISTRAL_API_KEY'),
