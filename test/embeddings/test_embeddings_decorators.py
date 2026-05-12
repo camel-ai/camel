@@ -41,7 +41,7 @@ def test_openai_embedding_missing_dependency():
 
     with _mock_missing('openai'):
         with pytest.raises(ImportError, match="openai"):
-            OpenAIEmbedding(api_key="fake-key")
+            OpenAIEmbedding()
 
 
 def test_jina_embedding_missing_dependency():
@@ -49,7 +49,7 @@ def test_jina_embedding_missing_dependency():
 
     with _mock_missing('requests'):
         with pytest.raises(ImportError, match="requests"):
-            JinaEmbedding(api_key="fake-key")
+            JinaEmbedding()
 
 
 def test_mistral_embedding_missing_dependency():
@@ -57,7 +57,7 @@ def test_mistral_embedding_missing_dependency():
 
     with _mock_missing('mistralai'):
         with pytest.raises(ImportError, match="mistralai"):
-            MistralEmbedding(api_key="fake-key")
+            MistralEmbedding()
 
 
 def test_together_embedding_missing_dependency():
@@ -65,7 +65,7 @@ def test_together_embedding_missing_dependency():
 
     with _mock_missing('openai'):
         with pytest.raises(ImportError, match="openai"):
-            TogetherEmbedding(api_key="fake-key")
+            TogetherEmbedding()
 
 
 def test_azure_embedding_missing_dependency():
@@ -73,7 +73,7 @@ def test_azure_embedding_missing_dependency():
 
     with _mock_missing('openai'):
         with pytest.raises(ImportError, match="openai"):
-            AzureEmbedding(api_key="fake-key", url="https://fake.azure.com")
+            AzureEmbedding()
 
 
 def test_gemini_embedding_missing_dependency():
@@ -81,7 +81,7 @@ def test_gemini_embedding_missing_dependency():
 
     with _mock_missing('google.genai'):
         with pytest.raises(ImportError, match=r"google\.genai"):
-            GeminiEmbedding(api_key="fake-key")
+            GeminiEmbedding()
 
 
 def test_openai_compatible_embedding_missing_dependency():
@@ -91,8 +91,6 @@ def test_openai_compatible_embedding_missing_dependency():
         with pytest.raises(ImportError, match="openai"):
             OpenAICompatibleEmbedding(
                 model_type="text-embed",
-                api_key="fake-key",
-                url="http://fake-url",
             )
 
 

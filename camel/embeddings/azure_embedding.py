@@ -46,13 +46,13 @@ class AzureEmbedding(BaseEmbedding[str]):
         ValueError: If required API configuration is missing.
     """
 
+    @dependencies_required('openai')
     @api_keys_required(
         [
             ("api_key", 'AZURE_OPENAI_API_KEY'),
             ("url", 'AZURE_OPENAI_BASE_URL'),
         ]
     )
-    @dependencies_required('openai')
     def __init__(
         self,
         model_type: EmbeddingModelType = (

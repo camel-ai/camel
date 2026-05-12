@@ -41,8 +41,8 @@ class TogetherEmbedding(BaseEmbedding[str]):
         RuntimeError: If the API request fails.
     """
 
-    @api_keys_required([("api_key", 'TOGETHER_API_KEY')])
     @dependencies_required('openai')
+    @api_keys_required([("api_key", 'TOGETHER_API_KEY')])
     def __init__(
         self,
         model_type: str = "togethercomputer/m2-bert-80M-8k-retrieval",

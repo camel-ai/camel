@@ -41,12 +41,12 @@ class OpenAIEmbedding(BaseEmbedding[str]):
         RuntimeError: If an unsupported model type is specified.
     """
 
+    @dependencies_required('openai')
     @api_keys_required(
         [
             ("api_key", 'OPENAI_API_KEY'),
         ]
     )
-    @dependencies_required('openai')
     def __init__(
         self,
         model_type: EmbeddingModelType = (

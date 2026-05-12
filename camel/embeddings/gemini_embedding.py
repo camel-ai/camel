@@ -39,12 +39,12 @@ class GeminiEmbedding(BaseEmbedding[str]):
         RuntimeError: If an unsupported model type is specified.
     """
 
+    @dependencies_required('google.genai')
     @api_keys_required(
         [
             ("api_key", 'GEMINI_API_KEY'),
         ]
     )
-    @dependencies_required('google.genai')
     def __init__(
         self,
         model_type: EmbeddingModelType = (

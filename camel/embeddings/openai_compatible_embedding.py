@@ -35,13 +35,13 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
             embedding call.
     """
 
+    @dependencies_required('openai')
     @api_keys_required(
         [
             ("api_key", 'OPENAI_COMPATIBILITY_API_KEY'),
             ("url", 'OPENAI_COMPATIBILITY_API_BASE_URL'),
         ]
     )
-    @dependencies_required('openai')
     def __init__(
         self,
         model_type: str,

@@ -52,8 +52,8 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             L2 norm. (default: :obj:`False`)
     """
 
-    @api_keys_required([("api_key", 'JINA_API_KEY')])
     @dependencies_required('requests', 'PIL')
+    @api_keys_required([("api_key", 'JINA_API_KEY')])
     def __init__(
         self,
         model_type: EmbeddingModelType = EmbeddingModelType.JINA_EMBEDDINGS_V3,

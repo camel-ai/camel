@@ -37,12 +37,12 @@ class MistralEmbedding(BaseEmbedding[str]):
         RuntimeError: If an unsupported model type is specified.
     """
 
+    @dependencies_required('mistralai')
     @api_keys_required(
         [
             ("api_key", 'MISTRAL_API_KEY'),
         ]
     )
-    @dependencies_required('mistralai')
     def __init__(
         self,
         model_type: EmbeddingModelType = (EmbeddingModelType.MISTRAL_EMBED),
