@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Dict, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 from camel.configs.base_config import BaseConfig
 from camel.types import NotGiven
@@ -86,6 +86,13 @@ class OpenRouterConfig(BaseConfig):
             forces the model to call that tool. :obj:`"none"` is the default
             when no tools are present. :obj:`"auto"` is the default if tools
             are present. (default: :obj:`None`)
+        extra_body (dict, optional): Used to pass provider-specific parameters 
+            to OpenRouter. This is where you can specify provider-specific 
+            caching options, such as "anthropic": {"cache_control": {"type": "ephemeral"}}
+            or other beta features. (default: :obj:`None`)
+        include_usage (bool, optional): Whether to include token usage in the
+            response, which is essential for tracking cache hits/misses.
+            (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None
@@ -101,8 +108,8 @@ class OpenRouterConfig(BaseConfig):
     tool_choice: Optional[
         Union[Dict[str, Union[str, Dict[str, str]]], str]
     ] = None
-
-
+    enable_prompt_caching: bool = False
+    ttl: str = "5m"
 OPENROUTER_API_PARAMS = {
     param for param in OpenRouterConfig.model_fields.keys()
 }
