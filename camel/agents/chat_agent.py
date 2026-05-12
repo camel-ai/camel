@@ -3934,7 +3934,7 @@ class ChatAgent(BaseAgent):
 
             reasoning_content = getattr(
                 choice.message, "reasoning_content", None
-            ) or getattr(choice.message, "reasoning", None)
+            )
 
             chat_message = BaseMessage(
                 role_name=self.role_name,
@@ -4635,15 +4635,13 @@ class ChatAgent(BaseAgent):
                 choice = chunk.choices[0]
                 delta = choice.delta
 
-                # Handle reasoning content streaming (for DeepSeek reasoner
-                # and vLLM which uses 'reasoning' instead of
-                # 'reasoning_content' since v0.8.3)
-                _reasoning_delta = getattr(
-                    delta, 'reasoning_content', None
-                ) or getattr(delta, 'reasoning', None)
-                if _reasoning_delta:
+                # Handle reasoning content streaming (for DeepSeek reasoner)
+                if (
+                    hasattr(delta, 'reasoning_content')
+                    and delta.reasoning_content
+                ):
                     content_accumulator.add_reasoning_content(
-                        _reasoning_delta
+                        delta.reasoning_content
                     )
                     # Yield partial response with reasoning content
                     partial_response = (
@@ -4653,7 +4651,7 @@ class ChatAgent(BaseAgent):
                             step_token_usage,
                             getattr(chunk, 'id', ''),
                             tool_call_records.copy(),
-                            reasoning_delta=_reasoning_delta,
+                            reasoning_delta=delta.reasoning_content,
                         )
                     )
                     yield partial_response
@@ -5747,15 +5745,13 @@ class ChatAgent(BaseAgent):
                 choice = chunk.choices[0]
                 delta = choice.delta
 
-                # Handle reasoning content streaming (for DeepSeek reasoner
-                # and vLLM which uses 'reasoning' instead of
-                # 'reasoning_content' since v0.8.3)
-                _reasoning_delta = getattr(
-                    delta, 'reasoning_content', None
-                ) or getattr(delta, 'reasoning', None)
-                if _reasoning_delta:
+                # Handle reasoning content streaming (for DeepSeek reasoner)
+                if (
+                    hasattr(delta, 'reasoning_content')
+                    and delta.reasoning_content
+                ):
                     content_accumulator.add_reasoning_content(
-                        _reasoning_delta
+                        delta.reasoning_content
                     )
                     # Yield partial response with reasoning content
                     partial_response = (
@@ -5765,7 +5761,7 @@ class ChatAgent(BaseAgent):
                             step_token_usage,
                             getattr(chunk, 'id', ''),
                             tool_call_records.copy(),
-                            reasoning_delta=_reasoning_delta,
+                            reasoning_delta=delta.reasoning_content,
                         )
                     )
                     yield partial_response
