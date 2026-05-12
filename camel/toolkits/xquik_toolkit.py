@@ -63,7 +63,7 @@ def _xquik_get(
 
 
 @api_keys_required([(None, "XQUIK_API_KEY")])
-def search_tweets(
+def xquik_search_tweets(
     query: str,
     max_results: int = 10,
     sort_order: str = "Top",
@@ -78,7 +78,7 @@ def search_tweets(
         query (str): The search query.
         max_results (int): Maximum number of tweets to return (10-200).
             (default: :obj:`10`)
-        sort_order (str): Sort order — "Top" (engagement) or "Latest"
+        sort_order (str): Sort order, "Top" (engagement) or "Latest"
             (chronological). (default: :obj:`"Top"`)
 
     Returns:
@@ -129,7 +129,7 @@ def search_tweets(
 
 
 @api_keys_required([(None, "XQUIK_API_KEY")])
-def get_tweet(tweet_id: str) -> str:
+def xquik_get_tweet(tweet_id: str) -> str:
     r"""Retrieve a single tweet by ID with full engagement metrics.
 
     Args:
@@ -171,7 +171,7 @@ def get_tweet(tweet_id: str) -> str:
 
 
 @api_keys_required([(None, "XQUIK_API_KEY")])
-def get_user_info(username: str) -> str:
+def xquik_get_user_info(username: str) -> str:
     r"""Retrieve information about a specific X (Twitter) user.
 
     Args:
@@ -200,7 +200,7 @@ def get_user_info(username: str) -> str:
 
 
 @api_keys_required([(None, "XQUIK_API_KEY")])
-def get_trends(woeid: int = 1, count: int = 20) -> str:
+def xquik_get_trends(woeid: int = 1, count: int = 20) -> str:
     r"""Get trending topics on X (Twitter).
 
     Args:
@@ -225,7 +225,7 @@ class XquikToolkit(BaseToolkit):
     r"""A toolkit for read-only X (Twitter) operations via the Xquik API.
 
     Provides tweet search, tweet lookup, user profile lookup, and trending
-    topics. Requires only ``XQUIK_API_KEY`` (1 env var) — no OAuth setup.
+    topics. Requires only ``XQUIK_API_KEY`` (1 env var) and no OAuth setup.
 
     For write operations (posting, deleting tweets), use
     :class:`TwitterToolkit` instead.
@@ -247,8 +247,8 @@ class XquikToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(search_tweets),
-            FunctionTool(get_tweet),
-            FunctionTool(get_user_info),
-            FunctionTool(get_trends),
+            FunctionTool(xquik_search_tweets),
+            FunctionTool(xquik_get_tweet),
+            FunctionTool(xquik_get_user_info),
+            FunctionTool(xquik_get_trends),
         ]
