@@ -86,7 +86,8 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
             str: The response after analyzing the image, which could be a
                  description, an answer, or a confirmation of an action.
         """
-        if self.agent is None:
+        parent_agent = self.agent
+        if parent_agent is None:
             logger.error(
                 "Cannot record screenshot in memory: No agent registered. "
                 "Please pass this toolkit to ChatAgent via "
@@ -97,6 +98,7 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "ChatAgent via toolkits_to_register_agent parameter."
             )
 
+        analysis_agent = None
         try:
             image_path = str(Path(image_path).absolute())
 
@@ -116,13 +118,28 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                 image_list=[img],
             )
 
-            # Record the message in agent's memory
-            response = self.agent.step(message)
+            from camel.agents import ChatAgent
+
+            # Use an isolated helper agent to avoid re-entering the parent
+            # agent while it is executing this toolkit's tool call.
+            analysis_agent = ChatAgent(
+                system_message=(
+                    "You analyze screenshots and answer the user's prompt "
+                    "using only the provided image."
+                ),
+                model=parent_agent.model_backend,
+                output_language=parent_agent.output_language,
+            )
+
+            response = analysis_agent.step(message)
             return response.msgs[0].content
 
         except Exception as e:
             logger.error(f"Error reading screenshot: {e}")
             return f"Error reading screenshot: {e}"
+        finally:
+            if analysis_agent is not None:
+                analysis_agent.reset()
 
     def take_screenshot_and_read_image(
         self,

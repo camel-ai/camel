@@ -226,7 +226,6 @@ class PgVectorStorage(BaseVectorStorage):
 
         try:
             with self._conn.cursor() as cur:
-                # Fix distance metric mapping
                 metric_info = {
                     VectorDistance.COSINE: ('<=>', 'ASC'),  # Cosine distance
                     VectorDistance.EUCLIDEAN: (
@@ -235,8 +234,8 @@ class PgVectorStorage(BaseVectorStorage):
                     ),  # Euclidean distance
                     VectorDistance.DOT: (
                         '<#>',
-                        'DESC',
-                    ),  # Negative dot product (higher is better)
+                        'ASC',
+                    ),  # Negative inner product, lower is more similar
                 }
 
                 if self.distance not in metric_info:
@@ -246,27 +245,27 @@ class PgVectorStorage(BaseVectorStorage):
 
                 metric, order = metric_info[self.distance]
 
-                from psycopg.sql import SQL, Identifier, Literal
+                from psycopg.sql import SQL, Identifier
 
                 query_sql = SQL("""
-                    SELECT id, vector, payload, (vector {} %s::vector)
-                    AS similarity
+                    SELECT id, vector, payload, (vector {} %s::vector) AS score
                     FROM {}
-                    ORDER BY similarity {}
+                    ORDER BY score {}
                     LIMIT %s
                 """).format(
-                    Literal(metric),
+                    SQL(metric),
                     Identifier(self.table_name),
-                    Literal(order),
+                    SQL(order),
                 )
 
                 cur.execute(query_sql, (query.query_vector, query.top_k))
                 results = []
                 for row in cur.fetchall():
-                    id, vector, payload, similarity = row
+                    id, vector, payload, score = row
+                    similarity = self._score_to_similarity(float(score))
                     results.append(
                         VectorDBQueryResult.create(
-                            similarity=float(similarity),
+                            similarity=similarity,
                             vector=list(vector),
                             id=id,
                             payload=payload,
@@ -276,6 +275,16 @@ class PgVectorStorage(BaseVectorStorage):
         except Exception as e:
             logger.error(f"Failed to query vectors: {e}")
             raise
+
+    def _score_to_similarity(self, score: float) -> float:
+        r"""Convert a pgvector operator result to high-is-better similarity."""
+        if self.distance == VectorDistance.COSINE:
+            return max(0.0, min(1.0, 1.0 - score))
+        if self.distance == VectorDistance.EUCLIDEAN:
+            return 1.0 / (1.0 + max(0.0, score))
+        if self.distance == VectorDistance.DOT:
+            return -score
+        raise ValueError(f"Unsupported distance metric: {self.distance}")
 
     def status(self, **kwargs: Any) -> VectorDBStatus:
         r"""Get the status of the vector database, including vector
