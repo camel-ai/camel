@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import json
 import logging
 import os
 import random
@@ -20,11 +19,12 @@ import re
 import string
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Protocol, Union
+from typing import Any, Dict, List, Optional, Protocol
 
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
+from camel.benchmarks._utils import save_to_jsonl
 from camel.benchmarks.base import BaseBenchmark
 from camel.messages import BaseMessage
 from camel.retrievers.auto_retriever import AutoRetriever
@@ -116,40 +116,34 @@ class DefaultGAIARetriever(AutoRetriever):
 class GAIABenchmark(BaseBenchmark):
     r"""GAIA Benchmark adapted from `"GAIA: a benchmark for General AI
     Assistants"
-    <https://huggingface.co/datasets/gaia-benchmark/GAIA>`_.
-
-    Args:
-        data_dir (str): The directory to save the data.
-        save_to (str): The file to save the results.
-        retriever (Optional[RetrieverProtocol]): The retriever to use.
-            (default: :obj:`None`)
-        processes (int, optional): The number of processes to use.
-            (default: :obj:`1`)
+    <https://huggingface.co/datasets/gaia-benchmark/GAIA>`.
     """
 
     def __init__(
         self,
-        data_dir: str,
-        save_to: str,
-        retriever: Optional[RetrieverProtocol] = None,
+        data_dir: Optional[str] = None,
+        save_to: Optional[str] = None,
         processes: int = 1,
     ):
         r"""Initialize the GAIA benchmark.
 
         Args:
-            data_dir (str): The directory to save the data.
-            save_to (str): The file to save the results.
-            retriever (Optional[RetrieverProtocol], optional): The retriever to
-                use. (default: :obj:`None`)
+            data_dir (Optional[str]): Path to the data directory.
+            save_to (Optional[str]): The file to save the results. If None,
+                uses default 'gaia_results.jsonl'. (default: :obj:`None`)
             processes (int, optional): The number of processes to use for
                 parallel processing. (default: :obj:`1`)
         """
-        super().__init__("gaia", data_dir, save_to, processes)
-        self.retriever = retriever or DefaultGAIARetriever()
+        self.data_dir = data_dir or str(Path(__file__).parent / "data")
+        self.save_to = save_to or "gaia_results.jsonl"
+        super().__init__("gaia", self.data_dir, self.save_to, processes)
+        self.retriever = DefaultGAIARetriever()
 
-    def download(self):
+    def download(self) -> None:
         r"""Download the GAIA dataset."""
         from huggingface_hub import snapshot_download
+
+        logger.info("Downloading GAIA dataset from HuggingFace.")
 
         snapshot_download(
             repo_id="gaia-benchmark/GAIA",
@@ -158,12 +152,15 @@ class GAIABenchmark(BaseBenchmark):
             local_dir_use_symlinks=True,
         )
 
-    def load(self, force_download=False):
+    def load(
+        self,
+        force_download: bool = False,
+    ) -> None:
         r"""Load the GAIA dataset.
 
         Args:
-            force_download (bool, optional): Whether to
-                force download the data.
+            force_download (bool, optional): Whether to force
+                download the data. (default: :obj:`False`)
         """
         import pandas as pd
 
@@ -172,8 +169,8 @@ class GAIABenchmark(BaseBenchmark):
             self.download()
 
         # Define validation and test directories
-        valid_dir = self.data_dir / "2023/validation"
-        test_dir = self.data_dir / "2023/test"
+        valid_dir = Path(self.data_dir) / "2023/validation"
+        test_dir = Path(self.data_dir) / "2023/test"
 
         # Check if directories exist; if not, download the data
         if not valid_dir.is_dir() or not test_dir.is_dir():
@@ -194,42 +191,47 @@ class GAIABenchmark(BaseBenchmark):
                 if data["file_name"]:
                     data["file_name"] = path / data["file_name"]
                 self._data[label].append(data)
-        return self
 
-    @property
-    def train(self):
-        r"""Get the training set."""
-        raise NotImplementedError("GAIA does not have a training set.")
-
-    def run(  # type: ignore[override]
+    def run(
         self,
-        agent: ChatAgent,
-        on: Literal["train", "valid", "test"],
-        level: Union[int, List[int], Literal["all"]],
+        pipeline_template: ChatAgent,
         randomize: bool = False,
         subset: Optional[int] = None,
+        **kwargs,
     ) -> Dict[str, Any]:
         r"""Run the benchmark.
 
         Args:
-            agent (ChatAgent): The agent to run the benchmark.
-            on (Literal["valid", "test"]): The set to run the benchmark.
-            level (Union[int, List[int], Literal["all"]]): The level to run
-                the benchmark.
+            pipeline_template (ChatAgent): The agent to run the benchmark.
             randomize (bool, optional): Whether to randomize the data.
                 (default: :obj:`False`)
             subset (Optional[int], optional): The subset of data to run.
                 (default: :obj:`None`)
+            **kwargs: Additional keyword arguments. Must include:
+                - on (Literal["valid", "test"]): The set to run the benchmark.
+                - level (Union[int, List[int], Literal["all"]]): The level(s).
 
         Returns:
-            Dict[str, Any]: The results of the benchmark.
+            Dict[str, Any]: Dictionary containing:
+                - total: Total number of tasks evaluated
+                - correct: Number of correct answers
+                - results: List of detailed results
+
+        Raises:
+            ValueError: If required parameters are missing or invalid.
         """
         # Validate inputs
+        on = kwargs.get("on")
+        if not on:
+            raise ValueError(
+                "Missing required parameter 'on'. Must be 'valid' or 'test'."
+            )
         if on not in ["valid", "test"]:
             raise ValueError(
                 f"Invalid value for `on`: {on}, expected 'valid' or 'test'."
             )
 
+        level = kwargs.get("level", "all")
         levels = (
             [1, 2, 3]
             if level == "all"
@@ -238,7 +240,7 @@ class GAIABenchmark(BaseBenchmark):
             else level
         )
         if not all(
-            isinstance(level, int) and level in [1, 2, 3] for level in levels
+            isinstance(lvl, int) and lvl in [1, 2, 3] for lvl in levels
         ):
             raise ValueError(
                 f"Invalid value for `level`: {level}, expected 1, 2, 3 "
@@ -246,37 +248,46 @@ class GAIABenchmark(BaseBenchmark):
             )
 
         logger.info(f"Running benchmark on {on} set at levels {levels}.")
-        datas = [data for data in self._data[on] if data["Level"] in levels]
+        tasks = [task for task in self._data[on] if task["Level"] in levels]
 
         # Shuffle and subset data if necessary
         if randomize:
-            random.shuffle(datas)
+            random.shuffle(tasks)
         if subset:
-            datas = datas[:subset]
+            tasks = tasks[:subset]
 
-        logger.info(f"Number of tasks: {len(datas)}")
+        logger.info(f"Number of tasks: {len(tasks)}")
+
+        # Clear the results file if it exists
+        open(self.save_to, "w").close()
 
         # Initialize results storage
         self._results = []
 
         # Process tasks
-        with open(self.save_to, "w") as f:
-            for task in tqdm(datas, desc="Running"):
-                if not self._prepare_task(task):
-                    continue
+        for task in tqdm(tasks, desc="Running"):
+            if not self._prepare_task(task):
+                continue
 
-                try:
-                    result = agent.step(self._create_user_message(task))
-                    self._process_result(agent, task, result, f)
-                except Exception as e:
-                    self._handle_error(task, e, f)
-                finally:
-                    agent.reset()
+            try:
+                result = pipeline_template.step(self._create_user_message(task))
+                self._process_result(pipeline_template, task, result)
+            except Exception as e:
+                self._handle_error(task, e)
+            finally:
+                pipeline_template.reset()
 
         return self._generate_summary()
 
     def _prepare_task(self, task: Dict[str, Any]) -> bool:
-        r"""Prepare the task by validating and enriching its data."""
+        r"""Prepare the task by validating and enriching its data.
+
+        Args:
+            task (Dict[str, Any]): The task to prepare.
+
+        Returns:
+            bool: True if the task is ready to process, False otherwise.
+        """
         if task["file_name"]:
             file_path = Path(task["file_name"])
             if not file_path.exists():
@@ -305,7 +316,14 @@ class GAIABenchmark(BaseBenchmark):
         return True
 
     def _create_user_message(self, task: Dict[str, Any]) -> BaseMessage:
-        r"""Create a user message from a task."""
+        r"""Create a user message from a task.
+
+        Args:
+            task (Dict[str, Any]): The task data.
+
+        Returns:
+            BaseMessage: The user message.
+        """
         return BaseMessage.make_user_message(
             role_name="User",
             content=task["Question"],
@@ -316,12 +334,17 @@ class GAIABenchmark(BaseBenchmark):
         agent: ChatAgent,
         task: Dict[str, Any],
         result: Any,
-        file_obj: Any,
     ) -> None:
-        r"""Process and store the result of a task."""
-        model_answer = self.get_final_answer(result.msgs[0].content)
+        r"""Process and store the result of a task.
+
+        Args:
+            agent (ChatAgent): The agent that generated the result.
+            task (Dict[str, Any]): The task data.
+            result (Any): The result from the agent.
+        """
+        model_answer = self._get_final_answer(result.msgs[0].content)
         final_answer = task["Final answer"]
-        score = self.question_scorer(model_answer, final_answer)
+        score = self._question_scorer(model_answer, final_answer)
         tool_calls = result.info.get("tool_calls", [])
 
         result_data = {
@@ -336,15 +359,17 @@ class GAIABenchmark(BaseBenchmark):
             "history": agent.memory.get_context(),
         }
         self._results.append(result_data)
-        file_obj.write(
-            json.dumps(result_data, indent=2, ensure_ascii=False) + "\n"
-        )
-        file_obj.flush()
+        save_to_jsonl(self.save_to, result_data, mode="a")
 
     def _handle_error(
-        self, task: Dict[str, Any], error: Exception, file_obj: Any
+        self, task: Dict[str, Any], error: Exception
     ) -> None:
-        r"""Handle errors encountered during task processing."""
+        r"""Handle errors encountered during task processing.
+
+        Args:
+            task (Dict[str, Any]): The task data.
+            error (Exception): The error encountered.
+        """
         logger.warning(f"Error processing task {task['task_id']}: {error}")
         error_data = {
             "task_id": task["task_id"],
@@ -357,20 +382,21 @@ class GAIABenchmark(BaseBenchmark):
             "score": 0,
         }
         self._results.append(error_data)
-        file_obj.write(
-            json.dumps(error_data, indent=2, ensure_ascii=False) + "\n"
-        )
-        file_obj.flush()
+        save_to_jsonl(self.save_to, error_data, mode="a")
 
     def _generate_summary(self) -> Dict[str, Any]:
-        r"""Generate and return a summary of the benchmark results."""
+        r"""Generate and return a summary of the benchmark results.
+
+        Returns:
+            Dict[str, Any]: Summary containing total, correct, and results.
+        """
         return {
             "total": len(self._results),
             "correct": sum(result["score"] for result in self._results),
             "results": self._results,
         }
 
-    def question_scorer(self, model_answer: str, ground_truth: str) -> bool:
+    def _question_scorer(self, model_answer: str, ground_truth: str) -> bool:
         r"""Scorer for the GAIA benchmark.
         https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/
         scorer.py
@@ -380,27 +406,27 @@ class GAIABenchmark(BaseBenchmark):
             ground_truth (str): The ground truth answer.
 
         Returns:
-            bool: The score of the model
+            bool: The score of the model.
         """
-
-        def is_float(element: Any) -> bool:
+        def _is_float(element: Any) -> bool:
+            r"""Check if an element can be converted to float."""
             try:
                 float(element)
                 return True
             except ValueError:
                 return False
 
-        if is_float(ground_truth):
+        if _is_float(ground_truth):
             logger.info(f"Evaluating {model_answer} as a number.")
-            normalized_answer = self.normalize_number_str(model_answer)
+            normalized_answer = self._normalize_number_str(model_answer)
             return normalized_answer == float(ground_truth)
 
         elif any(char in ground_truth for char in [",", ";"]):
             logger.info(
                 f"Evaluating {model_answer} as a comma separated list."
             )
-            gt_elems = self.split_string(ground_truth)
-            ma_elems = self.split_string(model_answer)
+            gt_elems = self._split_string(ground_truth)
+            ma_elems = self._split_string(model_answer)
 
             if len(gt_elems) != len(ma_elems):
                 logger.warning(
@@ -411,21 +437,29 @@ class GAIABenchmark(BaseBenchmark):
 
             comparisons = []
             for ma_elem, gt_elem in zip(ma_elems, gt_elems):
-                if is_float(gt_elem):
-                    normalized_ma_elem = self.normalize_number_str(ma_elem)
+                if _is_float(gt_elem):
+                    normalized_ma_elem = self._normalize_number_str(ma_elem)
                     comparisons.append(normalized_ma_elem == float(gt_elem))
                 else:
-                    ma_elem = self.normalize_str(ma_elem, remove_punct=False)
-                    gt_elem = self.normalize_str(gt_elem, remove_punct=False)
+                    ma_elem = self._normalize_str(ma_elem, remove_punct=False)
+                    gt_elem = self._normalize_str(gt_elem, remove_punct=False)
                     comparisons.append(ma_elem == gt_elem)
             return all(comparisons)
         else:
             logger.info(f"Evaluating {model_answer} as a string.")
-            ma_elem = self.normalize_str(model_answer)
-            gt_elem = self.normalize_str(ground_truth)
+            ma_elem = self._normalize_str(model_answer)
+            gt_elem = self._normalize_str(ground_truth)
             return ma_elem == gt_elem
 
-    def normalize_number_str(self, number_str: str) -> float:
+    def _normalize_number_str(self, number_str: str) -> float:
+        r"""Normalize a number string to float.
+
+        Args:
+            number_str (str): The number string to normalize.
+
+        Returns:
+            float: The normalized number, or inf if conversion fails.
+        """
         for char in ["$", "%", ","]:
             number_str = number_str.replace(char, "")
         try:
@@ -436,28 +470,32 @@ class GAIABenchmark(BaseBenchmark):
             )
             return float("inf")
 
-    def split_string(
+    def _split_string(
         self, s: str, char_list: Optional[List[str]] = None
-    ) -> list[str]:
+    ) -> List[str]:
         r"""Split a string based on a list of characters.
 
         Args:
             s (str): The string to split.
-            char_list (Optional[List[str]], optional): T
-                he list of characters to split on.
-                (default: :obj:`None`)
+            char_list (Optional[List[str]], optional): The list of characters
+                to split on. (default: :obj:`None`)
+
+        Returns:
+            List[str]: The split string parts.
         """
         if char_list is None:
             char_list = [",", ";"]
         pattern = f"[{''.join(char_list)}]"
         return re.split(pattern, s)
 
-    def normalize_str(self, input_str, remove_punct=True) -> str:
+    def _normalize_str(
+        self, input_str: str, remove_punct: bool = True
+    ) -> str:
         r"""Normalize a string.
 
         Args:
-            input_str: The input string to normalize.
-            remove_punct: Whether to remove punctuation.
+            input_str (str): The input string to normalize.
+            remove_punct (bool): Whether to remove punctuation.
 
         Returns:
             str: The normalized string.
@@ -469,7 +507,7 @@ class GAIABenchmark(BaseBenchmark):
         else:
             return no_spaces.lower()
 
-    def get_final_answer(self, content: str) -> str:
+    def _get_final_answer(self, content: str) -> str:
         r"""Get the final answer from the content.
 
         Args:

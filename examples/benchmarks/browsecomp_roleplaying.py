@@ -38,20 +38,10 @@ if __name__ == '__main__':
         task_type=TaskType.AI_SOCIETY,
     )
 
-    benchmark = BrowseCompBenchmark(
-        "report_role_playing.html", num_examples=2, processes=2
-    )
+    benchmark = BrowseCompBenchmark(processes=2)
+    benchmark.load(num_examples=2)
 
     benchmark.run(
         pipeline_template=role_play_session,
         roleplaying_summarizer=summarize_agent,
     )
-
-    # Create a grader agent for validation
-    grader_agent = ChatAgent(
-        "You are a helpful assistant.",
-        model=ModelFactory.create(**model_config),
-    )
-
-    # Validate the results
-    benchmark.validate(grader=grader_agent)
