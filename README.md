@@ -586,6 +586,67 @@ We implemented amazing research ideas from other works for you to build, compare
 
 - `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
 
+## FAQ
+
+### What is CAMEL-AI?
+CAMEL is an open-source community dedicated to finding the **scaling laws of agents**. We implement and support various types of agents, tasks, prompts, models, and simulated environments to facilitate research in multi-agent systems.
+
+### How does CAMEL differ from LangChain or CrewAI?
+| Feature | CAMEL | LangChain | CrewAI |
+|:---|:---|:---|:---|
+| **Focus** | Scaling laws research | Chain orchestration | Role-playing agents |
+| **Scale** | Up to 1M agents | Single/multi-agent | Small teams |
+| **Memory** | Stateful (chat + code) | Conversation memory | Task context |
+| **Data Generation** | Built-in (CoT, Self-Instruct) | External tools | Limited |
+| **Simulation** | World simulation (Oasis) | No | No |
+
+### How do I install CAMEL?
+```bash
+pip install camel-ai
+```
+For web tools: `pip install 'camel-ai[web_tools]'`
+
+### What LLM providers does CAMEL support?
+CAMEL supports multiple model platforms via `ModelFactory`:
+- **OpenAI** (GPT-4o, GPT-4, GPT-3.5)
+- **Anthropic** (Claude)
+- **Azure OpenAI**
+- **Google Gemini**
+- **LiteLLM** (unified interface)
+- **Ollama** (local models)
+- **Qwen** (Alibaba's models)
+
+### What is ChatAgent?
+`ChatAgent` is the core agent class in CAMEL that can:
+- Use tools (like `SearchToolkit` for web search)
+- Maintain stateful memory across conversations
+- Execute multi-step tasks with planning
+
+### What is Workforce?
+`Workforce` enables **multi-agent collaboration** where multiple agents work together on complex tasks, with dynamic communication and task distribution.
+
+### How does CAMEL handle memory?
+CAMEL agents maintain **stateful memory** that includes:
+- Chat history (text-based interactions)
+- Code execution history (Python execution results)
+- In-memory data (DataFrames, complex structures)
+
+### What is Oasis?
+[Oasis](https://oasis.camel-ai.org/) is CAMEL's **world simulation platform** for studying emergent behaviors in multi-agent environments.
+
+### How do I create custom tools?
+Use the `@tool` decorator or extend `Toolkit` classes. See [Tools documentation](https://docs.camel-ai.org/key_modules/tools).
+
+### How do I contribute to CAMEL?
+See [Contributing guide](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md). Join our [Discord](https://discord.camel-ai.org/) or [WeChat](https://ghli.org/camel/wechat.png) community.
+
+### Where can I find examples and tutorials?
+- [Cookbooks](https://docs.camel-ai.org/cookbooks/) - Detailed tutorials
+- [Examples folder](https://github.com/camel-ai/camel/tree/master/examples) - Code examples
+- [Google Colab demo](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim)
+
+<br>
+
 ## License
 
 The source code is licensed under Apache 2.0.
