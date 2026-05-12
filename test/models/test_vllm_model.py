@@ -100,9 +100,7 @@ def test_vllm_postprocess_maps_reasoning_to_reasoning_content():
 
     result = model.postprocess_response(response)
 
-    assert (
-        result.choices[0].message.reasoning_content == "provider reasoning"
-    )
+    assert result.choices[0].message.reasoning_content == "provider reasoning"
 
 
 def test_vllm_postprocess_preserves_reasoning_content():
@@ -114,9 +112,7 @@ def test_vllm_postprocess_preserves_reasoning_content():
 
     result = model.postprocess_response(response)
 
-    assert (
-        result.choices[0].message.reasoning_content == "canonical reasoning"
-    )
+    assert result.choices[0].message.reasoning_content == "canonical reasoning"
 
 
 def test_vllm_run_maps_stream_reasoning_to_reasoning_content():
