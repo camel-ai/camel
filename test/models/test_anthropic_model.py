@@ -12,9 +12,11 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from unittest.mock import MagicMock
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from pydantic import BaseModel
 
 from camel.configs import AnthropicConfig
 from camel.models import AnthropicModel
@@ -26,6 +28,10 @@ from camel.utils import AnthropicTokenCounter, BaseTokenCounter
 
 # Skip all tests in this module if the anthropic package is not available.
 pytest.importorskip("anthropic", reason="anthropic package is required")
+
+
+class TravelResponse(BaseModel):
+    city: str
 
 
 @pytest.mark.model_backend
@@ -107,6 +113,17 @@ def test_anthropic_model_cache_control_from_config():
         "type": "ephemeral",
         "ttl": "1h",
     }
+
+
+def test_anthropic_config_thinking_and_output_config():
+    """Test Anthropic thinking-related config fields."""
+    config = AnthropicConfig(
+        thinking={"type": "adaptive"},
+        output_config={"effort": "medium"},
+    ).as_dict()
+
+    assert config["thinking"] == {"type": "adaptive"}
+    assert config["output_config"] == {"effort": "medium"}
 
 
 def test_anthropic_model_stream_property():
@@ -221,7 +238,7 @@ def test_convert_openai_to_anthropic_system_message_list_content():
         {"role": "user", "content": "Hello"},
     ]
 
-    system_msg, anthropic_msgs = model._convert_openai_to_anthropic_messages(
+    system_msg, _anthropic_msgs = model._convert_openai_to_anthropic_messages(
         messages
     )
 
@@ -296,12 +313,10 @@ def test_convert_anthropic_response_text_only():
         api_key="dummy_api_key",
     )
 
-    # Create mock response
     mock_response = MagicMock()
-    mock_text_block = MagicMock()
-    mock_text_block.type = "text"
-    mock_text_block.text = "Hello, how can I help?"
-    mock_response.content = [mock_text_block]
+    mock_response.content = [
+        SimpleNamespace(type="text", text="Hello, how can I help?")
+    ]
     mock_response.stop_reason = "end_turn"
     mock_response.id = "msg_123"
     mock_response.usage = MagicMock()
@@ -320,6 +335,42 @@ def test_convert_anthropic_response_text_only():
     assert result.usage.total_tokens == 15
 
 
+def test_convert_anthropic_response_preserves_cache_usage_fields():
+    """Test conversion preserves Anthropic prompt cache usage fields."""
+    model = AnthropicModel(
+        ModelType.CLAUDE_SONNET_4_5,
+        api_key="dummy_api_key",
+    )
+
+    mock_response = MagicMock()
+    mock_response.content = [{"type": "text", "text": "cached"}]
+    mock_response.stop_reason = "end_turn"
+    mock_response.id = "msg_cached"
+    mock_response.usage = MagicMock()
+    mock_response.usage.input_tokens = 20
+    mock_response.usage.output_tokens = 6
+    mock_response.usage.cache_read_input_tokens = 12
+    mock_response.usage.cache_creation_input_tokens = 8
+    mock_response.usage.cache_creation = {
+        "ephemeral_5m_input_tokens": 5,
+        "ephemeral_1h_input_tokens": 3,
+    }
+
+    result = model._convert_anthropic_to_openai_response(
+        mock_response, "claude-haiku-4-5"
+    )
+
+    assert result.usage.prompt_tokens == 20
+    assert result.usage.completion_tokens == 6
+    assert result.usage.total_tokens == 26
+    assert result.usage.cache_read_input_tokens == 12
+    assert result.usage.cache_creation_input_tokens == 8
+    assert result.usage.cache_creation == {
+        "ephemeral_5m_input_tokens": 5,
+        "ephemeral_1h_input_tokens": 3,
+    }
+
+
 def test_convert_anthropic_response_with_tool_use():
     """Test conversion of response with tool use."""
     model = AnthropicModel(
@@ -327,19 +378,16 @@ def test_convert_anthropic_response_with_tool_use():
         api_key="dummy_api_key",
     )
 
-    # Create mock response with tool use
     mock_response = MagicMock()
-    mock_text_block = MagicMock()
-    mock_text_block.type = "text"
-    mock_text_block.text = "I'll search for that."
-
-    mock_tool_block = MagicMock()
-    mock_tool_block.type = "tool_use"
-    mock_tool_block.id = "tool_123"
-    mock_tool_block.name = "search"
-    mock_tool_block.input = {"query": "test"}
-
-    mock_response.content = [mock_text_block, mock_tool_block]
+    mock_response.content = [
+        SimpleNamespace(type="text", text="I'll search for that."),
+        SimpleNamespace(
+            type="tool_use",
+            id="tool_123",
+            name="search",
+            input={"query": "test"},
+        ),
+    ]
     mock_response.stop_reason = "tool_use"
     mock_response.id = "msg_123"
     mock_response.usage = MagicMock()
@@ -357,6 +405,114 @@ def test_convert_anthropic_response_with_tool_use():
     assert tool_calls[0].id == "tool_123"
     assert tool_calls[0].type == "function"
     assert tool_calls[0].function.name == "search"
+
+
+def test_convert_anthropic_response_with_thinking_blocks():
+    """Test conversion of Anthropic thinking blocks."""
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        api_key="dummy_api_key",
+    )
+
+    mock_response = MagicMock()
+    mock_response.content = [
+        {
+            "type": "thinking",
+            "thinking": "I should inspect the data first.",
+            "signature": "sig_123",
+        },
+        {"type": "redacted_thinking", "data": "opaque"},
+        {"type": "text", "text": "The answer is 42."},
+        {
+            "type": "tool_use",
+            "id": "tool_123",
+            "name": "search",
+            "input": {"query": "test"},
+        },
+    ]
+    mock_response.stop_reason = "tool_use"
+    mock_response.id = "msg_thinking"
+    mock_response.usage = MagicMock()
+    mock_response.usage.input_tokens = 10
+    mock_response.usage.output_tokens = 5
+
+    result = model._convert_anthropic_to_openai_response(
+        mock_response, "claude-haiku-4-5"
+    )
+
+    message = result.choices[0].message
+    assert message.content == "The answer is 42."
+    assert message.reasoning_content == "I should inspect the data first."
+    assert message.anthropic_thinking_blocks == [
+        {
+            "type": "thinking",
+            "thinking": "I should inspect the data first.",
+            "signature": "sig_123",
+        },
+        {"type": "redacted_thinking", "data": "opaque"},
+    ]
+    assert model._tool_call_thinking_blocks["tool_123"] == [
+        {
+            "type": "thinking",
+            "thinking": "I should inspect the data first.",
+            "signature": "sig_123",
+        },
+        {"type": "redacted_thinking", "data": "opaque"},
+    ]
+    assert message.tool_calls[0].extra_content == {
+        "anthropic_thinking_blocks": [
+            {
+                "type": "thinking",
+                "thinking": "I should inspect the data first.",
+                "signature": "sig_123",
+            },
+            {"type": "redacted_thinking", "data": "opaque"},
+        ]
+    }
+
+
+def test_convert_openai_to_anthropic_reuses_tool_call_thinking_blocks():
+    """Test tool-use continuation includes tool call thinking blocks."""
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        api_key="dummy_api_key",
+    )
+
+    messages = [
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {
+                    "id": "call_123",
+                    "function": {
+                        "name": "search",
+                        "arguments": '{"query": "test"}',
+                    },
+                    "extra_content": {
+                        "anthropic_thinking_blocks": [
+                            {
+                                "type": "thinking",
+                                "thinking": "Need this tool.",
+                                "signature": "sig_123",
+                            }
+                        ]
+                    },
+                }
+            ],
+        }
+    ]
+
+    _, anthropic_msgs = model._convert_openai_to_anthropic_messages(messages)
+
+    content = anthropic_msgs[0]["content"]
+    assert content[0] == {
+        "type": "thinking",
+        "thinking": "Need this tool.",
+        "signature": "sig_123",
+    }
+    assert content[1]["type"] == "tool_use"
+    assert content[1]["id"] == "call_123"
 
 
 def test_convert_anthropic_response_stop_reasons():
@@ -442,12 +598,11 @@ def test_convert_tools_basic():
     assert result[0]["input_schema"]["type"] == "object"
 
 
-def test_convert_tools_with_beta_structured_outputs():
-    """Test tool conversion with beta structured outputs enabled."""
+def test_convert_tools_preserves_strict_flag():
+    """Test tool conversion preserves the strict field."""
     model = AnthropicModel(
         ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
-        use_beta_for_structured_outputs=True,
     )
 
     openai_tools = [
@@ -489,6 +644,33 @@ def test_convert_stream_chunk_message_start():
     assert result.choices[0].finish_reason is None
 
 
+def test_convert_stream_chunk_message_start_preserves_cache_usage():
+    """Test message_start chunk conversion preserves prompt cache usage."""
+    model = AnthropicModel(
+        ModelType.CLAUDE_SONNET_4_5,
+        api_key="dummy_api_key",
+    )
+
+    mock_chunk = MagicMock()
+    mock_chunk.type = "message_start"
+    mock_chunk.message = MagicMock()
+    mock_chunk.message.id = "msg_cached"
+    mock_chunk.message.usage = MagicMock()
+    mock_chunk.message.usage.input_tokens = 30
+    mock_chunk.message.usage.output_tokens = 0
+    mock_chunk.message.usage.cache_read_input_tokens = 18
+
+    tool_call_index = {}
+    result = model._convert_anthropic_stream_to_openai_chunk(
+        mock_chunk, "claude-haiku-4-5", tool_call_index
+    )
+
+    assert result.usage.prompt_tokens == 30
+    assert result.usage.completion_tokens == 0
+    assert result.usage.total_tokens == 30
+    assert result.usage.cache_read_input_tokens == 18
+
+
 def test_convert_stream_chunk_content_block_delta_text():
     """Test conversion of text content_block_delta chunk."""
     model = AnthropicModel(
@@ -510,6 +692,122 @@ def test_convert_stream_chunk_content_block_delta_text():
     assert result.choices[0].delta.content == "Hello"
 
 
+def test_convert_stream_chunk_content_block_delta_thinking():
+    """Test conversion of thinking_delta chunks."""
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        api_key="dummy_api_key",
+    )
+
+    thinking_state = {}
+
+    mock_chunk = SimpleNamespace(
+        type="content_block_delta",
+        index=0,
+        delta=SimpleNamespace(
+            type="thinking_delta",
+            thinking="Let me reason.",
+        ),
+    )
+
+    tool_call_index = {}
+    result = model._convert_anthropic_stream_to_openai_chunk(
+        mock_chunk,
+        "claude-haiku-4-5",
+        tool_call_index,
+        thinking_state=thinking_state,
+    )
+
+    assert result.choices[0].delta.reasoning_content == "Let me reason."
+
+    mock_signature_chunk = SimpleNamespace(
+        type="content_block_delta",
+        index=0,
+        delta=SimpleNamespace(
+            type="signature_delta",
+            signature="sig_123",
+        ),
+    )
+
+    model._convert_anthropic_stream_to_openai_chunk(
+        mock_signature_chunk,
+        "claude-haiku-4-5",
+        tool_call_index,
+        thinking_state=thinking_state,
+    )
+
+    mock_stop_chunk = SimpleNamespace(type="content_block_stop", index=0)
+
+    model._convert_anthropic_stream_to_openai_chunk(
+        mock_stop_chunk,
+        "claude-haiku-4-5",
+        tool_call_index,
+        thinking_state=thinking_state,
+    )
+
+    assert thinking_state["thinking_blocks"] == [
+        {
+            "type": "thinking",
+            "thinking": "Let me reason.",
+            "signature": "sig_123",
+        }
+    ]
+
+
+def test_convert_stream_tool_use_start_includes_thinking_blocks():
+    """Test streamed tool calls carry thinking blocks in extra_content."""
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        api_key="dummy_api_key",
+    )
+
+    mock_chunk = SimpleNamespace(
+        type="content_block_start",
+        index=1,
+        content_block=SimpleNamespace(
+            type="tool_use",
+            id="tool_123",
+            name="search",
+        ),
+    )
+
+    thinking_state = {
+        "thinking_blocks": [
+            {
+                "type": "thinking",
+                "thinking": "Use a search tool.",
+                "signature": "sig_123",
+            }
+        ]
+    }
+    tool_call_index = {}
+
+    result = model._convert_anthropic_stream_to_openai_chunk(
+        mock_chunk,
+        "claude-haiku-4-5",
+        tool_call_index,
+        thinking_state=thinking_state,
+    )
+
+    tool_call = result.choices[0].delta.tool_calls[0]
+    assert tool_call.extra_content == {
+        "anthropic_thinking_blocks": [
+            {
+                "type": "thinking",
+                "thinking": "Use a search tool.",
+                "signature": "sig_123",
+            }
+        ]
+    }
+    assert model._tool_call_thinking_blocks["tool_123"] == [
+        {
+            "type": "thinking",
+            "thinking": "Use a search tool.",
+            "signature": "sig_123",
+        }
+    ]
+
+
 def test_convert_stream_chunk_tool_use_start():
     """Test conversion of tool_use content_block_start chunk."""
     model = AnthropicModel(
@@ -517,12 +815,14 @@ def test_convert_stream_chunk_tool_use_start():
         api_key="dummy_api_key",
     )
 
-    mock_chunk = MagicMock()
-    mock_chunk.type = "content_block_start"
-    mock_chunk.content_block = MagicMock()
-    mock_chunk.content_block.type = "tool_use"
-    mock_chunk.content_block.id = "tool_123"
-    mock_chunk.content_block.name = "search"
+    mock_chunk = SimpleNamespace(
+        type="content_block_start",
+        content_block=SimpleNamespace(
+            type="tool_use",
+            id="tool_123",
+            name="search",
+        ),
+    )
 
     tool_call_index = {}
     result = model._convert_anthropic_stream_to_openai_chunk(
@@ -605,12 +905,202 @@ def test_convert_stream_chunk_message_stop():
     assert result.choices[0].finish_reason == "stop"
 
 
-def test_use_beta_for_structured_outputs():
-    """Test that beta API is used when configured."""
+def test_build_output_config():
+    """Test output_config generation for structured outputs."""
     model = AnthropicModel(
         ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
-        use_beta_for_structured_outputs=True,
     )
 
-    assert model._use_beta_for_structured_outputs is True
+    output_config = model._build_output_config(TravelResponse)
+
+    assert output_config["format"]["type"] == "json_schema"
+    schema = output_config["format"]["schema"]
+    assert schema["type"] == "object"
+    assert "city" in schema["properties"]
+
+
+def test_run_passes_output_config_tool_choice_and_extra_fields():
+    """Test Anthropic request payload for structured outputs with tools."""
+    mock_client = MagicMock()
+    mock_async_client = MagicMock()
+
+    mock_response = MagicMock()
+    mock_response.content = [{"type": "text", "text": '{"city":"Kyoto"}'}]
+    mock_response.stop_reason = "end_turn"
+    mock_response.id = "msg_structured"
+    mock_response.usage = MagicMock()
+    mock_response.usage.input_tokens = 12
+    mock_response.usage.output_tokens = 4
+    mock_client.messages.create.return_value = mock_response
+
+    config = AnthropicConfig(
+        max_tokens=128,
+        tool_choice={"type": "auto"},
+        thinking={"type": "adaptive"},
+        output_config={"effort": "medium"},
+        extra_headers={"x-test-header": "1"},
+        extra_body={
+            "existing": True,
+            "output_config": {"format": {"type": "json_schema", "schema": {}}},
+        },
+    ).as_dict()
+
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        model_config_dict=config,
+        api_key="dummy_api_key",
+        client=mock_client,
+        async_client=mock_async_client,
+    )
+
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get weather",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {"type": "string"},
+                    },
+                    "required": ["location"],
+                },
+                "strict": True,
+            },
+        }
+    ]
+
+    result = model._run(
+        messages=[{"role": "user", "content": "Plan a trip"}],
+        response_format=TravelResponse,
+        tools=tools,
+    )
+
+    request_kwargs = mock_client.messages.create.call_args.kwargs
+
+    assert request_kwargs["tool_choice"] == {"type": "auto"}
+    assert request_kwargs["thinking"] == {"type": "adaptive"}
+    assert request_kwargs["extra_headers"] == {"x-test-header": "1"}
+    assert request_kwargs["extra_body"]["existing"] is True
+    assert "output_config" not in request_kwargs["extra_body"]
+    assert request_kwargs["output_config"]["effort"] == "medium"
+    assert request_kwargs["output_config"]["format"]["type"] == "json_schema"
+    assert request_kwargs["tools"][0]["strict"] is True
+    assert result.choices[0].message.content == '{"city":"Kyoto"}'
+
+
+def test_run_rejects_forced_tool_choice_with_thinking():
+    """Test Anthropic thinking rejects forced tool_choice with tools."""
+    mock_client = MagicMock()
+    mock_async_client = MagicMock()
+
+    config = AnthropicConfig(
+        max_tokens=128,
+        tool_choice={"type": "any"},
+        thinking={"type": "enabled", "budget_tokens": 1024},
+    ).as_dict()
+
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        model_config_dict=config,
+        api_key="dummy_api_key",
+        client=mock_client,
+        async_client=mock_async_client,
+    )
+
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get weather",
+                "parameters": {"type": "object", "properties": {}},
+            },
+        }
+    ]
+
+    with pytest.raises(ValueError, match="extended thinking with tools"):
+        model._run(
+            messages=[{"role": "user", "content": "Plan a trip"}],
+            tools=tools,
+        )
+
+
+@pytest.mark.asyncio
+async def test_arun_passes_output_config_tool_choice_and_extra_fields():
+    """Test async Anthropic request payload for structured outputs."""
+    mock_client = MagicMock()
+    mock_async_client = MagicMock()
+
+    mock_response = MagicMock()
+    mock_response.content = [{"type": "text", "text": '{"city":"Kyoto"}'}]
+    mock_response.stop_reason = "end_turn"
+    mock_response.id = "msg_structured_async"
+    mock_response.usage = MagicMock()
+    mock_response.usage.input_tokens = 7
+    mock_response.usage.output_tokens = 3
+    mock_async_client.messages.create = AsyncMock(return_value=mock_response)
+
+    config = AnthropicConfig(
+        max_tokens=128,
+        tool_choice={"type": "auto"},
+        thinking={"type": "adaptive"},
+        output_config={"effort": "low"},
+        extra_headers={"x-test-header": "1"},
+        extra_body={"existing": True},
+    ).as_dict()
+
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        model_config_dict=config,
+        api_key="dummy_api_key",
+        client=mock_client,
+        async_client=mock_async_client,
+    )
+
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get weather",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "minLength": 3,
+                        },
+                    },
+                    "required": ["location"],
+                },
+                "strict": True,
+            },
+        }
+    ]
+
+    await model._arun(
+        messages=[{"role": "user", "content": "Plan a trip"}],
+        response_format=TravelResponse,
+        tools=tools,
+    )
+
+    request_kwargs = mock_async_client.messages.create.call_args.kwargs
+
+    assert request_kwargs["tool_choice"] == {"type": "auto"}
+    assert request_kwargs["thinking"] == {"type": "adaptive"}
+    assert request_kwargs["extra_headers"] == {"x-test-header": "1"}
+    assert request_kwargs["extra_body"]["existing"] is True
+    assert request_kwargs["output_config"]["effort"] == "low"
+    assert request_kwargs["output_config"]["format"]["type"] == "json_schema"
+    output_schema = request_kwargs["output_config"]["format"]["schema"]
+    assert output_schema["additionalProperties"] is False
+    assert "city" in output_schema["properties"]
+    assert (
+        request_kwargs["tools"][0]["input_schema"]["properties"]["location"][
+            "description"
+        ]
+        == "{minLength: 3}"
+    )
