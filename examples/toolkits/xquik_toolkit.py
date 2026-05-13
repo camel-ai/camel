@@ -14,35 +14,52 @@
 
 import os
 
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
 from camel.toolkits import XquikToolkit
-from camel.toolkits.xquik_toolkit import (
-    xquik_get_trends,
-    xquik_get_user_info,
-    xquik_search_tweets,
-)
+from camel.types import ModelPlatformType, ModelType
 
 
 def main() -> None:
-    r"""Run read-only X (Twitter) lookups with XquikToolkit.
+    r"""Run read-only X (Twitter) research with ChatAgent and XquikToolkit.
 
-    Set ``XQUIK_API_KEY`` before running this example.
+    Set ``XQUIK_API_KEY`` and your model provider credentials before running
+    this example.
     """
     if not os.environ.get("XQUIK_API_KEY"):
         raise RuntimeError("Set XQUIK_API_KEY before running this example.")
 
-    toolkit = XquikToolkit()
-    tool_names = [tool.get_function_name() for tool in toolkit.get_tools()]
-    print(f"Available Xquik tools: {', '.join(tool_names)}")
-
-    print(
-        xquik_search_tweets(
-            query="CAMEL-AI -is:retweet",
-            max_results=10,
-            sort_order="Latest",
-        )
+    tools = XquikToolkit().get_tools()
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
-    print(xquik_get_user_info("CamelAIOrg"))
-    print(xquik_get_trends(woeid=1, count=5))
+
+    agent = ChatAgent(
+        system_message=(
+            "You are a social research assistant. Use Xquik tools for "
+            "read-only X/Twitter search, profile lookup, and trends. "
+            "Summarize results concisely and include source URLs when present."
+        ),
+        model=model,
+        tools=tools,
+    )
+    agent.reset()
+
+    user_messages = [
+        (
+            "Search X for recent posts about CAMEL-AI and multi-agent "
+            "frameworks. Return three concise findings."
+        ),
+        "Look up the X profile CamelAIOrg and summarize the public profile.",
+        "Get the top five global X trends and group them by topic.",
+    ]
+
+    for user_message in user_messages:
+        response = agent.step(user_message)
+        print(f"User: {user_message}")
+        print(f"Tool calls: {response.info.get('tool_calls', [])}")
+        print(f"Agent: {response.msg.content}\n")
 
 
 if __name__ == "__main__":
