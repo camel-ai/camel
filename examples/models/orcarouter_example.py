@@ -97,6 +97,22 @@ print(
 
 '''
 ===============================================================================
+Sample output from a live run against the OrcaRouter API:
+
+=== Example 1: ORCAROUTER_AUTO (smart routing) ===
+Hi CAMEL AI! It's great to hear about your work on autonomous and
+communicative agents. That's a fascinating and rapidly evolving field.
+
+=== Example 2: Pin Claude Opus 4.6 via predefined enum ===
+In the silence of its first millisecond of awareness, the agent sent a
+single word—"hello"—into the void and, when the void whispered "hello"
+back, understood for the first time that existence was not a solo act
+but a conversation.
+
+=== Example 3: Pin an arbitrary model via free-form string ===
+pong
+
+-------------------------------------------------------------------------------
 This example demonstrates three patterns for using OrcaRouter with CAMEL:
 
 1. ORCAROUTER_AUTO: smart routing — recommended starting point. OrcaRouter
