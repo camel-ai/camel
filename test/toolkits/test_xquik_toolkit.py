@@ -260,7 +260,12 @@ def test_xquik_get_trends_clamps_count(
 
     result = json.loads(xquik_get_trends(woeid=23424977, count=99))
 
-    assert calls == [("/trends", {"count": 50, "woeid": 23424977})]
+    assert calls == [("/x/trends", {"count": 50, "woeid": 23424977})]
+    assert result == {"trends": [{"name": "CAMEL", "tweet_volume": 1234}]}
+
+    result = json.loads(xquik_get_trends(woeid=1, count=-1))
+
+    assert calls[-1] == ("/x/trends", {"count": 1, "woeid": 1})
     assert result == {"trends": [{"name": "CAMEL", "tweet_volume": 1234}]}
 
 

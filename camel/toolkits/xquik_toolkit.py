@@ -213,7 +213,8 @@ def xquik_get_trends(woeid: int = 1, count: int = 20) -> str:
         str: A JSON-formatted string with a list of trending topics.
     """
     try:
-        data = _xquik_get("/trends", {"woeid": woeid, "count": min(count, 50)})
+        count = max(1, min(count, 50))
+        data = _xquik_get("/x/trends", {"woeid": woeid, "count": count})
         return json.dumps({"trends": data.get("trends", [])}, indent=2)
     except Exception as e:
         logger.exception("Error fetching trends via Xquik")
