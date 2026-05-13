@@ -1,6 +1,10 @@
 ---
 title: "Browser Toolkit"
 icon: "globe"
+
+doc_code_map:
+  - "camel/toolkits/hybrid_browser_toolkit/**/*.py"
+  - "camel/toolkits/hybrid_browser_toolkit_py/**/*.py"
 ---
 
 <Note type="info" title="What is the HybridBrowserToolkit?">

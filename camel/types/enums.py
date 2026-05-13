@@ -43,14 +43,20 @@ class ModelType(UnifiedModelType, Enum):
     O1_PREVIEW = "o1-preview"
     O1_MINI = "o1-mini"
     O3_MINI = "o3-mini"
-    GPT_4_1 = "gpt-4.1-2025-04-14"
+    GPT_4_1 = "gpt-4.1"
     GPT_4_1_MINI = "gpt-4.1-mini-2025-04-14"
     GPT_4_1_NANO = "gpt-4.1-nano-2025-04-14"
     O4_MINI = "o4-mini"
     O3 = "o3"
     O3_PRO = "o3-pro"
     GPT_5_1 = "gpt-5.1"
-    GPT_5_2 = ("gpt-5.2",)
+    GPT_5_2 = "gpt-5.2"
+    GPT_5_4 = "gpt-5.4"
+    GPT_5_4_MINI = "gpt-5.4-mini-2026-03-17"
+    GPT_5_4_NANO = "gpt-5.4-nano-2026-03-17"
+    GPT_5_4_PRO = "gpt-5.5-pro-2026-04-23"
+    GPT_5_5 = "gpt-5.5"
+    GPT_5_5_PRO = "gpt-5.5-pro-2026-04-23"
     GPT_5 = "gpt-5"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
@@ -222,10 +228,12 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_SONNET_4_5 = "claude-sonnet-4-5"
     CLAUDE_OPUS_4_5 = "claude-opus-4-5"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
+    CLAUDE_SONNET_4_6 = "claude-sonnet-4-6"
     CLAUDE_HAIKU_4_5 = "claude-haiku-4-5"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
     CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
     CLAUDE_OPUS_4_6 = "claude-opus-4-6"
+    CLAUDE_OPUS_4_7 = "claude-opus-4-7"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -254,6 +262,8 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
+    GEMINI_3_1_PRO = "gemini-3.1-pro-preview"
+    GEMINI_3_1_FLASH_LITE = "gemini-3.1-flash-lite-preview"
     GEMINI_3_PRO = "gemini-3-pro-preview"
     GEMINI_3_FLASH = "gemini-3-flash-preview"
     GEMINI_2_5_FLASH = "gemini-2.5-flash"
@@ -329,6 +339,8 @@ class ModelType(UnifiedModelType, Enum):
     YI_LARGE_FC = "yi-large-fc"
 
     # DeepSeek models
+    DEEPSEEK_V4_FLASH = "deepseek-v4-flash"
+    DEEPSEEK_V4_PRO = "deepseek-v4-pro"
     DEEPSEEK_CHAT = "deepseek-chat"
     DEEPSEEK_REASONER = "deepseek-reasoner"
     # InternLM models
@@ -526,11 +538,12 @@ class ModelType(UnifiedModelType, Enum):
     CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
 
     # Minimax models
+    MINIMAX_M2_7 = "MiniMax-M2.7"
+    MINIMAX_M2_7_HIGHSPEED = "MiniMax-M2.7-highspeed"
     MINIMAX_M2_5 = "MiniMax-M2.5"
     MINIMAX_M2_1 = "MiniMax-M2.1"
     MINIMAX_M2_1_LIGHTNING = "MiniMax-M2.1-lightning"
     MINIMAX_M2 = "MiniMax-M2"
-    MINIMAX_M2_STABLE = "MiniMax-M2-Stable"
 
     # Avian models
     AVIAN_DEEPSEEK_V3_2 = "deepseek/deepseek-v3.2"
@@ -581,6 +594,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_gemini,
                 self.is_mistral,
                 self.is_qwen,
+                self.is_minimax,
                 self.is_deepseek,
                 self.is_ppio,
                 self.is_cohere,
@@ -628,6 +642,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O3,
             ModelType.GPT_5_1,
             ModelType.GPT_5_2,
+            ModelType.GPT_5_4,
+            ModelType.GPT_5_4_MINI,
+            ModelType.GPT_5_4_NANO,
+            ModelType.GPT_5_4_PRO,
+            ModelType.GPT_5_5,
+            ModelType.GPT_5_5_PRO,
         }
 
     @property
@@ -891,6 +911,8 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
+            ModelType.GEMINI_3_1_PRO,
+            ModelType.GEMINI_3_1_FLASH_LITE,
             ModelType.GEMINI_3_PRO,
             ModelType.GEMINI_3_FLASH,
             ModelType.GEMINI_2_5_FLASH,
@@ -978,8 +1000,21 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_minimax(self) -> bool:
+        return self in {
+            ModelType.MINIMAX_M2_7,
+            ModelType.MINIMAX_M2_7_HIGHSPEED,
+            ModelType.MINIMAX_M2_5,
+            ModelType.MINIMAX_M2_1,
+            ModelType.MINIMAX_M2_1_LIGHTNING,
+            ModelType.MINIMAX_M2,
+        }
+
+    @property
     def is_deepseek(self) -> bool:
         return self in {
+            ModelType.DEEPSEEK_V4_FLASH,
+            ModelType.DEEPSEEK_V4_PRO,
             ModelType.DEEPSEEK_CHAT,
             ModelType.DEEPSEEK_REASONER,
         }
@@ -1629,7 +1664,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_5_2,
             ModelType.GPT_5_MINI,
             ModelType.GPT_5_NANO,
-            ModelType.GPT_5,
+            ModelType.GPT_5_4_MINI,
+            ModelType.GPT_5_4_NANO,
         }:
             return 400_000
         elif self in {
@@ -1638,6 +1674,8 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 512_000
         elif self in {
+            ModelType.GEMINI_3_1_PRO,
+            ModelType.GEMINI_3_1_FLASH_LITE,
             ModelType.GEMINI_3_PRO,
             ModelType.GEMINI_3_FLASH,
             ModelType.GEMINI_2_5_FLASH,
@@ -1661,6 +1699,14 @@ class ModelType(UnifiedModelType, Enum):
             return 1_048_576
         elif self in {
             ModelType.QWEN_3_CODER_PLUS,
+            ModelType.CLAUDE_SONNET_4_6,
+            ModelType.CLAUDE_OPUS_4_7,
+            ModelType.DEEPSEEK_V4_FLASH,
+            ModelType.DEEPSEEK_V4_PRO,
+            ModelType.GPT_5_4,
+            ModelType.GPT_5_4_PRO,
+            ModelType.GPT_5_5,
+            ModelType.GPT_5_5_PRO,
         }:
             return 1_000_000
         elif self in {
@@ -1669,11 +1715,12 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 10_000_000
         elif self in {
+            ModelType.MINIMAX_M2_7,
+            ModelType.MINIMAX_M2_7_HIGHSPEED,
             ModelType.MINIMAX_M2_5,
             ModelType.MINIMAX_M2_1,
             ModelType.MINIMAX_M2_1_LIGHTNING,
             ModelType.MINIMAX_M2,
-            ModelType.MINIMAX_M2_STABLE,
         }:
             return 204_800
 
@@ -1871,6 +1918,7 @@ class ModelPlatformType(Enum):
 
     OPENAI = "openai"
     AWS_BEDROCK = "aws-bedrock"
+    AWS_BEDROCK_CONVERSE = "aws-bedrock-converse"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
@@ -1914,6 +1962,7 @@ class ModelPlatformType(Enum):
     FUNCTION_GEMMA = "function-gemma"
     AVIAN = "avian"
     ATLASCLOUD = "atlascloud"
+    XAI = "xai"
 
     @classmethod
     def from_name(cls, name):
@@ -1931,7 +1980,10 @@ class ModelPlatformType(Enum):
     @property
     def is_aws_bedrock(self) -> bool:
         r"""Returns whether this platform is aws-bedrock."""
-        return self is ModelPlatformType.AWS_BEDROCK
+        return self in (
+            ModelPlatformType.AWS_BEDROCK,
+            ModelPlatformType.AWS_BEDROCK_CONVERSE,
+        )
 
     @property
     def is_azure(self) -> bool:

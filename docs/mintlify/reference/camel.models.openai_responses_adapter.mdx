@@ -1,0 +1,81 @@
+<a id="camel.models.openai_responses_adapter"></a>
+
+<a id="camel.models.openai_responses_adapter._get"></a>
+
+## _get
+
+```python
+def _get(value: Any, key: str, default: Any = None):
+```
+
+<a id="camel.models.openai_responses_adapter._usage_to_openai"></a>
+
+## _usage_to_openai
+
+```python
+def _usage_to_openai(usage: Any):
+```
+
+<a id="camel.models.openai_responses_adapter._extract_text_from_message_item"></a>
+
+## _extract_text_from_message_item
+
+```python
+def _extract_text_from_message_item(item: Any):
+```
+
+<a id="camel.models.openai_responses_adapter._extract_tool_call"></a>
+
+## _extract_tool_call
+
+```python
+def _extract_tool_call(item: Any):
+```
+
+<a id="camel.models.openai_responses_adapter._build_chat_completion_chunk"></a>
+
+## _build_chat_completion_chunk
+
+```python
+def _build_chat_completion_chunk():
+```
+
+<a id="camel.models.openai_responses_adapter._process_output_item_event"></a>
+
+## _process_output_item_event
+
+```python
+def _process_output_item_event():
+```
+
+<a id="camel.models.openai_responses_adapter._process_response_stream_event"></a>
+
+## _process_response_stream_event
+
+```python
+def _process_response_stream_event():
+```
+
+<a id="camel.models.openai_responses_adapter.response_to_chat_completion"></a>
+
+## response_to_chat_completion
+
+```python
+def response_to_chat_completion(
+    response: Any,
+    model: str,
+    response_format: Optional[Type[BaseModel]] = None
+):
+```
+
+<a id="camel.models.openai_responses_adapter.iter_response_events_to_chat_chunks"></a>
+
+## iter_response_events_to_chat_chunks
+
+```python
+def iter_response_events_to_chat_chunks(
+    event_stream: Any,
+    model: str,
+    on_response_completed: Optional[Callable[[str], None]] = None
+):
+```

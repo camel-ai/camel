@@ -22,7 +22,7 @@ from openai import AzureOpenAI
 
 from camel.embeddings.base import BaseEmbedding
 from camel.types import EmbeddingModelType
-from camel.utils import api_keys_required  # Add this import
+from camel.utils import api_keys_required, dependencies_required
 
 
 class AzureEmbedding(BaseEmbedding[str]):
@@ -46,6 +46,7 @@ class AzureEmbedding(BaseEmbedding[str]):
         ValueError: If required API configuration is missing.
     """
 
+    @dependencies_required('openai')
     @api_keys_required(
         [
             ("api_key", 'AZURE_OPENAI_API_KEY'),

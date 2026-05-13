@@ -82,7 +82,7 @@ def __init__(
     self,
     config: Union[ServerConfig, Dict[str, Any]],
     client_info: Optional[types.Implementation] = None,
-    timeout: Optional[float] = 10.0
+    timeout: Optional[float] = None
 ):
 ```
 
@@ -101,7 +101,7 @@ Get the detected transport type.
 ### _simplify_connection_error
 
 ```python
-def _simplify_connection_error(self, error: Exception):
+def _simplify_connection_error(self, error: BaseException):
 ```
 
 Convert complex MCP connection errors to simple, understandable
@@ -158,6 +158,14 @@ a given MCP tool.
 
   Callable: A dynamically created Python function that wraps
 the MCP tool and works in both sync and async contexts.
+
+<a id="camel.utils.mcp_client.MCPClient._build_function_param_type"></a>
+
+### _build_function_param_type
+
+```python
+def _build_function_param_type(self, param_type):
+```
 
 <a id="camel.utils.mcp_client.MCPClient._build_tool_schema"></a>
 

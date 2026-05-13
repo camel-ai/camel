@@ -1,0 +1,141 @@
+<a id="camel.toolkits.headless_browser_search_toolkit"></a>
+
+<a id="camel.toolkits.headless_browser_search_toolkit.SearchResult"></a>
+
+## SearchResult
+
+```python
+class SearchResult:
+```
+
+A single search result.
+
+**Parameters:**
+
+- **title** (str): The title of the search result.
+- **url** (str): The URL of the search result.
+- **snippet** (str): A short text snippet from the result.
+
+<a id="camel.toolkits.headless_browser_search_toolkit.SearchResult.to_dict"></a>
+
+### to_dict
+
+```python
+def to_dict(self):
+```
+
+<a id="camel.toolkits.headless_browser_search_toolkit.SearchResponse"></a>
+
+## SearchResponse
+
+```python
+class SearchResponse:
+```
+
+Response from a search query.
+
+**Parameters:**
+
+- **query** (str): The original search query.
+- **engine** (str): The search engine used.
+- **page** (int): The page number of this response.
+- **results** (List[SearchResult]): Extracted structured results.
+- **raw_snapshot** (str): Raw page snapshot when JS extraction fails or page is blocked.
+
+<a id="camel.toolkits.headless_browser_search_toolkit.SearchResponse.to_dict"></a>
+
+### to_dict
+
+```python
+def to_dict(self):
+```
+
+<a id="camel.toolkits.headless_browser_search_toolkit._parse_console_result"></a>
+
+## _parse_console_result
+
+```python
+def _parse_console_result(raw: str):
+```
+
+Strip the 'Console execution result: ' prefix and unquote.
+
+<a id="camel.toolkits.headless_browser_search_toolkit._parse_json_from_response"></a>
+
+## _parse_json_from_response
+
+```python
+def _parse_json_from_response(raw: str):
+```
+
+Parse JSON array from a console exec response string.
+
+<a id="camel.toolkits.headless_browser_search_toolkit.HeadlessBrowserSearchToolkit"></a>
+
+## HeadlessBrowserSearchToolkit
+
+```python
+class HeadlessBrowserSearchToolkit(BaseToolkit):
+```
+
+Headless browser search toolkit using HybridBrowserToolkit.
+
+Performs web searches via a stealth headless browser, supporting
+Google, Bing, and Brave search engines. Automatically constructs
+search URLs, navigates pages, and extracts structured results.
+
+**Parameters:**
+
+- **headless** (bool): Run browser in headless mode. (default: :obj:`True`)
+- **stealth** (bool): Enable anti-fingerprint stealth mode. (default: :obj:`True`)
+- **lang** (str): Language hint for search results. (default: :obj:`"en"`)
+
+<a id="camel.toolkits.headless_browser_search_toolkit.HeadlessBrowserSearchToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    headless: bool = True,
+    stealth: bool = True,
+    lang: str = 'en'
+):
+```
+
+<a id="camel.toolkits.headless_browser_search_toolkit.HeadlessBrowserSearchToolkit._build_search_url"></a>
+
+### _build_search_url
+
+```python
+def _build_search_url(
+    self,
+    query: str,
+    engine: str,
+    page_idx: int = 0
+):
+```
+
+Build search URL for the given query and page.
+
+**Parameters:**
+
+- **query** (str): The search query.
+- **engine** (str): Search engine name.
+- **page_idx** (int): Zero-based page index. (default: :obj:`0`)
+
+**Returns:**
+
+  str: The full search URL.
+
+<a id="camel.toolkits.headless_browser_search_toolkit.HeadlessBrowserSearchToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects.

@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import copy
 import os
 from typing import Any, Dict, Optional, Union
 
@@ -87,3 +88,89 @@ class QianfanModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+
+    @staticmethod
+    def _sanitize_tools_for_qianfan(
+        tools: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        r"""Sanitize tools for Qianfan models that do not support strict
+        JSON Schema tool definitions.
+
+        Qianfan's ERNIE 5.0 OpenAI-compatible endpoint rejects some strict
+        schema features produced by CAMEL/OpenAI style tool schemas, such as
+        `strict=True`, nullable union types, and `anyOf` for optional fields.
+        This method downgrades those features into a more permissive schema
+        while keeping the rest of the tool definition intact.
+        """
+        sanitized_tools = copy.deepcopy(tools)
+
+        for tool in sanitized_tools:
+            function_dict = tool.get("function", {})
+            function_dict.pop("strict", None)
+
+            params = function_dict.get("parameters")
+            if not isinstance(params, dict):
+                continue
+
+            properties = params.get("properties")
+            if not isinstance(properties, dict):
+                continue
+
+            nullable_fields = set()
+
+            for prop_name, prop_value in properties.items():
+                if not isinstance(prop_value, dict):
+                    continue
+
+                if "anyOf" in prop_value and isinstance(
+                    prop_value["anyOf"], list
+                ):
+                    non_null_schema = next(
+                        (
+                            item
+                            for item in prop_value["anyOf"]
+                            if isinstance(item, dict)
+                            and item.get("type") != "null"
+                        ),
+                        None,
+                    )
+                    if non_null_schema is not None:
+                        replacement = copy.deepcopy(non_null_schema)
+                        if "description" in prop_value:
+                            replacement["description"] = prop_value[
+                                "description"
+                            ]
+                        properties[prop_name] = replacement
+                        nullable_fields.add(prop_name)
+                        prop_value = replacement
+
+                prop_type = prop_value.get("type")
+                if isinstance(prop_type, list):
+                    non_null_types = [
+                        type_name
+                        for type_name in prop_type
+                        if type_name != "null"
+                    ]
+                    if non_null_types:
+                        prop_value["type"] = non_null_types[0]
+                        if "null" in prop_type:
+                            nullable_fields.add(prop_name)
+
+            required_fields = params.get("required")
+            if isinstance(required_fields, list):
+                params["required"] = [
+                    field
+                    for field in required_fields
+                    if field not in nullable_fields
+                ]
+
+        return sanitized_tools
+
+    def _prepare_request_config(
+        self,
+        tools: Optional[list[dict[str, Any]]] = None,
+    ) -> dict[str, Any]:
+        sanitized_tools = (
+            self._sanitize_tools_for_qianfan(tools) if tools else None
+        )
+        return super()._prepare_request_config(sanitized_tools)

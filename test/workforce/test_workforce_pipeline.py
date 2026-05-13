@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import List
+from typing import TYPE_CHECKING, Awaitable, Callable, List, Optional
 
 import pytest
 
@@ -25,6 +25,9 @@ from camel.societies.workforce.single_agent_worker import SingleAgentWorker
 from camel.societies.workforce.workforce import WorkforceMode
 from camel.tasks.task import Task, TaskState
 from camel.types import ModelPlatformType, ModelType
+
+if TYPE_CHECKING:
+    from camel.responses import ChatAgentResponse
 
 
 class SuccessfulWorker(SingleAgentWorker):
@@ -40,7 +43,12 @@ class SuccessfulWorker(SingleAgentWorker):
         self.result_suffix = result_suffix
 
     async def _process_task(
-        self, task: Task, dependencies: List[Task]
+        self,
+        task: Task,
+        dependencies: List[Task],
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], Optional[Awaitable[None]]]
+        ] = None,
     ) -> TaskState:
         """Always return successful task with dependency info."""
         # Include dependency results in the output
@@ -67,7 +75,12 @@ class FailingWorker(SingleAgentWorker):
         super().__init__(description, agent)
 
     async def _process_task(
-        self, task: Task, dependencies: List[Task]
+        self,
+        task: Task,
+        dependencies: List[Task],
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], Optional[Awaitable[None]]]
+        ] = None,
     ) -> TaskState:
         """Always return failed task."""
         task.state = TaskState.FAILED

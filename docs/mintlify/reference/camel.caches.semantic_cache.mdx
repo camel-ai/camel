@@ -1,0 +1,333 @@
+<a id="camel.caches.semantic_cache"></a>
+
+<a id="camel.caches.semantic_cache.SemanticCache"></a>
+
+## SemanticCache
+
+```python
+class SemanticCache(BaseCache):
+```
+
+A semantic cache implementation that uses vector similarity to find
+cached responses for semantically similar queries.
+
+This cache generates embeddings for queries and stores them in a vector
+database. When looking up a query, it finds the most similar cached query
+using vector similarity search and returns the corresponding response if
+the similarity exceeds the threshold.
+
+**Parameters:**
+
+- **embedding_model** (BaseEmbedding): The embedding model to use for generating query embeddings.
+- **vector_storage** (BaseVectorStorage): The vector storage backend for storing and searching query embeddings.
+- **similarity_threshold** (float): The minimum similarity score (0.0-1.0) required for a cache hit. Higher values require closer matches. (default: :obj:`0.85`)
+- **cache_enabled** (bool): Whether the cache is enabled. (default: :obj:`True`)
+
+<a id="camel.caches.semantic_cache.SemanticCache.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    embedding_model: BaseEmbedding,
+    vector_storage: BaseVectorStorage,
+    similarity_threshold: float = 0.85,
+    cache_enabled: bool = True
+):
+```
+
+Initialize the semantic cache.
+
+**Parameters:**
+
+- **embedding_model** (BaseEmbedding): The embedding model for queries.
+- **vector_storage** (BaseVectorStorage): The vector storage backend.
+- **similarity_threshold** (float): Minimum similarity for cache hit.
+- **cache_enabled** (bool): Whether the cache is enabled initially.
+
+<a id="camel.caches.semantic_cache.SemanticCache.similarity_threshold"></a>
+
+### similarity_threshold
+
+```python
+def similarity_threshold(self):
+```
+
+**Returns:**
+
+  float: The similarity threshold (0.0-1.0).
+
+<a id="camel.caches.semantic_cache.SemanticCache.similarity_threshold"></a>
+
+### similarity_threshold
+
+```python
+def similarity_threshold(self, value: float):
+```
+
+Set the similarity threshold for cache hits.
+
+**Parameters:**
+
+- **value** (float): The new threshold value (0.0-1.0).
+
+<a id="camel.caches.semantic_cache.SemanticCache.enabled"></a>
+
+### enabled
+
+```python
+def enabled(self):
+```
+
+**Returns:**
+
+  bool: True if cache is enabled.
+
+<a id="camel.caches.semantic_cache.SemanticCache.enabled"></a>
+
+### enabled
+
+```python
+def enabled(self, value: bool):
+```
+
+Enable or disable the cache.
+
+**Parameters:**
+
+- **value** (bool): True to enable, False to disable.
+
+<a id="camel.caches.semantic_cache.SemanticCache.size"></a>
+
+### size
+
+```python
+def size(self):
+```
+
+**Returns:**
+
+  int: The number of cached entries.
+
+<a id="camel.caches.semantic_cache.SemanticCache.hit_rate"></a>
+
+### hit_rate
+
+```python
+def hit_rate(self):
+```
+
+**Returns:**
+
+  float: Cache hit rate (0.0-1.0), or 0.0 if no lookups yet.
+
+<a id="camel.caches.semantic_cache.SemanticCache.stats"></a>
+
+### stats
+
+```python
+def stats(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: Dictionary containing cache statistics including
+hits, misses, hit rate, and size.
+
+<a id="camel.caches.semantic_cache.SemanticCache._query_similar"></a>
+
+### _query_similar
+
+```python
+def _query_similar(self, query: str, top_k: int = 1):
+```
+
+Internal helper to query vector storage for similar entries.
+
+This consolidates the common logic of embedding generation and
+vector storage querying used by get, get_with_score, and find_similar.
+
+**Parameters:**
+
+- **query** (str): The query to search for.
+- **top_k** (int): Number of results to return. (default: :obj:`1`) (default: 1)
+
+**Returns:**
+
+  Optional[List]: List of query results from vector storage,
+or None if query fails or is empty.
+
+<a id="camel.caches.semantic_cache.SemanticCache._result_to_cache_record"></a>
+
+### _result_to_cache_record
+
+```python
+def _result_to_cache_record(self, result):
+```
+
+Convert a vector storage result to a CacheRecord.
+
+**Parameters:**
+
+- **result**: A query result from vector storage.
+
+**Returns:**
+
+  CacheRecord: The converted cache record.
+
+<a id="camel.caches.semantic_cache.SemanticCache._normalize_similarity"></a>
+
+### _normalize_similarity
+
+```python
+def _normalize_similarity(self, score: float):
+```
+
+Normalize similarity score to 0.0-1.0 range.
+
+Different vector storage backends may return similarity scores in
+different ranges. This method ensures consistent behavior by clamping
+scores to the expected 0.0-1.0 range.
+
+**Parameters:**
+
+- **score** (float): Raw similarity score from storage backend.
+
+**Returns:**
+
+  float: Normalized similarity score between 0.0 and 1.0.
+
+<a id="camel.caches.semantic_cache.SemanticCache.get"></a>
+
+### get
+
+```python
+def get(self, query: str):
+```
+
+Retrieve a cached response for a semantically similar query.
+
+Generates an embedding for the query and searches the vector storage
+for similar cached queries. Returns the cached response if a match
+is found with similarity >= threshold.
+
+**Parameters:**
+
+- **query** (str): The query to look up in the cache.
+
+**Returns:**
+
+  Optional[str]: The cached response if a similar query is found
+with sufficient similarity, None otherwise.
+
+<a id="camel.caches.semantic_cache.SemanticCache.get_with_score"></a>
+
+### get_with_score
+
+```python
+def get_with_score(self, query: str):
+```
+
+Retrieve cached response with similarity score and full record.
+
+Similar to get(), but returns additional information about the match.
+
+**Parameters:**
+
+- **query** (str): The query to look up in the cache.
+
+**Returns:**
+
+  Optional[tuple[str, float, CacheRecord]]: A tuple of
+(response, similarity_score, cache_record) if found,
+None otherwise.
+
+<a id="camel.caches.semantic_cache.SemanticCache.set"></a>
+
+### set
+
+```python
+def set(
+    self,
+    query: str,
+    response: str,
+    **kwargs: Any
+):
+```
+
+Store a query-response pair in the cache.
+
+Generates an embedding for the query and stores it along with the
+response in the vector storage. If a semantically similar query
+already exists (above the similarity threshold), the old entry is
+deleted and replaced with the new one.
+
+**Parameters:**
+
+- **query** (str): The query text.
+- **response** (str): The response to cache. **kwargs (Any): Additional arguments. Supports: - metadata (Dict[str, Any]): Additional metadata to store.
+
+**Returns:**
+
+  Optional[str]: The unique ID assigned to this cache entry,
+or None if cache is disabled.
+
+<a id="camel.caches.semantic_cache.SemanticCache.delete"></a>
+
+### delete
+
+```python
+def delete(self, entry_id: str):
+```
+
+Delete a specific cache entry by its ID.
+
+**Parameters:**
+
+- **entry_id** (str): The unique ID of the cache entry to delete.
+
+**Returns:**
+
+  bool: True if the entry was deleted, False if not found.
+
+<a id="camel.caches.semantic_cache.SemanticCache.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Remove all entries from the cache.
+
+<a id="camel.caches.semantic_cache.SemanticCache.find_similar"></a>
+
+### find_similar
+
+```python
+def find_similar(self, query: str, top_k: int = 5):
+```
+
+Find the top-k most similar cached queries.
+
+This method returns similar entries regardless of whether they
+meet the similarity threshold.
+
+**Parameters:**
+
+- **query** (str): The query to search for.
+- **top_k** (int): Number of results to return. (default: :obj:`5`) (default: 5)
+
+**Returns:**
+
+  List[tuple[CacheRecord, float]]: List of (record, similarity)
+tuples sorted by similarity in descending order.
+
+<a id="camel.caches.semantic_cache.SemanticCache.__repr__"></a>
+
+### __repr__
+
+```python
+def __repr__(self):
+```

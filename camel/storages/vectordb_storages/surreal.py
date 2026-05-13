@@ -262,9 +262,7 @@ class SurrealStorage(BaseVectorStorage):
             # SurrealDB RecordID has an 'id' attribute for the actual ID
             actual_id = record_id.id if hasattr(record_id, 'id') else record_id
             dist = float(row["dist"])
-            similarity = (
-                1.0 - dist if self.distance == VectorDistance.COSINE else -dist
-            )
+            similarity = self._distance_to_similarity(dist)
             results.append(
                 VectorDBQueryResult(
                     record=VectorRecord(
@@ -276,6 +274,13 @@ class SurrealStorage(BaseVectorStorage):
                 )
             )
         return results
+
+    def _distance_to_similarity(self, distance: float) -> float:
+        r"""Convert a SurrealDB distance value to high-is-better similarity."""
+        distance = max(0.0, distance)
+        if self.distance == VectorDistance.COSINE:
+            return max(0.0, min(1.0, 1.0 - distance))
+        return 1.0 / (1.0 + distance)
 
     def add(self, records: List[VectorRecord], **kwargs) -> None:
         r"""Insert validated vector records into the SurrealDB table.

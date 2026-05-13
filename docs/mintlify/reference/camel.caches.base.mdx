@@ -1,0 +1,141 @@
+<a id="camel.caches.base"></a>
+
+<a id="camel.caches.base.CacheRecord"></a>
+
+## CacheRecord
+
+```python
+class CacheRecord:
+```
+
+Represents a cached query-response pair with metadata.
+
+**Parameters:**
+
+- **query** (str): The original query text.
+- **response** (str): The cached response for the query.
+- **query_id** (str): Unique identifier for this cache entry.
+- **created_at** (datetime): Timestamp when the entry was created.
+- **metadata** (Dict[str, Any]): Additional metadata about the cache entry.
+
+<a id="camel.caches.base.BaseCache"></a>
+
+## BaseCache
+
+```python
+class BaseCache(ABC):
+```
+
+An abstract base class for cache systems.
+
+This class defines the interface for caching mechanisms that can store
+and retrieve query-response pairs. Implementations may use various
+strategies including exact match, semantic similarity, or hybrid.
+
+<a id="camel.caches.base.BaseCache.get"></a>
+
+### get
+
+```python
+def get(self, query: str):
+```
+
+Retrieve a cached response for the given query.
+
+**Parameters:**
+
+- **query** (str): The query to look up in the cache.
+
+**Returns:**
+
+  Optional[str]: The cached response if found, None otherwise.
+
+<a id="camel.caches.base.BaseCache.set"></a>
+
+### set
+
+```python
+def set(
+    self,
+    query: str,
+    response: str,
+    **kwargs: Any
+):
+```
+
+Store a query-response pair in the cache.
+
+**Parameters:**
+
+- **query** (str): The query text.
+- **response** (str): The response to cache. **kwargs (Any): Additional arguments for the cache entry.
+
+**Returns:**
+
+  Optional[str]: The unique ID of the cache entry, or None.
+
+<a id="camel.caches.base.BaseCache.delete"></a>
+
+### delete
+
+```python
+def delete(self, entry_id: str):
+```
+
+Delete a specific cache entry by its ID.
+
+**Parameters:**
+
+- **entry_id** (str): The unique ID of the entry to delete.
+
+**Returns:**
+
+  bool: True if the entry was deleted, False otherwise.
+
+<a id="camel.caches.base.BaseCache.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Remove all entries from the cache.
+
+<a id="camel.caches.base.BaseCache.size"></a>
+
+### size
+
+```python
+def size(self):
+```
+
+**Returns:**
+
+  int: The number of cached entries.
+
+<a id="camel.caches.base.BaseCache.enabled"></a>
+
+### enabled
+
+```python
+def enabled(self):
+```
+
+**Returns:**
+
+  bool: True if cache is enabled, False otherwise.
+
+<a id="camel.caches.base.BaseCache.enabled"></a>
+
+### enabled
+
+```python
+def enabled(self, value: bool):
+```
+
+Enable or disable the cache.
+
+**Parameters:**
+
+- **value** (bool): True to enable, False to disable.

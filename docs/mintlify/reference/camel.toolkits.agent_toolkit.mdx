@@ -1,0 +1,257 @@
+<a id="camel.toolkits.agent_toolkit"></a>
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit"></a>
+
+## AgentToolkit
+
+```python
+class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
+```
+
+Toolkit for delegating a task to a persistent specialized sub-agent.
+
+This toolkit exposes tools for either waiting on a delegated task directly
+or starting one and checking its result later.
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+Initialize the AgentToolkit.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): Maximum execution time for toolkit calls. (default: :obj:`None`)
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit._build_system_message"></a>
+
+### _build_system_message
+
+```python
+def _build_system_message(self, subagent_type: str, description: str):
+```
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit._error_result"></a>
+
+### _error_result
+
+```python
+def _error_result(self, error_message: str, **payload: Any):
+```
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit._require_parent_agent"></a>
+
+### _require_parent_agent
+
+```python
+def _require_parent_agent(self):
+```
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit._resolve_child_tools"></a>
+
+### _resolve_child_tools
+
+```python
+def _resolve_child_tools(self, parent: Optional['ChatAgent']):
+```
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit._create_subagent"></a>
+
+### _create_subagent
+
+```python
+def _create_subagent(self, subagent_type: str, description: str):
+```
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit._run_agent_step"></a>
+
+### _run_agent_step
+
+```python
+def _run_agent_step(self, agent: 'ChatAgent', prompt: str):
+```
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit._complete_task"></a>
+
+### _complete_task
+
+```python
+def _complete_task(self, task_id: str):
+```
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit._submit_agent_task"></a>
+
+### _submit_agent_task
+
+```python
+def _submit_agent_task(
+    self,
+    agent_id: str,
+    agent: 'ChatAgent',
+    prompt: str
+):
+```
+
+Submit a new task. Caller MUST hold `__INLINE_CODE_0__`.
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit._get_task"></a>
+
+### _get_task
+
+```python
+def _get_task(self, task_id: str):
+```
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit.agent_run_subagent"></a>
+
+### agent_run_subagent
+
+```python
+def agent_run_subagent(
+    self,
+    prompt: str,
+    description: str = 'Specialized sub-agent task',
+    subagent_type: str = 'general-purpose',
+    agent_id: Optional[str] = None,
+    wait: bool = True,
+    timeout: Optional[float] = None
+):
+```
+
+Run a specialized sub-agent, optionally waiting for completion.
+
+Use this tool when the current task is complex enough to benefit from
+a focused child agent with its own conversation state. If
+:obj:`agent_id` is omitted, a new sub-agent session is created with a
+fresh ChatAgent instance and its own empty conversation state. If
+:obj:`agent_id` is provided, the matching sub-agent instance is reused
+rather than recreated. This means the sub-agent keeps its existing
+memory and any state accumulated from previous turns in that session.
+
+Prefer :obj:`wait=True` when the parent agent needs the sub-agent
+result before it can continue. Use :obj:`wait=False` only when the
+parent agent intentionally wants to do other work first and check the
+task later with :obj:`agent_get_task_output`.
+
+**Parameters:**
+
+- **prompt** (str): The task instructions to send to the sub-agent for this turn.
+- **description** (str): Short description of the sub-task or role for the sub-agent. This is primarily used when creating a new session. (default: :obj:`"Specialized sub-agent task"`)
+- **subagent_type** (str): Specialization label for the spawned sub-agent, such as :obj:`general-purpose`, :obj:`research`, :obj:`analysis`, :obj:`coding`, or :obj:`writing`. (default: :obj:`"general-purpose"`)
+- **agent_id** (Optional[str]): Existing sub-agent session ID to resume. When provided, the stored sub-agent instance is reused, so it continues with the same memory / conversation state from earlier turns. In this case, :obj:`description` and :obj:`subagent_type` are ignored. The spawned sub-agent always uses the calling parent agent's model. (default: :obj:`None`)
+- **wait** (bool): Whether to wait for the sub-agent to finish before returning. Set to :obj:`False` to start the task and check it later with :obj:`agent_get_task_output`. (default: :obj:`True`)
+- **timeout** (Optional[float]): Maximum wait time in seconds for the sub-agent to finish when :obj:`wait` is True. If the timeout is reached, the task keeps running and the current status is returned.
+
+**Returns:**
+
+  Dict[str, Any]: Final result for completed tasks, or current task
+metadata if still running.
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit.agent_get_task_output"></a>
+
+### agent_get_task_output
+
+```python
+def agent_get_task_output(
+    self,
+    task_id: str,
+    block: bool = False,
+    timeout: Optional[float] = None
+):
+```
+
+Get the latest result of a sub-agent task started earlier.
+
+Use this after calling :obj:`agent_run_subagent(wait=False)`. When
+:obj:`block` is False, the call returns immediately with the latest
+known status. When :obj:`block` is True, the tool waits up to
+:obj:`timeout` seconds for completion before returning.
+
+**Parameters:**
+
+- **task_id** (str): Sub-agent task ID returned by :obj:`agent_run_subagent`.
+- **block** (bool): Whether to wait for the task to finish before returning status and output. (default: :obj:`False`)
+- **timeout** (Optional[float]): Maximum wait time in seconds when :obj:`block` is True. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: Task status, associated :obj:`agent_id`, and any
+available result or error output.
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit.agent_stop_task"></a>
+
+### agent_stop_task
+
+```python
+def agent_stop_task(self, task_id: str):
+```
+
+Request cancellation of a running sub-agent task.
+
+**Parameters:**
+
+- **task_id** (str): Sub-agent task ID returned by :obj:`agent_run_subagent`.
+
+**Returns:**
+
+  Dict[str, Any]: Stop request status and the latest known task
+state.
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit.clone_for_new_session"></a>
+
+### clone_for_new_session
+
+```python
+def clone_for_new_session(self, new_session_id: Optional[str] = None):
+```
+
+Create a fresh AgentToolkit without carrying over sub-agent state.
+
+**Parameters:**
+
+- **new_session_id** (Optional[str]): Unused compatibility parameter for ChatAgent toolkit cloning. (default: :obj:`None`)
+
+**Returns:**
+
+  AgentToolkit: A new toolkit instance with the same configuration
+and no active sub-agent sessions.
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit._purge_completed_tasks"></a>
+
+### _purge_completed_tasks
+
+```python
+def _purge_completed_tasks(self):
+```
+
+Remove finished tasks to prevent unbounded memory growth.
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit.cleanup"></a>
+
+### cleanup
+
+```python
+def cleanup(self):
+```
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+<a id="camel.toolkits.agent_toolkit.AgentToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+Return the tool list for this toolkit.
