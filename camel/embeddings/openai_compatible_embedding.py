@@ -19,7 +19,7 @@ from typing import Any, Optional
 from openai import OpenAI
 
 from camel.embeddings.base import BaseEmbedding
-from camel.utils import api_keys_required
+from camel.utils import api_keys_required, dependencies_required
 
 
 class OpenAICompatibleEmbedding(BaseEmbedding[str]):
@@ -35,6 +35,7 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
             embedding call.
     """
 
+    @dependencies_required('openai')
     @api_keys_required(
         [
             ("api_key", 'OPENAI_COMPATIBILITY_API_KEY'),

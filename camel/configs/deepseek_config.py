@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Dict, Optional, Sequence, Type, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, JsonValue
 
 from camel.configs.base_config import BaseConfig
 
@@ -83,6 +83,17 @@ class DeepSeekConfig(BaseConfig):
         include_usage (bool, optional): When streaming, specifies whether to
             include usage information in `stream_options`.
             (default: :obj:`None`)
+        reasoning_effort (str, optional): Controls DeepSeek thinking effort.
+            Current DeepSeek values are :obj:`"high"` and :obj:`"max"`;
+            compatibility values such as :obj:`"low"`, :obj:`"medium"`,
+            and :obj:`"xhigh"` are mapped by DeepSeek. (default: :obj:`None`)
+        thinking (dict, optional): DeepSeek thinking mode configuration,
+            such as :obj:`{"type": "enabled"}` or
+            :obj:`{"type": "disabled"}`. It will be moved into
+            :obj:`extra_body` by :obj:`DeepSeekModel` when using the OpenAI
+            SDK. (default: :obj:`None`)
+        extra_body (dict, optional): Additional request body parameters passed
+            through the OpenAI-compatible SDK. (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None  # deepseek default: 1.0
@@ -99,6 +110,9 @@ class DeepSeekConfig(BaseConfig):
     logprobs: Optional[bool] = None
     top_logprobs: Optional[int] = None
     stream_options: Optional[dict[str, bool]] = None
+    reasoning_effort: Optional[str] = None
+    thinking: Optional[Dict[str, JsonValue]] = None
+    extra_body: Optional[Dict[str, JsonValue]] = None
 
     def __init__(self, include_usage: bool = True, **kwargs):
         if kwargs.get("stream") and "stream_options" not in kwargs:
