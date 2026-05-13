@@ -173,6 +173,20 @@ class ModelType(UnifiedModelType, Enum):
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
     OPENROUTER_HORIZON_ALPHA = "openrouter/horizon-alpha"
 
+    # OrcaRouter models. OrcaRouter is a multi-provider gateway; the catalog
+    # is dynamic, so only flagship picks are predefined here for IDE
+    # discoverability. Any model id from
+    # https://docs.orcarouter.ai/ can be passed as a free-form string.
+    # Use ORCAROUTER_AUTO to let OrcaRouter pick the cheapest / fastest
+    # upstream provider automatically.
+    ORCAROUTER_AUTO = "orcarouter/auto"
+    ORCAROUTER_GPT_5 = "openai/gpt-5"
+    ORCAROUTER_GPT_4O = "openai/gpt-4o"
+    ORCAROUTER_CLAUDE_OPUS_4_7 = "anthropic/claude-opus-4.7"
+    ORCAROUTER_CLAUDE_OPUS_4_6 = "anthropic/claude-opus-4.6"
+    ORCAROUTER_CLAUDE_SONNET_4_6 = "anthropic/claude-sonnet-4.6"
+    ORCAROUTER_GEMINI_2_5_PRO = "google/gemini-2.5-pro"
+
     # LMStudio models
     LMSTUDIO_GEMMA_3_1B = "gemma-3-1b"
     LMSTUDIO_GEMMA_3_4B = "gemma-3-4b"
@@ -604,6 +618,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_groq,
                 self.is_cerebras,
                 self.is_openrouter,
+                self.is_orcarouter,
                 self.is_lmstudio,
                 self.is_sglang,
                 self.is_moonshot,
@@ -832,6 +847,19 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.OPENROUTER_OLYMPICODER_7B,
             ModelType.OPENROUTER_HORIZON_ALPHA,
+        }
+
+    @property
+    def is_orcarouter(self) -> bool:
+        r"""Returns whether this type of models is served by OrcaRouter."""
+        return self in {
+            ModelType.ORCAROUTER_AUTO,
+            ModelType.ORCAROUTER_GPT_5,
+            ModelType.ORCAROUTER_GPT_4O,
+            ModelType.ORCAROUTER_CLAUDE_OPUS_4_7,
+            ModelType.ORCAROUTER_CLAUDE_OPUS_4_6,
+            ModelType.ORCAROUTER_CLAUDE_SONNET_4_6,
+            ModelType.ORCAROUTER_GEMINI_2_5_PRO,
         }
 
     @property
@@ -1569,6 +1597,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.ERNIE_4_5_TURBO_VL,
             ModelType.GLM_4_5_AIR,
             ModelType.GLM_4_5_AIRX,
+            ModelType.ORCAROUTER_AUTO,
+            ModelType.ORCAROUTER_GPT_4O,
         }:
             return 128_000
         elif self in {
@@ -1666,6 +1696,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_5_NANO,
             ModelType.GPT_5_4_MINI,
             ModelType.GPT_5_4_NANO,
+            ModelType.ORCAROUTER_GPT_5,
         }:
             return 400_000
         elif self in {
@@ -1695,6 +1726,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1_NANO,
             ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
             ModelType.AVIAN_MINIMAX_M2_5,
+            ModelType.ORCAROUTER_GEMINI_2_5_PRO,
         }:
             return 1_048_576
         elif self in {
@@ -1707,6 +1739,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_5_4_PRO,
             ModelType.GPT_5_5,
             ModelType.GPT_5_5_PRO,
+            ModelType.ORCAROUTER_CLAUDE_OPUS_4_7,
+            ModelType.ORCAROUTER_CLAUDE_OPUS_4_6,
+            ModelType.ORCAROUTER_CLAUDE_SONNET_4_6,
         }:
             return 1_000_000
         elif self in {

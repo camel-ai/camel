@@ -28,9 +28,14 @@ class OrcaRouterModel(OpenAICompatibleModel):
     interface.
 
     OrcaRouter is an OpenAI-compatible LLM gateway that routes each request
-    to the cheapest or fastest provider that can serve the requested model
-    across 40+ upstream providers (OpenAI, Anthropic, Google, Azure, AWS
-    Bedrock, DeepSeek, etc.).
+    to the cheapest or fastest upstream provider for the requested model.
+
+    Quickstart: pass ``ModelType.ORCAROUTER_AUTO`` to let OrcaRouter pick the
+    upstream for you — no need to know specific model ids. To pin a specific
+    model, use one of the predefined ``ModelType.ORCAROUTER_*`` enums
+    (discoverable in IDE autocomplete) or pass any model id from the full
+    catalog at https://docs.orcarouter.ai/ as a free-form string (e.g.
+    ``"qwen/qwen3.5-flash"``).
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

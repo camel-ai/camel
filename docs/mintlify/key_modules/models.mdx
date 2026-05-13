@@ -431,6 +431,68 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
 
   </Tab>
 
+  <Tab title="OrcaRouter">
+
+  [OrcaRouter](https://orcarouter.ai/) is an OpenAI-compatible LLM gateway that routes each request to the cheapest or fastest upstream provider for the requested model:
+
+ - **OrcaRouter Platform** ([orcarouter.ai](https://orcarouter.ai/)): Unified access across many upstream model providers.
+ - **API Key Setup**: Obtain your OrcaRouter API key from the dashboard at [orcarouter.ai](https://orcarouter.ai/).
+ - **OrcaRouter Docs** ([docs.orcarouter.ai](https://docs.orcarouter.ai/)): Full catalog of supported models and routing details.
+
+  ```python
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType, ModelType
+  from camel.configs import OrcaRouterConfig
+  from camel.agents import ChatAgent
+
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.ORCAROUTER,
+      model_type=ModelType.ORCAROUTER_AUTO,
+      model_config_dict=OrcaRouterConfig(temperature=0.2).as_dict(),
+  )
+
+  agent = ChatAgent(
+      system_message="You are a helpful assistant.",
+      model=model
+  )
+
+  response = agent.step("Say hi to CAMEL AI community.")
+  print(response.msgs[0].content)
+  ```
+
+  <Note type="info">
+  **Smart Routing with `ORCAROUTER_AUTO`:** Pass `ModelType.ORCAROUTER_AUTO` to let OrcaRouter pick the cheapest or fastest upstream provider for you — no need to know specific model ids. To pin a specific model, use one of the predefined `ORCAROUTER_*` enums, or pass any model id from the [full catalog](https://docs.orcarouter.ai/) as a free-form string.
+  </Note>
+
+  **Environment Variables:**
+  ```bash
+  export ORCAROUTER_API_KEY="your_orcarouter_api_key_here"
+  export ORCAROUTER_API_BASE_URL="https://api.orcarouter.ai/v1" # Optional
+  ```
+
+  **Model Support:**
+  - **Smart routing:** `ORCAROUTER_AUTO` lets OrcaRouter pick the upstream automatically.
+  - **Predefined enums:** Flagship models like `ORCAROUTER_GPT_5`, `ORCAROUTER_CLAUDE_OPUS_4_7`, `ORCAROUTER_GEMINI_2_5_PRO`, etc. — discoverable in IDE autocomplete.
+  - **String-based access:** Pass any model id from [docs.orcarouter.ai](https://docs.orcarouter.ai/) directly as a string for maximum flexibility.
+
+  **Example pinning a specific model via predefined enum:**
+  ```python
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.ORCAROUTER,
+      model_type=ModelType.ORCAROUTER_CLAUDE_OPUS_4_6,
+  )
+  ```
+
+  **Example pinning an arbitrary model via free-form string:**
+  ```python
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.ORCAROUTER,
+      model_type="qwen/qwen3.5-flash",
+  )
+  ```
+
+  </Tab>
+
   <Tab title="Groq">
 
   Using [Groq](https://groq.com/)'s powerful models (e.g., Llama 3.3-70B):

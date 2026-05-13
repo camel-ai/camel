@@ -16,6 +16,7 @@ import pytest
 
 from camel.configs import OrcaRouterConfig
 from camel.models import OrcaRouterModel
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -23,28 +24,55 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        "gpt-4o",
-        "gpt-4o-mini",
-        "claude-opus-4-6",
-        "deepseek-chat",
+        ModelType.ORCAROUTER_AUTO,
+        ModelType.ORCAROUTER_GPT_5,
+        ModelType.ORCAROUTER_GPT_4O,
+        ModelType.ORCAROUTER_CLAUDE_OPUS_4_7,
+        ModelType.ORCAROUTER_CLAUDE_OPUS_4_6,
+        ModelType.ORCAROUTER_CLAUDE_SONNET_4_6,
+        ModelType.ORCAROUTER_GEMINI_2_5_PRO,
     ],
 )
-def test_orcarouter_model(model_type: str):
+def test_orcarouter_predefined_models(model_type: ModelType):
     model = OrcaRouterModel(model_type, api_key="test-key")
     assert model.model_type == model_type
     assert model.model_config_dict == OrcaRouterConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
+    # Predefined entries should have a sensible token limit (not fall back
+    # to the 999_999_999 unknown-model warning).
+    assert model.model_type.token_limit < 999_999_999
+    # Predefined entries should report as OrcaRouter-served and as
+    # supporting native tool calling at the ModelType level.
+    assert model.model_type.is_orcarouter is True
+    assert model.model_type.support_native_tool_calling is True
+
+
+@pytest.mark.model_backend
+@pytest.mark.parametrize(
+    "model_type",
+    [
+        "qwen/qwen3.5-flash",
+        "deepseek/deepseek-chat",
+        "grok/grok-4-0709",
+        "minimax/minimax-m2.7",
+    ],
+)
+def test_orcarouter_freeform_string_models(model_type: str):
+    """Non-predefined model ids should work via free-form string."""
+    model = OrcaRouterModel(model_type, api_key="test-key")
+    assert model.model_type == model_type
+    assert model.model_config_dict == OrcaRouterConfig().as_dict()
 
 
 @pytest.mark.model_backend
 def test_orcarouter_model_stream_property():
-    model = OrcaRouterModel("gpt-4o", api_key="test-key")
+    model = OrcaRouterModel(ModelType.ORCAROUTER_AUTO, api_key="test-key")
     assert model.stream is False
 
 
 @pytest.mark.model_backend
 def test_orcarouter_model_default_url():
-    model = OrcaRouterModel("gpt-4o", api_key="test-key")
+    model = OrcaRouterModel(ModelType.ORCAROUTER_AUTO, api_key="test-key")
     assert str(model._url) == "https://api.orcarouter.ai/v1"
 
 
@@ -67,4 +95,13 @@ def test_orcarouter_config_extra_body():
 def test_orcarouter_model_missing_api_key(monkeypatch):
     monkeypatch.delenv("ORCAROUTER_API_KEY", raising=False)
     with pytest.raises(ValueError, match="ORCAROUTER_API_KEY"):
-        OrcaRouterModel("gpt-4o", api_key=None)
+        OrcaRouterModel(ModelType.ORCAROUTER_AUTO, api_key=None)
+
+
+@pytest.mark.model_backend
+def test_orcarouter_platform_enum():
+    """`from_name` should resolve `'orcarouter'` to the dedicated platform."""
+    assert ModelPlatformType.from_name("orcarouter") is (
+        ModelPlatformType.ORCAROUTER
+    )
+    assert ModelPlatformType.ORCAROUTER.is_orcarouter is True

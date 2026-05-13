@@ -15,39 +15,97 @@
 from camel.agents import ChatAgent
 from camel.configs import OrcaRouterConfig
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType
+from camel.types import ModelPlatformType, ModelType
 
-# Create a model via OrcaRouter. The model_type is a free-form string that
-# OrcaRouter routes to the cheapest or fastest upstream provider (OpenAI,
-# Anthropic, Google, DeepSeek, etc.).
-model = ModelFactory.create(
+"""
+Set the ORCAROUTER_API_KEY environment variable before running this example:
+
+    export ORCAROUTER_API_KEY="your_orcarouter_api_key_here"
+
+OrcaRouter (https://orcarouter.ai) is an OpenAI-compatible LLM gateway that
+routes each request to the cheapest or fastest upstream provider for the
+requested model. The full model catalog is at https://docs.orcarouter.ai/.
+"""
+
+# ---------------------------------------------------------------------------
+# Example 1: ORCAROUTER_AUTO — let OrcaRouter pick the upstream automatically
+# This is the recommended starter: zero model-id lookup, the routing strategy
+# selects the cheapest / fastest provider that can serve the request.
+# ---------------------------------------------------------------------------
+print("=== Example 1: ORCAROUTER_AUTO (smart routing) ===")
+
+auto_model = ModelFactory.create(
     model_platform=ModelPlatformType.ORCAROUTER,
-    model_type="gpt-4o-mini",
+    model_type=ModelType.ORCAROUTER_AUTO,
+    model_config_dict=OrcaRouterConfig(temperature=0.2).as_dict(),
+)
+
+auto_agent = ChatAgent(
+    system_message="You are a helpful assistant.",
+    model=auto_model,
+)
+print(
+    auto_agent.step(
+        "Say hi to CAMEL AI, one open-source community dedicated to the "
+        "study of autonomous and communicative agents."
+    ).msgs[0].content
+)
+
+# ---------------------------------------------------------------------------
+# Example 2: Pin a specific flagship model via a predefined enum.
+# Predefined enums show up in IDE autocomplete when you type
+# ``ModelType.ORCAROUTER_``.
+# ---------------------------------------------------------------------------
+print("\n=== Example 2: Pin Claude Opus 4.6 via predefined enum ===")
+
+claude_model = ModelFactory.create(
+    model_platform=ModelPlatformType.ORCAROUTER,
+    model_type=ModelType.ORCAROUTER_CLAUDE_OPUS_4_6,
     model_config_dict=OrcaRouterConfig(temperature=0.7).as_dict(),
 )
 
-# Define system message
-sys_msg = "You are a helpful AI assistant."
+claude_agent = ChatAgent(
+    system_message="You are a creative writing assistant.",
+    model=claude_model,
+)
+print(
+    claude_agent.step(
+        "Write a one-sentence story about an AI agent discovering "
+        "communication."
+    ).msgs[0].content
+)
 
-# Set agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model)
+# ---------------------------------------------------------------------------
+# Example 3: Pin any model not in the predefined list — pass the id string
+# directly. The full catalog is at https://docs.orcarouter.ai/.
+# ---------------------------------------------------------------------------
+print("\n=== Example 3: Pin an arbitrary model via free-form string ===")
 
-user_msg = "Say hi in one short sentence."
+custom_model = ModelFactory.create(
+    model_platform=ModelPlatformType.ORCAROUTER,
+    model_type="qwen/qwen3.5-flash",
+    model_config_dict=OrcaRouterConfig(temperature=0.2).as_dict(),
+)
 
-# Get response
-response = camel_agent.step(user_msg)
-print(response.msgs[0].content)
+custom_agent = ChatAgent(
+    system_message="You are a helpful assistant.",
+    model=custom_model,
+)
+print(
+    custom_agent.step("Reply with the single word: pong.").msgs[0].content
+)
 
 '''
 ===============================================================================
-This example demonstrates how to use OrcaRouter with the CAMEL framework.
+This example demonstrates three patterns for using OrcaRouter with CAMEL:
 
-OrcaRouter (https://orcarouter.ai) is an OpenAI-compatible LLM gateway that
-sits between your application and 40+ upstream model providers. Each request
-is routed to the cheapest or fastest provider that can serve the requested
-model.
+1. ORCAROUTER_AUTO: smart routing — recommended starting point. OrcaRouter
+   picks the cheapest / fastest upstream provider; no need to know model ids.
+2. Predefined enum: pin a flagship model with IDE autocomplete support.
+3. Free-form string: pin any model from the full catalog at
+   https://docs.orcarouter.ai/ — no upstream PR needed when OrcaRouter adds
+   new models.
 
-Before running this example, set the ORCAROUTER_API_KEY environment variable
-with an API key from https://orcarouter.ai.
+Get an OrcaRouter API key at https://orcarouter.ai/ before running.
 ===============================================================================
 '''
