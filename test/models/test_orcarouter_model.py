@@ -49,6 +49,21 @@ def test_orcarouter_model_default_url():
 
 
 @pytest.mark.model_backend
+def test_orcarouter_config_extra_body():
+    config = OrcaRouterConfig(
+        extra_body={
+            "models": ["openai/gpt-4o-mini", "openai/gpt-4o"],
+            "route": "fallback",
+        }
+    ).as_dict()
+
+    assert config["extra_body"] == {
+        "models": ["openai/gpt-4o-mini", "openai/gpt-4o"],
+        "route": "fallback",
+    }
+
+
+@pytest.mark.model_backend
 def test_orcarouter_model_missing_api_key(monkeypatch):
     monkeypatch.delenv("ORCAROUTER_API_KEY", raising=False)
     with pytest.raises(ValueError, match="ORCAROUTER_API_KEY"):

@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Dict, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 from camel.configs.base_config import BaseConfig
 from camel.types import NotGiven
@@ -86,6 +86,9 @@ class OrcaRouterConfig(BaseConfig):
             forces the model to call that tool. :obj:`"none"` is the default
             when no tools are present. :obj:`"auto"` is the default if tools
             are present. (default: :obj:`None`)
+        extra_body (Dict[str, Any], optional): Extra request body fields to
+            pass through to OrcaRouter, such as routing preferences or fallback
+            model lists. (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None
@@ -101,6 +104,7 @@ class OrcaRouterConfig(BaseConfig):
     tool_choice: Optional[
         Union[Dict[str, Union[str, Dict[str, str]]], str]
     ] = None
+    extra_body: Optional[Dict[str, Any]] = None
 
 
 ORCAROUTER_API_PARAMS = {
