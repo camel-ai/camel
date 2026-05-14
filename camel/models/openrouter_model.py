@@ -52,9 +52,9 @@ class OpenRouterModel(OpenAICompatibleModel):
             for OpenRouter App Attribution. If not provided, defaults to
             'https://www.camel-ai.org/'. Set to :obj:`None` to disable.
             (default: :obj:`'https://www.camel-ai.org/'`)
-        app_title (Optional[str], optional): The X-Title header value for
-            OpenRouter App Attribution. If not provided, defaults to
-            'CAMEL-AI'. Set to :obj:`None` to disable.
+        app_title (Optional[str], optional): The X-OpenRouter-Title header
+            value for OpenRouter App Attribution. If not provided, defaults
+            to 'CAMEL-AI'. Set to :obj:`None` to disable.
             (default: :obj:`'CAMEL-AI'`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
@@ -88,11 +88,11 @@ class OpenRouterModel(OpenAICompatibleModel):
         if app_referer is not None:
             attribution_headers['HTTP-Referer'] = app_referer
         if app_title is not None:
-            attribution_headers['X-Title'] = app_title
+            attribution_headers['X-OpenRouter-Title'] = app_title
 
         kwargs["default_headers"] = {
-            **kwargs.get("default_headers", {}),
             **attribution_headers,
+            **(kwargs.get("default_headers") or {}),
         }
 
         super().__init__(
