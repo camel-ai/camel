@@ -173,6 +173,12 @@ class ModelType(UnifiedModelType, Enum):
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
     OPENROUTER_HORIZON_ALPHA = "openrouter/horizon-alpha"
 
+    ORCAROUTER_AUTO = "orcarouter/auto"
+    ORCAROUTER_GPT_5 = "openai/gpt-5"
+    ORCAROUTER_CLAUDE_OPUS_4_7 = "anthropic/claude-opus-4.7"
+    ORCAROUTER_GEMINI_3_FLASH_PREVIEW = "google/gemini-3-flash-preview"
+    ORCAROUTER_GROK_4_3 = "grok/grok-4.3"
+
     # LMStudio models
     LMSTUDIO_GEMMA_3_1B = "gemma-3-1b"
     LMSTUDIO_GEMMA_3_4B = "gemma-3-4b"
@@ -604,6 +610,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_groq,
                 self.is_cerebras,
                 self.is_openrouter,
+                self.is_orcarouter,
                 self.is_lmstudio,
                 self.is_sglang,
                 self.is_moonshot,
@@ -832,6 +839,17 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.OPENROUTER_OLYMPICODER_7B,
             ModelType.OPENROUTER_HORIZON_ALPHA,
+        }
+
+    @property
+    def is_orcarouter(self) -> bool:
+        r"""Returns whether this type of models is served by OrcaRouter."""
+        return self in {
+            ModelType.ORCAROUTER_AUTO,
+            ModelType.ORCAROUTER_GPT_5,
+            ModelType.ORCAROUTER_CLAUDE_OPUS_4_7,
+            ModelType.ORCAROUTER_GEMINI_3_FLASH_PREVIEW,
+            ModelType.ORCAROUTER_GROK_4_3,
         }
 
     @property
@@ -1569,6 +1587,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.ERNIE_4_5_TURBO_VL,
             ModelType.GLM_4_5_AIR,
             ModelType.GLM_4_5_AIRX,
+            ModelType.ORCAROUTER_AUTO,
         }:
             return 128_000
         elif self in {
@@ -1666,6 +1685,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_5_NANO,
             ModelType.GPT_5_4_MINI,
             ModelType.GPT_5_4_NANO,
+            ModelType.ORCAROUTER_GPT_5,
         }:
             return 400_000
         elif self in {
@@ -1695,6 +1715,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1_NANO,
             ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
             ModelType.AVIAN_MINIMAX_M2_5,
+            ModelType.ORCAROUTER_GEMINI_3_FLASH_PREVIEW,
         }:
             return 1_048_576
         elif self in {
@@ -1707,6 +1728,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_5_4_PRO,
             ModelType.GPT_5_5,
             ModelType.GPT_5_5_PRO,
+            ModelType.ORCAROUTER_CLAUDE_OPUS_4_7,
+            ModelType.ORCAROUTER_GROK_4_3,
         }:
             return 1_000_000
         elif self in {
@@ -1925,6 +1948,7 @@ class ModelPlatformType(Enum):
     NEBIUS = "nebius"
     COMETAPI = "cometapi"
     OPENROUTER = "openrouter"
+    ORCAROUTER = "orcarouter"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     LMSTUDIO = "lmstudio"
@@ -2004,6 +2028,11 @@ class ModelPlatformType(Enum):
     def is_openrouter(self) -> bool:
         r"""Returns whether this platform is openrouter."""
         return self is ModelPlatformType.OPENROUTER
+
+    @property
+    def is_orcarouter(self) -> bool:
+        r"""Returns whether this platform is orcarouter."""
+        return self is ModelPlatformType.ORCAROUTER
 
     @property
     def is_lmstudio(self) -> bool:
