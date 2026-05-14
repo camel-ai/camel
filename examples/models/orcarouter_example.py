@@ -49,7 +49,9 @@ print(
     auto_agent.step(
         "Say hi to CAMEL AI, one open-source community dedicated to the "
         "study of autonomous and communicative agents."
-    ).msgs[0].content
+    )
+    .msgs[0]
+    .content
 )
 
 # ---------------------------------------------------------------------------
@@ -74,7 +76,9 @@ print(
     claude_agent.step(
         "Write a one-sentence story about an AI agent discovering "
         "communication."
-    ).msgs[0].content
+    )
+    .msgs[0]
+    .content
 )
 
 # ---------------------------------------------------------------------------
@@ -93,9 +97,7 @@ custom_agent = ChatAgent(
     system_message="You are a helpful assistant.",
     model=custom_model,
 )
-print(
-    custom_agent.step("Reply with the single word: pong.").msgs[0].content
-)
+print(custom_agent.step("Reply with the single word: pong.").msgs[0].content)
 
 '''
 ===============================================================================
