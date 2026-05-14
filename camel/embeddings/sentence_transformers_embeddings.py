@@ -16,6 +16,7 @@ from __future__ import annotations
 from typing import Any
 
 from camel.embeddings.base import BaseEmbedding
+from camel.utils import dependencies_required
 
 
 class SentenceTransformerEncoder(BaseEmbedding[str]):
@@ -26,6 +27,7 @@ class SentenceTransformerEncoder(BaseEmbedding[str]):
         https://www.sbert.net/
     """
 
+    @dependencies_required('sentence_transformers')
     def __init__(
         self,
         model_name: str = "intfloat/e5-large-v2",

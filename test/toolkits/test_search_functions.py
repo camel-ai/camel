@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 import requests
@@ -34,25 +34,55 @@ def test_search_wiki_normal(search_toolkit):
         "recognized and classified in 1892."
     )
 
-    assert search_toolkit.search_wiki("Erygia sigillata") == expected_output
+    with patch(
+        "wikipedia.summary", return_value=expected_output
+    ) as mock_summary:
+        assert (
+            search_toolkit.search_wiki("Erygia sigillata") == expected_output
+        )
+
+    mock_summary.assert_called_once_with(
+        "Erygia sigillata", sentences=5, auto_suggest=False
+    )
 
 
 def test_search_wiki_not_found(search_toolkit):
-    search_output = search_toolkit.search_wiki(
-        "South Africa Women Football Team"
-    )
+    entity = "South Africa Women Football Team"
+
+    with patch(
+        "wikipedia.summary",
+        side_effect=wikipedia.exceptions.PageError(entity),
+    ) as mock_summary:
+        search_output = search_toolkit.search_wiki(entity)
+
     assert search_output.startswith(
         "There is no page in Wikipedia corresponding to entity South Africa "
         "Women Football Team, please specify another word to describe the "
         "entity to be searched."
     )
+    mock_summary.assert_called_once_with(
+        entity, sentences=5, auto_suggest=False
+    )
 
 
 def test_search_wiki_with_ambiguity(search_toolkit):
-    expected_output = wikipedia.summary(
-        "Google", sentences=5, auto_suggest=False
+    expected_output = "Google is a search engine."
+
+    with patch(
+        "wikipedia.summary",
+        side_effect=[
+            wikipedia.exceptions.DisambiguationError("Google LLC", ["Google"]),
+            expected_output,
+        ],
+    ) as mock_summary:
+        assert search_toolkit.search_wiki("Google LLC") == expected_output
+
+    mock_summary.assert_has_calls(
+        [
+            call("Google LLC", sentences=5, auto_suggest=False),
+            call("Google", sentences=5, auto_suggest=False),
+        ]
     )
-    assert search_toolkit.search_wiki("Google LLC") == expected_output
 
 
 def test_google_api():

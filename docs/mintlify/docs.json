@@ -710,6 +710,13 @@
             ]
           },
           {
+            "group": "Caches",
+            "pages": [
+              "reference/camel.caches.base",
+              "reference/camel.caches.semantic_cache"
+            ]
+          },
+          {
             "group": "Data Collectors",
             "pages": [
               "reference/camel.data_collectors.alpaca_collector",
