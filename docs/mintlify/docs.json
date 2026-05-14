@@ -259,6 +259,7 @@
               "reference/camel.configs.vllm_config",
               "reference/camel.configs.volcano_config",
               "reference/camel.configs.watsonx_config",
+              "reference/camel.configs.xai_config",
               "reference/camel.configs.yi_config",
               "reference/camel.configs.zhipuai_config"
             ]
@@ -359,6 +360,7 @@
               "reference/camel.models.vllm_model",
               "reference/camel.models.volcano_model",
               "reference/camel.models.watsonx_model",
+              "reference/camel.models.xai_model",
               "reference/camel.models.yi_model",
               "reference/camel.models.zhipuai_model",
               "reference/camel.models.reward.base_reward_model",
@@ -501,6 +503,7 @@
             "group": "Toolkits",
             "pages": [
               "reference/camel.toolkits.aci_toolkit",
+              "reference/camel.toolkits.agent_toolkit",
               "reference/camel.toolkits.artifact_toolkit",
               "reference/camel.toolkits.arxiv_toolkit",
               "reference/camel.toolkits.ask_news_toolkit",
@@ -521,7 +524,6 @@
               "reference/camel.toolkits.edgeone_pages_mcp_toolkit",
               "reference/camel.toolkits.excel_toolkit",
               "reference/camel.toolkits.file_toolkit",
-              "reference/camel.toolkits.file_write_toolkit",
               "reference/camel.toolkits.function_tool",
               "reference/camel.toolkits.github_toolkit",
               "reference/camel.toolkits.gmail_toolkit",
@@ -556,6 +558,7 @@
               "reference/camel.toolkits.openai_image_toolkit",
               "reference/camel.toolkits.openbb_toolkit",
               "reference/camel.toolkits.origene_mcp_toolkit",
+              "reference/camel.toolkits.planning_worktree_toolkit",
               "reference/camel.toolkits.playwright_mcp_toolkit",
               "reference/camel.toolkits.pptx_toolkit",
               "reference/camel.toolkits.pubmed_toolkit",
@@ -576,12 +579,14 @@
               "reference/camel.toolkits.task_planning_toolkit",
               "reference/camel.toolkits.terminal_toolkit",
               "reference/camel.toolkits.thinking_toolkit",
+              "reference/camel.toolkits.todo_toolkit",
               "reference/camel.toolkits.twitter_toolkit",
               "reference/camel.toolkits.vertex_ai_veo_toolkit",
               "reference/camel.toolkits.video_analysis_toolkit",
               "reference/camel.toolkits.video_download_toolkit",
               "reference/camel.toolkits.weather_toolkit",
               "reference/camel.toolkits.web_deploy_toolkit",
+              "reference/camel.toolkits.web_fetch_toolkit",
               "reference/camel.toolkits.wechat_official_toolkit",
               "reference/camel.toolkits.whatsapp_toolkit",
               "reference/camel.toolkits.wolfram_alpha_toolkit",
@@ -607,6 +612,9 @@
               "reference/camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit",
               "reference/camel.toolkits.non_visual_browser_toolkit.nv_browser_session",
               "reference/camel.toolkits.non_visual_browser_toolkit.snapshot",
+              "reference/camel.toolkits.terminal_toolkit.go_runtime",
+              "reference/camel.toolkits.terminal_toolkit.java_runtime",
+              "reference/camel.toolkits.terminal_toolkit.runtime_utils",
               "reference/camel.toolkits.terminal_toolkit.terminal_toolkit",
               "reference/camel.toolkits.terminal_toolkit.utils"
             ]
@@ -699,6 +707,13 @@
               "reference/camel.benchmarks.ragbench",
               "reference/camel.benchmarks.mock_website.app",
               "reference/camel.benchmarks.mock_website.mock_web"
+            ]
+          },
+          {
+            "group": "Caches",
+            "pages": [
+              "reference/camel.caches.base",
+              "reference/camel.caches.semantic_cache"
             ]
           },
           {

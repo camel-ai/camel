@@ -1,6 +1,9 @@
 ---
 title: "Tasks"
 icon: list-check
+
+doc_code_map:
+  - "camel/tasks/**/*.py"
 ---
 
 For more detailed usage information, please refer to our cookbook: [Task Generation Cookbook](../cookbooks/multi_agent_society/task_generation.ipynb)

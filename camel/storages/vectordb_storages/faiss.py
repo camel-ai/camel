@@ -458,8 +458,11 @@ class FaissStorage(BaseVectorStorage):
         if not ids_to_delete:
             return
 
-        # Check if the index supports removal
-        if hasattr(self._index, 'remove_ids'):
+        # Check if the index supports direct removal.
+        # Note: We only use remove_ids for Flat indexes because it compacts
+        # positions predictably. Other index types might leave gaps or not
+        # shift IDs, leading to collisions or mapping errors.
+        if self.index_type == 'Flat' and hasattr(self._index, 'remove_ids'):
             # Convert IDs to indices
             indices_to_remove = np.array(
                 [
@@ -471,18 +474,15 @@ class FaissStorage(BaseVectorStorage):
             )
 
             if len(indices_to_remove) > 0:
-                # Create a selector where 1 means "remove"
-                selector = np.zeros(self._index.ntotal, dtype=bool)
-                selector[indices_to_remove] = True
-
                 try:
-                    # Remove from FAISS index
-                    id_selector = faiss.IDSelectorArray(
-                        len(indices_to_remove), indices_to_remove
-                    )
+                    # NOTE: Pass only the array (1 arg) so FAISS's
+                    # Python wrapper auto-converts via swig_ptr().
+                    # Passing 2 args (len, array) bypasses the
+                    # wrapper and fails on some platforms.
+                    id_selector = faiss.IDSelectorArray(indices_to_remove)
                     self._index.remove_ids(id_selector)
 
-                    # Update mappings and storage
+                    # Update storage
                     for id in ids_to_delete:
                         if id in self._id_to_index:
                             idx = self._id_to_index[id]
@@ -493,6 +493,18 @@ class FaissStorage(BaseVectorStorage):
                             if id in self._vectors:
                                 del self._vectors[id]
 
+                    # FAISS remove_ids() compacts the index (for Flat indexes),
+                    # shifting positions down. We must rebuild _id_to_index and
+                    # _index_to_id to match the new dense positions.
+                    remaining_items = sorted(
+                        self._id_to_index.items(), key=lambda x: x[1]
+                    )
+                    self._id_to_index.clear()
+                    self._index_to_id.clear()
+                    for new_idx, (id, _old_idx) in enumerate(remaining_items):
+                        self._id_to_index[id] = new_idx
+                        self._index_to_id[new_idx] = id
+
                     # Save to disk if storage path is provided
                     self._save_to_disk()
                 except Exception as e:
@@ -500,7 +512,7 @@ class FaissStorage(BaseVectorStorage):
                         f"Failed to remove vectors from FAISS index: {e}"
                     )
         else:
-            # Index doesn't support removal, need to rebuild
+            # Index doesn't support removal or needs rebuild for safety
             logger.warning(
                 "This FAISS index type doesn't support direct removal. "
                 "Rebuilding entire index (may be slow for large datasets)."

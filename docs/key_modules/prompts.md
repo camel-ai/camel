@@ -1,6 +1,9 @@
 ---
 title: "Prompts"
 icon: message-pen
+
+doc_code_map:
+  - "camel/prompts/**/*.py"
 ---
 
 <Card title="What is the Prompt Module?" icon="lightbulb">

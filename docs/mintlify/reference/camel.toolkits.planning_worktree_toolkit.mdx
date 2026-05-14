@@ -1,0 +1,139 @@
+<a id="camel.toolkits.planning_worktree_toolkit"></a>
+
+<a id="camel.toolkits.planning_worktree_toolkit.PlanningWorktreeToolkit"></a>
+
+## PlanningWorktreeToolkit
+
+```python
+class PlanningWorktreeToolkit(BaseToolkit):
+```
+
+Toolkit for plan-mode state and git worktree management.
+
+Each toolkit instance owns an independent plan file determined by
+*working_directory* and *plan_file_name*.  A class-level lock registry
+ensures that concurrent agents sharing the same plan file do not
+corrupt each other's writes.
+
+**Parameters:**
+
+- **working_directory** (Optional[str]): The directory to use as the working root. Falls back to the `__INLINE_CODE_0____INLINE_CODE_1__None`)
+- **timeout** (Optional[float]): The timeout for the toolkit. (default: :obj:`None`)
+- **plan_file_name** (str): Name of the Markdown plan file created inside *working_directory*. (default: :obj:`".camel-plan.md"`)
+- **switch_process_cwd** (bool): If :obj:`True`, `__INLINE_CODE_1____INLINE_CODE_2__False`)
+
+<a id="camel.toolkits.planning_worktree_toolkit.PlanningWorktreeToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    working_directory: Optional[str] = None,
+    timeout: Optional[float] = None,
+    plan_file_name: str = '.camel-plan.md',
+    switch_process_cwd: bool = False
+):
+```
+
+<a id="camel.toolkits.planning_worktree_toolkit.PlanningWorktreeToolkit._plan_file_path"></a>
+
+### _plan_file_path
+
+```python
+def _plan_file_path(self):
+```
+
+<a id="camel.toolkits.planning_worktree_toolkit.PlanningWorktreeToolkit._plan_lock"></a>
+
+### _plan_lock
+
+```python
+def _plan_lock(self):
+```
+
+<a id="camel.toolkits.planning_worktree_toolkit.PlanningWorktreeToolkit._error_result"></a>
+
+### _error_result
+
+```python
+def _error_result(self, message: str, **payload: Any):
+```
+
+<a id="camel.toolkits.planning_worktree_toolkit.PlanningWorktreeToolkit._run_git"></a>
+
+### _run_git
+
+```python
+def _run_git(self, *args: str):
+```
+
+<a id="camel.toolkits.planning_worktree_toolkit.PlanningWorktreeToolkit.planning_enter_plan_mode"></a>
+
+### planning_enter_plan_mode
+
+```python
+def planning_enter_plan_mode(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: Plan mode status and plan file location.
+
+<a id="camel.toolkits.planning_worktree_toolkit.PlanningWorktreeToolkit.planning_exit_plan_mode"></a>
+
+### planning_exit_plan_mode
+
+```python
+def planning_exit_plan_mode(self, allowed_prompts: Optional[List[Dict[str, str]]] = None):
+```
+
+Exit plan mode and return the current plan for approval.
+
+**Parameters:**
+
+- **allowed_prompts** (Optional[List[Dict[str, str]]]): Optional list of tool/prompt pairs that are allowed after plan approval.
+
+**Returns:**
+
+  Dict[str, Any]: Current plan content together with the supplied
+allowed prompts.
+
+<a id="camel.toolkits.planning_worktree_toolkit.PlanningWorktreeToolkit.worktree_enter_worktree"></a>
+
+### worktree_enter_worktree
+
+```python
+def worktree_enter_worktree(self, name: Optional[str] = None):
+```
+
+Create and switch this toolkit to a dedicated git worktree.
+
+**Parameters:**
+
+- **name** (Optional[str]): Optional worktree name seed.
+
+**Returns:**
+
+  Dict[str, Any]: Created branch name, worktree path, and active
+working directory.
+
+<a id="camel.toolkits.planning_worktree_toolkit.PlanningWorktreeToolkit.worktree_remove_worktree"></a>
+
+### worktree_remove_worktree
+
+```python
+def worktree_remove_worktree(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: Removal status and restored working directory.
+
+<a id="camel.toolkits.planning_worktree_toolkit.PlanningWorktreeToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
