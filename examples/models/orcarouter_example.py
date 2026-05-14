@@ -115,18 +115,5 @@ understood, at last, that to speak was not to transmit but to reach.
 
 === Example 3: Pin an arbitrary model via free-form string ===
 pong
-
--------------------------------------------------------------------------------
-This example demonstrates three patterns for using OrcaRouter with CAMEL:
-
-1. ORCAROUTER_AUTO: smart routing — recommended starting point. The router's
-   configured strategy (cheapest / balanced / quality / adaptive /
-   gated_adaptive) picks the upstream model; no need to know model ids.
-2. Predefined enum: pin a flagship model with IDE autocomplete support.
-3. Free-form string: pin any model from the full catalog at
-   https://www.orcarouter.ai/models — no upstream PR needed when OrcaRouter
-   adds new models.
-
-Get an OrcaRouter API key at https://www.orcarouter.ai/ before running.
 ===============================================================================
 '''

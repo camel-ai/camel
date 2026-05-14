@@ -173,16 +173,6 @@ class ModelType(UnifiedModelType, Enum):
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
     OPENROUTER_HORIZON_ALPHA = "openrouter/horizon-alpha"
 
-    # OrcaRouter models. OrcaRouter is a multi-provider gateway with an
-    # adaptive routing engine; the catalog is dynamic, so only flagship
-    # picks are predefined here for IDE discoverability. Any model id
-    # from https://www.orcarouter.ai/models can be passed as a free-form
-    # string.
-    #
-    # Use ORCAROUTER_AUTO to target the default router, whose strategy
-    # (cheapest / balanced / quality / adaptive / gated_adaptive) is
-    # configurable from the OrcaRouter console — the adaptive strategies
-    # learn the best upstream per workload from production traffic.
     ORCAROUTER_AUTO = "orcarouter/auto"
     ORCAROUTER_GPT_5 = "openai/gpt-5"
     ORCAROUTER_CLAUDE_OPUS_4_7 = "anthropic/claude-opus-4.7"
