@@ -16,7 +16,7 @@ To get started, make sure you have `camel-ai` installed.
 
 
 ```python
-%pip install "camel-ai[all]==0.2.16"
+%pip install "camel-ai[all]==0.2.91a4"
 ```
 
 Workforce employs an asynchronous design with coroutines. However, since **coroutines cannot directly run in notebooks**, we need to do specific handlings in this demo. Note that, under most normal cases (not inside notebook environment), we don't need to do this.
@@ -345,7 +345,7 @@ task = Task(
     " score accordingly. Finally, list the opinions from each judge while"
     " preserving the judge's unique identity, along with the score and"
     " judge name, and also give a final summary of the opinions.",
-    additional_info=proj_content,
+    additional_info={"project_description": proj_content},
     id="0",
 )
 ```
