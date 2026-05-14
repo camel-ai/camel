@@ -52,7 +52,11 @@ class NebiusModel(OpenAICompatibleModel):
             initialization.
     """
 
-    @api_keys_required([("api_key", "NEBIUS_API_KEY")])
+    _API_KEY_ENV_VAR: str = "NEBIUS_API_KEY"
+    _BASE_URL_ENV_VAR: str = "NEBIUS_API_BASE_URL"
+    _DEFAULT_BASE_URL: str = "https://api.studio.nebius.com/v1"
+
+    @api_keys_required([("api_key", _API_KEY_ENV_VAR)])
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -66,9 +70,9 @@ class NebiusModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = NebiusConfig().as_dict()
-        api_key = api_key or os.environ.get("NEBIUS_API_KEY")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
         url = url or os.environ.get(
-            "NEBIUS_API_BASE_URL", "https://api.studio.nebius.com/v1"
+            self._BASE_URL_ENV_VAR, self._DEFAULT_BASE_URL
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(

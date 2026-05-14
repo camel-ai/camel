@@ -430,6 +430,37 @@ class CohereModel(BaseModelBackend):
 
         return openai_response
 
+    @classmethod
+    def list_available_models(
+        cls,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        timeout: int = 30,
+    ) -> List[str]:
+        r"""List available model IDs from the Cohere API.
+
+        Args:
+            api_key (Optional[str], optional): The API key. If not
+                provided, reads from ``COHERE_API_KEY``.
+                (default: :obj:`None`)
+            url (Optional[str], optional): The base URL (unused for
+                Cohere SDK). (default: :obj:`None`)
+            timeout (int, optional): Timeout in seconds.
+                (default: :obj:`30`)
+
+        Returns:
+            List[str]: A sorted list of available model ID strings.
+        """
+        import cohere
+
+        api_key = api_key or os.environ.get("COHERE_API_KEY")
+        client = cohere.ClientV2(
+            api_key=api_key,
+            timeout=float(timeout),
+        )
+        response = client.models.list()
+        return sorted(m.name for m in response.models)
+
     @property
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode, which sends partial

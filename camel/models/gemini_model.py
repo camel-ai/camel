@@ -93,9 +93,15 @@ class GeminiModel(OpenAICompatibleModel):
             initialization.
     """
 
+    _API_KEY_ENV_VAR: str = "GEMINI_API_KEY"
+    _BASE_URL_ENV_VAR: str = "GEMINI_API_BASE_URL"
+    _DEFAULT_BASE_URL: str = (
+        "https://generativelanguage.googleapis.com/v1beta/openai/"
+    )
+
     @api_keys_required(
         [
-            ("api_key", 'GEMINI_API_KEY'),
+            ("api_key", _API_KEY_ENV_VAR),
         ]
     )
     def __init__(
@@ -116,11 +122,10 @@ class GeminiModel(OpenAICompatibleModel):
         self._cache_control = model_config_dict.pop("cache_control", None)
         self._cached_content = model_config_dict.pop("cached_content", None)
 
-        api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
         self._api_key = api_key
         url = url or os.environ.get(
-            "GEMINI_API_BASE_URL",
-            "https://generativelanguage.googleapis.com/v1beta/openai/",
+            self._BASE_URL_ENV_VAR, self._DEFAULT_BASE_URL
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(

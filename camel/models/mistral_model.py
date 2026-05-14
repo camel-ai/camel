@@ -391,6 +391,41 @@ class MistralModel(BaseModelBackend):
 
         return request_config
 
+    @classmethod
+    def list_available_models(
+        cls,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        timeout: int = 30,
+    ) -> List[str]:
+        r"""List available model IDs from the Mistral API.
+
+        Args:
+            api_key (Optional[str], optional): The API key. If not
+                provided, reads from ``MISTRAL_API_KEY``.
+                (default: :obj:`None`)
+            url (Optional[str], optional): The server URL.
+                (default: :obj:`None`)
+            timeout (int, optional): Timeout in seconds.
+                (default: :obj:`30`)
+
+        Returns:
+            List[str]: A sorted list of available model ID strings.
+        """
+        from mistralai import Mistral
+
+        api_key = api_key or os.environ.get("MISTRAL_API_KEY")
+        url = url or os.environ.get("MISTRAL_API_BASE_URL")
+        client = Mistral(
+            api_key=api_key,
+            server_url=url,
+            timeout_ms=timeout * 1000,
+        )
+        response = client.models.list()
+        if response.data is None:
+            return []
+        return sorted(m.id for m in response.data)
+
     @property
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode, which sends partial

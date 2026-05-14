@@ -26,6 +26,7 @@ from camel.configs import (
 )
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models._utils import list_openai_model_ids
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -170,6 +171,25 @@ class SambaModel(BaseModelBackend):
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
+
+    @classmethod
+    def list_available_models(
+        cls,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        timeout: int = 30,
+    ) -> List[str]:
+        r"""List available model IDs from SambaNova's API."""
+        api_key = api_key or os.environ.get("SAMBA_API_KEY")
+        url = url or os.environ.get(
+            "SAMBA_API_BASE_URL",
+            "https://api.sambanova.ai/v1",
+        )
+        return list_openai_model_ids(
+            api_key=api_key,
+            url=url,
+            timeout=timeout,
+        )
 
     @observe(as_type="generation")
     async def _arun(  # type: ignore[misc]

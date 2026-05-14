@@ -51,7 +51,11 @@ class GroqModel(OpenAICompatibleModel):
             initialization.
     """
 
-    @api_keys_required([("api_key", "GROQ_API_KEY")])
+    _API_KEY_ENV_VAR: str = "GROQ_API_KEY"
+    _BASE_URL_ENV_VAR: str = "GROQ_API_BASE_URL"
+    _DEFAULT_BASE_URL: str = "https://api.groq.com/openai/v1"
+
+    @api_keys_required([("api_key", _API_KEY_ENV_VAR)])
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -65,9 +69,9 @@ class GroqModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = GroqConfig().as_dict()
-        api_key = api_key or os.environ.get("GROQ_API_KEY")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
         url = url or os.environ.get(
-            "GROQ_API_BASE_URL", "https://api.groq.com/openai/v1"
+            self._BASE_URL_ENV_VAR, self._DEFAULT_BASE_URL
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(

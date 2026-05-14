@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
 import textwrap
-from typing import Type
+from typing import List, Optional, Type
 
 from pydantic import BaseModel
 
@@ -100,3 +100,21 @@ def try_modify_message_with_format(
         """  # noqa: E501
     )
     message["content"] = updated_prompt
+
+
+def list_openai_model_ids(
+    api_key: Optional[str],
+    url: Optional[str],
+    timeout: int = 30,
+) -> List[str]:
+    r"""List model IDs from an OpenAI-compatible models endpoint."""
+    from openai import OpenAI
+
+    client = OpenAI(
+        api_key=api_key,
+        base_url=url,
+        timeout=float(timeout),
+        max_retries=0,
+    )
+    models = client.models.list()
+    return sorted(m.id for m in models)

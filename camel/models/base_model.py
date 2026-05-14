@@ -1038,6 +1038,41 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         """
         return self.model_type.token_limit
 
+    @classmethod
+    def list_available_models(
+        cls,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        timeout: int = 30,
+    ) -> List[str]:
+        r"""List available model IDs from the provider API.
+
+        Subclasses should override this method to query the provider's
+        list-models endpoint and return available model ID strings.
+
+        Args:
+            api_key (Optional[str], optional): The API key for
+                authenticating with the model service. If not provided,
+                the subclass will attempt to read from the appropriate
+                environment variable. (default: :obj:`None`)
+            url (Optional[str], optional): The base URL to the model
+                service. If not provided, the subclass default will be
+                used. (default: :obj:`None`)
+            timeout (int, optional): The timeout in seconds for the API
+                request. (default: :obj:`30`)
+
+        Returns:
+            List[str]: A list of available model ID strings.
+
+        Raises:
+            NotImplementedError: If the subclass does not implement this
+                method.
+        """
+        raise NotImplementedError(
+            f"{cls.__name__} does not implement list_available_models(). "
+            f"This provider may not support listing models via API."
+        )
+
     @property
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode, which sends partial

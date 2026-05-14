@@ -53,9 +53,13 @@ class PPIOModel(OpenAICompatibleModel):
             initialization.
     """
 
+    _API_KEY_ENV_VAR: str = "PPIO_API_KEY"
+    _BASE_URL_ENV_VAR: str = "PPIO_API_BASE_URL"
+    _DEFAULT_BASE_URL: str = "https://api.ppinfra.com/v3/openai"
+
     @api_keys_required(
         [
-            ("api_key", 'PPIO_API_KEY'),
+            ("api_key", _API_KEY_ENV_VAR),
         ]
     )
     def __init__(
@@ -71,9 +75,9 @@ class PPIOModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = PPIOConfig().as_dict()
-        api_key = api_key or os.environ.get("PPIO_API_KEY")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
         url = url or os.environ.get(
-            "PPIO_API_BASE_URL", "https://api.ppinfra.com/v3/openai"
+            self._BASE_URL_ENV_VAR, self._DEFAULT_BASE_URL
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
