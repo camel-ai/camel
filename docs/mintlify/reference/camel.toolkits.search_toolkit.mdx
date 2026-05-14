@@ -549,6 +549,57 @@ including Google, Bing, Yahoo, DuckDuckGo, Baidu, Yandex, and more.
 - 'source': The source of the result
 - 'error: Error if any
 
+<a id="camel.toolkits.search_toolkit.SearchToolkit.search_querit"></a>
+
+### search_querit
+
+```python
+def search_querit(
+    self,
+    query: str,
+    number_of_result_pages: int = 10,
+    site_include: Optional[List[str]] = None,
+    site_exclude: Optional[List[str]] = None,
+    time_range: Optional[str] = None,
+    country_include: Optional[List[str]] = None,
+    language_include: Optional[List[str]] = None
+):
+```
+
+Use Querit search API to search information for the given query.
+
+Querit (https://www.querit.ai) provides a web search API that returns
+relevant search results including titles, snippets, URLs, and metadata
+such as site names, favicons, and page ages.
+
+**Parameters:**
+
+- **query** (str): The search query string.
+- **number_of_result_pages** (int): The maximum number of search results to return. Adjust this based on your task - use fewer results for focused searches and more for comprehensive searches. (default: :obj:`10`)
+- **site_include** (Optional[List[str]]): List of websites to include, only fetch data from these sites. For example: `__INLINE_CODE_0____INLINE_CODE_1__None`)
+- **site_exclude** (Optional[List[str]]): List of websites to exclude, do not fetch data from these sites. (default: :obj:`None`)
+- **time_range** (Optional[str]): Time range filter for search results. Supported formats: - `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5____INLINE_CODE_6____INLINE_CODE_7____INLINE_CODE_8____INLINE_CODE_9____INLINE_CODE_10____INLINE_CODE_11____INLINE_CODE_12____INLINE_CODE_13__None`)
+- **country_include** (Optional[List[str]]): List of countries to include in the results. Available options: `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5____INLINE_CODE_6____INLINE_CODE_7____INLINE_CODE_8____INLINE_CODE_9____INLINE_CODE_10____INLINE_CODE_11____INLINE_CODE_12____INLINE_CODE_13____INLINE_CODE_14____INLINE_CODE_15____INLINE_CODE_16____INLINE_CODE_17____INLINE_CODE_18____INLINE_CODE_19____INLINE_CODE_20____INLINE_CODE_21____INLINE_CODE_22____INLINE_CODE_23____INLINE_CODE_24____INLINE_CODE_25____INLINE_CODE_26____INLINE_CODE_27____INLINE_CODE_28____INLINE_CODE_29____INLINE_CODE_30____INLINE_CODE_31____INLINE_CODE_32____INLINE_CODE_33__None`)
+- **language_include** (Optional[List[str]]): List of languages to include in the results. Available options: `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5____INLINE_CODE_6____INLINE_CODE_7____INLINE_CODE_8____INLINE_CODE_9____INLINE_CODE_10____INLINE_CODE_11____INLINE_CODE_12____INLINE_CODE_13__None`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing either:
+
+- 'results': A list of dictionaries, each with:
+
+- 'result_id': The index of the result (starting from 1).
+- 'title': The title of the search result.
+- 'snippet': A brief snippet from the web page.
+- 'url': The URL of the search result.
+- 'site_name': The website name.
+- 'site_icon': The favicon URL of the website.
+- 'page_age': The age of the web page (UTC+0).
+
+- 'search_id': A unique request reference ID.
+- 'took': The server-side response time.
+- or 'error': An error message if something went wrong.
+
 <a id="camel.toolkits.search_toolkit.SearchToolkit.get_tools"></a>
 
 ### get_tools
