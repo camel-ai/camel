@@ -28,7 +28,7 @@ If you already have a local checkout installed from source, you can skip this st
 
 OceanBase provides an official Docker image: `oceanbase/oceanbase-ce`.
 
-- Port: `2881`
+- Port: `2881` (MySQL-compatible endpoint) and `2886` (OceanBase dashboard / obshell)
 - Recommended environment variable: `OB_TENANT_PASSWORD`
 
 Official image docs:
@@ -43,10 +43,12 @@ docker pull oceanbase/oceanbase-ce
 
 docker run -d --name oceanbase-ce \
   -p 2881:2881 \
-  -e MODE=mini \
+  -p 2886:2886 \
+  -e MODE=SLIM \
   -e OB_TENANT_PASSWORD=TenantPassw0rd! \
   oceanbase/oceanbase-ce
 
+# Watch logs until the service prints "boot success!"
 docker logs -f oceanbase-ce
 ```
 
@@ -57,7 +59,8 @@ mkdir -p ob ob-cluster
 
 docker run -d --name oceanbase-ce \
   -p 2881:2881 \
-  -e MODE=mini \
+  -p 2886:2886 \
+  -e MODE=SLIM \
   -e OB_TENANT_PASSWORD=TenantPassw0rd! \
   -v "$PWD/ob:/root/ob" \
   -v "$PWD/ob-cluster:/root/.obd/cluster" \
@@ -73,7 +76,8 @@ mysql -h 127.0.0.1 -P 2881 -u root@test -p
 Notes:
 
 - Default tenants/users can vary by image version and your configuration.
-- For local dev, `MODE=mini` reduces resource usage.
+- For local dev, `MODE=SLIM` starts a lightweight single-node setup quickly.
+- Wait until `docker logs -f oceanbase-ce` shows `boot success!` before running the CAMEL storage cells below.
 
 ## Recipe 2: Use OceanBaseStorage in CAMEL
 
