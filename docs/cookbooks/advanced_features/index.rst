@@ -19,6 +19,7 @@ Advanced Features
    agents_with_rag
    agents_with_graph_rag
    agents_with_MCP
+   agents_with_oceanbase_advanced_usage
    agents_tracking
    critic_agents_and_tree_search
    embodied_agents
