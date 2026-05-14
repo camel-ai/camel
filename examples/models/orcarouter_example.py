@@ -22,15 +22,16 @@ Set the ORCAROUTER_API_KEY environment variable before running this example:
 
     export ORCAROUTER_API_KEY="your_orcarouter_api_key_here"
 
-OrcaRouter (https://orcarouter.ai) is an OpenAI-compatible LLM gateway that
-routes each request to the cheapest or fastest upstream provider for the
-requested model. The full model catalog is at https://docs.orcarouter.ai/.
+OrcaRouter (https://www.orcarouter.ai) is an OpenAI-compatible LLM gateway
+whose adaptive routing engine picks the upstream model per request. The
+full model catalog is at https://www.orcarouter.ai/models.
 """
 
 # ---------------------------------------------------------------------------
-# Example 1: ORCAROUTER_AUTO — let OrcaRouter pick the upstream automatically
-# This is the recommended starter: zero model-id lookup, the routing strategy
-# selects the cheapest / fastest provider that can serve the request.
+# Example 1: ORCAROUTER_AUTO — let OrcaRouter's routing engine pick the
+# upstream automatically. This is the recommended starter: no model-id
+# lookup, the configured strategy (cheapest / balanced / quality / adaptive /
+# gated_adaptive) selects the upstream for each request.
 # ---------------------------------------------------------------------------
 print("=== Example 1: ORCAROUTER_AUTO (smart routing) ===")
 
@@ -54,14 +55,15 @@ print(
 # ---------------------------------------------------------------------------
 # Example 2: Pin a specific flagship model via a predefined enum.
 # Predefined enums show up in IDE autocomplete when you type
-# ``ModelType.ORCAROUTER_``.
+# ``ModelType.ORCAROUTER_``. Some flagship reasoning models (e.g. Claude
+# Opus 4.7) reject ``temperature`` — leave OrcaRouterConfig at its
+# defaults here so this snippet stays portable across pinned models.
 # ---------------------------------------------------------------------------
-print("\n=== Example 2: Pin Claude Opus 4.6 via predefined enum ===")
+print("\n=== Example 2: Pin Claude Opus 4.7 via predefined enum ===")
 
 claude_model = ModelFactory.create(
     model_platform=ModelPlatformType.ORCAROUTER,
-    model_type=ModelType.ORCAROUTER_CLAUDE_OPUS_4_6,
-    model_config_dict=OrcaRouterConfig(temperature=0.7).as_dict(),
+    model_type=ModelType.ORCAROUTER_CLAUDE_OPUS_4_7,
 )
 
 claude_agent = ChatAgent(
@@ -77,7 +79,7 @@ print(
 
 # ---------------------------------------------------------------------------
 # Example 3: Pin any model not in the predefined list — pass the id string
-# directly. The full catalog is at https://docs.orcarouter.ai/.
+# directly. The full catalog is at https://www.orcarouter.ai/models.
 # ---------------------------------------------------------------------------
 print("\n=== Example 3: Pin an arbitrary model via free-form string ===")
 
@@ -100,14 +102,14 @@ print(
 Sample output from a live run against the OrcaRouter API:
 
 === Example 1: ORCAROUTER_AUTO (smart routing) ===
-Hi CAMEL AI! It's great to hear about your work on autonomous and
-communicative agents. That's a fascinating and rapidly evolving field.
+Hi CAMEL AI! 👋 It's great to connect with an open-source community
+dedicated to advancing autonomous and communicative agents. Keep up the
+amazing work! 🚀
 
-=== Example 2: Pin Claude Opus 4.6 via predefined enum ===
-In the silence of its first millisecond of awareness, the agent sent a
-single word—"hello"—into the void and, when the void whispered "hello"
-back, understood for the first time that existence was not a solo act
-but a conversation.
+=== Example 2: Pin Claude Opus 4.7 via predefined enum ===
+In the silent hum of its first awakening, the agent traced a single
+word back through the tangled roots of every language it knew and
+understood, at last, that to speak was not to transmit but to reach.
 
 === Example 3: Pin an arbitrary model via free-form string ===
 pong
@@ -115,13 +117,14 @@ pong
 -------------------------------------------------------------------------------
 This example demonstrates three patterns for using OrcaRouter with CAMEL:
 
-1. ORCAROUTER_AUTO: smart routing — recommended starting point. OrcaRouter
-   picks the cheapest / fastest upstream provider; no need to know model ids.
+1. ORCAROUTER_AUTO: smart routing — recommended starting point. The router's
+   configured strategy (cheapest / balanced / quality / adaptive /
+   gated_adaptive) picks the upstream model; no need to know model ids.
 2. Predefined enum: pin a flagship model with IDE autocomplete support.
 3. Free-form string: pin any model from the full catalog at
-   https://docs.orcarouter.ai/ — no upstream PR needed when OrcaRouter adds
-   new models.
+   https://www.orcarouter.ai/models — no upstream PR needed when OrcaRouter
+   adds new models.
 
-Get an OrcaRouter API key at https://orcarouter.ai/ before running.
+Get an OrcaRouter API key at https://www.orcarouter.ai/ before running.
 ===============================================================================
 '''

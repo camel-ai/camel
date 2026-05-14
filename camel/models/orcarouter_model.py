@@ -34,7 +34,7 @@ class OrcaRouterModel(OpenAICompatibleModel):
     upstream for you — no need to know specific model ids. To pin a specific
     model, use one of the predefined ``ModelType.ORCAROUTER_*`` enums
     (discoverable in IDE autocomplete) or pass any model id from the full
-    catalog at https://docs.orcarouter.ai/ as a free-form string (e.g.
+    catalog at https://www.orcarouter.ai/models as a free-form string (e.g.
     ``"qwen/qwen3.5-flash"``).
 
     Args:

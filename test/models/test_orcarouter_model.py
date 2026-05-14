@@ -26,11 +26,9 @@ from camel.utils import OpenAITokenCounter
     [
         ModelType.ORCAROUTER_AUTO,
         ModelType.ORCAROUTER_GPT_5,
-        ModelType.ORCAROUTER_GPT_4O,
         ModelType.ORCAROUTER_CLAUDE_OPUS_4_7,
-        ModelType.ORCAROUTER_CLAUDE_OPUS_4_6,
-        ModelType.ORCAROUTER_CLAUDE_SONNET_4_6,
-        ModelType.ORCAROUTER_GEMINI_2_5_PRO,
+        ModelType.ORCAROUTER_GEMINI_3_FLASH_PREVIEW,
+        ModelType.ORCAROUTER_GROK_4_3,
     ],
 )
 def test_orcarouter_predefined_models(model_type: ModelType):
