@@ -1,6 +1,9 @@
 ---
 title: "Workforce"
 icon: "users"
+
+doc_code_map:
+  - "camel/societies/workforce/**/*.py"
 ---
 
 <Card title="Concept" icon="users">
@@ -21,11 +24,16 @@ class Workforce(BaseNode):
         coordinator_agent: Optional[ChatAgent] = None,
         task_agent: Optional[ChatAgent] = None,
         new_worker_agent: Optional[ChatAgent] = None,
+        default_model: Optional[Union[BaseModelBackend, ModelManager]] = None,
         graceful_shutdown_timeout: float = 15.0,
         task_timeout_seconds: Optional[float] = None,
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
         callbacks: Optional[List[WorkforceCallback]] = None,
+        mode: WorkforceMode = WorkforceMode.AUTO_DECOMPOSE,
+        failure_handling_config: Optional[
+            Union[FailureHandlingConfig, Dict]
+        ] = None,
     ) -> None:
     # ...
 ```
@@ -41,6 +49,8 @@ class Workforce(BaseNode):
 -   `share_memory`: If `True`, `SingleAgentWorker` instances will share memory.
 -   `use_structured_output_handler`: Defaults to `True`. Enables structured output handling so models without native JSON + tool-calling can still interop reliably.
 -   `callbacks`: Optional A list of callback handlers to observe and record workforce lifecycle events and metrics.
+-   `mode`: Execution mode, either `WorkforceMode.AUTO_DECOMPOSE` (default) or `WorkforceMode.PIPELINE`.
+-   `failure_handling_config`: Controls retry count, enabled recovery strategies, and whether to halt on max retries.
 </Card>
 
 <Card title="Worker Types" icon="users-gear">
@@ -103,12 +113,15 @@ workforce.add_single_agent_worker(
 from camel.societies.workforce import Workforce
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.types import ModelType
+from camel.types import ModelPlatformType, ModelType
 
 workforce = Workforce("Creative Writing Team")
 
 # Create an agent with a specific model for creative tasks
-creative_model = ModelFactory.create(model_type=ModelType.GPT_5_MINI)
+creative_model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_5_MINI
+)
 creative_agent = ChatAgent(
     system_message="A creative writer for generating stories.",
     model=creative_model
@@ -181,6 +194,37 @@ graph TD
 5.  **Failure Handling**: If a task fails, the `Workforce` initiates its recovery protocols.
 </Card>
 
+<Card title="Pipeline Mode (Dependency Graph)" icon="diagram-project">
+Besides automatic decomposition, Workforce also supports predefined pipeline execution (`WorkforceMode.PIPELINE`) for deterministic multi-step workflows.
+
+```python
+from camel.societies.workforce import Workforce, WorkforceMode
+from camel.tasks import Task
+
+workforce = Workforce("Report Pipeline", mode=WorkforceMode.PIPELINE)
+
+workforce.pipeline_add("Collect data", task_id="collect") \
+         .pipeline_fork(["Analyze market", "Analyze risks"]) \
+         .pipeline_join("Write final report", task_id="report") \
+         .pipeline_build()
+
+result = workforce.process_task(Task(content="Generate weekly report"))
+```
+
+In pipeline mode, downstream tasks can still receive failure context from upstream tasks, which is useful for robust join/aggregation steps.
+</Card>
+
+<Card title="Runtime Control (Pause/Resume/Snapshot)" icon="hand">
+Workforce provides built-in runtime control APIs for human intervention and safe operations:
+
+- `pause()` / `resume()`
+- `stop_gracefully()` / `stop_immediately()` / `skip_gracefully()`
+- `save_snapshot()` / `list_snapshots()` / `restore_from_snapshot(...)`
+- `add_main_task(...)`, `add_subtask(...)`, `modify_task_content(...)`, `reorder_tasks(...)`
+
+This makes it possible to inspect and adjust execution while tasks are in progress.
+</Card>
+
 <Card title="Advanced Usage: Human-in-the-Loop (HITL)" icon="hand">
 To enable HITL inside a Workforce, equip the agents (coordinator, task agent, or workers) with the `HumanToolkit`. Agents can then call a human during execution (e.g., to clarify requirements, approve actions, or unblock errors).
 
@@ -189,14 +233,11 @@ from camel.societies.workforce import Workforce
 from camel.agents import ChatAgent
 from camel.toolkits import HumanToolkit
 
-# 1) Create the workforce
-workforce = Workforce("Interactive Workforce")
-
-# 2) Prepare human-in-the-loop tools
+# 1) Prepare human-in-the-loop tools
 human_toolkit = HumanToolkit()
 human_tools = human_toolkit.get_tools()  # includes ask_human_via_console, send_message_to_user, ...
 
-# 3) Attach HumanToolkit to any agents that may need human help
+# 2) Attach HumanToolkit to any agents that may need human help
 coordinator = ChatAgent(
     system_message="You coordinate tasks and may ask a human for help when needed.",
     tools=human_tools,
@@ -207,7 +248,7 @@ worker = ChatAgent(
     tools=[human_toolkit.ask_human_via_console],  # or use `human_tools`
 )
 
-# 4) Register agents into the workforce
+# 3) Register agents into the workforce
 workforce = Workforce(
     description="Interactive Workforce",
     coordinator_agent=coordinator,
@@ -215,13 +256,23 @@ workforce = Workforce(
 )
 workforce.add_single_agent_worker(description="Worker", worker=worker)
 
-# 5) Run tasks as usual. When an agent invokes a human tool, it will prompt via console.
+# 4) Run tasks as usual. When an agent invokes a human tool, it will prompt via console.
 # workforce.process_task(Task(content="Build a quick demo and confirm requirements with the human."))
 ```
 
 Notes:
 - No special threading is required. Agents prompt the user when they call a `HumanToolkit` tool.
 - If you need async control, `process_task_async` is available, but it is not required for HITL.
+</Card>
+
+<Card title="Workflow Memory" icon="database">
+For recurring tasks, `SingleAgentWorker` can persist and reuse workflow traces:
+
+- `save_workflow_memories_async()` (recommended async path)
+- `load_workflow_memories(...)`
+- Selection metadata via `WorkflowSelectionMethod`
+
+This helps workers reuse proven execution patterns across similar tasks.
 </Card>
 
 <Card title="Key Data Structures" icon="database">
@@ -231,7 +282,7 @@ The `workforce` module uses several Pydantic models to ensure structured data ex
 -   **`TaskResult`**: Represents the output of a completed task.
 -   **`TaskAssignment`**: A single task-to-worker assignment, including dependencies.
 -   **`TaskAssignResult`**: A list of `TaskAssignment` objects.
--   **`RecoveryDecision`**: The output of the failure analysis process, dictating the recovery strategy.
+-   **`TaskAnalysisResult`**: Unified output for failure/quality analysis, including recommended recovery strategy.
 
 Understanding these models is key to interpreting the workforce's internal state and logs.
 </Card>
@@ -247,7 +298,7 @@ Understanding these models is key to interpreting the workforce's internal state
   <Card
     title="API Reference"
     icon="book"
-    href="/reference/#societies.workforce"
+    href="/reference/camel.societies.workforce.workforce"
   >
     Full documentation for advanced usage and configuration.
   </Card>

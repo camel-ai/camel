@@ -14,7 +14,6 @@
 
 import re
 from enum import Enum
-from types import GeneratorType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -447,18 +446,10 @@ class Task(BaseModel):
         )
         response = agent.step(msg)
 
-        # Auto-detect streaming based on response type
-        from camel.agents.chat_agent import StreamingChatAgentResponse
+        # Auto-detect streaming based on response type (centralized helper)
+        from camel.utils import is_streaming_response
 
-        is_streaming = isinstance(
-            response, StreamingChatAgentResponse
-        ) or isinstance(response, GeneratorType)
-        if (
-            not is_streaming
-            and hasattr(response, "__iter__")
-            and not hasattr(response, "msg")
-        ):
-            is_streaming = True
+        is_streaming = is_streaming_response(response)
 
         if is_streaming:
             return self._decompose_streaming(
@@ -491,7 +482,19 @@ class Task(BaseModel):
 
         # Process streaming response
         for chunk in response:
-            accumulated_content = chunk.msg.content
+            # Determine whether this chunk is accumulated or delta
+            stream_accumulate_mode = None
+            if getattr(chunk, "info", None):
+                stream_accumulate_mode = chunk.info.get(
+                    "stream_accumulate_mode"
+                )
+
+            if stream_accumulate_mode == "delta":
+                accumulated_content += chunk.msg.content
+            else:
+                # Default (accumulate mode): chunk already contains full text
+                accumulated_content = chunk.msg.content
+
             if stream_callback:
                 try:
                     stream_callback(chunk)

@@ -1,0 +1,53 @@
+<a id="camel.toolkits.terminal_toolkit.java_runtime"></a>
+
+Java runtime auto-installation utilities.
+
+This module provides functionality to detect, download, and configure
+the Java (JDK) runtime. If Java is not already available on the
+system, Eclipse Temurin (Adoptium) JDK 21 LTS is downloaded and
+extracted to `__INLINE_CODE_0__`.
+
+<a id="camel.toolkits.terminal_toolkit.java_runtime.ensure_java_available"></a>
+
+## ensure_java_available
+
+```python
+def ensure_java_available(update_callback: UpdateCallback = None):
+```
+
+Ensure Java (JDK) is available, downloading if necessary.
+
+Checks if Java is already installed on the system. If not,
+downloads Eclipse Temurin (Adoptium) JDK 21 LTS for the current
+platform and extracts it to `__INLINE_CODE_0__`.
+
+**Parameters:**
+
+- **update_callback** (Callable[[str], None], optional): Callback function to receive status updates. (default: :obj:`None`)
+
+**Returns:**
+
+  Optional[str]: The JAVA_HOME directory path, or `__INLINE_CODE_0__`
+if Java could not be made available.
+
+<a id="camel.toolkits.terminal_toolkit.java_runtime._find_java_home"></a>
+
+## _find_java_home
+
+```python
+def _find_java_home(java_runtime_dir: str, os_name: SupportedOS):
+```
+
+Find the JAVA_HOME directory within the runtime directory.
+
+Adoptium extracts to a versioned directory like
+`__INLINE_CODE_0__`. This helper scans for it.
+
+**Parameters:**
+
+- **java_runtime_dir** (str): The parent directory where Java was extracted.
+- **os_name** (SupportedOS): The operating system name.
+
+**Returns:**
+
+  Optional[str]: The path to JAVA_HOME, or None if not found.

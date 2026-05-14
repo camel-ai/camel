@@ -12,7 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from .terminal_toolkit import TerminalToolkit
+from .utils import DANGEROUS_COMMANDS
 
 __all__ = [
+    "DANGEROUS_COMMANDS",
     "TerminalToolkit",
 ]

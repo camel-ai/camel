@@ -19,8 +19,9 @@ using different transport protocols (stdio, sse, streamable-http, websocket).
 The client can automatically detect the transport type based on configuration.
 """
 
+import asyncio
 import inspect
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import timedelta
 from enum import Enum
 from pathlib import Path
@@ -254,7 +255,7 @@ class MCPClient:
         self,
         config: Union[ServerConfig, Dict[str, Any]],
         client_info: Optional[types.Implementation] = None,
-        timeout: Optional[float] = 10.0,
+        timeout: Optional[float] = None,
     ):
         # Convert dict config to ServerConfig if needed
         if isinstance(config, dict):
@@ -267,10 +268,13 @@ class MCPClient:
 
         self.client_info = client_info
         self.read_timeout_seconds = timedelta(seconds=timeout or 10.0)
+        self._handshake_timeout_seconds = (
+            timeout if timeout is not None else self.config.timeout
+        )
 
         self._session: Optional[ClientSession] = None
         self._tools: List[types.Tool] = []
-        self._connection_context = None
+        self._connection_context: Optional[Any] = None
 
     @property
     def transport_type(self) -> TransportType:
@@ -296,12 +300,73 @@ class MCPClient:
         await self._cleanup_connection()
 
     async def _establish_connection(self):
-        r"""Establish connection to the MCP server."""
+        r"""Establish connection to the MCP server.
+
+        For auto-detected HTTP/HTTPS URLs, first tries StreamableHTTP
+        transport (MCP 2025 spec). If that fails or times out, automatically
+        falls back to SSE transport (MCP 2024 / supergateway-compatible).
+        Explicitly configured transport types are honored without fallback.
+        """
+        transport_type = self.config.transport_type
+        transports_to_try = [transport_type]
+
+        # Only auto-detected HTTP transports fall back to SSE. If the user
+        # explicitly selected a transport type, keep connection behavior
+        # deterministic and honor that choice.
+        if (
+            transport_type == TransportType.STREAMABLE_HTTP
+            and self.config.type is None
+        ):
+            transports_to_try.append(TransportType.SSE)
+
+        last_error: Optional[Exception] = None
+        for attempt_transport in transports_to_try:
+            connect_task = asyncio.create_task(
+                self._try_connect(attempt_transport)
+            )
+            try:
+                await asyncio.shield(connect_task)
+                return  # success
+            except asyncio.CancelledError:
+                if not connect_task.done():
+                    connect_task.cancel()
+                    with suppress(BaseException):
+                        await connect_task
+                    await self._cleanup_connection()
+                    raise
+                last_error = ConnectionError(
+                    f"{attempt_transport} connection attempt was cancelled"
+                )
+            except Exception as e:
+                last_error = e
+                if attempt_transport != transports_to_try[-1]:
+                    from camel.logger import get_logger
+
+                    logger = get_logger(__name__)
+                    logger.warning(
+                        f"StreamableHTTP connection failed "
+                        f"({type(e).__name__}: {str(e)[:80]}). "
+                        f"Retrying with SSE transport..."
+                    )
+
+        # All transports exhausted — raise simplified error
+        await self._cleanup_connection()
+        from camel.logger import get_logger
+
+        logger = get_logger(__name__)
+        error_msg = self._simplify_connection_error(last_error)
+        logger.error(f"MCP connection failed: {error_msg}")
+        raise ConnectionError(error_msg) from last_error
+
+    async def _try_connect(self, transport_type: "TransportType"):
+        r"""Attempt connection with a specific transport type."""
         try:
-            self._connection_context = self._create_transport()
+            self._connection_context = self._create_transport(
+                override_transport=transport_type
+            )
             streams = await self._connection_context.__aenter__()
 
-            # Handle extra returns safely
+            # Handle extra returns safely (streamable_http yields 3 values)
             read_stream, write_stream = streams[:2]
 
             self._session = ClientSession(
@@ -314,25 +379,20 @@ class MCPClient:
             # Start the session's message processing loop
             await self._session.__aenter__()
 
-            # Initialize the session and load tools
-            await self._session.initialize()
-            tools_response = await self._session.list_tools()
+            # Initialize the session and load tools — apply a hard timeout so
+            # a hung server (e.g., streamable_http vs supergateway mismatch)
+            # fails fast instead of blocking forever.
+            init_timeout = self._handshake_timeout_seconds
+            await self._run_operation_with_timeout(
+                self._session.initialize(), timeout=init_timeout
+            )
+            tools_response = await self._run_operation_with_timeout(
+                self._session.list_tools(), timeout=init_timeout
+            )
             self._tools = tools_response.tools if tools_response else []
-
-        except Exception as e:
-            # Clean up on error
+        except BaseException:
             await self._cleanup_connection()
-
-            # Convert complex exceptions to simpler, more understandable ones
-            from camel.logger import get_logger
-
-            logger = get_logger(__name__)
-
-            error_msg = self._simplify_connection_error(e)
-            logger.error(f"MCP connection failed: {error_msg}")
-
-            # Raise a simpler exception
-            raise ConnectionError(error_msg) from e
+            raise
 
     async def _cleanup_connection(self):
         r"""Clean up connection resources."""
@@ -365,7 +425,25 @@ class MCPClient:
             # Ensure state is reset
             self._tools = []
 
-    def _simplify_connection_error(self, error: Exception) -> str:
+    async def _run_operation_with_timeout(
+        self, operation: Any, timeout: float
+    ) -> Any:
+        r"""Run a session operation with deterministic timeout cleanup."""
+        task = asyncio.create_task(operation)
+        try:
+            return await asyncio.wait_for(task, timeout=timeout)
+        except asyncio.TimeoutError:
+            task.cancel()
+            with suppress(BaseException):
+                await task
+            raise
+        except asyncio.CancelledError:
+            task.cancel()
+            with suppress(BaseException):
+                await task
+            raise
+
+    def _simplify_connection_error(self, error: BaseException) -> str:
         r"""Convert complex MCP connection errors to simple, understandable
         messages.
         """
@@ -436,9 +514,16 @@ class MCPClient:
             )
 
     @asynccontextmanager
-    async def _create_transport(self):
-        """Create the appropriate transport based on detected type."""
-        transport_type = self.config.transport_type
+    async def _create_transport(
+        self, override_transport: Optional["TransportType"] = None
+    ):
+        """Create the appropriate transport based on detected type.
+
+        Args:
+            override_transport: If provided, use this transport type instead
+                of the auto-detected one. Used for fallback logic.
+        """
+        transport_type = override_transport or self.config.transport_type
 
         if transport_type == TransportType.STDIO:
             from mcp import StdioServerParameters
@@ -593,21 +678,13 @@ class MCPClient:
         parameters_schema = mcp_tool.inputSchema.get("properties", {})
         required_params = mcp_tool.inputSchema.get("required", [])
 
-        type_map = {
-            "string": str,
-            "integer": int,
-            "number": float,
-            "boolean": bool,
-            "array": list,
-            "object": dict,
-        }
         annotations = {}  # used to type hints
         defaults: Dict[str, Any] = {}  # store default values
 
         func_params = []
         for param_name, param_schema in parameters_schema.items():
             param_type = param_schema.get("type", "Any")
-            param_type = type_map.get(param_type, Any)
+            param_type = self._build_function_param_type(param_type)
 
             annotations[param_name] = param_type
             if param_name not in required_params:
@@ -752,11 +829,12 @@ class MCPClient:
                     raise
 
         # Add an async_call method to the function for explicit async usage
-        adaptive_dynamic_function.async_call = async_mcp_call  # type: ignore[attr-defined]
+        dynamic_fn = adaptive_dynamic_function
+        dynamic_fn.async_call = async_mcp_call  # type: ignore[attr-defined]
 
-        adaptive_dynamic_function.__name__ = func_name
-        adaptive_dynamic_function.__doc__ = func_desc
-        adaptive_dynamic_function.__annotations__ = annotations
+        dynamic_fn.__name__ = func_name
+        dynamic_fn.__doc__ = func_desc
+        dynamic_fn.__annotations__ = annotations
 
         sig = inspect.Signature(
             parameters=[
@@ -769,9 +847,75 @@ class MCPClient:
                 for param in func_params
             ]
         )
-        adaptive_dynamic_function.__signature__ = sig  # type: ignore[attr-defined]
+        dynamic_fn.__signature__ = sig  # type: ignore[attr-defined]
 
-        return adaptive_dynamic_function
+        return dynamic_fn
+
+    def _build_function_param_type(self, param_type) -> Any:
+        """
+        Dynamically generates a Python type hint corresponding to a given MCP
+        tool parameter type.
+
+        This method maps JSON Schema types (used in MCP) to Python's typing
+        system.
+
+        Examples:
+            - "string" -> str
+            - ["string", "null"] -> Optional[str]
+            - ["string", "integer"] -> Union[str, int]
+
+        :param param_type: The 'type' field from the JSON Schema (can be a
+            string or a list of strings).
+        :return: A Python type object (e.g., str, int, Optional[str],
+            Union[...]).
+        """
+
+        # Map JSON Schema types to Python built-in types
+        type_map = {
+            "string": str,
+            "integer": int,
+            "number": float,
+            "boolean": bool,
+            "array": list,
+            "object": dict,
+        }
+        # Single string type (e.g., "string")
+        if isinstance(param_type, str):
+            return type_map.get(param_type, Any)
+        # Input validation: If it's not a string or a list, fallback to Any.
+        if not isinstance(param_type, list):
+            return Any
+
+        # List of types (Union Type in JSON Schema)
+
+        # Pre-processing: Filter out "null".
+        # In JSON Schema, the presence of "null" implies the field is
+        # Nullable/Optional.
+        tool_types = [t for t in param_type if t != "null"]
+
+        # If the list is empty (or contained only "null"), we cannot determine
+        # a specific type.
+        if len(tool_types) == 0:
+            return Any
+        exist_optional = 'null' in param_type
+
+        # Construct the base Python type
+        type_value: Any
+        python_types: List[Any] = [type_map.get(t, Any) for t in tool_types]
+        unique_python_types: List[Any] = []
+        for python_type in python_types:
+            if python_type not in unique_python_types:
+                unique_python_types.append(python_type)
+
+        if exist_optional:
+            unique_python_types.append(type(None))
+
+        if len(unique_python_types) == 1:
+            type_value = unique_python_types[0]
+        else:
+            type_value = Union[tuple(unique_python_types)]
+
+        return type_value
 
     def _build_tool_schema(self, mcp_tool: types.Tool) -> Dict[str, Any]:
         r"""Build tool schema for OpenAI function calling format."""

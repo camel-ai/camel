@@ -1,0 +1,108 @@
+<a id="camel.toolkits.todo_toolkit"></a>
+
+<a id="camel.toolkits.todo_toolkit.TodoItem"></a>
+
+## TodoItem
+
+```python
+class TodoItem(BaseModel):
+```
+
+Schema for a single todo item.
+
+**Parameters:**
+
+- **content**: A brief, actionable title for the task.
+- **active_form**: Present-continuous label shown in a UI spinner while the task is in progress.
+- **status**: Current status of the task.
+
+<a id="camel.toolkits.todo_toolkit.TodoToolkit"></a>
+
+## TodoToolkit
+
+```python
+class TodoToolkit(BaseToolkit):
+```
+
+A toolkit for managing a todo list persisted to local files.
+
+The toolkit exposes a single :obj:`todo_write` tool that lets an agent
+replace the current todo list with a new set of items. Each item carries
+a short content string, an active-form label for UI spinners, and a
+status drawn from `__INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5__`.
+
+Two files are maintained inside *working_dir*:
+
+- `__INLINE_CODE_6__`  — a clean, human-readable Markdown checklist.
+- `__INLINE_CODE_7__` — structured data used to reload state across sessions.
+
+A thread lock prevents concurrent write conflicts within the same
+process.
+
+**Parameters:**
+
+- **working_dir** (Optional[str]): Directory where files are stored. Defaults to the current working directory.
+- **timeout** (Optional[float]): The timeout for the toolkit. (default: :obj:`None`)
+
+<a id="camel.toolkits.todo_toolkit.TodoToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    working_dir: Optional[str] = None,
+    timeout: Optional[float] = None
+):
+```
+
+<a id="camel.toolkits.todo_toolkit.TodoToolkit._load"></a>
+
+### _load
+
+```python
+def _load(self):
+```
+
+Load todos from the JSON data file, if it exists.
+
+<a id="camel.toolkits.todo_toolkit.TodoToolkit._save"></a>
+
+### _save
+
+```python
+def _save(self):
+```
+
+Write todos to both the JSON data file and the Markdown file.
+
+<a id="camel.toolkits.todo_toolkit.TodoToolkit.todo_write"></a>
+
+### todo_write
+
+```python
+def todo_write(self, todos: List[TodoItem]):
+```
+
+Replace the current todo list with a new set of items.
+
+**Parameters:**
+
+- **todos** (List[TodoItem]): The new todo list that will replace the current one.
+
+**Returns:**
+
+  str: A success message, or an error string prefixed with
+`__INLINE_CODE_0__` if validation fails.
+
+<a id="camel.toolkits.todo_toolkit.TodoToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of tools.

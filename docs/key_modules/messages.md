@@ -1,6 +1,9 @@
 ---
 title: "Messages"
 icon: messages
+
+doc_code_map:
+  - "camel/messages/**/*.py"
 ---
 
 <Card title="What is BaseMessage?" icon="message">

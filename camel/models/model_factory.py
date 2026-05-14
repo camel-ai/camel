@@ -20,6 +20,8 @@ from camel.models.aiml_model import AIMLModel
 from camel.models.amd_model import AMDModel
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.atlascloud_model import AtlasCloudModel
+from camel.models.avian_model import AvianModel
+from camel.models.aws_bedrock_converse_model import AWSBedrockConverseModel
 from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
@@ -58,6 +60,7 @@ from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.volcano_model import VolcanoModel
 from camel.models.watsonx_model import WatsonXModel
+from camel.models.xai_model import XAIModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
@@ -82,6 +85,7 @@ class ModelFactory:
         ModelPlatformType.TOGETHER: TogetherAIModel,
         ModelPlatformType.LITELLM: LiteLLMModel,
         ModelPlatformType.AWS_BEDROCK: AWSBedrockModel,
+        ModelPlatformType.AWS_BEDROCK_CONVERSE: AWSBedrockConverseModel,
         ModelPlatformType.NVIDIA: NvidiaModel,
         ModelPlatformType.SILICONFLOW: SiliconFlowModel,
         ModelPlatformType.AMD: AMDModel,
@@ -116,7 +120,9 @@ class ModelFactory:
         ModelPlatformType.QIANFAN: QianfanModel,
         ModelPlatformType.CRYNUX: CrynuxModel,
         ModelPlatformType.AIHUBMIX: AihubMixModel,
+        ModelPlatformType.AVIAN: AvianModel,
         ModelPlatformType.FUNCTION_GEMMA: FunctionGemmaModel,
+        ModelPlatformType.XAI: XAIModel,
     }
 
     @staticmethod

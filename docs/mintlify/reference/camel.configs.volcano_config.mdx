@@ -1,0 +1,19 @@
+<a id="camel.configs.volcano_config"></a>
+
+<a id="camel.configs.volcano_config.VolcanoConfig"></a>
+
+## VolcanoConfig
+
+```python
+class VolcanoConfig(BaseConfig):
+```
+
+Defines the parameters for generating chat completions using the
+Volcano Engine API.
+
+**Parameters:**
+
+- **temperature** (Optional[float], optional): Sampling temperature to use. (default: :obj:`None`)
+- **max_tokens** (Optional[int], optional): The maximum number of tokens to generate in the chat completion. (default: :obj:`None`)
+- **stream** (Optional[bool], optional): Whether to stream the response. (default: :obj:`None`)
+- **interleaved_thinking** (Optional[bool], optional): Whether to enable interleaved thinking mode for doubao-seed models. When enabled, the model performs step-by-step reasoning while dynamically invoking tools. (default: :obj:`None`)

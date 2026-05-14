@@ -406,13 +406,13 @@ class TaskAnalysisResult(BaseModel):
         r"""For quality evaluations, check if quality meets standards.
 
         Returns:
-            bool: True if quality is sufficient (score >= 70 and no recovery
+            bool: True if quality is sufficient (score >= 60 and no recovery
                 strategy recommended), False otherwise. Always False for
                 failure analysis results.
         """
         return (
             self.quality_score is not None
-            and self.quality_score >= 70
+            and self.quality_score >= 60
             and self.recovery_strategy is None
         )
 

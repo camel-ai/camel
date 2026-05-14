@@ -29,7 +29,7 @@ class ResponseFormat(BaseModel):
 # Refer: https://dashscope.console.aliyun.com/overview
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-    model_type="glm-4",
+    model_type="glm-4-plus",
     api_key="fb75bxxxxx",
     url="https://open.bigmodel.cn/api/paas/v4/",
     model_config_dict={"temperature": 0.4},

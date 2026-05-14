@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import io
+import shutil
 import tempfile
 from pathlib import Path
 from typing import List, Optional
@@ -31,6 +32,27 @@ from camel.utils import dependencies_required
 logger = get_logger(__name__)
 
 
+def _check_ffmpeg_installed() -> None:
+    r"""Check if FFmpeg is installed and available on the system.
+
+    Raises:
+        RuntimeError: If FFmpeg is not installed or not in the system PATH.
+    """
+    ffmpeg_path = shutil.which('ffmpeg')
+    if ffmpeg_path is None:
+        raise RuntimeError(
+            "FFmpeg is not installed or not found in your system PATH. "
+            "Please install FFmpeg:\n"
+            "  - Windows: 'winget install ffmpeg' or download "
+            "from https://ffmpeg.org/download.html\n"
+            "  - macOS: 'brew install ffmpeg'\n"
+            "  - Linux: 'sudo apt install ffmpeg' or 'sudo "
+            "yum install ffmpeg'\n"
+            "After installation, restart your terminal for the "
+            "changes to take effect."
+        )
+
+
 def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
     r"""Capture a screenshot from a video file at a specific timestamp.
 
@@ -42,6 +64,7 @@ def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
     Returns:
         Image.Image: The captured screenshot in the form of Image.Image.
     """
+    _check_ffmpeg_installed()
     import ffmpeg
 
     try:
@@ -184,6 +207,7 @@ class VideoDownloaderToolkit(BaseToolkit):
         Returns:
             List[Image.Image]: A list of screenshots as Image.Image.
         """
+        _check_ffmpeg_installed()
         import ffmpeg
 
         parsed_url = urlparse(video_path)
