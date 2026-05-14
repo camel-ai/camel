@@ -84,7 +84,30 @@ def test_pgvector_query(mock_pgvector_conn):
         assert results[0].record.id == "1"
         assert results[0].record.vector == [0.1, 0.2, 0.3, 0.4]
         assert results[0].record.payload == {"a": 1}
-        assert results[0].similarity == 0.01
+        assert results[0].similarity == pytest.approx(0.99)
+
+
+@pytest.mark.parametrize(
+    ("distance", "score", "expected_similarity"),
+    [
+        (VectorDistance.COSINE, 0.0, 1.0),
+        (VectorDistance.COSINE, 0.25, 0.75),
+        (VectorDistance.EUCLIDEAN, 1.0, 0.5),
+        (VectorDistance.DOT, -0.8, 0.8),
+    ],
+)
+def test_pgvector_score_to_similarity(
+    mock_pgvector_conn, distance, score, expected_similarity
+):
+    mock_conn, _ = mock_pgvector_conn
+    with (
+        patch("psycopg.connect", return_value=mock_conn),
+        patch("pgvector.psycopg.register_vector"),
+    ):
+        storage = PgVectorStorage(4, {"host": "localhost"}, distance=distance)
+        assert storage._score_to_similarity(score) == pytest.approx(
+            expected_similarity
+        )
 
 
 def test_pgvector_delete(mock_pgvector_conn):

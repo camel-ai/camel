@@ -236,20 +236,33 @@ class MCPServer:
                     "Please specify function names or use BaseToolkit."
                 )
 
-            function_names = self.function_names
-            if not function_names and isinstance(instance, BaseToolkit):
-                function_names = [
-                    tool.get_function_name() for tool in instance.get_tools()
-                ]
-
-            for name in function_names:
-                func = getattr(instance, name, None)
-                if func is None or not callable(func):
-                    raise ValueError(
-                        f"Method {name} not found in class {cls.__name__} or "
-                        "cannot be called."
+            tool_entries: List[Tuple[str, Callable[..., Any]]] = []
+            if not self.function_names and isinstance(instance, BaseToolkit):
+                for tool in instance.get_tools():
+                    name = tool.get_function_name()
+                    func = getattr(
+                        tool,
+                        "mcp_registration_func",
+                        tool.func,
                     )
+                    if func is None or not callable(func):
+                        raise ValueError(
+                            f"Tool {name} in class {cls.__name__} does not "
+                            "provide a callable MCP registration function."
+                        )
+                    tool_entries.append((name, func))
+            else:
+                function_names = self.function_names or []
+                for name in function_names:
+                    func = getattr(instance, name, None)
+                    if func is None or not callable(func):
+                        raise ValueError(
+                            f"Method {name} not found in class {cls.__name__} "
+                            "or cannot be called."
+                        )
+                    tool_entries.append((name, func))
 
+            for name, func in tool_entries:
                 # Validate function types for Pydantic compatibility
                 type_errors = _validate_function_types(func)
                 if type_errors:

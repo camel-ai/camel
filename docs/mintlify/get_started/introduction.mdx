@@ -31,6 +31,10 @@ description: |
 ## Ecosystem Highlights
 
 <CardGroup cols={2}>
+  <Card title="Eigent" icon="users" href="https://www.eigent.ai/">
+    The Best Open Source Cowork Desktop to Unlock Your Exceptional Productivity
+  </Card>
+
   <Card title="OASIS" icon="globe" href="https://github.com/camel-ai/oasis">
     Large‑scale social simulation environment: model Reddit, Twitter, and user interactions
   </Card>

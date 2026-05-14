@@ -20,7 +20,7 @@ from camel.types import ModelPlatformType, ModelType
 from camel.toolkits import (
     GoogleScholarToolkit, SemanticScholarToolkit, ArxivToolkit,
     AskNewsToolkit, ThinkingToolkit,
-    FileWriteToolkit, LinkedInToolkit
+    FileToolkit, LinkedInToolkit
 )
 from camel.logger import set_log_level
 import logging
@@ -76,7 +76,7 @@ if st.button("Generate Report") and topic:
         *ArxivToolkit().get_tools(),
         *AskNewsToolkit().get_tools(),
         *ThinkingToolkit().get_tools(),
-        *FileWriteToolkit().get_tools(),
+        *FileToolkit().get_tools(),
         *LinkedInToolkit().get_tools(),
     ]
 

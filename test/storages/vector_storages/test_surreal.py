@@ -24,6 +24,7 @@ from camel.storages.vectordb_storages.surreal import (
     VectorDBStatus,
     VectorRecord,
 )
+from camel.types import VectorDistance
 
 # Mock the module if surrealdb is not installed
 sys.modules['surrealdb'] = MagicMock()
@@ -90,6 +91,26 @@ def test_query(storage):
     assert isinstance(results, list)
     assert all(isinstance(r, VectorDBQueryResult) for r in results)
     assert len(results) == 2
+
+
+@pytest.mark.parametrize(
+    ("distance", "raw_distance", "expected_similarity"),
+    [
+        (VectorDistance.COSINE, 0.0, 1.0),
+        (VectorDistance.COSINE, 0.25, 0.75),
+        (VectorDistance.EUCLIDEAN, 0.0, 1.0),
+        (VectorDistance.EUCLIDEAN, 1.0, 0.5),
+    ],
+)
+def test_distance_to_similarity(
+    storage, distance, raw_distance, expected_similarity
+):
+    storage_instance, _ = storage
+    storage_instance.distance = distance
+
+    assert storage_instance._distance_to_similarity(
+        raw_distance
+    ) == pytest.approx(expected_similarity)
 
 
 def test_status(storage):

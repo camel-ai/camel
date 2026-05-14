@@ -40,6 +40,172 @@ def __init__(
 ):
 ```
 
+<a id="camel.models.deepseek_model.DeepSeekModel._get_reasoning_session_id"></a>
+
+### _get_reasoning_session_id
+
+```python
+def _get_reasoning_session_id(self):
+```
+
+Get the current agent session ID for reasoning cache isolation.
+
+<a id="camel.models.deepseek_model.DeepSeekModel._get_tool_call_id"></a>
+
+### _get_tool_call_id
+
+```python
+def _get_tool_call_id(tool_call: Any):
+```
+
+<a id="camel.models.deepseek_model.DeepSeekModel._get_message_content"></a>
+
+### _get_message_content
+
+```python
+def _get_message_content(message: Any):
+```
+
+<a id="camel.models.deepseek_model.DeepSeekModel._cache_tool_call_reasoning"></a>
+
+### _cache_tool_call_reasoning
+
+```python
+def _cache_tool_call_reasoning(self, response: Any):
+```
+
+Cache reasoning content for DeepSeek thinking-mode tool calls.
+
+DeepSeek requires the assistant `__INLINE_CODE_0__` generated with a
+tool call to be passed back in later requests. CAMEL memory stores the
+OpenAI-compatible tool-call message, so the model layer keeps the
+DeepSeek-specific field keyed by tool_call_id and injects it before
+the next request.
+
+<a id="camel.models.deepseek_model.DeepSeekModel._cache_reasoning_content"></a>
+
+### _cache_reasoning_content
+
+```python
+def _cache_reasoning_content(
+    self,
+    reasoning_content: Optional[str],
+    tool_call_ids: List[str],
+    content: Optional[str] = None
+):
+```
+
+Cache DeepSeek reasoning collected from a streamed response.
+
+<a id="camel.models.deepseek_model.DeepSeekModel._collect_stream_reasoning"></a>
+
+### _collect_stream_reasoning
+
+```python
+def _collect_stream_reasoning(
+    self,
+    chunk: ChatCompletionChunk,
+    reasoning_parts: List[str],
+    content_parts: List[str],
+    tool_call_ids: Set[str]
+):
+```
+
+Collect reasoning/content/tool ids from a streaming chunk.
+
+<a id="camel.models.deepseek_model.DeepSeekModel._is_stream_response_complete"></a>
+
+### _is_stream_response_complete
+
+```python
+def _is_stream_response_complete(chunk: ChatCompletionChunk):
+```
+
+Return whether a streaming chunk completes one response.
+
+<a id="camel.models.deepseek_model.DeepSeekModel._cache_collected_stream_reasoning"></a>
+
+### _cache_collected_stream_reasoning
+
+```python
+def _cache_collected_stream_reasoning(
+    self,
+    reasoning_parts: List[str],
+    content_parts: List[str],
+    tool_call_ids: Set[str]
+):
+```
+
+Cache collected streaming reasoning once it is complete.
+
+<a id="camel.models.deepseek_model.DeepSeekModel._wrap_stream_reasoning_cache"></a>
+
+### _wrap_stream_reasoning_cache
+
+```python
+def _wrap_stream_reasoning_cache(self, response: Stream[ChatCompletionChunk]):
+```
+
+Wrap a DeepSeek stream and cache reasoning after consumption.
+
+<a id="camel.models.deepseek_model.DeepSeekModel._inject_tool_call_reasoning"></a>
+
+### _inject_tool_call_reasoning
+
+```python
+def _inject_tool_call_reasoning(self, messages: List[OpenAIMessage]):
+```
+
+Inject cached reasoning into assistant tool-call messages.
+
+<a id="camel.models.deepseek_model.DeepSeekModel._with_reasoning_content"></a>
+
+### _with_reasoning_content
+
+```python
+def _with_reasoning_content(self, message: OpenAIMessage, reasoning_content: str):
+```
+
+Return a copy of an OpenAI message with DeepSeek reasoning.
+
+<a id="camel.models.deepseek_model.DeepSeekModel.preprocess_messages"></a>
+
+### preprocess_messages
+
+```python
+def preprocess_messages(self, messages: List[OpenAIMessage]):
+```
+
+Preprocess messages and restore DeepSeek tool-call reasoning.
+
+<a id="camel.models.deepseek_model.DeepSeekModel.postprocess_response"></a>
+
+### postprocess_response
+
+```python
+def postprocess_response(self, response: Any):
+```
+
+Postprocess responses and cache DeepSeek tool-call reasoning.
+
+<a id="camel.models.deepseek_model.DeepSeekModel._normalize_thinking_config"></a>
+
+### _normalize_thinking_config
+
+```python
+def _normalize_thinking_config(self, request_config: Dict[str, Any]):
+```
+
+Move top-level `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2__` for OpenAI SDK.
+
+<a id="camel.models.deepseek_model.DeepSeekModel._is_thinking_mode_enabled"></a>
+
+### _is_thinking_mode_enabled
+
+```python
+def _is_thinking_mode_enabled(self, request_config: Dict[str, Any]):
+```
+
 <a id="camel.models.deepseek_model.DeepSeekModel._prepare_request"></a>
 
 ### _prepare_request

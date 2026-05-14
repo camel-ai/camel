@@ -11,14 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import inspect
 import os
 import subprocess
-from typing import Any, Dict, Optional, Union
+from typing import Any, AsyncGenerator, Dict, Generator, Optional, Union
 
 from camel.configs import VLLMConfig
 from camel.logger import get_logger
 from camel.models.openai_compatible_model import OpenAICompatibleModel
-from camel.types import ModelType
+from camel.types import ChatCompletionChunk, ModelType
 from camel.utils import BaseTokenCounter
 
 logger = get_logger(__name__)
@@ -87,6 +88,46 @@ class VLLMModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+
+    def _normalize_reasoning_content(self, response: Any) -> Any:
+        r"""Normalize vLLM ``reasoning`` to CAMEL ``reasoning_content``."""
+        for choice in getattr(response, "choices", []) or []:
+            message = getattr(choice, "message", None) or getattr(
+                choice, "delta", None
+            )
+            if message is None:
+                continue
+            reasoning = getattr(message, "reasoning", None)
+            if reasoning and not getattr(message, "reasoning_content", None):
+                message.reasoning_content = reasoning
+        return response
+
+    def _wrap_stream_reasoning(
+        self, stream: Any
+    ) -> Generator[ChatCompletionChunk, None, None]:
+        for chunk in stream:
+            yield self._normalize_reasoning_content(chunk)
+
+    async def _wrap_async_stream_reasoning(
+        self, stream: Any
+    ) -> AsyncGenerator[ChatCompletionChunk, None]:
+        async for chunk in stream:
+            yield self._normalize_reasoning_content(chunk)
+
+    def postprocess_response(self, response: Any) -> Any:
+        r"""Normalize vLLM reasoning fields before agent consumption."""
+        response = super().postprocess_response(response)
+
+        if inspect.isasyncgen(response) or (
+            hasattr(response, "__aiter__") and hasattr(response, "__anext__")
+        ):
+            return self._wrap_async_stream_reasoning(response)
+        if inspect.isgenerator(response) or (
+            hasattr(response, "__iter__") and hasattr(response, "__next__")
+        ):
+            return self._wrap_stream_reasoning(response)
+
+        return self._normalize_reasoning_content(response)
 
     def _start_server(self) -> None:
         r"""Starts the vllm server in a subprocess."""
