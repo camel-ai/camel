@@ -787,6 +787,54 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return [{"error": f"An unexpected error occurred: {e!s}"}]
 
+    @api_keys_required([(None, 'YOU_API_KEY')])
+    def search_you(
+        self,
+        query: str,
+        number_of_result_pages: int = 10,
+        country: Optional[str] = None,
+        search_lang: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        r"""Use the You.com Search API to search information for the
+        given query.
+
+        You.com (https://you.com) provides a web search API that returns
+        relevant results including titles, descriptions, snippets, and
+        URLs. The API exposes optional locale parameters that make it
+        well suited to multilingual and region-specific searches.
+
+        Args:
+            query (str): The search query string.
+            number_of_result_pages (int): The number of result pages to
+                retrieve. Adjust this based on your task - use fewer
+                results for focused searches and more for comprehensive
+                searches. (default: :obj:`10`)
+            country (Optional[str]): ISO-3166 alpha-2 country code used
+                to bias results toward a specific market (e.g.
+                ``"US"``, ``"JP"``, ``"SA"``). When ``None`` the API
+                default is used. (default: :obj:`None`)
+            search_lang (Optional[str]): BCP-47 language tag used to
+                bias results toward a specific language (e.g. ``"en"``,
+                ``"ja"``, ``"ar"``). When ``None`` the API default is
+                used. (default: :obj:`None`)
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries representing
+                search results. Each dictionary contains:
+
+                - 'result_id' (int): The result's index (1-based).
+                - 'title' (str): The title of the result.
+                - 'description' (str): A brief description of the
+                  result.
+                - 'long_description' (str): Concatenated snippets that
+                  provide longer-form context for the result.
+                - 'url' (str): The URL of the result.
+
+                On failure a single-element list ``[{"error": "..."}]``
+                is returned.
+        """
+        raise NotImplementedError
+
     @api_keys_required([(None, 'BOCHA_API_KEY')])
     def search_bocha(
         self,
