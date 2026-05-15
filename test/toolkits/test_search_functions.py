@@ -1212,3 +1212,181 @@ def test_search_querit_empty_results(mock_post, search_toolkit):
     assert "results" in result
     assert len(result["results"]) == 0
     assert result["search_id"] == 12348
+
+
+# ==================== You.com Search Tests ====================
+
+# Reduced fixture mirroring the shape captured at
+# research/fixtures/search-response.json (2026-05-15 live 200 response).
+# Long thumbnail URLs are trimmed; the field set is unchanged.
+YOU_FIXTURE_RESPONSE = {
+    "results": {
+        "web": [
+            {
+                "url": (
+                    "https://docs.langchain.com/oss/python/"
+                    "integrations/providers/overview"
+                ),
+                "title": (
+                    "LangChain Python integrations - Docs by LangChain"
+                ),
+                "description": (
+                    "Integrate with providers using LangChain Python."
+                ),
+                "thumbnail_url": "https://example.com/thumb1.png",
+                "original_thumbnail_url": (
+                    "https://example.com/thumb1-orig.png"
+                ),
+                "favicon_url": (
+                    "https://you.com/favicon?domain=docs.langchain.com"
+                ),
+                "snippets": [
+                    "LangChain offers an extensive ecosystem.",
+                    "1000+ integrations across chat & embedding models.",
+                    "Community integrations live in langchain-community.",
+                ],
+            },
+            {
+                "url": (
+                    "https://docs.langchain.com/oss/python/"
+                    "integrations/providers/all_providers"
+                ),
+                "title": (
+                    "All LangChain Python integration providers - Docs"
+                ),
+                "description": (
+                    "Browse the complete collection of integrations "
+                    "available for Python."
+                ),
+                "thumbnail_url": "https://example.com/thumb2.png",
+                "original_thumbnail_url": (
+                    "https://example.com/thumb2-orig.png"
+                ),
+                "favicon_url": (
+                    "https://you.com/favicon?domain=docs.langchain.com"
+                ),
+                "snippets": [
+                    "LangChain Python offers the most extensive ecosystem.",
+                    "1000+ integrations across LLMs and retrievers.",
+                ],
+            },
+        ]
+    },
+    "metadata": {
+        "query": "python langchain integration",
+        "search_uuid": "46e1a6fa-ad87-485e-9b99-e18db4c40c5b",
+        "latency": 0.53,
+    },
+}
+
+
+@patch('requests.get')
+def test_search_you_success(mock_get, search_toolkit):
+    """Test successful You.com search returns the expected shape."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = YOU_FIXTURE_RESPONSE
+    mock_get.return_value = mock_response
+
+    with patch.dict(os.environ, {'YOU_API_KEY': 'fake_api_key'}):
+        result = search_toolkit.search_you(
+            query="python langchain integration"
+        )
+
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert result[0] == {
+        "result_id": 1,
+        "title": "LangChain Python integrations - Docs by LangChain",
+        "description": (
+            "Integrate with providers using LangChain Python."
+        ),
+        "long_description": (
+            "LangChain offers an extensive ecosystem.\n"
+            "1000+ integrations across chat & embedding models.\n"
+            "Community integrations live in langchain-community."
+        ),
+        "url": (
+            "https://docs.langchain.com/oss/python/integrations/"
+            "providers/overview"
+        ),
+    }
+    assert result[1]["result_id"] == 2
+
+    # Verify the request was made correctly.
+    mock_get.assert_called_once()
+    args, kwargs = mock_get.call_args
+    assert args[0] == "https://ydc-index.io/v1/search"
+    assert kwargs['headers']['X-API-Key'] == 'fake_api_key'
+    assert kwargs['params']['query'] == 'python langchain integration'
+    assert kwargs['params']['count'] == 10
+    assert 'timeout' in kwargs
+
+
+@patch('requests.get')
+def test_search_you_missing_api_key(mock_get, search_toolkit):
+    """Test the @api_keys_required decorator rejects missing key."""
+    # Ensure YOU_API_KEY is not present in the environment.
+    with patch.dict(os.environ, {}, clear=True):
+        with pytest.raises(ValueError, match="YOU_API_KEY"):
+            search_toolkit.search_you(query="test")
+
+    # No HTTP call should have been made.
+    mock_get.assert_not_called()
+
+
+@patch('requests.get')
+def test_search_you_http_error(mock_get, search_toolkit):
+    """Test HTTP error handling in You.com search."""
+    mock_response = MagicMock()
+    mock_response.status_code = 401
+    mock_response.text = '{"message": "Unauthorized"}'
+    mock_get.return_value = mock_response
+
+    with patch.dict(os.environ, {'YOU_API_KEY': 'invalid_key'}):
+        result = search_toolkit.search_you(query="test")
+
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert "error" in result[0]
+    assert "401" in result[0]["error"]
+
+
+@patch('requests.get')
+def test_search_you_timeout(mock_get, search_toolkit):
+    """Test timeout handling in You.com search."""
+    mock_get.side_effect = requests.exceptions.Timeout(
+        "Connection timed out"
+    )
+
+    with patch.dict(os.environ, {'YOU_API_KEY': 'fake_key'}):
+        result = search_toolkit.search_you(query="test")
+
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert "error" in result[0]
+    assert "timed out" in result[0]["error"]
+
+
+@patch('requests.get')
+def test_search_you_multilingual_params_propagated(
+    mock_get, search_toolkit
+):
+    """Test country and search_lang are forwarded to the API call."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"results": {"web": []}}
+    mock_get.return_value = mock_response
+
+    with patch.dict(os.environ, {'YOU_API_KEY': 'fake_key'}):
+        search_toolkit.search_you(
+            query="ما هي أحدث أخبار التقنية؟",
+            country='SA',
+            search_lang='ar',
+        )
+
+    mock_get.assert_called_once()
+    _, kwargs = mock_get.call_args
+    assert kwargs['params']['country'] == 'SA'
+    assert kwargs['params']['search_lang'] == 'ar'
+    assert kwargs['params']['query'] == 'ما هي أحدث أخبار التقنية؟'
