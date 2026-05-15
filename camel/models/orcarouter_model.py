@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import OpenRouterConfig
+from camel.configs import OrcaRouterConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
@@ -23,20 +23,30 @@ from camel.utils import (
 )
 
 
-class OpenRouterModel(OpenAICompatibleModel):
-    r"""LLM API served by OpenRouter in a unified OpenAICompatibleModel
+class OrcaRouterModel(OpenAICompatibleModel):
+    r"""LLM API served by OrcaRouter in a unified OpenAICompatibleModel
     interface.
+
+    OrcaRouter is an OpenAI-compatible LLM gateway that routes each request
+    to the cheapest or fastest upstream provider for the requested model.
+
+    Quickstart: pass ``ModelType.ORCAROUTER_AUTO`` to let OrcaRouter pick the
+    upstream for you — no need to know specific model ids. To pin a specific
+    model, use one of the predefined ``ModelType.ORCAROUTER_*`` enums
+    (discoverable in IDE autocomplete) or pass any model id from the full
+    catalog at https://www.orcarouter.ai/models as a free-form string (e.g.
+    ``"qwen/qwen3.5-flash"``).
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
             created.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`.
-            If:obj:`None`, :obj:`GroqConfig().as_dict()` will be used.
+            If:obj:`None`, :obj:`OrcaRouterConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating
-            with the OpenRouter service. (default: :obj:`None`).
-        url (Optional[str], optional): The url to the OpenRouter service.
+            with the OrcaRouter service. (default: :obj:`None`).
+        url (Optional[str], optional): The url to the OrcaRouter service.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
@@ -48,19 +58,11 @@ class OpenRouterModel(OpenAICompatibleModel):
             (default: :obj:`None`)
         max_retries (int, optional): Maximum number of retries for API calls.
             (default: :obj:`3`)
-        app_referer (Optional[str], optional): The HTTP-Referer header value
-            for OpenRouter App Attribution. If not provided, defaults to
-            'https://www.camel-ai.org/'. Set to :obj:`None` to disable.
-            (default: :obj:`'https://www.camel-ai.org/'`)
-        app_title (Optional[str], optional): The X-OpenRouter-Title header
-            value for OpenRouter App Attribution. If not provided, defaults
-            to 'CAMEL-AI'. Set to :obj:`None` to disable.
-            (default: :obj:`'CAMEL-AI'`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
     """
 
-    @api_keys_required([("api_key", "OPENROUTER_API_KEY")])
+    @api_keys_required([("api_key", "ORCAROUTER_API_KEY")])
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -70,31 +72,15 @@ class OpenRouterModel(OpenAICompatibleModel):
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
-        app_referer: Optional[str] = 'https://www.camel-ai.org/',
-        app_title: Optional[str] = 'CAMEL-AI',
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
-            model_config_dict = OpenRouterConfig().as_dict()
-        api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
+            model_config_dict = OrcaRouterConfig().as_dict()
+        api_key = api_key or os.environ.get("ORCAROUTER_API_KEY")
         url = url or os.environ.get(
-            "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
+            "ORCAROUTER_API_BASE_URL", "https://api.orcarouter.ai/v1"
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
-
-        # Add OpenRouter App Attribution headers
-        # Merge with any existing headers to preserve user-provided headers
-        attribution_headers = {}
-        if app_referer is not None:
-            attribution_headers['HTTP-Referer'] = app_referer
-        if app_title is not None:
-            attribution_headers['X-OpenRouter-Title'] = app_title
-
-        kwargs["default_headers"] = {
-            **attribution_headers,
-            **(kwargs.get("default_headers") or {}),
-        }
-
         super().__init__(
             model_type=model_type,
             model_config_dict=model_config_dict,
