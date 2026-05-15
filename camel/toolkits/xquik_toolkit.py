@@ -76,7 +76,7 @@ def xquik_search_tweets(
 
     Args:
         query (str): The search query.
-        max_results (int): Maximum number of tweets to return (10-200).
+        max_results (int): Maximum number of tweets to return (1-200).
             (default: :obj:`10`)
         sort_order (str): Sort order, "Top" (engagement) or "Latest"
             (chronological). (default: :obj:`"Top"`)
@@ -86,7 +86,7 @@ def xquik_search_tweets(
             tweet text, author info, engagement metrics, and URLs.
     """
     try:
-        max_results = max(10, min(max_results, 200))
+        max_results = max(1, min(max_results, 200))
         data = _xquik_get(
             "/x/tweets/search",
             {"q": query, "limit": max_results, "queryType": sort_order},

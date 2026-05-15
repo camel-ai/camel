@@ -164,6 +164,16 @@ def test_xquik_search_tweets_formats_results(
         ],
     }
 
+    calls.clear()
+    xquik_search_tweets("CAMEL-AI", max_results=1)
+
+    assert calls == [
+        (
+            "/x/tweets/search",
+            {"limit": 1, "q": "CAMEL-AI", "queryType": "Top"},
+        )
+    ]
+
 
 def test_xquik_get_tweet_formats_single_tweet(
     monkeypatch: pytest.MonkeyPatch,
