@@ -224,16 +224,11 @@ class AWSBedrockConverseModel(BaseModelBackend):
 
     @staticmethod
     def _parse_json_or_text(value: Any) -> Dict[str, Any]:
-        # Bedrock Converse requires `toolResult.content[].json` to be a
-        # JSON object. A top-level list/scalar at that position is rejected
-        # with "The format of the value at messages.*.content.*.toolResult.
-        # content.*.json is invalid". When a tool returns (or its message
-        # content is) a non-object JSON value, wrap it under a `result` key.
-        # See issue #3962.
+        # Bedrock Converse requires `toolResult.content[].json` objects.
         if isinstance(value, dict):
             return {"json": value}
         if isinstance(value, list):
-            return {"json": {"result": value}}
+            return {"json": {"__camel_tool_result__": value}}
         if isinstance(value, str):
             stripped = value.strip()
             if not stripped:
