@@ -1813,6 +1813,7 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_google),
             FunctionTool(self.search_duckduckgo),
             FunctionTool(self.search_tavily),
+            FunctionTool(self.search_you),
             FunctionTool(self.search_brave),
             FunctionTool(self.search_bocha),
             FunctionTool(self.search_baidu),
