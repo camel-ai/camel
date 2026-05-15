@@ -141,27 +141,32 @@ def xquik_get_tweet(tweet_id: str) -> str:
     """
     try:
         data = _xquik_get(f"/x/tweets/{tweet_id}")
-        author = data.get("author", {})
+        tweet = data.get("tweet")
+        if not isinstance(tweet, dict):
+            tweet = data
+        author = data.get("author")
+        if not isinstance(author, dict):
+            author = tweet.get("author", {})
         result = {
-            "id": data.get("id", ""),
-            "text": data.get("text", ""),
-            "created_at": data.get("createdAt", ""),
+            "id": tweet.get("id", ""),
+            "text": tweet.get("text", ""),
+            "created_at": tweet.get("createdAt", ""),
             "author": {
                 "username": author.get("username", ""),
                 "name": author.get("name", ""),
                 "verified": author.get("verified", False),
             },
             "metrics": {
-                "likes": data.get("likeCount", 0),
-                "retweets": data.get("retweetCount", 0),
-                "replies": data.get("replyCount", 0),
-                "quotes": data.get("quoteCount", 0),
-                "views": data.get("viewCount", 0),
-                "bookmarks": data.get("bookmarkCount", 0),
+                "likes": tweet.get("likeCount", 0),
+                "retweets": tweet.get("retweetCount", 0),
+                "replies": tweet.get("replyCount", 0),
+                "quotes": tweet.get("quoteCount", 0),
+                "views": tweet.get("viewCount", 0),
+                "bookmarks": tweet.get("bookmarkCount", 0),
             },
             "url": (
                 f"https://x.com/{author.get('username', 'unknown')}"
-                f"/status/{data.get('id', '')}"
+                f"/status/{tweet.get('id', '')}"
             ),
         }
         return json.dumps(result, indent=2)

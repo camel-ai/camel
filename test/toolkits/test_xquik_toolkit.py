@@ -175,16 +175,18 @@ def test_xquik_get_tweet_formats_single_tweet(
     ) -> Dict[str, Any]:
         calls.append((path, params))
         return {
-            "id": "456",
-            "text": "A specific tweet",
-            "createdAt": "2026-05-12T01:00:00Z",
+            "tweet": {
+                "id": "456",
+                "text": "A specific tweet",
+                "createdAt": "2026-05-12T01:00:00Z",
+                "likeCount": 5,
+                "retweetCount": 4,
+                "replyCount": 3,
+                "quoteCount": 2,
+                "viewCount": 100,
+                "bookmarkCount": 1,
+            },
             "author": {"username": "CamelAIOrg", "name": "CAMEL-AI"},
-            "likeCount": 5,
-            "retweetCount": 4,
-            "replyCount": 3,
-            "quoteCount": 2,
-            "viewCount": 100,
-            "bookmarkCount": 1,
         }
 
     monkeypatch.setattr(
