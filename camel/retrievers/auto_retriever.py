@@ -42,15 +42,19 @@ class AutoRetriever:
     r"""Facilitates the automatic retrieval of information using a
     query-based approach with pre-defined elements.
 
-    Attributes:
-        url_and_api_key (Optional[Tuple[str, str]]): URL and API key for
-            accessing the vector storage remotely.
-        vector_storage_local_path (Optional[str]): Local path for vector
-            storage, if applicable.
-        storage_type (Optional[StorageType]): The type of vector storage to
-            use. Defaults to `StorageType.QDRANT`.
-        embedding_model (Optional[BaseEmbedding]): Model used for embedding
-            queries and documents. Defaults to `OpenAIEmbedding()`.
+    Args:
+        url_and_api_key (Optional[Tuple[str, str]], optional): URL and
+            API key for accessing the vector storage remotely.
+            (default: :obj:`None`)
+        vector_storage_local_path (Optional[str], optional): Local path
+            for vector storage, if applicable.
+            (default: :obj:`None`)
+        storage_type (Optional[StorageType], optional): The type of
+            vector storage to use.
+            (default: :obj:`StorageType.QDRANT`)
+        embedding_model (Optional[BaseEmbedding], optional): Model used
+            for embedding queries and documents.
+            (default: :obj:`OpenAIEmbedding()`)
     """
 
     def __init__(
@@ -69,12 +73,13 @@ class AutoRetriever:
         self,
         collection_name: Optional[str] = None,
     ) -> BaseVectorStorage:
-        r"""Sets up and returns a vector storage instance with specified
-        parameters.
+        r"""Sets up and returns a vector storage instance with
+        specified parameters.
 
         Args:
-            collection_name (Optional[str]): Name of the collection in the
-                vector storage.
+            collection_name (Optional[str], optional): Name of the
+                collection in the vector storage.
+                (default: :obj:`None`)
 
         Returns:
             BaseVectorStorage: Configured vector storage instance.
@@ -174,36 +179,40 @@ class AutoRetriever:
         return_detailed_info: bool = False,
         max_characters: int = 500,
     ) -> dict[str, Sequence[Collection[str]]]:
-        r"""Executes the automatic vector retriever process using vector
-        storage.
+        r"""Executes the automatic vector retriever process using
+        vector storage.
 
         Args:
             query (str): Query string for information retriever.
-            contents (Union[str, List[str], Element, List[Element]]): Local
-                file paths, remote URLs, string contents or Element objects.
-            top_k (int, optional): The number of top results to return during
-                retrieve. Must be a positive integer. Defaults to
-                `DEFAULT_TOP_K_RESULTS`.
-            similarity_threshold (float, optional): The similarity threshold
-                for filtering results. Defaults to
-                `DEFAULT_SIMILARITY_THRESHOLD`.
-            return_detailed_info (bool, optional): Whether to return detailed
-                information including similarity score, content path and
-                metadata. Defaults to `False`.
-            max_characters (int): Max number of characters in each chunk.
-                Defaults to `500`.
+            contents (Union[str, List[str], Element, List[Element]]):
+                Local file paths, remote URLs, string contents or
+                Element objects.
+            top_k (int, optional): The number of top results to
+                return during retrieve. Must be a positive integer.
+                (default: :obj:`DEFAULT_TOP_K_RESULTS`)
+            similarity_threshold (float, optional): The similarity
+                threshold for filtering results.
+                (default: :obj:`DEFAULT_SIMILARITY_THRESHOLD`)
+            return_detailed_info (bool, optional): Whether to return
+                detailed information including similarity score,
+                content path and metadata.
+                (default: :obj:`False`)
+            max_characters (int, optional): Max number of characters
+                in each chunk. (default: :obj:`500`)
 
         Returns:
             dict[str, Sequence[Collection[str]]]: By default, returns
-                only the text information. If `return_detailed_info` is
-                `True`, return detailed information including similarity
-                score, content path and metadata.
+                only the text information. If
+                :obj:`return_detailed_info` is :obj:`True`, return
+                detailed information including similarity score,
+                content path and metadata.
 
         Raises:
-            ValueError: If there's an vector storage existing with content
-                name in the vector path but the payload is None. If
-                `contents` is empty.
-            RuntimeError: If any errors occur during the retrieve process.
+            ValueError: If there's a vector storage existing with
+                content name in the vector path but the payload is
+                :obj:`None`. If :obj:`contents` is empty.
+            RuntimeError: If any errors occur during the retrieve
+                process.
         """
         from unstructured.documents.elements import Element
 

@@ -19,20 +19,24 @@ from camel.storages import BaseVectorStorage
 
 
 class HybridRetriever(BaseRetriever):
+    r"""An implementation of the :obj:`BaseRetriever` that combines
+    vector-based and BM25 retrieval using Reciprocal Rank Fusion
+    (RRF) for improved search results.
+
+    Args:
+        embedding_model (Optional[BaseEmbedding], optional): An
+            embedding model used by the VectorRetriever.
+            (default: :obj:`None`)
+        vector_storage (Optional[BaseVectorStorage], optional): A
+            vector storage used by the VectorRetriever.
+            (default: :obj:`None`)
+    """
+
     def __init__(
         self,
         embedding_model: Optional[BaseEmbedding] = None,
         vector_storage: Optional[BaseVectorStorage] = None,
     ) -> None:
-        r"""Initializes the HybridRetriever with optional embedding model and
-        vector storage.
-
-        Args:
-            embedding_model (Optional[BaseEmbedding]): An optional embedding
-                model used by the VectorRetriever. Defaults to None.
-            vector_storage (Optional[BaseVectorStorage]): An optional vector
-                storage used by the VectorRetriever. Defaults to None.
-        """
         self.vr = VectorRetriever(embedding_model, vector_storage)
         self.bm25 = BM25Retriever()
 
@@ -63,36 +67,38 @@ class HybridRetriever(BaseRetriever):
         bm25_weight: float,
         rank_smoothing_factor: float,
     ) -> List[Dict[str, Union[str, float]]]:
-        r"""Sorts and combines results from vector and BM25 retrievers using
-        Reciprocal Rank Fusion (RRF).
+        r"""Sorts and combines results from vector and BM25 retrievers
+        using Reciprocal Rank Fusion (RRF).
 
         Args:
-            vector_retriever_results: A list of dictionaries containing the
-                results from the vector retriever, where each dictionary
-                contains a 'text' entry.
-            bm25_retriever_results: A list of dictionaries containing the
-                results from the BM25 retriever, where each dictionary
-                contains a 'text' entry.
-            top_k: The number of top results to return after sorting by RRF
-                score.
-            vector_weight: The weight to assign to the vector retriever
-                results in the RRF calculation.
-            bm25_weight: The weight to assign to the BM25 retriever results in
-                the RRF calculation.
-            rank_smoothing_factor: A hyperparameter for the RRF calculation
-                that helps smooth the rank positions.
+            vector_retriever_results (List[Dict[str, Any]]): A list of
+                dictionaries containing the results from the vector
+                retriever, where each dictionary contains a 'text'
+                entry.
+            bm25_retriever_results (List[Dict[str, Any]]): A list of
+                dictionaries containing the results from the BM25
+                retriever, where each dictionary contains a 'text'
+                entry.
+            top_k (int): The number of top results to return after
+                sorting by RRF score.
+            vector_weight (float): The weight to assign to the vector
+                retriever results in the RRF calculation.
+            bm25_weight (float): The weight to assign to the BM25
+                retriever results in the RRF calculation.
+            rank_smoothing_factor (float): A hyperparameter for the
+                RRF calculation that helps smooth the rank positions.
 
         Returns:
-            List[Dict[str, Union[str, float]]]: A list of dictionaries
-            representing the sorted results. Each dictionary contains the
-            'text'from the retrieved items and their corresponding 'rrf_score'.
+            List[Dict[str, Union[str, float]]]: A list of
+                dictionaries representing the sorted results. Each
+                dictionary contains the 'text' from the retrieved
+                items and their corresponding 'rrf_score'.
 
         Raises:
             ValueError: If any of the input weights are negative.
 
         References:
             https://medium.com/@devalshah1619/mathematical-intuition-behind-reciprocal-rank-fusion-rrf-explained-in-2-mins-002df0cc5e2a
-            https://colab.research.google.com/drive/1iwVJrN96fiyycxN1pBqWlEr_4EPiGdGy#scrollTo=0qh83qGV2dY8
         """
         import numpy as np
 
@@ -162,28 +168,42 @@ class HybridRetriever(BaseRetriever):
         bm25_retriever_top_k: int = 50,
         return_detailed_info: bool = False,
     ) -> Dict[str, Any]:
-        r"""Executes a hybrid retrieval query using both vector and BM25
-        retrievers.
+        r"""Executes a hybrid retrieval query using both vector and
+        BM25 retrievers.
 
         Args:
             query (str): The search query.
-            top_k (int): Number of top results to return (default 20).
-            vector_weight (float): Weight for vector retriever results in RRF.
-            bm25_weight (float): Weight for BM25 retriever results in RRF.
-            rank_smoothing_factor (int): RRF hyperparameter for rank smoothing.
-            vector_retriever_top_k (int): Top results from vector retriever.
-            vector_retriever_similarity_threshold (float): Similarity
-                threshold for vector retriever.
-            bm25_retriever_top_k (int): Top results from BM25 retriever.
-            return_detailed_info (bool): Return detailed info if True.
+            top_k (int, optional): Number of top results to return.
+                (default: :obj:`20`)
+            vector_weight (float, optional): Weight for vector
+                retriever results in RRF.
+                (default: :obj:`0.8`)
+            bm25_weight (float, optional): Weight for BM25 retriever
+                results in RRF. (default: :obj:`0.2`)
+            rank_smoothing_factor (int, optional): RRF hyperparameter
+                for rank smoothing. (default: :obj:`60`)
+            vector_retriever_top_k (int, optional): Top results from
+                vector retriever. (default: :obj:`50`)
+            vector_retriever_similarity_threshold (float, optional):
+                Similarity threshold for vector retriever.
+                (default: :obj:`0.5`)
+            bm25_retriever_top_k (int, optional): Top results from
+                BM25 retriever. (default: :obj:`50`)
+            return_detailed_info (bool, optional): Return detailed
+                info if :obj:`True`. (default: :obj:`False`)
 
         Returns:
-            Union[
-                dict[str, Sequence[Collection[str]]],
-                dict[str, Sequence[Union[str, float]]]
-            ]: By default, returns only the text information. If
-                `return_detailed_info` is `True`, return detailed information
-                including rrf scores.
+            Dict[str, Any]: By default, returns only the text
+                information. If :obj:`return_detailed_info` is
+                :obj:`True`, return detailed information including
+                rrf scores.
+
+        Raises:
+            ValueError: If :obj:`top_k` is greater than the maximum
+                of :obj:`vector_retriever_top_k` and
+                :obj:`bm25_retriever_top_k`. If
+                :obj:`vector_weight` or :obj:`bm25_weight` is
+                negative.
         """
         if top_k > max(vector_retriever_top_k, bm25_retriever_top_k):
             raise ValueError(

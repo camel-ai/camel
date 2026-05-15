@@ -21,19 +21,21 @@ DEFAULT_TOP_K_RESULTS = 1
 
 
 class BM25Retriever(BaseRetriever):
-    r"""An implementation of the `BaseRetriever` using the `BM25` model.
+    r"""An implementation of the :obj:`BaseRetriever` using the BM25
+    model.
 
-    This class facilitates the retriever of relevant information using a
-    query-based approach, it ranks documents based on the occurrence and
-    frequency of the query terms.
+    This class facilitates the retrieval of relevant information
+    using a query-based approach. It ranks documents based on the
+    occurrence and frequency of the query terms.
 
     Attributes:
-        bm25 (BM25Okapi): An instance of the BM25Okapi class used for
-            calculating document scores.
-        content_input_path (str): The path to the content that has been
-            processed and stored.
-        unstructured_modules (UnstructuredIO): A module for parsing files and
-            URLs and chunking content based on specified parameters.
+        bm25 (BM25Okapi): An instance of the BM25Okapi class used
+            for calculating document scores.
+        content_input_path (str): The path to the content that has
+            been processed and stored.
+        unstructured_modules (UnstructuredIO): A module for parsing
+            files and URLs and chunking content based on specified
+            parameters.
 
     References:
         https://github.com/dorianbrown/rank_bm25
@@ -54,16 +56,18 @@ class BM25Retriever(BaseRetriever):
         chunk_type: str = "chunk_by_title",
         **kwargs: Any,
     ) -> None:
-        r"""Processes content from a file or URL, divides it into chunks by
-        using `Unstructured IO`,then stored internally. This method must be
-        called before executing queries with the retriever.
+        r"""Processes content from a file or URL, divides it into
+        chunks by using :obj:`Unstructured IO`, then stored
+        internally. This method must be called before executing
+        queries with the retriever.
 
         Args:
-            content_input_path (str): File path or URL of the content to be
-                processed.
-            chunk_type (str): Type of chunking going to apply. Defaults to
-                "chunk_by_title".
-            **kwargs (Any): Additional keyword arguments for content parsing.
+            content_input_path (str): File path or URL of the content
+                to be processed.
+            chunk_type (str, optional): Type of chunking going to
+                apply. (default: :obj:`"chunk_by_title"`)
+            **kwargs (Any): Additional keyword arguments for content
+                parsing.
         """
         from rank_bm25 import BM25Okapi
 
@@ -92,17 +96,18 @@ class BM25Retriever(BaseRetriever):
 
         Args:
             query (str): Query string for information retriever.
-            top_k (int, optional): The number of top results to return during
-                retriever. Must be a positive integer. Defaults to
-                `DEFAULT_TOP_K_RESULTS`.
+            top_k (int, optional): The number of top results to return
+                during retrieval. Must be a positive integer.
+                (default: :obj:`DEFAULT_TOP_K_RESULTS`)
 
         Returns:
-            List[Dict[str]]: Concatenated list of the query results.
+            List[Dict[str, Any]]: Concatenated list of the query
+                results.
 
         Raises:
-            ValueError: If `top_k` is less than or equal to 0, if the BM25
-                model has not been initialized by calling `process`
-                first.
+            ValueError: If :obj:`top_k` is less than or equal to 0,
+                if the BM25 model has not been initialized by calling
+                :obj:`process` first.
         """
         import numpy as np
 
