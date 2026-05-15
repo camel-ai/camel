@@ -46,7 +46,6 @@ from .wechat_official_toolkit import WeChatOfficialToolkit
 from .dingtalk import DingtalkToolkit
 from .lark_toolkit import LarkToolkit
 from .twitter_toolkit import TwitterToolkit
-from .xquik_toolkit import XquikToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
 from .notion_toolkit import NotionToolkit
@@ -129,7 +128,6 @@ __all__ = [
     'LarkToolkit',
     'ImageGenToolkit',
     'TwitterToolkit',
-    'XquikToolkit',
     'WeatherToolkit',
     'RetrievalToolkit',
     'OpenAPIToolkit',
