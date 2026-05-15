@@ -833,7 +833,37 @@ class SearchToolkit(BaseToolkit):
                 On failure a single-element list ``[{"error": "..."}]``
                 is returned.
         """
-        raise NotImplementedError
+        YOU_API_KEY = os.environ.get("YOU_API_KEY")
+
+        url = "https://ydc-index.io/v1/search"
+        headers = {"X-API-Key": YOU_API_KEY}
+        params: Dict[str, Any] = {
+            "query": query,
+            "count": number_of_result_pages,
+        }
+        if country is not None:
+            params["country"] = country
+        if search_lang is not None:
+            params["search_lang"] = search_lang
+
+        response = requests.get(
+            url, headers=headers, params=params, timeout=self.timeout
+        )
+        web_results = response.json().get("results", {}).get("web", [])
+
+        results: List[Dict[str, Any]] = []
+        for idx, item in enumerate(web_results, 1):
+            snippets = item.get("snippets") or []
+            results.append(
+                {
+                    "result_id": idx,
+                    "title": item.get("title", ""),
+                    "description": item.get("description", ""),
+                    "long_description": "\n".join(snippets),
+                    "url": item.get("url", ""),
+                }
+            )
+        return results
 
     @api_keys_required([(None, 'BOCHA_API_KEY')])
     def search_bocha(
