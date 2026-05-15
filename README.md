@@ -322,6 +322,34 @@ Explore different types of agents, their roles, and their applications.
 - **[Embodied Agents](https://docs.camel-ai.org/cookbooks/advanced_features/embodied_agents)**
 - **[Critic Agents](https://docs.camel-ai.org/cookbooks/advanced_features/critic_agents_and_tree_search)**
 
+### Search: You.com
+
+`SearchToolkit` exposes the You.com Search API via `search_you`. Set
+the API key in the environment, then call the method directly or pass
+it to a `ChatAgent` like any other tool.
+
+```bash
+export YOU_API_KEY='your_you_api_key'
+```
+
+```python
+from camel.toolkits import SearchToolkit
+
+toolkit = SearchToolkit()
+results = toolkit.search_you(
+    query="latest CAMEL-AI release notes",
+    number_of_result_pages=5,
+)
+for hit in results:
+    print(hit["title"], hit["url"])
+```
+
+The `country` and `search_lang` arguments accept ISO-3166 alpha-2 and
+BCP-47 codes respectively, so the same tool covers Arabic
+(`country='SA', search_lang='ar'`) and Japanese
+(`country='JP', search_lang='ja'`) searches without a separate
+locale-specific engine.
+
 ### Seeking Help
 
 Please reach out to us on [CAMEL discord](https://discord.camel-ai.org/) if you encounter any issue set up CAMEL.
