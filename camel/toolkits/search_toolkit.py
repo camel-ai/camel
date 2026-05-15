@@ -884,42 +884,23 @@ class SearchToolkit(BaseToolkit):
                     }
                 ]
 
-            web_results = (
-                response.json().get("results", {}).get("web", [])
-            )
+            web_results = response.json().get("results", {}).get("web", [])
         except requests.exceptions.Timeout as e:
             logger.warning(f"You.com search timed out: {e!s}")
             return [{"error": f"You.com search timed out: {e!s}"}]
         except requests.exceptions.HTTPError as e:
             status = (
-                e.response.status_code
-                if e.response is not None
-                else "unknown"
+                e.response.status_code if e.response is not None else "unknown"
             )
-            logger.warning(
-                f"You.com search HTTP error {status}: {e!s}"
-            )
-            return [
-                {
-                    "error": (
-                        f"You.com search HTTP error {status}: {e!s}"
-                    )
-                }
-            ]
+            logger.warning(f"You.com search HTTP error {status}: {e!s}")
+            return [{"error": (f"You.com search HTTP error {status}: {e!s}")}]
         except requests.exceptions.RequestException as e:
             logger.warning(f"You.com search request failed: {e!s}")
             return [{"error": f"You.com search request failed: {e!s}"}]
         except Exception as e:
-            logger.warning(
-                f"Unexpected error during You.com search: {e!s}"
-            )
+            logger.warning(f"Unexpected error during You.com search: {e!s}")
             return [
-                {
-                    "error": (
-                        f"Unexpected error during You.com search: "
-                        f"{e!s}"
-                    )
-                }
+                {"error": (f"Unexpected error during You.com search: {e!s}")}
             ]
 
         results: List[Dict[str, Any]] = []

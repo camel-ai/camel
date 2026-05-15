@@ -1227,9 +1227,7 @@ YOU_FIXTURE_RESPONSE = {
                     "https://docs.langchain.com/oss/python/"
                     "integrations/providers/overview"
                 ),
-                "title": (
-                    "LangChain Python integrations - Docs by LangChain"
-                ),
+                "title": ("LangChain Python integrations - Docs by LangChain"),
                 "description": (
                     "Integrate with providers using LangChain Python."
                 ),
@@ -1251,9 +1249,7 @@ YOU_FIXTURE_RESPONSE = {
                     "https://docs.langchain.com/oss/python/"
                     "integrations/providers/all_providers"
                 ),
-                "title": (
-                    "All LangChain Python integration providers - Docs"
-                ),
+                "title": ("All LangChain Python integration providers - Docs"),
                 "description": (
                     "Browse the complete collection of integrations "
                     "available for Python."
@@ -1298,9 +1294,7 @@ def test_search_you_success(mock_get, search_toolkit):
     assert result[0] == {
         "result_id": 1,
         "title": "LangChain Python integrations - Docs by LangChain",
-        "description": (
-            "Integrate with providers using LangChain Python."
-        ),
+        "description": ("Integrate with providers using LangChain Python."),
         "long_description": (
             "LangChain offers an extensive ecosystem.\n"
             "1000+ integrations across chat & embedding models.\n"
@@ -1355,9 +1349,7 @@ def test_search_you_http_error(mock_get, search_toolkit):
 @patch('requests.get')
 def test_search_you_timeout(mock_get, search_toolkit):
     """Test timeout handling in You.com search."""
-    mock_get.side_effect = requests.exceptions.Timeout(
-        "Connection timed out"
-    )
+    mock_get.side_effect = requests.exceptions.Timeout("Connection timed out")
 
     with patch.dict(os.environ, {'YOU_API_KEY': 'fake_key'}):
         result = search_toolkit.search_you(query="test")
@@ -1369,9 +1361,7 @@ def test_search_you_timeout(mock_get, search_toolkit):
 
 
 @patch('requests.get')
-def test_search_you_multilingual_params_propagated(
-    mock_get, search_toolkit
-):
+def test_search_you_multilingual_params_propagated(mock_get, search_toolkit):
     """Test country and search_lang are forwarded to the API call."""
     mock_response = MagicMock()
     mock_response.status_code = 200
