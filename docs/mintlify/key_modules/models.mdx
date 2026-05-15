@@ -67,6 +67,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **CometAPI**     | [supported models](https://api.cometapi.com/pricing) |
 | **Nebius**       | [supported models](https://studio.nebius.com/) |
 | **OpenRouter**   | [supported models](https://openrouter.ai/models) |
+| **OrcaRouter**   | [supported models](https://www.orcarouter.ai/models) |
 | **PPIO**         | [supported models](https://ppio.com/model-api/console) |
 | **LiteLLM**      | [supported models](https://docs.litellm.ai/docs/providers) |
 | **OpenAI Compatible** | custom OpenAI-compatible endpoints via `OPENAI_COMPATIBLE_MODEL` |
