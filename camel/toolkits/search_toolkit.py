@@ -818,6 +818,22 @@ class SearchToolkit(BaseToolkit):
                 ``"ja"``, ``"ar"``). When ``None`` the API default is
                 used. (default: :obj:`None`)
 
+                Examples for multilingual searches::
+
+                    # Arabic-language results biased to Saudi Arabia.
+                    toolkit.search_you(
+                        query="ما هي أحدث أخبار التقنية؟",
+                        country="SA",
+                        search_lang="ar",
+                    )
+
+                    # Japanese-language results biased to Japan.
+                    toolkit.search_you(
+                        query="生成AIの最新動向",
+                        country="JP",
+                        search_lang="ja",
+                    )
+
         Returns:
             List[Dict[str, Any]]: A list of dictionaries representing
                 search results. Each dictionary contains:
