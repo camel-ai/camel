@@ -19,13 +19,6 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 
 from camel.toolkits import FunctionTool, XquikToolkit
-from camel.toolkits.xquik_toolkit import (
-    _xquik_get,
-    xquik_get_trends,
-    xquik_get_tweet,
-    xquik_get_user_info,
-    xquik_search_tweets,
-)
 
 
 class FakeResponse:
@@ -65,7 +58,7 @@ def test_xquik_get_builds_authorized_request(
         fake_urlopen,
     )
 
-    result = _xquik_get(
+    result = XquikToolkit()._xquik_get(
         "/x/tweets/search",
         {"q": "camel ai", "limit": 10, "empty": None},
     )
@@ -89,6 +82,7 @@ def test_xquik_search_tweets_formats_results(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: List[Tuple[str, Dict[str, Any]]] = []
+    toolkit = XquikToolkit()
 
     def fake_xquik_get(
         path: str, params: Dict[str, Any] | None = None
@@ -115,13 +109,10 @@ def test_xquik_search_tweets_formats_results(
             ]
         }
 
-    monkeypatch.setattr(
-        "camel.toolkits.xquik_toolkit._xquik_get",
-        fake_xquik_get,
-    )
+    monkeypatch.setattr(toolkit, "_xquik_get", fake_xquik_get)
 
     result = json.loads(
-        xquik_search_tweets(
+        toolkit.xquik_search_tweets(
             "from:CamelAIOrg -is:retweet",
             max_results=500,
             sort_order="Latest",
@@ -165,7 +156,7 @@ def test_xquik_search_tweets_formats_results(
     }
 
     calls.clear()
-    xquik_search_tweets("CAMEL-AI", max_results=1)
+    toolkit.xquik_search_tweets("CAMEL-AI", max_results=1)
 
     assert calls == [
         (
@@ -179,6 +170,7 @@ def test_xquik_get_tweet_formats_single_tweet(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: List[Tuple[str, Dict[str, Any] | None]] = []
+    toolkit = XquikToolkit()
 
     def fake_xquik_get(
         path: str, params: Dict[str, Any] | None = None
@@ -199,12 +191,9 @@ def test_xquik_get_tweet_formats_single_tweet(
             "author": {"username": "CamelAIOrg", "name": "CAMEL-AI"},
         }
 
-    monkeypatch.setattr(
-        "camel.toolkits.xquik_toolkit._xquik_get",
-        fake_xquik_get,
-    )
+    monkeypatch.setattr(toolkit, "_xquik_get", fake_xquik_get)
 
-    result = json.loads(xquik_get_tweet("456"))
+    result = json.loads(toolkit.xquik_get_tweet("456"))
 
     assert calls == [("/x/tweets/456", None)]
     assert result["id"] == "456"
@@ -217,6 +206,7 @@ def test_xquik_get_user_info_strips_at_sign(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: List[Tuple[str, Dict[str, Any] | None]] = []
+    toolkit = XquikToolkit()
 
     def fake_xquik_get(
         path: str, params: Dict[str, Any] | None = None
@@ -233,12 +223,9 @@ def test_xquik_get_user_info_strips_at_sign(
             "verified": True,
         }
 
-    monkeypatch.setattr(
-        "camel.toolkits.xquik_toolkit._xquik_get",
-        fake_xquik_get,
-    )
+    monkeypatch.setattr(toolkit, "_xquik_get", fake_xquik_get)
 
-    result = json.loads(xquik_get_user_info("@CamelAIOrg"))
+    result = json.loads(toolkit.xquik_get_user_info("@CamelAIOrg"))
 
     assert calls == [("/x/users/CamelAIOrg", None)]
     assert result == {
@@ -258,6 +245,7 @@ def test_xquik_get_trends_clamps_count(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: List[Tuple[str, Dict[str, Any]]] = []
+    toolkit = XquikToolkit()
 
     def fake_xquik_get(
         path: str, params: Dict[str, Any] | None = None
@@ -265,17 +253,14 @@ def test_xquik_get_trends_clamps_count(
         calls.append((path, params or {}))
         return {"trends": [{"name": "CAMEL", "tweet_volume": 1234}]}
 
-    monkeypatch.setattr(
-        "camel.toolkits.xquik_toolkit._xquik_get",
-        fake_xquik_get,
-    )
+    monkeypatch.setattr(toolkit, "_xquik_get", fake_xquik_get)
 
-    result = json.loads(xquik_get_trends(woeid=23424977, count=99))
+    result = json.loads(toolkit.xquik_get_trends(woeid=23424977, count=99))
 
     assert calls == [("/x/trends", {"count": 50, "woeid": 23424977})]
     assert result == {"trends": [{"name": "CAMEL", "tweet_volume": 1234}]}
 
-    result = json.loads(xquik_get_trends(woeid=1, count=-1))
+    result = json.loads(toolkit.xquik_get_trends(woeid=1, count=-1))
 
     assert calls[-1] == ("/x/trends", {"count": 1, "woeid": 1})
     assert result == {"trends": [{"name": "CAMEL", "tweet_volume": 1234}]}
@@ -294,10 +279,10 @@ def test_xquik_toolkit_get_tools() -> None:
     ]
 
 
-def test_xquik_functions_require_api_key(
+def test_xquik_toolkit_requires_api_key(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv("XQUIK_API_KEY")
 
     with pytest.raises(ValueError, match="XQUIK_API_KEY"):
-        xquik_search_tweets("CAMEL-AI")
+        XquikToolkit()
