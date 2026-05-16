@@ -52,6 +52,10 @@ class CometAPIModel(OpenAICompatibleModel):
             initialization.
     """
 
+    _API_KEY_ENV_VAR: str = "COMETAPI_KEY"
+    _BASE_URL_ENV_VAR: str = "COMETAPI_API_BASE_URL"
+    _DEFAULT_BASE_URL: str = "https://api.cometapi.com/v1"
+
     @api_keys_required([("api_key", "COMETAPI_KEY")])
     def __init__(
         self,
@@ -66,9 +70,9 @@ class CometAPIModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = CometAPIConfig().as_dict()
-        api_key = api_key or os.environ.get("COMETAPI_KEY")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
         url = url or os.environ.get(
-            "COMETAPI_API_BASE_URL", "https://api.cometapi.com/v1"
+            self._BASE_URL_ENV_VAR, self._DEFAULT_BASE_URL
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(

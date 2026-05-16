@@ -52,6 +52,10 @@ class CerebrasModel(OpenAICompatibleModel):
             initialization.
     """
 
+    _API_KEY_ENV_VAR: str = "CEREBRAS_API_KEY"
+    _BASE_URL_ENV_VAR: str = "CEREBRAS_API_BASE_URL"
+    _DEFAULT_BASE_URL: str = "https://api.cerebras.ai/v1"
+
     @api_keys_required([("api_key", "CEREBRAS_API_KEY")])
     def __init__(
         self,
@@ -66,9 +70,9 @@ class CerebrasModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = CerebrasConfig().as_dict()
-        api_key = api_key or os.environ.get("CEREBRAS_API_KEY")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
         url = url or os.environ.get(
-            "CEREBRAS_API_BASE_URL", "https://api.cerebras.ai/v1"
+            self._BASE_URL_ENV_VAR, self._DEFAULT_BASE_URL
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(

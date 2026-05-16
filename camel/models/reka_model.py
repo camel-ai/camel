@@ -213,6 +213,26 @@ class RekaModel(BaseModelBackend):
             )
         return self._token_counter
 
+    @classmethod
+    def list_available_models(
+        cls,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        timeout: int = 30,
+    ) -> List[str]:
+        r"""List available model IDs from the Reka API."""
+        from reka.client import Reka
+
+        api_key = api_key or os.environ.get("REKA_API_KEY")
+        url = url or os.environ.get("REKA_API_BASE_URL")
+        client = Reka(
+            api_key=api_key,
+            base_url=url,
+            timeout=float(timeout),
+        )
+        models = client.models.get()
+        return sorted(model.id for model in models)
+
     @observe(as_type="generation")
     async def _arun(
         self,

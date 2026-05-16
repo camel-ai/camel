@@ -171,6 +171,28 @@ class SambaModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
+    @classmethod
+    def list_available_models(
+        cls,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        timeout: int = 30,
+    ) -> List[str]:
+        r"""List available model IDs from SambaNova's API."""
+        api_key = api_key or os.environ.get("SAMBA_API_KEY")
+        url = url or os.environ.get(
+            "SAMBA_API_BASE_URL",
+            "https://api.sambanova.ai/v1",
+        )
+        client = OpenAI(
+            api_key=api_key,
+            base_url=url,
+            timeout=float(timeout),
+            max_retries=0,
+        )
+        models = client.models.list()
+        return sorted(m.id for m in models)
+
     @observe(as_type="generation")
     async def _arun(  # type: ignore[misc]
         self,

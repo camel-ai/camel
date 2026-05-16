@@ -107,6 +107,11 @@ class AzureOpenAIModel(BaseModelBackend):
         https://learn.microsoft.com/en-us/azure/ai-services/openai/
     """
 
+    _API_KEY_ENV_VAR: str = "AZURE_OPENAI_API_KEY"
+    _BASE_URL_ENV_VAR: str = "AZURE_OPENAI_BASE_URL"
+    _API_VERSION_ENV_VAR: str = "AZURE_API_VERSION"
+    _AZURE_AD_TOKEN_ENV_VAR: str = "AZURE_AD_TOKEN"
+
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -147,16 +152,18 @@ class AzureOpenAIModel(BaseModelBackend):
 
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
-        api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
-        url = url or os.environ.get("AZURE_OPENAI_BASE_URL")
+        api_key = api_key or os.environ.get(self._API_KEY_ENV_VAR)
+        url = url or os.environ.get(self._BASE_URL_ENV_VAR)
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
 
-        self.api_version = api_version or os.environ.get("AZURE_API_VERSION")
+        self.api_version = api_version or os.environ.get(
+            self._API_VERSION_ENV_VAR
+        )
         self._azure_ad_token = azure_ad_token or os.environ.get(
-            "AZURE_AD_TOKEN"
+            self._AZURE_AD_TOKEN_ENV_VAR
         )
         self.azure_ad_token_provider = azure_ad_token_provider
         if self.api_version is None:
@@ -231,6 +238,30 @@ class AzureOpenAIModel(BaseModelBackend):
                     max_retries=max_retries,
                     **kwargs,
                 )
+
+    @classmethod
+    def list_available_models(
+        cls,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        timeout: int = 30,
+    ) -> List[str]:
+        r"""List available model IDs from Azure OpenAI API."""
+        api_key = api_key or os.environ.get(cls._API_KEY_ENV_VAR)
+        url = url or os.environ.get(cls._BASE_URL_ENV_VAR)
+        api_version = os.environ.get(cls._API_VERSION_ENV_VAR)
+        azure_ad_token = os.environ.get(cls._AZURE_AD_TOKEN_ENV_VAR)
+
+        client = AzureOpenAI(
+            api_key=api_key,
+            azure_endpoint=url,  # type: ignore[arg-type]
+            api_version=api_version,
+            azure_ad_token=azure_ad_token,
+            timeout=float(timeout),
+            max_retries=0,
+        )
+        models = client.models.list()
+        return sorted(m.id for m in models)
 
     @property
     def token_counter(self) -> BaseTokenCounter:
