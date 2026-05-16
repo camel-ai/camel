@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from unittest.mock import patch
 
 import pytest
@@ -18,14 +19,34 @@ import pytest
 from camel.retrievers import CohereRerankRetriever
 
 
-def test_initialization():
+@patch.dict(os.environ, {"COHERE_API_KEY": "test_key"})
+@patch('cohere.Client')
+def test_initialization(mock_client):
     retriever = CohereRerankRetriever()
     assert retriever.model_name == "rerank-multilingual-v2.0"
+    assert retriever.api_key == "test_key"
+    mock_client.assert_called_once_with("test_key")
+
+
+@patch('cohere.Client')
+def test_initialization_with_explicit_api_key(mock_client):
+    retriever = CohereRerankRetriever(api_key="explicit_key")
+    assert retriever.api_key == "explicit_key"
+    mock_client.assert_called_once_with("explicit_key")
+
+
+def test_initialization_without_api_key():
+    with patch.dict(os.environ, {}, clear=True):
+        with pytest.raises(
+            ValueError,
+            match="Missing or empty required API keys.*COHERE_API_KEY",
+        ):
+            CohereRerankRetriever()
 
 
 @pytest.fixture
 def cohere_rerank():
-    return CohereRerankRetriever()
+    return CohereRerankRetriever(api_key="test_key")
 
 
 @pytest.fixture

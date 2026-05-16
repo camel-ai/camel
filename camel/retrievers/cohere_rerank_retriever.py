@@ -15,7 +15,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from camel.retrievers import BaseRetriever
-from camel.utils import dependencies_required
+from camel.utils import api_keys_required, dependencies_required
 
 DEFAULT_TOP_K_RESULTS = 1
 
@@ -34,6 +34,7 @@ class CohereRerankRetriever(BaseRetriever):
     """
 
     @dependencies_required('cohere')
+    @api_keys_required([("api_key", "COHERE_API_KEY")])
     def __init__(
         self,
         model_name: str = "rerank-multilingual-v2.0",
@@ -60,13 +61,7 @@ class CohereRerankRetriever(BaseRetriever):
         """
         import cohere
 
-        try:
-            self.api_key = api_key or os.environ["COHERE_API_KEY"]
-        except ValueError as e:
-            raise ValueError(
-                "Must pass in cohere api key or specify via COHERE_API_KEY"
-                " environment variable."
-            ) from e
+        self.api_key = api_key or os.environ["COHERE_API_KEY"]
 
         self.co = cohere.Client(self.api_key)
         self.model_name = model_name
