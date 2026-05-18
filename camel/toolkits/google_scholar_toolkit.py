@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 
 @MCPServer()
@@ -34,6 +34,7 @@ class GoogleScholarToolkit(BaseToolkit):
             manual assignment if desired.
     """
 
+    @dependencies_required('scholarly')
     def __init__(
         self,
         author_identifier: str,

@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 # Import only for type hints (not executed at runtime)
 if TYPE_CHECKING:
@@ -39,6 +39,7 @@ class ExcelToolkit(BaseToolkit):
     Markdown formatted table.
     """
 
+    @dependencies_required('pandas', 'openpyxl')
     def __init__(
         self,
         timeout: Optional[float] = None,
