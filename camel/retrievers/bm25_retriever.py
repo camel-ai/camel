@@ -83,6 +83,7 @@ class BM25Retriever(BaseRetriever):
         else:
             self.bm25 = None
 
+    @dependencies_required('numpy')
     def query(
         self,
         query: str,
