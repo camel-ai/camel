@@ -224,18 +224,21 @@ class AWSBedrockConverseModel(BaseModelBackend):
 
     @staticmethod
     def _parse_json_or_text(value: Any) -> Dict[str, Any]:
+        # Bedrock Converse requires `toolResult.content[].json` objects.
         if isinstance(value, dict):
             return {"json": value}
         if isinstance(value, list):
-            return {"json": value}
+            return {"json": {"__camel_tool_result__": value}}
         if isinstance(value, str):
             stripped = value.strip()
             if not stripped:
                 return {"text": ""}
             try:
                 parsed = json.loads(stripped)
-                if isinstance(parsed, (dict, list)):
+                if isinstance(parsed, dict):
                     return {"json": parsed}
+                if isinstance(parsed, list):
+                    return {"json": {"__camel_tool_result__": parsed}}
                 return {"text": stripped}
             except Exception:
                 return {"text": value}
@@ -387,19 +390,35 @@ class AWSBedrockConverseModel(BaseModelBackend):
                 if not isinstance(tool_id, str) or not tool_id:
                     continue
                 payload = self._parse_json_or_text(msg.get("content", ""))
-                bedrock_messages.append(
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "toolResult": {
-                                    "toolUseId": tool_id,
-                                    "content": [payload],
-                                }
-                            }
-                        ],
+                tool_result_block = {
+                    "toolResult": {
+                        "toolUseId": tool_id,
+                        "content": [payload],
                     }
-                )
+                }
+                # Bedrock Converse requires all toolResult blocks for a
+                # multi-tool-use assistant turn to be grouped in a single
+                # user message immediately following that assistant turn.
+                # When the previous bedrock message is already a user
+                # message (i.e. from a prior tool result in the same
+                # batch), append to it instead of creating a new one.
+                if (
+                    bedrock_messages
+                    and bedrock_messages[-1].get("role") == "user"
+                    and isinstance(bedrock_messages[-1].get("content"), list)
+                    and any(
+                        isinstance(b, dict) and "toolResult" in b
+                        for b in bedrock_messages[-1]["content"]
+                    )
+                ):
+                    bedrock_messages[-1]["content"].append(tool_result_block)
+                else:
+                    bedrock_messages.append(
+                        {
+                            "role": "user",
+                            "content": [tool_result_block],
+                        }
+                    )
 
         system_blocks: List[Dict[str, Any]] = []
         if system_parts:

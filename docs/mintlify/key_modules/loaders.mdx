@@ -1,12 +1,15 @@
 ---
 title: "Loaders"
 icon: loader
+
+doc_code_map:
+  - "camel/loaders/**/*.py"
 ---
 
 <Card title="What are Loaders?" icon="loader">
   CAMEL’s Loaders provide flexible ways to ingest and process all kinds of data
   structured files, unstructured text, web content, and even OCR from images.
-  They power your agent’s ability to interact with the outside world. itionally,
+  They power your agent’s ability to interact with the outside world. Additionally,
   several data readers were added, including `Apify Reader`, `Chunkr Reader`,
   `Firecrawl Reader`, `Jina_url Reader`, and `Mistral Reader`, which enable
   retrieval of external data for improved data integration and analysis.
@@ -80,7 +83,7 @@ from camel.loaders import create_file_from_raw_bytes
 # Read a pdf file from disk
 
 with open("test.pdf", "rb") as file:
-file_content = file.read()
+    file_content = file.read()
 
 # Use the create_file function to create an object based on the file extension
 
@@ -128,13 +131,24 @@ print(("\n\n".join([str(el) for el in elements])))
 
 <strong>2. Clean unstructured text data:</strong>
 <CodeGroup>
-  ```python unstructured_io_clean.py example_dirty_text = ("\x93Some dirty text
-  â€™ with extra spaces and – dashes.") options = [ ('replace_unicode_quotes',{" "}
-  {}), ('clean_dashes', {}), ('clean_non_ascii_chars', {}),
-  ('clean_extra_whitespace', {}), ] cleaned_text =
-  uio.clean_text_data(text=example_dirty_text, clean_options=options)
-  print(cleaned_text) ``` ```markdown cleaned_text.md >>> Some dirty text with
-  extra spaces and dashes. ```
+```python unstructured_io_clean.py
+example_dirty_text = "\u201cSome dirty text\u201d with  extra spaces and \u2013 dashes."
+options = [
+    ("replace_unicode_quotes", {}),
+    ("clean_dashes", {}),
+    ("clean_non_ascii_chars", {}),
+    ("clean_extra_whitespace", {}),
+]
+cleaned_text = uio.clean_text_data(
+    text=example_dirty_text,
+    clean_options=options,
+)
+print(cleaned_text)
+````
+
+```markdown cleaned_text.md
+>>> "Some dirty text" with extra spaces and dashes.
+````
 </CodeGroup>
 
 <br />
@@ -165,8 +179,8 @@ print(extracted_text)
 chunks = uio.chunk_elements(elements=elements, chunk_type="chunk_by_title")
 
 for chunk in chunks:
-print(chunk)
-print("\n" + "-" \* 80)
+    print(chunk)
+    print("\n" + "-" * 80)
 
 ````
 ```markdown chunked_content.md

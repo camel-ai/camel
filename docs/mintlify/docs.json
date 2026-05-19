@@ -111,6 +111,7 @@
                   "cookbooks/advanced_features/agents_with_graph_rag",
                   "cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval",
                   "cookbooks/advanced_features/agents_with_memory",
+                  "cookbooks/advanced_features/agents_with_oceanbase_advanced_usage",
                   "cookbooks/advanced_features/agents_with_rag",
                   "cookbooks/advanced_features/agents_with_tools",
                   "cookbooks/advanced_features/agents_with_tools_from_ACI",
@@ -248,6 +249,7 @@
               "reference/camel.configs.ollama_config",
               "reference/camel.configs.openai_config",
               "reference/camel.configs.openrouter_config",
+              "reference/camel.configs.orcarouter_config",
               "reference/camel.configs.ppio_config",
               "reference/camel.configs.qianfan_config",
               "reference/camel.configs.qwen_config",
@@ -259,6 +261,7 @@
               "reference/camel.configs.vllm_config",
               "reference/camel.configs.volcano_config",
               "reference/camel.configs.watsonx_config",
+              "reference/camel.configs.xai_config",
               "reference/camel.configs.yi_config",
               "reference/camel.configs.zhipuai_config"
             ]
@@ -347,6 +350,7 @@
               "reference/camel.models.openai_model",
               "reference/camel.models.openai_responses_adapter",
               "reference/camel.models.openrouter_model",
+              "reference/camel.models.orcarouter_model",
               "reference/camel.models.ppio_model",
               "reference/camel.models.qianfan_model",
               "reference/camel.models.qwen_model",
@@ -359,6 +363,7 @@
               "reference/camel.models.vllm_model",
               "reference/camel.models.volcano_model",
               "reference/camel.models.watsonx_model",
+              "reference/camel.models.xai_model",
               "reference/camel.models.yi_model",
               "reference/camel.models.zhipuai_model",
               "reference/camel.models.reward.base_reward_model",
@@ -588,6 +593,7 @@
               "reference/camel.toolkits.wechat_official_toolkit",
               "reference/camel.toolkits.whatsapp_toolkit",
               "reference/camel.toolkits.wolfram_alpha_toolkit",
+              "reference/camel.toolkits.xquik_toolkit",
               "reference/camel.toolkits.zapier_toolkit",
               "reference/camel.toolkits.hybrid_browser_toolkit.actions",
               "reference/camel.toolkits.hybrid_browser_toolkit.agent",
@@ -705,6 +711,13 @@
               "reference/camel.benchmarks.ragbench",
               "reference/camel.benchmarks.mock_website.app",
               "reference/camel.benchmarks.mock_website.mock_web"
+            ]
+          },
+          {
+            "group": "Caches",
+            "pages": [
+              "reference/camel.caches.base",
+              "reference/camel.caches.semantic_cache"
             ]
           },
           {
