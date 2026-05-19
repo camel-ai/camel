@@ -286,7 +286,8 @@ class SGLangModel(BaseModelBackend):
         if tools is not None:
             extra_params["tools"] = tools
 
-        response = await async_client.chat.completions.create(
+        response = await self._acall_client(
+            async_client.chat.completions.create,
             messages=messages,
             model=self.model_type,
             **extra_params,
@@ -349,7 +350,8 @@ class SGLangModel(BaseModelBackend):
         if tools is not None:
             extra_params["tools"] = tools
 
-        response = client.chat.completions.create(
+        response = self._call_client(
+            client.chat.completions.create,
             messages=messages,
             model=self.model_type,
             **extra_params,

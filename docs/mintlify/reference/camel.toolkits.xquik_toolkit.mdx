@@ -1,0 +1,153 @@
+<a id="camel.toolkits.xquik_toolkit"></a>
+
+<a id="camel.toolkits.xquik_toolkit.XquikToolkit"></a>
+
+## XquikToolkit
+
+```python
+class XquikToolkit(BaseToolkit):
+```
+
+A toolkit for read-only X (Twitter) operations via the Xquik API.
+
+Provides tweet search, tweet lookup, user profile lookup, and trending
+topics. Requires only `__INLINE_CODE_0__` (1 env var) and no OAuth setup.
+
+For write operations (posting, deleting tweets), use
+:class:`TwitterToolkit` instead.
+
+References:
+https://xquik.com
+
+**Note:**
+
+To use this toolkit, set the `__INLINE_CODE_0__` environment variable.
+Get a key at https://xquik.com
+
+<a id="camel.toolkits.xquik_toolkit.XquikToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+Initialize the XquikToolkit with API credentials from env vars.
+
+<a id="camel.toolkits.xquik_toolkit.XquikToolkit._xquik_get"></a>
+
+### _xquik_get
+
+```python
+def _xquik_get(self, path: str, params: Optional[Dict[str, Any]] = None):
+```
+
+Make a GET request to the Xquik API.
+
+**Parameters:**
+
+- **path** (str): API endpoint path.
+- **params** (Optional[Dict[str, Any]]): Query parameters.
+
+**Returns:**
+
+  Dict[str, Any]: Parsed JSON response.
+
+<a id="camel.toolkits.xquik_toolkit.XquikToolkit.xquik_search_tweets"></a>
+
+### xquik_search_tweets
+
+```python
+def xquik_search_tweets(
+    self,
+    query: str,
+    max_results: int = 10,
+    sort_order: str = 'Top'
+):
+```
+
+Search for tweets on X (Twitter).
+
+Supports X search operators: `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2__`,
+`__INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5____INLINE_CODE_6____INLINE_CODE_7__`,
+`__INLINE_CODE_8____INLINE_CODE_9____INLINE_CODE_10____INLINE_CODE_11____INLINE_CODE_12__`.
+
+**Parameters:**
+
+- **query** (str): The search query.
+- **max_results** (int): Maximum number of tweets to return (1-200). (default: :obj:`10`)
+- **sort_order** (str): Sort order, "Top" (engagement) or "Latest" (chronological). (default: :obj:`"Top"`)
+
+**Returns:**
+
+  str: A JSON-formatted string containing the search results with
+tweet text, author info, engagement metrics, and URLs.
+
+<a id="camel.toolkits.xquik_toolkit.XquikToolkit.xquik_get_tweet"></a>
+
+### xquik_get_tweet
+
+```python
+def xquik_get_tweet(self, tweet_id: str):
+```
+
+Retrieve a single tweet by ID with full engagement metrics.
+
+**Parameters:**
+
+- **tweet_id** (str): The tweet ID to look up.
+
+**Returns:**
+
+  str: A JSON-formatted string containing the tweet text, author
+info, and engagement metrics.
+
+<a id="camel.toolkits.xquik_toolkit.XquikToolkit.xquik_get_user_info"></a>
+
+### xquik_get_user_info
+
+```python
+def xquik_get_user_info(self, username: str):
+```
+
+Retrieve information about a specific X (Twitter) user.
+
+**Parameters:**
+
+- **username** (str): The username (without @) to look up.
+
+**Returns:**
+
+  str: A JSON-formatted string with the user's profile information.
+
+<a id="camel.toolkits.xquik_toolkit.XquikToolkit.xquik_get_trends"></a>
+
+### xquik_get_trends
+
+```python
+def xquik_get_trends(self, woeid: int = 1, count: int = 20):
+```
+
+Get trending topics on X (Twitter).
+
+**Parameters:**
+
+- **woeid** (int): WOEID for region. 1=Global, 23424977=US, 23424975=UK. (default: :obj:`1`)
+- **count** (int): Number of trends to return (1-50). (default: :obj:`20`)
+
+**Returns:**
+
+  str: A JSON-formatted string with a list of trending topics.
+
+<a id="camel.toolkits.xquik_toolkit.XquikToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

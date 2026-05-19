@@ -5,7 +5,7 @@
 ## MinimaxModel
 
 ```python
-class MinimaxModel(OpenAICompatibleModel):
+class MinimaxModel(InterleavedThinkingMixin, OpenAICompatibleModel):
 ```
 
 LLM API served by Minimax in a unified OpenAICompatibleModel
@@ -39,3 +39,38 @@ def __init__(
     **kwargs: Any
 ):
 ```
+
+<a id="camel.models.minimax_model.MinimaxModel._prepare_thinking_config"></a>
+
+### _prepare_thinking_config
+
+```python
+def _prepare_thinking_config(self, config: Dict[str, Any]):
+```
+
+Prepare the request config for thinking-enabled requests.
+
+Overrides base method to add reasoning_split=True to extra_body
+when interleaved thinking is enabled.
+
+**Parameters:**
+
+- **config**: The request configuration dictionary.
+
+**Returns:**
+
+  The modified configuration dictionary.
+
+<a id="camel.models.minimax_model.MinimaxModel._prepare_request_config"></a>
+
+### _prepare_request_config
+
+```python
+def _prepare_request_config(self, tools: Optional[List[Dict[str, Any]]] = None):
+```
+
+Prepare the request configuration dictionary.
+
+Overrides the base method to:
+1. Remove interleaved_thinking parameter (internal use only)
+2. Add reasoning_split=True to extra_body when thinking is enabled

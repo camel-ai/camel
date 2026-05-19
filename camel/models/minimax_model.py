@@ -12,9 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from camel.configs import MinimaxConfig
+from camel.models._interleaved_thinking_mixin import InterleavedThinkingMixin
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
@@ -23,7 +24,7 @@ from camel.utils import (
 )
 
 
-class MinimaxModel(OpenAICompatibleModel):
+class MinimaxModel(InterleavedThinkingMixin, OpenAICompatibleModel):
     r"""LLM API served by Minimax in a unified OpenAICompatibleModel
     interface.
 
@@ -51,6 +52,9 @@ class MinimaxModel(OpenAICompatibleModel):
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
     """
+
+    # Minimax uses "reasoning_details" instead of "reasoning_content"
+    _reasoning_field = "reasoning_details"
 
     @api_keys_required([("api_key", "MINIMAX_API_KEY")])
     def __init__(
@@ -81,3 +85,44 @@ class MinimaxModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+        # Initialize interleaved thinking state
+        self._init_thinking_state()
+
+    def _prepare_thinking_config(
+        self,
+        config: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        r"""Prepare the request config for thinking-enabled requests.
+
+        Overrides base method to add reasoning_split=True to extra_body
+        when interleaved thinking is enabled.
+
+        Args:
+            config: The request configuration dictionary.
+
+        Returns:
+            The modified configuration dictionary.
+        """
+        config = super()._prepare_thinking_config(config)
+
+        # Add reasoning_split to extra_body when interleaved thinking is
+        # enabled
+        if self._is_thinking_enabled():
+            extra_body = config.get("extra_body", {})
+            extra_body["reasoning_split"] = True
+            config["extra_body"] = extra_body
+
+        return config
+
+    def _prepare_request_config(
+        self,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        r"""Prepare the request configuration dictionary.
+
+        Overrides the base method to:
+        1. Remove interleaved_thinking parameter (internal use only)
+        2. Add reasoning_split=True to extra_body when thinking is enabled
+        """
+        request_config = super()._prepare_request_config(tools)
+        return self._prepare_thinking_config(request_config)

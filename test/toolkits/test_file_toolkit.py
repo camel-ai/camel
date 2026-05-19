@@ -20,7 +20,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from camel.toolkits import FileToolkit, FileWriteToolkit
+from camel.toolkits import FileToolkit
 
 
 @pytest.fixture
@@ -37,6 +37,31 @@ def temp_dir():
     r"""Create a temporary directory for file operations."""
     with tempfile.TemporaryDirectory() as temp_dir:
         yield temp_dir
+
+
+def _write_notebook(path: Path) -> None:
+    notebook = {
+        "cells": [
+            {
+                "id": "cell-1",
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": ["# Title\n"],
+            },
+            {
+                "id": "cell-2",
+                "cell_type": "code",
+                "metadata": {},
+                "execution_count": None,
+                "outputs": [],
+                "source": ["print('old')\n"],
+            },
+        ],
+        "metadata": {},
+        "nbformat": 4,
+        "nbformat_minor": 5,
+    }
+    path.write_text(json.dumps(notebook), encoding="utf-8")
 
 
 def test_initialization():
@@ -319,8 +344,9 @@ def test_get_tools(file_write_toolkit):
     tools = file_write_toolkit.get_tools()
 
     # Check that we have the expected number of tools
-    # (now 4: write_to_file, read_file, edit_file, search_files)
-    assert len(tools) == 4
+    # (now 7: write_to_file, read_file, edit_file, search_files,
+    # notebook_edit_cell, glob_files, grep_files)
+    assert len(tools) == 7
 
     # Check that the tools have the correct function names
     tool_names = [tool.get_function_name() for tool in tools]
@@ -328,6 +354,21 @@ def test_get_tools(file_write_toolkit):
     assert "read_file" in tool_names
     assert "edit_file" in tool_names
     assert "search_files" in tool_names
+    assert "notebook_edit_cell" in tool_names
+    assert "glob_files" in tool_names
+    assert "grep_files" in tool_names
+
+
+def test_mcp_registers_new_tools(file_write_toolkit):
+    r"""Verify the new tools are exposed through the MCP server."""
+    mcp_tools = {
+        tool.name: tool
+        for tool in file_write_toolkit.mcp._tool_manager.list_tools()
+    }
+
+    assert "glob_files" in mcp_tools
+    assert "grep_files" in mcp_tools
+    assert "notebook_edit_cell" in mcp_tools
 
 
 def test_sanitize_and_resolve_filepath(file_write_toolkit):
@@ -431,28 +472,6 @@ def test_no_backup_when_disabled(tmp_path):
         file_content = f.read()
     assert "Updated content" in file_content
     assert "Initial content" not in file_content
-
-
-def test_deprecated_alias():
-    r"""Test that FileWriteToolkit still works with deprecation warning."""
-    import warnings
-
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-
-        # This should trigger a deprecation warning
-        toolkit = FileWriteToolkit()
-
-        # Check that a deprecation warning was issued
-        assert len(w) == 1
-        assert issubclass(w[0].category, DeprecationWarning)
-        assert "FileWriteToolkit is deprecated" in str(w[0].message)
-
-        # Verify the toolkit still works
-        assert toolkit is not None
-        assert hasattr(toolkit, 'write_to_file')
-        assert hasattr(toolkit, 'read_file')
-        assert hasattr(toolkit, 'edit_file')
 
 
 def test_search_files_basic(file_write_toolkit):
@@ -662,3 +681,181 @@ def test_search_files_path_is_file(file_write_toolkit):
     # verify error is returned
     assert "error" in result_data
     assert "not a directory" in result_data["error"]
+
+
+def test_glob_sorts_by_modification_time(file_write_toolkit):
+    older = file_write_toolkit.working_directory / "a.js"
+    newer = file_write_toolkit.working_directory / "b.js"
+    older.write_text("console.log('old')", encoding="utf-8")
+    newer.write_text("console.log('new')", encoding="utf-8")
+    os.utime(older, (1, 1))
+
+    result = file_write_toolkit.glob_files("*.js")
+
+    assert result == [str(newer.resolve()), str(older.resolve())]
+
+
+def test_grep_via_function_tool(file_write_toolkit):
+    r"""Verify grep_files works correctly when invoked through FunctionTool,
+    testing ignore_case, context_lines, and head_limit together."""
+    file_path = file_write_toolkit.working_directory / "sample.txt"
+    file_path.write_text(
+        "alpha\nHello World\nomega\nHELLO again\n",
+        encoding="utf-8",
+    )
+    grep_tool = next(
+        tool
+        for tool in file_write_toolkit.get_tools()
+        if tool.get_function_name() == "grep_files"
+    )
+
+    result = grep_tool(
+        **{
+            "pattern": "hello",
+            "path": str(file_write_toolkit.working_directory),
+            "glob_pattern": "*.txt",
+            "output_mode": "content",
+            "ignore_case": True,
+            "context_lines": 1,
+            "head_limit": 2,
+            "multiline": False,
+        }
+    )
+
+    assert "Hello World" in result
+    assert "HELLO again" in result
+    # context lines should be present
+    assert "alpha" in result
+    assert "omega" in result
+    # Verify the result contains two blocks separated by "--"
+    blocks = result.split("--")
+    assert len(blocks) == 2
+
+
+def test_grep_count_mode(file_write_toolkit):
+    (file_write_toolkit.working_directory / "a.py").write_text(
+        "def one():\n    pass\n",
+        encoding="utf-8",
+    )
+    (file_write_toolkit.working_directory / "b.py").write_text(
+        "def two():\n    pass\n",
+        encoding="utf-8",
+    )
+
+    result = file_write_toolkit.grep_files(
+        pattern=r"def\s+\w+",
+        path=str(file_write_toolkit.working_directory),
+        glob_pattern="*.py",
+        output_mode="count",
+    )
+
+    assert result == {"files_with_matches": 2, "matches": 2}
+
+
+def test_glob_missing_path_returns_error_message(file_write_toolkit):
+    result = file_write_toolkit.glob_files(
+        "*.py",
+        str(file_write_toolkit.working_directory / "does-not-exist"),
+    )
+
+    assert result.startswith("Error:")
+
+
+def test_grep_invalid_regex_returns_error_message(file_write_toolkit):
+    result = file_write_toolkit.grep_files(
+        pattern="(",
+        path=str(file_write_toolkit.working_directory),
+    )
+
+    assert result.startswith("Error:")
+
+
+def test_grep_invalid_output_mode_returns_error_message(file_write_toolkit):
+    result = file_write_toolkit.grep_files(
+        pattern="hello",
+        path=str(file_write_toolkit.working_directory),
+        output_mode="invalid",
+    )
+
+    assert result.startswith("Error:")
+    assert "output_mode" in result
+
+
+def test_grep_multiline_does_not_overcount_trailing_newline(
+    file_write_toolkit,
+):
+    file_path = file_write_toolkit.working_directory / "multi.txt"
+    file_path.write_text("aaa\nbbb\nccc\nddd\n", encoding="utf-8")
+
+    result = file_write_toolkit.grep_files(
+        pattern=r"bbb\nccc\n",
+        path=str(file_write_toolkit.working_directory),
+        glob_pattern="*.txt",
+        output_mode="content",
+        multiline=True,
+        context_lines=1,
+    )
+
+    # The match covers lines 2-3 (bbb, ccc).
+    # With context_lines=1 we also see aaa (line 1) and ddd (line 4).
+    result_lines = result.strip().splitlines()
+    markers = {}
+    for line in result_lines:
+        # format: "path:lineno:marker rest"
+        parts = line.split(":", 3)
+        lineno = int(parts[1])
+        marker = parts[2][0]
+        markers[lineno] = marker
+
+    assert markers[1] == " ", "aaa (context) should not be marked"
+    assert markers[2] == ">", "bbb should be marked as match"
+    assert markers[3] == ">", "ccc should be marked as match"
+    assert markers[4] == " ", "ddd should not be marked as match"
+
+
+def test_notebook_edit_replace_insert_delete(file_write_toolkit):
+    notebook_path = file_write_toolkit.working_directory / "test.ipynb"
+    _write_notebook(notebook_path)
+
+    replace_result = file_write_toolkit.notebook_edit_cell(
+        notebook_path=str(notebook_path),
+        new_source="print('new')",
+        cell_id="cell-2",
+        edit_mode="replace",
+    )
+    assert "Updated cell 'cell-2'" in replace_result
+
+    insert_result = file_write_toolkit.notebook_edit_cell(
+        notebook_path=str(notebook_path),
+        new_source="## Inserted",
+        cell_id="cell-1",
+        cell_type="markdown",
+        edit_mode="insert",
+    )
+    assert "Inserted new cell" in insert_result
+
+    delete_result = file_write_toolkit.notebook_edit_cell(
+        notebook_path=str(notebook_path),
+        cell_id="cell-1",
+        edit_mode="delete",
+    )
+    assert "Deleted cell 'cell-1'" in delete_result
+
+    notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
+    assert notebook["cells"][0]["source"] == ["## Inserted"]
+    assert notebook["cells"][1]["source"] == ["print('new')"]
+
+
+def test_notebook_edit_returns_error_message_for_missing_file(
+    file_write_toolkit,
+):
+    result = file_write_toolkit.notebook_edit_cell(
+        notebook_path=str(
+            file_write_toolkit.working_directory / "does-not-exist.ipynb"
+        ),
+        new_source="print('x')",
+        cell_id="cell-1",
+        edit_mode="replace",
+    )
+
+    assert result.startswith("Error:")

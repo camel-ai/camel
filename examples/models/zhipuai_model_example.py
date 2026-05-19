@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.ZHIPU,
-    model_type=ModelType.GLM_4,
+    model_type=ModelType.GLM_4_PLUS,
     model_config_dict=ZhipuAIConfig(temperature=0.2).as_dict(),
 )
 

@@ -16,6 +16,8 @@ from .aiml_model import AIMLModel
 from .amd_model import AMDModel
 from .anthropic_model import AnthropicModel
 from .atlascloud_model import AtlasCloudModel
+from .avian_model import AvianModel
+from .aws_bedrock_converse_model import AWSBedrockConverseModel
 from .aws_bedrock_model import AWSBedrockModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
@@ -48,6 +50,7 @@ from .openai_audio_models import OpenAIAudioModels
 from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
 from .openrouter_model import OpenRouterModel
+from .orcarouter_model import OrcaRouterModel
 from .ppio_model import PPIOModel
 from .qianfan_model import QianfanModel
 from .qwen_model import QwenModel
@@ -60,60 +63,65 @@ from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .volcano_model import VolcanoModel
 from .watsonx_model import WatsonXModel
+from .xai_model import XAIModel
 from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
 
 __all__ = [
-    'BaseModelBackend',
-    'OpenAIModel',
-    'OpenRouterModel',
-    'AtlasCloudModel',
-    'AzureOpenAIModel',
-    'AnthropicModel',
+    'AIMLModel',
     'AMDModel',
-    'MistralModel',
-    'GroqModel',
-    'StubModel',
-    'ZhipuAIModel',
+    'AWSBedrockConverseModel',
+    'AWSBedrockModel',
+    'AihubMixModel',
+    'AnthropicModel',
+    'AtlasCloudModel',
+    'AvianModel',
+    'AzureOpenAIModel',
+    'BaseAudioModel',
+    'BaseModelBackend',
     'CerebrasModel',
     'CohereModel',
     'CometAPIModel',
+    'CrynuxModel',
+    'DeepSeekModel',
+    'FishAudioModel',
+    'FunctionGemmaModel',
+    'GeminiModel',
+    'GroqModel',
+    'InternLMModel',
+    'LMStudioModel',
+    'LiteLLMModel',
+    'MinimaxModel',
+    'MistralModel',
     'ModelFactory',
     'ModelManager',
-    'LiteLLMModel',
-    'OpenAIAudioModels',
-    'NetmindModel',
+    'ModelProcessingError',
+    'ModelScopeModel',
+    'MoonshotModel',
+    'NebiusModel',
     'NemotronModel',
+    'NetmindModel',
     'NovitaModel',
     'NvidiaModel',
     'OllamaModel',
-    'VLLMModel',
-    'SGLangModel',
-    'GeminiModel',
+    'OpenAIAudioModels',
     'OpenAICompatibleModel',
-    'RekaModel',
-    'SambaModel',
-    'TogetherAIModel',
+    'OpenAIModel',
+    'OpenRouterModel',
+    'OrcaRouterModel',
     'PPIOModel',
-    'YiModel',
-    'QwenModel',
-    'AWSBedrockModel',
-    'ModelProcessingError',
-    'NebiusModel',
-    'DeepSeekModel',
-    'FishAudioModel',
-    'InternLMModel',
-    'ModelScopeModel',
-    'MoonshotModel',
-    'AIMLModel',
-    'BaseAudioModel',
-    'SiliconFlowModel',
-    'VolcanoModel',
-    'LMStudioModel',
-    'MinimaxModel',
-    'WatsonXModel',
     'QianfanModel',
-    'CrynuxModel',
-    'AihubMixModel',
-    'FunctionGemmaModel',
+    'QwenModel',
+    'RekaModel',
+    'SGLangModel',
+    'SambaModel',
+    'SiliconFlowModel',
+    'StubModel',
+    'TogetherAIModel',
+    'VLLMModel',
+    'VolcanoModel',
+    'WatsonXModel',
+    'XAIModel',
+    'YiModel',
+    'ZhipuAIModel',
 ]

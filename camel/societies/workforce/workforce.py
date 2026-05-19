@@ -24,6 +24,7 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
+    Awaitable,
     Callable,
     Coroutine,
     Deque,
@@ -91,7 +92,12 @@ from camel.toolkits import (
     SearchToolkit,
     ThinkingToolkit,
 )
-from camel.utils import dependencies_required, safe_extract_parsed
+from camel.utils import (
+    consume_response_content,
+    consume_response_content_async,
+    dependencies_required,
+    safe_extract_parsed,
+)
 
 from .events import (
     AllTasksCompletedEvent,
@@ -243,6 +249,10 @@ class Workforce(BaseNode):
             is added automatically. If at least one provided callback
             implements :class:`WorkforceMetrics`, no default logger is added.
             (default: :obj:`None`)
+        stream_callback (Optional[Callable], optional): Real-time callback for
+            worker streaming output chunks. Called as
+            ``(worker_id, task_id, text, mode)``.
+            (default: :obj:`None`)
         mode (WorkforceMode, optional): The execution mode for task
             processing. AUTO_DECOMPOSE mode uses intelligent recovery
             strategies (decompose, replan, etc.) when tasks fail.
@@ -323,6 +333,9 @@ class Workforce(BaseNode):
         task_timeout_seconds: Optional[float] = None,
         mode: WorkforceMode = WorkforceMode.AUTO_DECOMPOSE,
         callbacks: Optional[List[WorkforceCallback]] = None,
+        stream_callback: Optional[
+            Callable[[str, str, str, str], Optional[Awaitable[None]]]
+        ] = None,
         failure_handling_config: Optional[
             Union[FailureHandlingConfig, Dict[str, Any]]
         ] = None,
@@ -380,6 +393,9 @@ class Workforce(BaseNode):
         self.snapshot_interval: float = 30.0
         # Shared memory UUID tracking to prevent re-sharing duplicates
         self._shared_memory_uuids: Set[str] = set()
+        # Optional user callback for worker streaming text chunks.
+        self._user_stream_callback = stream_callback
+        self._stream_progress: Dict[Tuple[str, str], str] = {}
         self._initialize_callbacks(callbacks)
 
         # Set up coordinator agent with default system message
@@ -535,6 +551,7 @@ class Workforce(BaseNode):
 
         # Shared context utility for workflow management (created lazily)
         self._shared_context_utility: Optional["ContextUtility"] = None
+        self._sync_child_stream_callbacks()
 
         # ------------------------------------------------------------------
         # Helper for propagating pause control to externally supplied agents
@@ -579,6 +596,69 @@ class Workforce(BaseNode):
 
         for child in self._children:
             self._notify_worker_created(child)
+
+    def _sync_child_stream_callbacks(self) -> None:
+        r"""Propagate stream callback settings to all child nodes."""
+        for child in self._children:
+            if isinstance(child, Worker):
+                child.set_stream_callback(self._on_worker_stream_chunk)
+            elif isinstance(child, Workforce):
+                child.set_stream_callback(self._user_stream_callback)
+
+    def set_stream_callback(
+        self,
+        stream_callback: Optional[
+            Callable[[str, str, str, str], Optional[Awaitable[None]]]
+        ],
+    ) -> Workforce:
+        r"""Set callback for real-time worker streaming output chunks.
+
+        Callback arguments:
+            worker_id (str): ID of the worker emitting this chunk.
+            task_id (str): ID of the task currently processed.
+            text (str): Incremental text content for this chunk.
+            mode (str): Chunk mode reported by model ("delta"/"accumulate").
+        """
+        self._user_stream_callback = stream_callback
+        self._stream_progress.clear()
+        self._sync_child_stream_callbacks()
+        return self
+
+    async def _on_worker_stream_chunk(
+        self, chunk: "ChatAgentResponse", worker_id: str, task_id: str
+    ) -> None:
+        r"""Normalize worker stream chunks and dispatch to user callback."""
+        if self._user_stream_callback is None:
+            return
+
+        if chunk.msg is None or chunk.msg.content is None:
+            return
+
+        mode = "accumulate"
+        if chunk.info:
+            mode = chunk.info.get("stream_accumulate_mode", mode)
+            if "mode" in chunk.info:
+                mode = chunk.info["mode"]
+
+        content = chunk.msg.content
+        key = (worker_id, task_id)
+
+        if mode == "accumulate":
+            previous = self._stream_progress.get(key, "")
+            if content.startswith(previous):
+                text = content[len(previous) :]
+            else:
+                text = content
+            self._stream_progress[key] = content
+        else:
+            text = content
+
+        if not text:
+            return
+
+        maybe = self._user_stream_callback(worker_id, task_id, text, mode)
+        if asyncio.iscoroutine(maybe):
+            await maybe
 
     def _notify_worker_created(
         self,
@@ -1190,6 +1270,24 @@ class Workforce(BaseNode):
 
         return shared_memory
 
+    def _on_stream_callback(self, chunk: ChatAgentResponse) -> None:
+        # TODO (transitional): This is a local, best-effort stream speed
+        #  logger used only until streaming telemetry is moved into
+        #  WorkforceCallback. In a follow-up PR, replace this direct logging
+        #  with callback-driven events/metrics and remove this helper path.
+        now = time.monotonic()
+        if not hasattr(self, "_stream_start_ts"):
+            self._stream_start_ts = now
+            self._stream_chars = 0
+        content = chunk.msg.content or ""
+        self._stream_chars += len(content)
+        elapsed = now - self._stream_start_ts
+        if elapsed > 0:
+            speed = self._stream_chars / elapsed  # chars per second
+            logger.info(
+                f"Stream Speed: {speed:.1f} chars/s (elapsed {elapsed:.2f}s)"
+            )
+
     def _share_memory_with_agents(
         self, shared_memory: Dict[str, List]
     ) -> None:
@@ -1367,6 +1465,11 @@ class Workforce(BaseNode):
 
         if task_id in self._assignees:
             del self._assignees[task_id]
+
+        # Clean streaming progress for completed/failed task chunks.
+        stale_keys = [k for k in self._stream_progress if k[1] == task_id]
+        for key in stale_keys:
+            del self._stream_progress[key]
 
     def _decompose_task(
         self,
@@ -1605,9 +1708,12 @@ class Workforce(BaseNode):
 
                 self.task_agent.reset()
                 response = self.task_agent.step(enhanced_prompt)
+                response, response_content = consume_response_content(
+                    response, self._on_stream_callback
+                )
 
                 result = self.structured_handler.parse_structured_response(
-                    response.msg.content if response.msg else "",
+                    response_content,
                     schema=result_schema,
                     fallback_values=fallback_values,
                 )
@@ -1623,6 +1729,9 @@ class Workforce(BaseNode):
                 self.task_agent.reset()
                 response = self.task_agent.step(
                     analysis_prompt, response_format=result_schema
+                )
+                response, _ = consume_response_content(
+                    response, self._on_stream_callback
                 )
                 parsed = safe_extract_parsed(response, result_schema)
                 if parsed is not None:
@@ -1773,7 +1882,9 @@ class Workforce(BaseNode):
                 logger.info(
                     f"Task {task.id} will be decomposed due to {reason}"
                 )
-                subtasks_result = self._decompose_task(task)
+                subtasks_result = self._decompose_task(
+                    task, self._on_stream_callback
+                )
 
                 # Handle both streaming and non-streaming results
                 if isinstance(subtasks_result, Generator):
@@ -2439,7 +2550,7 @@ class Workforce(BaseNode):
 
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
-        subtasks_result = self._decompose_task(task)
+        subtasks_result = self._decompose_task(task, self._on_stream_callback)
 
         # Handle both streaming and non-streaming results
         if isinstance(subtasks_result, Generator):
@@ -2890,6 +3001,7 @@ class Workforce(BaseNode):
             enable_workflow_memory=enable_workflow_memory,
         )
         self._children.append(worker_node)
+        self._sync_child_stream_callbacks()
 
         # If we have a channel set up, set it for the new worker
         if hasattr(self, '_channel') and self._channel is not None:
@@ -2967,6 +3079,7 @@ class Workforce(BaseNode):
             use_structured_output_handler=self.use_structured_output_handler,
         )
         self._children.append(worker_node)
+        self._sync_child_stream_callbacks()
 
         # If we have a channel set up, set it for the new worker
         if hasattr(self, '_channel') and self._channel is not None:
@@ -3003,6 +3116,7 @@ class Workforce(BaseNode):
         # control of worker agents only.
         workforce._pause_event = self._pause_event
         self._children.append(workforce)
+        self._sync_child_stream_callbacks()
 
         # If we have a channel set up, set it for the new workforce
         if hasattr(self, '_channel') and self._channel is not None:
@@ -3509,16 +3623,47 @@ class Workforce(BaseNode):
     ) -> str:
         r"""Get formatted information for a SingleAgentWorker node."""
         toolkit_tools = self._group_tools_by_toolkit(worker.worker.tool_dict)
-
-        if not toolkit_tools:
-            return ""
-
+        skill_names = self._get_single_agent_skill_names(worker)
         toolkit_info = []
         for toolkit_name, tools in sorted(toolkit_tools.items()):
             tools_str = ', '.join(sorted(tools))
             toolkit_info.append(f"{toolkit_name}({tools_str})")
-
+            # Append skill names right after SkillToolkit for clarity
+            if toolkit_name == "SkillToolkit" and skill_names:
+                toolkit_info.append(f"skills({', '.join(skill_names)})")
         return ", ".join(toolkit_info)
+
+    def _get_single_agent_skill_names(
+        self, worker: 'SingleAgentWorker'
+    ) -> List[str]:
+        r"""Extract available skill names from SkillToolkit instances."""
+        for tool in worker.worker.tool_dict.values():
+            toolkit_instance = getattr(tool.func, "__self__", None)
+            if toolkit_instance is None:
+                continue
+            if toolkit_instance.__class__.__name__ != "SkillToolkit":
+                continue
+
+            list_skills_fn = getattr(toolkit_instance, "list_skills", None)
+            if not callable(list_skills_fn):
+                continue
+
+            try:
+                skills = list_skills_fn()
+                return sorted(
+                    skill["name"].strip()
+                    for skill in skills
+                    if skill.get("name")
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Failed to list skills for worker %s: %s",
+                    worker.node_id,
+                    exc,
+                )
+                return []
+
+        return []
 
     def _group_tools_by_toolkit(self, tool_dict: dict) -> dict[str, list[str]]:
         r"""Group tools by their parent toolkit class names."""
@@ -3609,8 +3754,11 @@ class Workforce(BaseNode):
 
             # Get response without structured format
             response = self.coordinator_agent.step(enhanced_prompt)
+            response, response_content = consume_response_content(
+                response, self._on_stream_callback
+            )
 
-            if response.msg is None or response.msg.content is None:
+            if response.msg is None or response_content is None:
                 logger.error(
                     "Coordinator agent returned empty response for "
                     "task assignment"
@@ -3619,7 +3767,7 @@ class Workforce(BaseNode):
 
             # Parse with structured handler
             result = self.structured_handler.parse_structured_response(
-                response.msg.content,
+                response_content,
                 schema=TaskAssignResult,
                 fallback_values={"assignments": []},
             )
@@ -3635,8 +3783,11 @@ class Workforce(BaseNode):
             response = self.coordinator_agent.step(
                 prompt, response_format=TaskAssignResult
             )
+            response, response_content = consume_response_content(
+                response, self._on_stream_callback
+            )
 
-            if response.msg is None or response.msg.content is None:
+            if response.msg is None or response_content is None:
                 logger.error(
                     "Coordinator agent returned empty response for "
                     "task assignment"
@@ -3644,13 +3795,13 @@ class Workforce(BaseNode):
                 return TaskAssignResult(assignments=[])
 
             try:
-                result_dict = json.loads(response.msg.content, parse_int=str)
+                result_dict = json.loads(response_content, parse_int=str)
                 return TaskAssignResult(**result_dict)
             except json.JSONDecodeError as e:
                 logger.error(
                     f"JSON parsing error in task assignment: Invalid response "
                     f"format - {e}. Response content: "
-                    f"{response.msg.content}"
+                    f"{response_content}"
                 )
                 return TaskAssignResult(assignments=[])
 
@@ -3993,8 +4144,11 @@ class Workforce(BaseNode):
             )
 
             response = self.coordinator_agent.step(enhanced_prompt)
+            response, response_content = await consume_response_content_async(
+                response, self._on_stream_callback
+            )
 
-            if response.msg is None or response.msg.content is None:
+            if response.msg is None or response_content is None:
                 logger.error(
                     "Coordinator agent returned empty response for "
                     "worker creation"
@@ -4007,7 +4161,7 @@ class Workforce(BaseNode):
                 )
             else:
                 result = self.structured_handler.parse_structured_response(
-                    response.msg.content,
+                    response_content,
                     schema=WorkerConf,
                     fallback_values={
                         "description": f"Worker for task: {task.content}",
@@ -4031,7 +4185,10 @@ class Workforce(BaseNode):
             response = self.coordinator_agent.step(
                 prompt, response_format=WorkerConf
             )
-            if response.msg is None or response.msg.content is None:
+            response, response_content = await consume_response_content_async(
+                response, self._on_stream_callback
+            )
+            if response.msg is None or response_content is None:
                 logger.error(
                     "Coordinator agent returned empty response for "
                     "worker creation"
@@ -4045,13 +4202,13 @@ class Workforce(BaseNode):
                 )
             else:
                 try:
-                    result_dict = json.loads(response.msg.content)
+                    result_dict = json.loads(response_content)
                     new_node_conf = WorkerConf(**result_dict)
                 except json.JSONDecodeError as e:
                     logger.error(
                         f"JSON parsing error in worker creation: Invalid "
                         f"response format - {e}. Response content: "
-                        f"{response.msg.content}"
+                        f"{response_content}"
                     )
                     raise RuntimeError(
                         f"Failed to create worker for task {task.id}: "
@@ -4087,6 +4244,7 @@ class Workforce(BaseNode):
             )
 
         self._children.append(new_node)
+        self._sync_child_stream_callbacks()
 
         self._notify_worker_created(
             new_node,

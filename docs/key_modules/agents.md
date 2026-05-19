@@ -2,6 +2,9 @@
 title: "Agents"
 description: "Learn about CAMEL's agent types, with a focus on ChatAgent and advanced agent architectures for AI-powered automation."
 icon: user-helmet-safety
+
+doc_code_map:
+  - "camel/agents/**/*.py"
 ---
 
 

@@ -13,11 +13,27 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import pytest
+from google.genai.errors import ClientError
+from pydantic import BaseModel
 
 from camel.configs import GeminiConfig
 from camel.models import GeminiModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
+
+
+def _make_stale_cache_error() -> ClientError:
+    """Create a ClientError that mimics a deleted/expired cached content."""
+    return ClientError(
+        code=403,
+        response_json={
+            "error": {
+                "code": 403,
+                "message": "CachedContent not found (or permission denied)",
+                "status": "PERMISSION_DENIED",
+            }
+        },
+    )
 
 
 @pytest.mark.model_backend
@@ -175,3 +191,274 @@ def test_gemini_process_messages_single_tool_call_unchanged():
     assert assistant_msg['role'] == 'assistant'
     assert len(assistant_msg['tool_calls']) == 1
     assert 'extra_content' in assistant_msg['tool_calls'][0]
+
+
+@pytest.mark.model_backend
+def test_gemini_config_accepts_cache_parameters():
+    r"""Test that GeminiConfig accepts cache_control and cached_content
+    parameters.
+    """
+    config = GeminiConfig(
+        temperature=0.5,
+        cache_control="300s",
+        cached_content="cachedContents/abc123",
+    )
+    config_dict = config.as_dict()
+
+    assert config_dict["cache_control"] == "300s"
+    assert config_dict["cached_content"] == "cachedContents/abc123"
+    assert config_dict["temperature"] == 0.5
+
+
+@pytest.mark.model_backend
+def test_gemini_model_extracts_cache_params():
+    r"""Test that GeminiModel extracts cache params from config and stores
+    them.
+    """
+    model_config_dict = GeminiConfig(
+        temperature=0.5,
+        cache_control="300s",
+        cached_content="cachedContents/abc123",
+    ).as_dict()
+
+    model = GeminiModel(
+        model_type=ModelType.GEMINI_2_0_FLASH,
+        model_config_dict=model_config_dict,
+    )
+
+    # Cache params should be extracted and stored
+    assert model._cache_control == "300s"
+    assert model._cached_content == "cachedContents/abc123"
+
+    # Cache params should not be in model_config_dict (passed to API)
+    assert "cache_control" not in model.model_config_dict
+    assert "cached_content" not in model.model_config_dict
+
+    # Other params should remain
+    assert model.model_config_dict["temperature"] == 0.5
+
+
+@pytest.mark.model_backend
+def test_gemini_model_has_cache_management_methods():
+    r"""Test that GeminiModel has cache management methods."""
+    model_config_dict = GeminiConfig().as_dict()
+    model = GeminiModel(
+        model_type=ModelType.GEMINI_2_0_FLASH,
+        model_config_dict=model_config_dict,
+    )
+
+    # Verify cache management methods exist
+    assert hasattr(model, 'create_cache')
+    assert hasattr(model, 'list_caches')
+    assert hasattr(model, 'get_cache')
+    assert hasattr(model, 'update_cache')
+    assert hasattr(model, 'delete_cache')
+    assert hasattr(model, 'native_client')
+
+    # Verify methods are callable
+    assert callable(model.create_cache)
+    assert callable(model.list_caches)
+    assert callable(model.get_cache)
+    assert callable(model.update_cache)
+    assert callable(model.delete_cache)
+
+
+@pytest.mark.model_backend
+def test_gemini_model_cached_content_property():
+    r"""Test that cached_content property can be set and cleared at runtime."""
+    model_config_dict = GeminiConfig(
+        temperature=0.5,
+        cached_content="cachedContents/initial",
+    ).as_dict()
+
+    model = GeminiModel(
+        model_type=ModelType.GEMINI_2_0_FLASH,
+        model_config_dict=model_config_dict,
+    )
+
+    # Initial cache should be extracted from config
+    assert model.cached_content == "cachedContents/initial"
+    assert "cached_content" not in model.model_config_dict
+
+    # Can change cache at runtime via property
+    model.cached_content = "cachedContents/updated"
+    assert model.cached_content == "cachedContents/updated"
+
+    # Can clear cache
+    model.cached_content = None
+    assert model.cached_content is None
+
+
+@pytest.mark.model_backend
+def test_gemini_cached_content_sent_via_nested_extra_body():
+    r"""Test cached_content is injected under extra_body.google."""
+    model = GeminiModel(
+        model_type=ModelType.GEMINI_2_0_FLASH,
+        model_config_dict=GeminiConfig(
+            cached_content="cachedContents/test-cache",
+        ).as_dict(),
+    )
+
+    class DummyCompletions:
+        def __init__(self):
+            self.calls = []
+
+        def create(self, **kwargs):
+            self.calls.append(kwargs)
+            return {"id": "ok"}
+
+    dummy_completions = DummyCompletions()
+    model._client = type(  # type: ignore[assignment]
+        "DummyClient",
+        (),
+        {
+            "chat": type(
+                "DummyChat",
+                (),
+                {"completions": dummy_completions},
+            )()
+        },
+    )()
+
+    model._request_chat_completion(
+        messages=[{"role": "user", "content": "hi"}]
+    )
+
+    assert len(dummy_completions.calls) == 1
+    assert (
+        dummy_completions.calls[0]["extra_body"]["extra_body"]["google"][
+            "cached_content"
+        ]
+        == "cachedContents/test-cache"
+    )
+
+
+@pytest.mark.model_backend
+def test_gemini_cached_content_retries_without_cache_on_stale_error():
+    r"""Test stale cached_content triggers a single retry without cache."""
+    model = GeminiModel(
+        model_type=ModelType.GEMINI_2_0_FLASH,
+        model_config_dict=GeminiConfig(
+            cached_content="cachedContents/stale-cache",
+        ).as_dict(),
+    )
+
+    class RetryCompletions:
+        def __init__(self):
+            self.calls = []
+
+        def create(self, **kwargs):
+            self.calls.append(kwargs)
+            if len(self.calls) == 1:
+                raise _make_stale_cache_error()
+            return {"id": "ok"}
+
+    retry_completions = RetryCompletions()
+    model._client = type(  # type: ignore[assignment]
+        "DummyClient",
+        (),
+        {
+            "chat": type(
+                "DummyChat",
+                (),
+                {"completions": retry_completions},
+            )()
+        },
+    )()
+
+    model._request_chat_completion(
+        messages=[{"role": "user", "content": "hi"}]
+    )
+
+    assert len(retry_completions.calls) == 2
+    assert (
+        retry_completions.calls[0]["extra_body"]["extra_body"]["google"][
+            "cached_content"
+        ]
+        == "cachedContents/stale-cache"
+    )
+    assert "extra_body" not in retry_completions.calls[1]
+    assert model.cached_content is None
+
+
+@pytest.mark.model_backend
+def test_gemini_parse_path_applies_cached_content_and_retry():
+    r"""Test parse path uses cache field and retries on stale cache."""
+    model = GeminiModel(
+        model_type=ModelType.GEMINI_2_0_FLASH,
+        model_config_dict=GeminiConfig(
+            cached_content="cachedContents/stale-cache",
+        ).as_dict(),
+    )
+
+    class DummySchema(BaseModel):
+        value: str
+
+    class RetryParseCompletions:
+        def __init__(self):
+            self.calls = []
+
+        def parse(self, **kwargs):
+            self.calls.append(kwargs)
+            if len(self.calls) == 1:
+                raise _make_stale_cache_error()
+            return {"id": "ok"}
+
+    retry_parse_completions = RetryParseCompletions()
+    model._client = type(  # type: ignore[assignment]
+        "DummyClient",
+        (),
+        {
+            "beta": type(
+                "DummyBeta",
+                (),
+                {
+                    "chat": type(
+                        "DummyChat",
+                        (),
+                        {"completions": retry_parse_completions},
+                    )()
+                },
+            )()
+        },
+    )()
+
+    model._request_parse(
+        messages=[{"role": "user", "content": "hi"}],
+        response_format=DummySchema,
+    )
+
+    assert len(retry_parse_completions.calls) == 2
+    assert (
+        retry_parse_completions.calls[0]["extra_body"]["extra_body"]["google"][
+            "cached_content"
+        ]
+        == "cachedContents/stale-cache"
+    )
+    assert "extra_body" not in retry_parse_completions.calls[1]
+    assert model.cached_content is None
+
+
+@pytest.mark.model_backend
+def test_gemini_cached_content_merges_with_existing_extra_body():
+    r"""Test cached_content merges with existing nested extra_body fields."""
+    model = GeminiModel(
+        model_type=ModelType.GEMINI_2_0_FLASH,
+        model_config_dict={
+            "temperature": 0.2,
+            "extra_body": {
+                "extra_body": {
+                    "google": {"thinking_config": {"type": "enabled"}}
+                }
+            },
+            "cached_content": "cachedContents/merge-cache",
+        },
+    )
+
+    request_config = model._prepare_request_config()
+    assert request_config["extra_body"]["extra_body"]["google"][
+        "thinking_config"
+    ] == {"type": "enabled"}
+    assert request_config["extra_body"]["extra_body"]["google"][
+        "cached_content"
+    ] == ("cachedContents/merge-cache")
