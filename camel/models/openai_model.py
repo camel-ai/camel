@@ -38,7 +38,7 @@ from pydantic import BaseModel
 from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
+from camel.models.base_model import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
