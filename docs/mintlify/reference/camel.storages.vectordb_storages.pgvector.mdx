@@ -116,6 +116,16 @@ query vector.
   List[VectorDBQueryResult]: List of query results sorted by
 similarity.
 
+<a id="camel.storages.vectordb_storages.pgvector.PgVectorStorage._score_to_similarity"></a>
+
+### _score_to_similarity
+
+```python
+def _score_to_similarity(self, score: float):
+```
+
+Convert a pgvector operator result to high-is-better similarity.
+
 <a id="camel.storages.vectordb_storages.pgvector.PgVectorStorage.status"></a>
 
 ### status

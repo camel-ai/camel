@@ -2650,7 +2650,10 @@ class ChatAgent(BaseAgent):
             return input_message, response_format, False
 
         # Check if tools are strict mode compatible
-        if self._check_tools_strict_compatibility():
+        if (
+            self._check_tools_strict_compatibility()
+            or self.model_backend.supports_tool_response_format
+        ):
             return input_message, response_format, False
 
         # Tools are not strict compatible, convert to prompt
@@ -4561,6 +4564,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         self._emit_request_usage(
@@ -4790,6 +4796,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         yield final_response
@@ -5565,6 +5574,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         await self._aemit_request_usage(
@@ -5896,6 +5908,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         yield final_response
@@ -6048,6 +6063,9 @@ class ChatAgent(BaseAgent):
                 "external_tool_requests": None,
                 "streaming": True,
                 "partial": True,
+                "stream_accumulate_mode": "accumulate"
+                if self.stream_accumulate
+                else "delta",
             },
         )
 
@@ -6133,7 +6151,18 @@ class ChatAgent(BaseAgent):
             pause_event=self.pause_event,
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
             on_request_usage=self.on_request_usage,
-            stream_accumulate=self.stream_accumulate,
+            stream_accumulate=(
+                self.stream_accumulate
+                if self._stream_accumulate_explicit
+                else None
+            ),
+            summarize_threshold=self.summarize_threshold,
+            mask_tool_output=self.mask_tool_output,
+            enable_snapshot_clean=self._enable_snapshot_clean,
+            retry_attempts=self.retry_attempts,
+            retry_delay=self.retry_delay,
+            step_timeout=self.step_timeout,
+            summary_window_ratio=self.summary_window_ratio,
         )
 
         # Copy memory if requested

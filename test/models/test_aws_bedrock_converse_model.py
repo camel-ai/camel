@@ -165,6 +165,70 @@ def test_parse_json_or_text_scalar_json_is_text():
 
 
 @pytest.mark.model_backend
+def test_parse_json_or_text_top_level_list_is_wrapped_in_object():
+    """Bedrock Converse requires an object at `toolResult.content[].json`."""
+    model = _make_model(bedrock_client=object())
+
+    assert model._parse_json_or_text([]) == {
+        "json": {"__camel_tool_result__": []}
+    }
+    assert model._parse_json_or_text("[]") == {
+        "json": {"__camel_tool_result__": []}
+    }
+    assert model._parse_json_or_text([{"id": 1}, {"id": 2}]) == {
+        "json": {"__camel_tool_result__": [{"id": 1}, {"id": 2}]}
+    }
+
+
+@pytest.mark.model_backend
+def test_converse_tool_message_with_list_payload_produces_object():
+    """End-to-end check: a `tool` message whose content is a JSON list
+    must produce a Bedrock `toolResult.content[0].json` whose value is a
+    JSON object (not a list). See issue #3962.
+    """
+    model = _make_model(bedrock_client=object())
+
+    request = model._build_converse_request(
+        messages=[
+            {"role": "user", "content": "find papers"},
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {
+                            "name": "search_papers",
+                            "arguments": "{}",
+                        },
+                    }
+                ],
+            },
+            {
+                "role": "tool",
+                "tool_call_id": "call_1",
+                "content": "[]",
+            },
+        ],
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "search_papers",
+                    "parameters": {"type": "object"},
+                },
+            }
+        ],
+    )
+
+    tool_result_block = request["messages"][2]["content"][0]
+    assert "toolResult" in tool_result_block
+    payload = tool_result_block["toolResult"]["content"][0]
+    assert payload == {"json": {"__camel_tool_result__": []}}
+
+
+@pytest.mark.model_backend
 def test_converse_stream_is_supported():
     class DummyEventStream:
         def __init__(self, events):
@@ -196,10 +260,76 @@ def test_converse_stream_is_supported():
 
 @pytest.mark.model_backend
 @pytest.mark.asyncio
-async def test_converse_async_not_supported():
-    model = _make_model(bedrock_client=object())
-    with pytest.raises(NotImplementedError):
-        await model._arun([{"role": "user", "content": "hi"}])
+async def test_converse_async_non_stream():
+    class DummyClient:
+        def converse(self, **kwargs):
+            return {
+                "output": {
+                    "message": {
+                        "role": "assistant",
+                        "content": [{"text": "hello async"}],
+                    }
+                },
+                "stopReason": "end_turn",
+                "usage": {
+                    "inputTokens": 10,
+                    "outputTokens": 5,
+                },
+                "ResponseMetadata": {
+                    "RequestId": "req-async-123",
+                },
+            }
+
+    model = _make_model(bedrock_client=DummyClient())
+    result = await model._arun(
+        [{"role": "user", "content": "hi"}],
+    )
+    assert result.id == "req-async-123"
+    assert result.choices[0].message.content == "hello async"
+    assert result.usage.prompt_tokens == 10
+    assert result.usage.completion_tokens == 5
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_converse_async_stream():
+    class DummyEventStream:
+        def __init__(self, events):
+            self._events = events
+
+        def __iter__(self):
+            return iter(self._events)
+
+    class DummyClient:
+        def converse_stream(self, **kwargs):
+            return {
+                "stream": DummyEventStream(
+                    [
+                        {"messageStart": {"role": "assistant"}},
+                        {
+                            "contentBlockDelta": {
+                                "delta": {"text": "hi async"},
+                            }
+                        },
+                        {
+                            "messageStop": {
+                                "stopReason": "end_turn",
+                            }
+                        },
+                    ]
+                )
+            }
+
+    model = _make_model(
+        BedrockConfig(stream=True).as_dict(),
+        bedrock_client=DummyClient(),
+    )
+    result = await model._arun(
+        [{"role": "user", "content": "hi"}],
+    )
+    chunks = [chunk async for chunk in result]
+    assert len(chunks) >= 2
+    assert chunks[-1].choices[0].finish_reason == "stop"
 
 
 @pytest.mark.model_backend

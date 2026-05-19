@@ -82,7 +82,7 @@ def __init__(
     self,
     config: Union[ServerConfig, Dict[str, Any]],
     client_info: Optional[types.Implementation] = None,
-    timeout: Optional[float] = 10.0
+    timeout: Optional[float] = None
 ):
 ```
 
@@ -101,7 +101,7 @@ Get the detected transport type.
 ### _simplify_connection_error
 
 ```python
-def _simplify_connection_error(self, error: Exception):
+def _simplify_connection_error(self, error: BaseException):
 ```
 
 Convert complex MCP connection errors to simple, understandable

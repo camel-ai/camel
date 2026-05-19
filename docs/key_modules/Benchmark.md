@@ -1,6 +1,9 @@
 ---
 title: "BenchMarks"
 description: "Learn about CAMEL's Benchmark module."
+
+doc_code_map:
+  - "camel/benchmarks/**/*.py"
 ---
 
 ## Overview

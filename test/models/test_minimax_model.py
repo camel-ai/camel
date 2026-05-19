@@ -24,10 +24,11 @@ class TestMinimaxModel:
     @pytest.mark.parametrize(
         "model_type",
         [
+            ModelType.MINIMAX_M2_7,
+            ModelType.MINIMAX_M2_7_HIGHSPEED,
             ModelType.MINIMAX_M2_1,
             ModelType.MINIMAX_M2_1_LIGHTNING,
             ModelType.MINIMAX_M2,
-            ModelType.MINIMAX_M2_STABLE,
         ],
     )
     def test_minimax_model_create(self, model_type: ModelType, monkeypatch):
@@ -90,10 +91,11 @@ class TestMinimaxModel:
     @pytest.mark.parametrize(
         "model_type",
         [
+            ModelType.MINIMAX_M2_7,
+            ModelType.MINIMAX_M2_7_HIGHSPEED,
             ModelType.MINIMAX_M2_1,
             ModelType.MINIMAX_M2_1_LIGHTNING,
             ModelType.MINIMAX_M2,
-            ModelType.MINIMAX_M2_STABLE,
         ],
     )
     def test_minimax_model_types_available(

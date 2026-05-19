@@ -1,0 +1,114 @@
+<a id="camel.toolkits.terminal_toolkit.runtime_utils"></a>
+
+Shared utilities, constants, and types for runtime auto-installation.
+
+This module provides common infrastructure used by the Go and Java
+runtime installers, including platform detection, binary download
+and extraction, and shared type definitions.
+
+<a id="camel.toolkits.terminal_toolkit.runtime_utils.Runtime"></a>
+
+## Runtime
+
+```python
+class Runtime(str, Enum):
+```
+
+Supported language runtimes.
+
+<a id="camel.toolkits.terminal_toolkit.runtime_utils.RuntimeDownloadError"></a>
+
+## RuntimeDownloadError
+
+```python
+class RuntimeDownloadError(Exception):
+```
+
+Raised when a runtime binary download fails.
+
+<a id="camel.toolkits.terminal_toolkit.runtime_utils.RuntimeExtractionError"></a>
+
+## RuntimeExtractionError
+
+```python
+class RuntimeExtractionError(Exception):
+```
+
+Raised when extracting a downloaded runtime archive fails.
+
+<a id="camel.toolkits.terminal_toolkit.runtime_utils.RuntimeInstallError"></a>
+
+## RuntimeInstallError
+
+```python
+class RuntimeInstallError(Exception):
+```
+
+Raised when a runtime installation fails for any reason.
+
+<a id="camel.toolkits.terminal_toolkit.runtime_utils.get_platform_info"></a>
+
+## get_platform_info
+
+```python
+def get_platform_info():
+```
+
+**Returns:**
+
+  tuple[SupportedOS, SupportedArch]: A tuple of (os_name, arch)
+suitable for constructing download URLs.
+
+**Raises:**
+
+- **RuntimeError**: If the OS or architecture is unsupported.
+
+<a id="camel.toolkits.terminal_toolkit.runtime_utils.download_and_extract_runtime"></a>
+
+## download_and_extract_runtime
+
+```python
+def download_and_extract_runtime(
+    url: str,
+    target_dir: str,
+    archive_type: ArchiveType = 'tar.gz',
+    checksum_url: Optional[str] = None,
+    update_callback: UpdateCallback = None
+):
+```
+
+Download and extract a runtime binary archive.
+
+**Parameters:**
+
+- **url** (str): URL of the archive to download.
+- **target_dir** (str): Directory to extract the archive into.
+- **archive_type** (ArchiveType): Type of archive, either `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3__tar.gz`)
+- **checksum_url** (str, optional): URL to a SHA256 checksum file for verification. (default: :obj:`None`)
+- **update_callback** (Callable[[str], None], optional): Callback function to receive status updates. (default: :obj:`None`)
+
+**Raises:**
+
+- **RuntimeDownloadError**: If the download fails.
+- **RuntimeExtractionError**: If the archive extraction fails.
+- **RuntimeInstallError**: If the installation fails for any
+
+<a id="camel.toolkits.terminal_toolkit.runtime_utils._verify_checksum"></a>
+
+## _verify_checksum
+
+```python
+def _verify_checksum(
+    file_path: str,
+    checksum_url: str,
+    update_callback: UpdateCallback = None
+):
+```
+
+Verify the SHA256 checksum of a downloaded file.
+
+**Parameters:**
+
+- **file_path** (str): Path to the file to verify.
+- **checksum_url** (str): URL to the SHA256 checksum file.
+- **update_callback** (Callable[[str], None], optional): Callback function to receive status updates. (default: :obj:`None`)

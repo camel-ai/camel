@@ -15,6 +15,7 @@
 Tests for the unified MCP client.
 """
 
+import asyncio
 import json
 import tempfile
 from pathlib import Path
@@ -570,6 +571,262 @@ class TestEdgeCases:
         client3 = MCPClient({"command": "test"}, client_info=client_info)
         assert client3.client_info.name == "test"
         assert client3.client_info.version == "2.0"
+
+
+class TestSSEFallback:
+    """Test StreamableHTTP -> SSE automatic fallback."""
+
+    @pytest.mark.asyncio
+    async def test_sse_fallback_on_streamablehttp_failure(self):
+        """StreamableHTTP failure should trigger SSE retry."""
+        from contextlib import asynccontextmanager
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        client = MCPClient(
+            {"url": "http://localhost:8000/mcp", "timeout": 5.0}
+        )
+        assert client.config.transport_type == TransportType.STREAMABLE_HTTP
+
+        call_log = []
+
+        @asynccontextmanager
+        async def fake_transport(override_transport=None):
+            call_log.append(override_transport)
+            if override_transport == TransportType.STREAMABLE_HTTP:
+                raise ConnectionError("streamablehttp timed out")
+            # SSE succeeds: yield fake streams
+            reader = MagicMock()
+            writer = MagicMock()
+            yield reader, writer
+
+        mock_session = AsyncMock()
+        mock_session.initialize = AsyncMock(return_value=None)
+        mock_session.list_tools = AsyncMock(return_value=MagicMock(tools=[]))
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=None)
+
+        with (
+            patch.object(
+                client, "_create_transport", side_effect=fake_transport
+            ),
+            patch(
+                "camel.utils.mcp_client.ClientSession",
+                return_value=mock_session,
+            ),
+        ):
+            await client._establish_connection()
+
+        # Both transports were attempted in order
+        assert call_log[0] == TransportType.STREAMABLE_HTTP
+        assert call_log[1] == TransportType.SSE
+
+    @pytest.mark.asyncio
+    async def test_no_sse_fallback_for_stdio(self):
+        """stdio transport should NOT attempt SSE fallback on failure."""
+        from contextlib import asynccontextmanager
+        from unittest.mock import patch
+
+        client = MCPClient({"command": "fake-command", "timeout": 5.0})
+        assert client.config.transport_type == TransportType.STDIO
+
+        call_log = []
+
+        @asynccontextmanager
+        async def fake_transport(override_transport=None):
+            call_log.append(override_transport)
+            raise ConnectionError("stdio failed")
+            yield  # make it a generator
+
+        with patch.object(
+            client, "_create_transport", side_effect=fake_transport
+        ):
+            with pytest.raises(ConnectionError):
+                await client._establish_connection()
+
+        # Only stdio was tried, no SSE fallback
+        assert len(call_log) == 1
+        assert call_log[0] == TransportType.STDIO
+
+    @pytest.mark.asyncio
+    async def test_error_raised_when_both_transports_fail(self):
+        """If both StreamableHTTP and SSE fail, ConnectionError is raised."""
+        from contextlib import asynccontextmanager
+        from unittest.mock import patch
+
+        client = MCPClient(
+            {"url": "http://localhost:8000/mcp", "timeout": 5.0}
+        )
+
+        @asynccontextmanager
+        async def fake_transport(override_transport=None):
+            raise ConnectionError(f"{override_transport} failed")
+            yield
+
+        with patch.object(
+            client, "_create_transport", side_effect=fake_transport
+        ):
+            with pytest.raises(ConnectionError):
+                await client._establish_connection()
+
+    @pytest.mark.asyncio
+    async def test_streamablehttp_succeeds_no_fallback(self):
+        """If StreamableHTTP succeeds, SSE fallback should NOT be attempted."""
+        from contextlib import asynccontextmanager
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        client = MCPClient(
+            {"url": "http://localhost:8000/mcp", "timeout": 5.0}
+        )
+
+        call_log = []
+
+        @asynccontextmanager
+        async def fake_transport(override_transport=None):
+            call_log.append(override_transport)
+            reader = MagicMock()
+            writer = MagicMock()
+            yield reader, writer
+
+        mock_session = AsyncMock()
+        mock_session.initialize = AsyncMock(return_value=None)
+        mock_session.list_tools = AsyncMock(return_value=MagicMock(tools=[]))
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=None)
+
+        with (
+            patch.object(
+                client, "_create_transport", side_effect=fake_transport
+            ),
+            patch(
+                "camel.utils.mcp_client.ClientSession",
+                return_value=mock_session,
+            ),
+        ):
+            await client._establish_connection()
+
+        # Only StreamableHTTP was used
+        assert call_log == [TransportType.STREAMABLE_HTTP]
+
+    @pytest.mark.asyncio
+    async def test_explicit_streamablehttp_disables_sse_fallback(self):
+        """Explicit StreamableHTTP config should not fall back to SSE."""
+        from unittest.mock import patch
+
+        client = MCPClient(
+            {
+                "url": "http://localhost:8000/mcp",
+                "type": "streamable_http",
+                "timeout": 5.0,
+            }
+        )
+
+        call_log = []
+
+        async def fake_try_connect(transport_type):
+            call_log.append(transport_type)
+            raise ConnectionError("streamablehttp timed out")
+
+        with patch.object(
+            client, "_try_connect", side_effect=fake_try_connect
+        ):
+            with pytest.raises(ConnectionError):
+                await client._establish_connection()
+
+        assert call_log == [TransportType.STREAMABLE_HTTP]
+
+    @pytest.mark.asyncio
+    async def test_cancelled_streamablehttp_falls_back_to_sse(self):
+        """Child-task cancellation should still allow SSE fallback."""
+        from unittest.mock import MagicMock, patch
+
+        client = MCPClient(
+            {"url": "http://localhost:8000/sse", "timeout": 5.0}
+        )
+
+        call_log = []
+
+        async def fake_try_connect(transport_type):
+            call_log.append(transport_type)
+            if transport_type == TransportType.STREAMABLE_HTTP:
+                raise asyncio.CancelledError()
+            client._session = MagicMock()
+            client._tools = []
+
+        with patch.object(
+            client, "_try_connect", side_effect=fake_try_connect
+        ):
+            await client._establish_connection()
+
+        assert call_log == [
+            TransportType.STREAMABLE_HTTP,
+            TransportType.SSE,
+        ]
+
+    @pytest.mark.asyncio
+    async def test_external_cancellation_is_not_swallowed(self):
+        """Real task cancellation should still propagate to the caller."""
+        from unittest.mock import patch
+
+        client = MCPClient(
+            {"url": "http://localhost:8000/sse", "timeout": 5.0}
+        )
+        started = asyncio.Event()
+
+        async def slow_try_connect(transport_type):
+            started.set()
+            await asyncio.sleep(10)
+
+        with patch.object(
+            client, "_try_connect", side_effect=slow_try_connect
+        ):
+            task = asyncio.create_task(client._establish_connection())
+            await started.wait()
+            task.cancel()
+
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+    @pytest.mark.asyncio
+    async def test_initialize_timeout_uses_config_timeout(self):
+        """Handshake timeout should respect the server config timeout."""
+        from contextlib import asynccontextmanager
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        client = MCPClient(
+            {"url": "http://localhost:8000/mcp", "timeout": 42.0}
+        )
+
+        observed_timeouts = []
+
+        @asynccontextmanager
+        async def fake_transport(override_transport=None):
+            reader = MagicMock()
+            writer = MagicMock()
+            yield reader, writer
+
+        mock_session = AsyncMock()
+        mock_session.initialize = AsyncMock(return_value=None)
+        mock_session.list_tools = AsyncMock(return_value=MagicMock(tools=[]))
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=None)
+
+        async def fake_wait_for(awaitable, timeout):
+            observed_timeouts.append(timeout)
+            return await awaitable
+
+        with (
+            patch.object(
+                client, "_create_transport", side_effect=fake_transport
+            ),
+            patch(
+                "camel.utils.mcp_client.ClientSession",
+                return_value=mock_session,
+            ),
+            patch("asyncio.wait_for", side_effect=fake_wait_for),
+        ):
+            await client._try_connect(TransportType.STREAMABLE_HTTP)
+
+        assert observed_timeouts == [42.0, 42.0]
 
 
 if __name__ == "__main__":
