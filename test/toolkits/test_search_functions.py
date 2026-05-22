@@ -1416,9 +1416,11 @@ def test_scrape_olostep_api_error(search_toolkit):
 
 
 def test_scrape_olostep_no_api_key(search_toolkit):
-    """Test Olostep scrape without API key - decorator handles this."""
-    # The @api_keys_required decorator validates the env var before method runs,
-    # so we test that the decorator properly raises ValueError
+    """Test Olostep scrape without API key - returns error dict."""
     with patch.dict(os.environ, {}, clear=True):
-        with pytest.raises(ValueError, match="OLOSTEP_API_KEY"):
-            search_toolkit.scrape_olostep(url="https://example.com")
+        result = search_toolkit.scrape_olostep(url="https://example.com")
+
+    assert isinstance(result, dict)
+    assert result["url"] == "https://example.com"
+    assert "error" in result
+    assert "OLOSTEP_API_KEY is not set" in result["error"]

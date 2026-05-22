@@ -855,7 +855,6 @@ class SearchToolkit(BaseToolkit):
         except requests.exceptions.RequestException as e:
             return {"error": f"Bocha AI search failed: {e!s}"}
 
-    @api_keys_required([(None, 'OLOSTEP_API_KEY')])
     def search_olostep(
         self,
         query: str,
@@ -910,7 +909,6 @@ class SearchToolkit(BaseToolkit):
         except requests.RequestException as e:
             return [{"error": f"Request failed: {str(e)}"}]
 
-    @api_keys_required([(None, 'OLOSTEP_API_KEY')])
     def scrape_olostep(
         self,
         url: str,
