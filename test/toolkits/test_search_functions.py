@@ -1212,3 +1212,213 @@ def test_search_querit_empty_results(mock_post, search_toolkit):
     assert "results" in result
     assert len(result["results"]) == 0
     assert result["search_id"] == 12348
+
+# ==================== Olostep Search Tests ====================
+
+
+@patch('requests.post')
+def test_search_olostep_success(mock_post, search_toolkit):
+    """Test successful Olostep search."""
+    fake_response_data = {
+        "result": {
+            "links": [
+                {
+                    "url": "https://example.com",
+                    "title": "Example",
+                    "description": "An example site",
+                },
+                {
+                    "url": "https://another.com",
+                    "title": "Another",
+                    "description": "Another result",
+                },
+            ]
+        }
+    }
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = fake_response_data
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'OLOSTEP_API_KEY': 'fake_api_key'}):
+        result = search_toolkit.search_olostep(query="test query")
+
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert result[0]["url"] == "https://example.com"
+    assert result[0]["title"] == "Example"
+    assert result[0]["description"] == "An example site"
+    assert result[1]["url"] == "https://another.com"
+
+    # Verify the request was made correctly
+    mock_post.assert_called_once()
+    args, kwargs = mock_post.call_args
+    assert args[0] == "https://api.olostep.com/v1/searches"
+    assert kwargs['headers']['Authorization'] == 'Bearer fake_api_key'
+    assert kwargs['json'] == {"query": "test query"}
+    assert kwargs['timeout'] == 30
+
+
+@patch('requests.post')
+def test_search_olostep_with_num_results_limit(mock_post, search_toolkit):
+    """Test Olostep search with num_results parameter."""
+    fake_response_data = {
+        "result": {
+            "links": [
+                {"url": f"https://result{i}.com", "title": f"Title {i}",
+                 "description": f"Description {i}"}
+                for i in range(5)
+            ]
+        }
+    }
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = fake_response_data
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'OLOSTEP_API_KEY': 'fake_api_key'}):
+        result = search_toolkit.search_olostep(query="test", num_results=1)
+
+    assert len(result) == 1
+    assert result[0]["url"] == "https://result0.com"
+
+
+@patch('requests.post')
+def test_search_olostep_http_error(mock_post, search_toolkit):
+    """Test Olostep search with HTTP error."""
+    mock_response = MagicMock()
+    mock_response.status_code = 401
+    mock_response.text = '{"error": "Unauthorized"}'
+    mock_response.raise_for_status.side_effect = requests.HTTPError(
+        response=mock_response
+    )
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'OLOSTEP_API_KEY': 'invalid_key'}):
+        result = search_toolkit.search_olostep(query="test")
+
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert "error" in result[0]
+    assert "401" in result[0]["error"]
+
+
+@patch('requests.post')
+def test_search_olostep_request_error(mock_post, search_toolkit):
+    """Test Olostep search with request exception."""
+    mock_post.side_effect = requests.RequestException("Connection error")
+
+    with patch.dict(os.environ, {'OLOSTEP_API_KEY': 'fake_key'}):
+        result = search_toolkit.search_olostep(query="test")
+
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert "error" in result[0]
+    assert "Request failed" in result[0]["error"]
+
+
+# ==================== Olostep Scrape Tests ====================
+
+
+def test_scrape_olostep_success(search_toolkit):
+    """Test successful Olostep scrape."""
+    import sys
+    
+    # Create mock olostep module
+    mock_olostep = MagicMock()
+    mock_content = MagicMock()
+    mock_content.markdown_content = "# Hello World\n\nTest content."
+    
+    mock_result = MagicMock()
+    mock_result.retrieve.return_value = mock_content
+    
+    mock_client_class = MagicMock()
+    mock_client_instance = MagicMock()
+    mock_client_instance.scrape.return_value = mock_result
+    mock_client_class.return_value = mock_client_instance
+    
+    mock_olostep.SyncOlostepClient = mock_client_class
+    mock_olostep.errors = MagicMock()
+    mock_olostep.errors.Olostep_BaseError = Exception
+    
+    with patch.dict('sys.modules', {'olostep': mock_olostep, 'olostep.errors': mock_olostep.errors}):
+        with patch.dict(os.environ, {'OLOSTEP_API_KEY': 'fake_api_key'}):
+            result = search_toolkit.scrape_olostep(url="https://example.com")
+
+    assert isinstance(result, dict)
+    assert result["url"] == "https://example.com"
+    assert result["markdown"] == "# Hello World\n\nTest content."
+    assert "error" not in result
+
+
+def test_scrape_olostep_empty_markdown(search_toolkit):
+    """Test Olostep scrape with empty markdown content."""
+    import sys
+    
+    mock_olostep = MagicMock()
+    mock_content = MagicMock()
+    mock_content.markdown_content = None
+
+    mock_result = MagicMock()
+    mock_result.retrieve.return_value = mock_content
+
+    mock_client_class = MagicMock()
+    mock_client_instance = MagicMock()
+    mock_client_instance.scrape.return_value = mock_result
+    mock_client_class.return_value = mock_client_instance
+    
+    mock_olostep.SyncOlostepClient = mock_client_class
+    mock_olostep.errors = MagicMock()
+
+    with patch.dict('sys.modules', {'olostep': mock_olostep, 'olostep.errors': mock_olostep.errors}):
+        with patch.dict(os.environ, {'OLOSTEP_API_KEY': 'fake_api_key'}):
+            result = search_toolkit.scrape_olostep(url="https://example.com")
+
+    assert result["url"] == "https://example.com"
+    assert result["markdown"] == ""
+    assert "error" not in result
+
+
+def test_scrape_olostep_import_error(search_toolkit):
+    """Test Olostep scrape with import error."""
+    with patch.dict(os.environ, {'OLOSTEP_API_KEY': 'fake_api_key'}):
+        with patch.dict('sys.modules', {'olostep': None}):
+            result = search_toolkit.scrape_olostep(url="https://example.com")
+
+    assert isinstance(result, dict)
+    assert result["url"] == "https://example.com"
+    assert "error" in result
+    assert "pip install olostep" in result["error"]
+
+
+def test_scrape_olostep_api_error(search_toolkit):
+    """Test Olostep scrape with API error."""
+    import sys
+    
+    mock_olostep = MagicMock()
+    
+    mock_client_class = MagicMock()
+    mock_client_instance = MagicMock()
+    mock_client_instance.scrape.side_effect = Exception("API error occurred")
+    mock_client_class.return_value = mock_client_instance
+    
+    mock_olostep.SyncOlostepClient = mock_client_class
+    mock_olostep.errors = MagicMock()
+
+    with patch.dict('sys.modules', {'olostep': mock_olostep, 'olostep.errors': mock_olostep.errors}):
+        with patch.dict(os.environ, {'OLOSTEP_API_KEY': 'fake_api_key'}):
+            result = search_toolkit.scrape_olostep(url="https://example.com")
+
+    assert isinstance(result, dict)
+    assert result["url"] == "https://example.com"
+    assert "error" in result
+    assert "API error occurred" in result["error"]
+
+
+def test_scrape_olostep_no_api_key(search_toolkit):
+    """Test Olostep scrape without API key - decorator handles this."""
+    # The @api_keys_required decorator validates the env var before method runs,
+    # so we test that the decorator properly raises ValueError
+    with patch.dict(os.environ, {}, clear=True):
+        with pytest.raises(ValueError, match="OLOSTEP_API_KEY"):
+            search_toolkit.scrape_olostep(url="https://example.com")

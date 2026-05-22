@@ -855,6 +855,107 @@ class SearchToolkit(BaseToolkit):
         except requests.exceptions.RequestException as e:
             return {"error": f"Bocha AI search failed: {e!s}"}
 
+    @api_keys_required([(None, 'OLOSTEP_API_KEY')])
+    def search_olostep(
+        self,
+        query: str,
+        num_results: int = 5,
+    ) -> List[Dict[str, Any]]:
+        r"""Search the web using the Olostep /searches API and return
+        a list of relevant results with titles, URLs, and descriptions.
+
+        Args:
+            query (str): The search query string.
+            num_results (int): Maximum number of results to return.
+                Adjust based on your task — use fewer for focused searches
+                and more for comprehensive research.
+                (default: :obj:`5`)
+
+        Returns:
+            List[Dict[str, Any]]: A list of search result dictionaries.
+                Each dictionary contains:
+                - ``url`` (str): The result URL.
+                - ``title`` (str): The page title.
+                - ``description`` (str): A short description or snippet.
+                Returns an error dict if the request fails.
+
+        Raises:
+            RuntimeError: If the Olostep API request fails.
+
+        Note:
+            Requires ``OLOSTEP_API_KEY`` environment variable.
+            Get your key at https://www.olostep.com/dashboard
+        """
+        api_key = os.environ.get("OLOSTEP_API_KEY", "")
+        if not api_key:
+            return [{"error": "OLOSTEP_API_KEY is not set."}]
+
+        try:
+            response = requests.post(
+                "https://api.olostep.com/v1/searches",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={"query": query},
+                timeout=30,
+            )
+            response.raise_for_status()
+            data = response.json()
+            links = data.get("result", {}).get("links", [])
+            return links[:num_results]
+        except requests.HTTPError as e:
+            return [{"error": f"HTTP error: {e.response.status_code}",
+                     "detail": e.response.text}]
+        except requests.RequestException as e:
+            return [{"error": f"Request failed: {str(e)}"}]
+
+    @api_keys_required([(None, 'OLOSTEP_API_KEY')])
+    def scrape_olostep(
+        self,
+        url: str,
+    ) -> Dict[str, Any]:
+        r"""Scrape a URL using the Olostep API and return its content
+        as clean Markdown text.
+
+        Uses the official Olostep Python SDK (``SyncOlostepClient``).
+
+        Args:
+            url (str): The URL to scrape.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing:
+                - ``url`` (str): The scraped URL.
+                - ``markdown`` (str): The page content in Markdown format.
+                - ``error`` (str): Error message if scraping failed.
+
+        Note:
+            Requires ``OLOSTEP_API_KEY`` environment variable.
+            Get your key at https://www.olostep.com/dashboard
+
+            Install the SDK with: ``pip install olostep``
+        """
+        api_key = os.environ.get("OLOSTEP_API_KEY", "")
+        if not api_key:
+            return {"url": url, "error": "OLOSTEP_API_KEY is not set."}
+
+        try:
+            from olostep import SyncOlostepClient
+            from olostep.errors import Olostep_BaseError
+
+            client = SyncOlostepClient(api_key=api_key)
+            result = client.scrape(url)
+            content = result.retrieve(["markdown"])
+            markdown = content.markdown_content or ""
+            return {"url": url, "markdown": markdown}
+        except ImportError:
+            return {
+                "url": url,
+                "error": "olostep package not installed. Run: pip install olostep",
+            }
+        except Exception as e:
+            return {"url": url, "error": str(e)}
+
     def search_baidu(
         self, query: str, number_of_result_pages: int = 10
     ) -> Dict[str, Any]:
@@ -1689,6 +1790,8 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_metaso),
             FunctionTool(self.search_serpapi),
             FunctionTool(self.search_querit),
+            FunctionTool(self.search_olostep),
+            FunctionTool(self.scrape_olostep),
         ]
 
     # Deprecated method alias for backward compatibility
