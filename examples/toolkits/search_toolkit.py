@@ -555,3 +555,91 @@ querit_agent = ChatAgent(
 usr_msg = "What are the latest developments in multi-agent AI systems?"
 response = querit_agent.step(input_message=usr_msg, response_format=None)
 print(response.msgs[0].content)
+# Example using Olostep search
+# Note: Requires OLOSTEP_API_KEY environment variable
+olostep_search_response = SearchToolkit().search_olostep(
+    query="What is CAMEL-AI framework?",
+    num_results=5,
+)
+print(olostep_search_response)
+"""
+===============================================================================
+[
+    {
+        'url': 'https://www.camel-ai.org/',
+        'title': 'CAMEL-AI: First Multi-Agent Framework',
+        'description': 'CAMEL-AI is an open-source framework for building
+        multi-agent AI systems with collaborative agents...'
+    },
+    {
+        'url': 'https://github.com/camel-ai/camel',
+        'title': 'camel-ai/camel: Multi-Agent Framework',
+        'description': 'Finding the Scaling Law of Agents: The Coevolution of
+        Expanding and Shrinking Overparameterized Models...'
+    },
+    ...
+]
+===============================================================================
+"""
+
+# Example with ChatAgent using Olostep search
+olostep_agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use Olostep search
+        engine to answer questions about AI and multi-agent systems.""",
+    tools=[FunctionTool(SearchToolkit().search_olostep)],
+)
+
+usr_msg = "What are the key features of CAMEL-AI?"
+response = olostep_agent.step(input_message=usr_msg, response_format=None)
+print(response.msgs[0].content)
+"""
+===============================================================================
+CAMEL-AI is a multi-agent framework with these key features:
+
+1. **Multi-Agent Collaboration**: Enables multiple AI agents to work together
+   to solve complex tasks.
+
+2. **Task-Driven Design**: Agents can be assigned specific roles and tasks to
+   complete collaborative objectives.
+
+3. **Communication Protocols**: Implements structured communication between
+   agents for effective coordination.
+
+4. **Flexible Architecture**: Supports various LLM backends and customizable
+   agent behaviors.
+
+5. **Production Ready**: Includes tools for evaluation, monitoring, and
+   deployment of multi-agent systems.
+
+For more information, visit: https://www.camel-ai.org/
+===============================================================================
+"""
+
+# Example using Olostep scrape to get page content
+# Note: Requires OLOSTEP_API_KEY environment variable
+olostep_scrape_response = SearchToolkit().scrape_olostep(
+    url="https://www.camel-ai.org/",
+)
+
+if "error" not in olostep_scrape_response:
+    markdown_content = olostep_scrape_response.get("markdown", "")
+    print(f"Scraped content from {olostep_scrape_response['url']}:")
+    print(markdown_content[:500])  # Print first 500 characters
+else:
+    print(f"Error scraping: {olostep_scrape_response['error']}")
+
+# Example with ChatAgent using both Olostep search and scrape
+olostep_combined_agent = ChatAgent(
+    system_message="""You are a helpful assistant that can search the web
+        and scrape pages using the Olostep API. You can provide comprehensive
+        answers by both searching and reading full page content.""",
+    tools=[
+        FunctionTool(SearchToolkit().search_olostep),
+        FunctionTool(SearchToolkit().scrape_olostep),
+    ],
+)
+
+usr_msg = """Find information about CAMEL-AI and provide details about its
+        capabilities and how to get started."""
+response = olostep_combined_agent.step(input_message=usr_msg, response_format=None)
+print(response.msgs[0].content)
