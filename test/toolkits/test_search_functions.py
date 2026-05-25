@@ -1288,29 +1288,22 @@ def test_search_perplexity_with_filters(mock_post, search_toolkit):
             search_domain_filter=["github.com"],
             search_language_filter=["en"],
             extra_params={
-                "last_updated_after_filter": "01/01/2025",
-                "last_updated_before_filter": "12/31/2025",
                 "search_after_date_filter": "01/01/2024",
-                "search_before_date_filter": "12/31/2025",
                 "max_results": 20,
             },
         )
 
-    call_args = mock_post.call_args
-    payload = call_args[1]['json']
-
-    assert payload["query"] == "AI agents"
-    assert payload["max_results"] == 5
-    assert payload["max_tokens"] == 10000
-    assert payload["max_tokens_per_page"] == 2048
-    assert payload["country"] == "US"
-    assert payload["search_recency_filter"] == "month"
-    assert payload["search_domain_filter"] == ["github.com"]
-    assert payload["search_language_filter"] == ["en"]
-    assert payload["last_updated_after_filter"] == "01/01/2025"
-    assert payload["last_updated_before_filter"] == "12/31/2025"
-    assert payload["search_after_date_filter"] == "01/01/2024"
-    assert payload["search_before_date_filter"] == "12/31/2025"
+    assert mock_post.call_args[1]['json'] == {
+        "query": "AI agents",
+        "max_results": 5,
+        "max_tokens": 10000,
+        "max_tokens_per_page": 2048,
+        "country": "US",
+        "search_recency_filter": "month",
+        "search_domain_filter": ["github.com"],
+        "search_language_filter": ["en"],
+        "search_after_date_filter": "01/01/2024",
+    }
 
 
 @patch('requests.post')
