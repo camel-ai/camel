@@ -342,6 +342,7 @@ def api_keys_required(
                     'AVIAN_API_KEY': "https://avian.io",
                     'ORCAROUTER_API_KEY': "https://www.orcarouter.ai/",
                     'QUERIT_API_KEY': "https://www.querit.ai/en/dashboard/home",
+                    'GOODMEM_API_KEY': "https://docs.goodmem.ai",
                 }
                 key_way = env_key_urls.get(
                     missing_keys[0], "the official website"
