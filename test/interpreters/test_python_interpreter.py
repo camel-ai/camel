@@ -323,6 +323,17 @@ x **= 3"""
     execution_res = interpreter.execute(code, keep_state=False)
     assert execution_res == 8
 
+    code = "\n".join(
+        [
+            "x = []",
+            "y = x",
+            "x += [1]",
+            "y",
+        ]
+    )
+    execution_res = interpreter.execute(code, keep_state=False)
+    assert execution_res == [1]
+
 
 def test_allow_builtins(interpreter: InternalPythonInterpreter):
     code = "res = len([0, 1])"

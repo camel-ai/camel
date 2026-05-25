@@ -14,6 +14,7 @@
 import ast
 import difflib
 import importlib
+import operator
 import os
 import subprocess
 import typing
@@ -410,39 +411,39 @@ class InternalPythonInterpreter(BaseInterpreter):
             )
 
         current_value = self._get_value_from_state(target.id)
-        operator = augassign.op
+        operator_node = augassign.op
         right_value = self._execute_ast(augassign.value)
 
         # Apply the operation based on the operator type
-        if isinstance(operator, ast.Add):
-            result = current_value + right_value
-        elif isinstance(operator, ast.Sub):
-            result = current_value - right_value
-        elif isinstance(operator, ast.Mult):
-            result = current_value * right_value
-        elif isinstance(operator, ast.Div):
-            result = current_value / right_value
-        elif isinstance(operator, ast.FloorDiv):
-            result = current_value // right_value
-        elif isinstance(operator, ast.Mod):
-            result = current_value % right_value
-        elif isinstance(operator, ast.Pow):
-            result = current_value ** right_value
-        elif isinstance(operator, ast.LShift):
-            result = current_value << right_value
-        elif isinstance(operator, ast.RShift):
-            result = current_value >> right_value
-        elif isinstance(operator, ast.BitOr):
-            result = current_value | right_value
-        elif isinstance(operator, ast.BitXor):
-            result = current_value ^ right_value
-        elif isinstance(operator, ast.BitAnd):
-            result = current_value & right_value
-        elif isinstance(operator, ast.MatMult):
-            result = current_value @ right_value
+        if isinstance(operator_node, ast.Add):
+            result = operator.iadd(current_value, right_value)
+        elif isinstance(operator_node, ast.Sub):
+            result = operator.isub(current_value, right_value)
+        elif isinstance(operator_node, ast.Mult):
+            result = operator.imul(current_value, right_value)
+        elif isinstance(operator_node, ast.Div):
+            result = operator.itruediv(current_value, right_value)
+        elif isinstance(operator_node, ast.FloorDiv):
+            result = operator.ifloordiv(current_value, right_value)
+        elif isinstance(operator_node, ast.Mod):
+            result = operator.imod(current_value, right_value)
+        elif isinstance(operator_node, ast.Pow):
+            result = operator.ipow(current_value, right_value)
+        elif isinstance(operator_node, ast.LShift):
+            result = operator.ilshift(current_value, right_value)
+        elif isinstance(operator_node, ast.RShift):
+            result = operator.irshift(current_value, right_value)
+        elif isinstance(operator_node, ast.BitOr):
+            result = operator.ior(current_value, right_value)
+        elif isinstance(operator_node, ast.BitXor):
+            result = operator.ixor(current_value, right_value)
+        elif isinstance(operator_node, ast.BitAnd):
+            result = operator.iand(current_value, right_value)
+        elif isinstance(operator_node, ast.MatMult):
+            result = operator.imatmul(current_value, right_value)
         else:
             raise InterpreterError(
-                f"Unsupported augmented assignment operator: {operator}"
+                f"Unsupported augmented assignment operator: {operator_node}"
             )
 
         # Update the state with the new value
