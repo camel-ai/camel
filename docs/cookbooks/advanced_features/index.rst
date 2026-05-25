@@ -22,5 +22,4 @@ Advanced Features
    agents_with_oceanbase_advanced_usage
    agents_tracking
    critic_agents_and_tree_search
-   embodied_agents
    agent_generate_structured_output
