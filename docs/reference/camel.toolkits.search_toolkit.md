@@ -12,7 +12,7 @@ A class representing a toolkit for web search.
 
 This class provides methods for searching information on the web using
 search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave,
-Querit, Perplexity.
+Perplexity.
 
 <a id="camel.toolkits.search_toolkit.SearchToolkit.__init__"></a>
 
@@ -563,8 +563,8 @@ def search_querit(
     site_exclude: Optional[List[str]] = None,
     time_range: Optional[str] = None,
     country_include: Optional[List[str]] = None,
-    language_include: Optional[List[str]] = None,
-) -> Dict[str, Any]:
+    language_include: Optional[List[str]] = None
+):
 ```
 
 Use Querit search API to search information for the given query.
@@ -577,26 +577,29 @@ such as site names, favicons, and page ages.
 
 - **query** (str): The search query string.
 - **number_of_result_pages** (int): The maximum number of search results to return. Adjust this based on your task - use fewer results for focused searches and more for comprehensive searches. (default: :obj:`10`)
-- **site_include** (Optional[List[str]]): List of websites to include, only fetch data from these sites. For example: `["github.com", "stackoverflow.com"]`. (default: :obj:`None`)
+- **site_include** (Optional[List[str]]): List of websites to include, only fetch data from these sites. For example: `__INLINE_CODE_0____INLINE_CODE_1__None`)
 - **site_exclude** (Optional[List[str]]): List of websites to exclude, do not fetch data from these sites. (default: :obj:`None`)
-- **time_range** (Optional[str]): Time range filter for search results. Supported formats: - `d[number]`: Results from the past specified number of days (e.g., `"d7"` for the past 7 days). - `w[number]`: Results from the past specified number of weeks. - `m[number]`: Results from the past specified number of months. - `y[number]`: Results from the past specified number of years. - `YYYY-MM-DDtoYYYY-MM-DD`: Results within a specified date range (e.g., `"2024-01-01to2024-06-30"`). (default: :obj:`None`)
-- **country_include** (Optional[List[str]]): List of countries to include in the results. Available options: `"argentina"`, `"australia"`, `"brazil"`, `"canada"`, `"colombia"`, `"france"`, `"germany"`, `"india"`, `"indonesia"`, `"japan"`, `"mexico"`, `"nigeria"`, `"philippines"`, `"south korea"`, `"spain"`, `"united kingdom"`, `"united states"`. (default: :obj:`None`)
-- **language_include** (Optional[List[str]]): List of languages to include in the results. Available options: `"english"`, `"japanese"`, `"korean"`, `"german"`, `"french"`, `"spanish"`, `"portuguese"`. (default: :obj:`None`)
+- **time_range** (Optional[str]): Time range filter for search results. Supported formats: - `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5____INLINE_CODE_6____INLINE_CODE_7____INLINE_CODE_8____INLINE_CODE_9____INLINE_CODE_10____INLINE_CODE_11____INLINE_CODE_12____INLINE_CODE_13__None`)
+- **country_include** (Optional[List[str]]): List of countries to include in the results. Available options: `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5____INLINE_CODE_6____INLINE_CODE_7____INLINE_CODE_8____INLINE_CODE_9____INLINE_CODE_10____INLINE_CODE_11____INLINE_CODE_12____INLINE_CODE_13____INLINE_CODE_14____INLINE_CODE_15____INLINE_CODE_16____INLINE_CODE_17____INLINE_CODE_18____INLINE_CODE_19____INLINE_CODE_20____INLINE_CODE_21____INLINE_CODE_22____INLINE_CODE_23____INLINE_CODE_24____INLINE_CODE_25____INLINE_CODE_26____INLINE_CODE_27____INLINE_CODE_28____INLINE_CODE_29____INLINE_CODE_30____INLINE_CODE_31____INLINE_CODE_32____INLINE_CODE_33__None`)
+- **language_include** (Optional[List[str]]): List of languages to include in the results. Available options: `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5____INLINE_CODE_6____INLINE_CODE_7____INLINE_CODE_8____INLINE_CODE_9____INLINE_CODE_10____INLINE_CODE_11____INLINE_CODE_12____INLINE_CODE_13__None`)
 
 **Returns:**
 
   Dict[str, Any]: A dictionary containing either:
+
 - 'results': A list of dictionaries, each with:
-  - 'result_id' (int): The index of the result (starting from 1).
-  - 'title' (str): The title of the search result.
-  - 'snippet' (str): A brief snippet from the web page.
-  - 'url' (str): The URL of the search result.
-  - 'site_name' (str): The website name.
-  - 'site_icon' (str): The favicon URL of the website.
-  - 'page_age' (str): The age of the web page (UTC+0).
-- 'search_id' (int): A unique request reference ID.
-- 'took' (str): The server-side response time.
-- or 'error' (str): An error message if something went wrong.
+
+- 'result_id': The index of the result (starting from 1).
+- 'title': The title of the search result.
+- 'snippet': A brief snippet from the web page.
+- 'url': The URL of the search result.
+- 'site_name': The website name.
+- 'site_icon': The favicon URL of the website.
+- 'page_age': The age of the web page (UTC+0).
+
+- 'search_id': A unique request reference ID.
+- 'took': The server-side response time.
+- or 'error': An error message if something went wrong.
 
 <a id="camel.toolkits.search_toolkit.SearchToolkit.search_perplexity"></a>
 
