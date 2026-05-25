@@ -271,7 +271,6 @@ pip install camel-ai
 
 - **[创建你的第一个 Agent](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent)**
 - **[创建你的第一个 Agent 社区](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society)**
-- **[具身智能体](https://docs.camel-ai.org/cookbooks/advanced_features/embodied_agents)**
 - **[评审智能体](https://docs.camel-ai.org/cookbooks/advanced_features/critic_agents_and_tree_search)**
 
 ### 寻求帮助
