@@ -1679,10 +1679,7 @@ class SearchToolkit(BaseToolkit):
         ] = None,
         search_domain_filter: Optional[List[str]] = None,
         search_language_filter: Optional[List[str]] = None,
-        last_updated_after_filter: Optional[str] = None,
-        last_updated_before_filter: Optional[str] = None,
-        search_after_date_filter: Optional[str] = None,
-        search_before_date_filter: Optional[str] = None,
+        extra_params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         r"""Use Perplexity Search API to retrieve web search results.
 
@@ -1706,17 +1703,9 @@ class SearchToolkit(BaseToolkit):
                 restrict the search to. (default: :obj:`None`)
             search_language_filter (Optional[List[str]]): ISO 639-1 language
                 codes to restrict the search to. (default: :obj:`None`)
-            last_updated_after_filter (Optional[str]): Only include results
-                last updated after this date (format: ``MM/DD/YYYY``).
-                (default: :obj:`None`)
-            last_updated_before_filter (Optional[str]): Only include results
-                last updated before this date (format: ``MM/DD/YYYY``).
-                (default: :obj:`None`)
-            search_after_date_filter (Optional[str]): Only include results
-                published after this date (format: ``MM/DD/YYYY``).
-                (default: :obj:`None`)
-            search_before_date_filter (Optional[str]): Only include results
-                published before this date (format: ``MM/DD/YYYY``).
+            extra_params (Optional[Dict[str, Any]]): Additional request body
+                parameters supported by the Perplexity Search API. Explicit
+                arguments take precedence when keys overlap.
                 (default: :obj:`None`)
 
         Returns:
@@ -1748,14 +1737,14 @@ class SearchToolkit(BaseToolkit):
             "search_recency_filter": search_recency_filter,
             "search_domain_filter": search_domain_filter,
             "search_language_filter": search_language_filter,
-            "last_updated_after_filter": last_updated_after_filter,
-            "last_updated_before_filter": last_updated_before_filter,
-            "search_after_date_filter": search_after_date_filter,
-            "search_before_date_filter": search_before_date_filter,
         }
         for key, value in optional_params.items():
             if value is not None:
                 payload[key] = value
+        if extra_params:
+            for key, value in extra_params.items():
+                if value is not None and key not in payload:
+                    payload[key] = value
 
         try:
             response = requests.post(

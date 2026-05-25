@@ -1267,7 +1267,7 @@ def test_search_perplexity_success(mock_post, search_toolkit):
 
 @patch('requests.post')
 def test_search_perplexity_with_filters(mock_post, search_toolkit):
-    """Test Perplexity search with all filter parameters."""
+    """Test Perplexity search with explicit filters and extra params."""
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {
@@ -1287,10 +1287,13 @@ def test_search_perplexity_with_filters(mock_post, search_toolkit):
             search_recency_filter="month",
             search_domain_filter=["github.com"],
             search_language_filter=["en"],
-            last_updated_after_filter="01/01/2025",
-            last_updated_before_filter="12/31/2025",
-            search_after_date_filter="01/01/2024",
-            search_before_date_filter="12/31/2025",
+            extra_params={
+                "last_updated_after_filter": "01/01/2025",
+                "last_updated_before_filter": "12/31/2025",
+                "search_after_date_filter": "01/01/2024",
+                "search_before_date_filter": "12/31/2025",
+                "max_results": 20,
+            },
         )
 
     call_args = mock_post.call_args

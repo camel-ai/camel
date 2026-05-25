@@ -616,10 +616,7 @@ def search_perplexity(
     search_recency_filter: Optional[Literal['hour', 'day', 'week', 'month', 'year']] = None,
     search_domain_filter: Optional[List[str]] = None,
     search_language_filter: Optional[List[str]] = None,
-    last_updated_after_filter: Optional[str] = None,
-    last_updated_before_filter: Optional[str] = None,
-    search_after_date_filter: Optional[str] = None,
-    search_before_date_filter: Optional[str] = None,
+    extra_params: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
 ```
 
@@ -637,10 +634,7 @@ See https://docs.perplexity.ai/api-reference/search-post for details.
 - **search_recency_filter** (Optional[Literal['hour', 'day', 'week', 'month', 'year']]): Filter results by recency. (default: :obj:`None`)
 - **search_domain_filter** (Optional[List[str]]): Up to 20 domains to restrict the search to. (default: :obj:`None`)
 - **search_language_filter** (Optional[List[str]]): ISO 639-1 language codes to restrict the search to. (default: :obj:`None`)
-- **last_updated_after_filter** (Optional[str]): Only include results last updated after this date (format: `MM/DD/YYYY`). (default: :obj:`None`)
-- **last_updated_before_filter** (Optional[str]): Only include results last updated before this date (format: `MM/DD/YYYY`). (default: :obj:`None`)
-- **search_after_date_filter** (Optional[str]): Only include results published after this date (format: `MM/DD/YYYY`). (default: :obj:`None`)
-- **search_before_date_filter** (Optional[str]): Only include results published before this date (format: `MM/DD/YYYY`). (default: :obj:`None`)
+- **extra_params** (Optional[Dict[str, Any]]): Additional request body parameters supported by the Perplexity Search API. Explicit arguments take precedence when keys overlap. (default: :obj:`None`)
 
 **Returns:**
 
