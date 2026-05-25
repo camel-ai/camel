@@ -232,12 +232,12 @@ class ModelType(UnifiedModelType, Enum):
     # Claude models
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
     CLAUDE_SONNET_4_5 = "claude-sonnet-4-5"
-    CLAUDE_OPUS_4_5 = "claude-opus-4-5"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
     CLAUDE_SONNET_4_6 = "claude-sonnet-4-6"
     CLAUDE_HAIKU_4_5 = "claude-haiku-4-5"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
     CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
+    CLAUDE_OPUS_4_5 = "claude-opus-4-5"
     CLAUDE_OPUS_4_6 = "claude-opus-4-6"
     CLAUDE_OPUS_4_7 = "claude-opus-4-7"
 
@@ -751,12 +751,14 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
-            ModelType.CLAUDE_OPUS_4_5,
-            ModelType.CLAUDE_OPUS_4_6,
+            ModelType.CLAUDE_SONNET_4_6,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_HAIKU_4_5,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
+            ModelType.CLAUDE_OPUS_4_5,
+            ModelType.CLAUDE_OPUS_4_6,
+            ModelType.CLAUDE_OPUS_4_7,
         }
 
     @property
