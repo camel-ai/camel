@@ -1669,8 +1669,9 @@ class SearchToolkit(BaseToolkit):
     @api_keys_required([(None, 'PERPLEXITY_API_KEY')])
     def search_perplexity(
         self,
-        query: str,
+        query: Union[str, List[str]],
         max_results: int = 10,
+        max_tokens: Optional[int] = None,
         max_tokens_per_page: Optional[int] = None,
         country: Optional[str] = None,
         search_recency_filter: Optional[
@@ -1688,9 +1689,12 @@ class SearchToolkit(BaseToolkit):
         See https://docs.perplexity.ai/api-reference/search-post for details.
 
         Args:
-            query (str): The search query string.
+            query (Union[str, List[str]]): The search query string, or a list
+                of search query strings.
             max_results (int): Maximum number of results to return. Must be
                 between 1 and 20. (default: :obj:`10`)
+            max_tokens (Optional[int]): Maximum tokens for context (between 1
+                and 1,000,000). (default: :obj:`None`)
             max_tokens_per_page (Optional[int]): Maximum number of tokens to
                 include from each result page (between 1 and 1,000,000).
                 (default: :obj:`None`)
@@ -1718,9 +1722,9 @@ class SearchToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: The Perplexity Search API response. On success,
                 contains a ``results`` list (each entry includes ``title``,
-                ``url``, ``snippet``, ``date``, ``last_updated``) along with
-                ``id`` and ``server_time`` fields. On failure, returns a
-                dictionary with an ``error`` key.
+                ``url``, ``snippet``, and may include ``date`` and
+                ``last_updated``) along with ``id`` and ``server_time`` fields.
+                On failure, returns a dictionary with an ``error`` key.
         """
         from camel import __version__ as camel_version
 
@@ -1738,6 +1742,7 @@ class SearchToolkit(BaseToolkit):
             "max_results": max_results,
         }
         optional_params: Dict[str, Any] = {
+            "max_tokens": max_tokens,
             "max_tokens_per_page": max_tokens_per_page,
             "country": country,
             "search_recency_filter": search_recency_filter,

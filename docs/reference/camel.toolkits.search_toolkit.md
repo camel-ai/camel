@@ -12,7 +12,7 @@ A class representing a toolkit for web search.
 
 This class provides methods for searching information on the web using
 search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave,
-Perplexity.
+Querit, Perplexity.
 
 <a id="camel.toolkits.search_toolkit.SearchToolkit.__init__"></a>
 
@@ -605,8 +605,9 @@ such as site names, favicons, and page ages.
 ```python
 def search_perplexity(
     self,
-    query: str,
+    query: Union[str, List[str]],
     max_results: int = 10,
+    max_tokens: Optional[int] = None,
     max_tokens_per_page: Optional[int] = None,
     country: Optional[str] = None,
     search_recency_filter: Optional[Literal['hour', 'day', 'week', 'month', 'year']] = None,
@@ -625,8 +626,9 @@ See https://docs.perplexity.ai/api-reference/search-post for details.
 
 **Parameters:**
 
-- **query** (str): The search query string.
+- **query** (Union[str, List[str]]): The search query string, or a list of search query strings.
 - **max_results** (int): Maximum number of results to return. Must be between 1 and 20. (default: :obj:`10`)
+- **max_tokens** (Optional[int]): Maximum tokens for context (between 1 and 1,000,000). (default: :obj:`None`)
 - **max_tokens_per_page** (Optional[int]): Maximum number of tokens to include from each result page (between 1 and 1,000,000). (default: :obj:`None`)
 - **country** (Optional[str]): ISO 3166-1 alpha-2 country code used to bias results to a specific country. (default: :obj:`None`)
 - **search_recency_filter** (Optional[Literal['hour', 'day', 'week', 'month', 'year']]): Filter results by recency. (default: :obj:`None`)
@@ -639,7 +641,7 @@ See https://docs.perplexity.ai/api-reference/search-post for details.
 
 **Returns:**
 
-  Dict[str, Any]: The Perplexity Search API response. On success, contains a `results` list (each entry includes `title`, `url`, `snippet`, `date`, `last_updated`) along with `id` and `server_time` fields. On failure, returns a dictionary with an `error` key.
+  Dict[str, Any]: The Perplexity Search API response. On success, contains a `results` list (each entry includes `title`, `url`, `snippet`, and may include `date` and `last_updated`) along with `id` and `server_time` fields. On failure, returns a dictionary with an `error` key.
 
 <a id="camel.toolkits.search_toolkit.SearchToolkit.get_tools"></a>
 

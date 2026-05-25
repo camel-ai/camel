@@ -1281,6 +1281,7 @@ def test_search_perplexity_with_filters(mock_post, search_toolkit):
         search_toolkit.search_perplexity(
             query="AI agents",
             max_results=5,
+            max_tokens=10000,
             max_tokens_per_page=2048,
             country="US",
             search_recency_filter="month",
@@ -1297,6 +1298,7 @@ def test_search_perplexity_with_filters(mock_post, search_toolkit):
 
     assert payload["query"] == "AI agents"
     assert payload["max_results"] == 5
+    assert payload["max_tokens"] == 10000
     assert payload["max_tokens_per_page"] == 2048
     assert payload["country"] == "US"
     assert payload["search_recency_filter"] == "month"
@@ -1330,6 +1332,26 @@ def test_search_perplexity_omits_unset_optional_params(
 
 
 @patch('requests.post')
+def test_search_perplexity_with_multiple_queries(mock_post, search_toolkit):
+    """Test Perplexity search accepts multiple queries."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "id": "jkl012",
+        "server_time": "2026-04-30T00:00:00Z",
+        "results": [],
+    }
+    mock_post.return_value = mock_response
+
+    queries = ["CAMEL-AI", "multi-agent systems"]
+    with patch.dict(os.environ, {'PERPLEXITY_API_KEY': 'fake_api_key'}):
+        search_toolkit.search_perplexity(query=queries)
+
+    payload = mock_post.call_args[1]['json']
+    assert payload == {"query": queries, "max_results": 10}
+
+
+@patch('requests.post')
 def test_search_perplexity_http_error(mock_post, search_toolkit):
     """Test HTTP error handling in Perplexity search."""
     mock_response = MagicMock()
@@ -1359,5 +1381,8 @@ def test_search_perplexity_request_exception(mock_post, search_toolkit):
 def test_search_perplexity_missing_api_key(search_toolkit):
     """Test that missing PERPLEXITY_API_KEY raises a clear error."""
     with patch.dict(os.environ, {}, clear=True):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError) as exc_info:
             search_toolkit.search_perplexity(query="test")
+
+    assert "PERPLEXITY_API_KEY" in str(exc_info.value)
+    assert "https://www.perplexity.ai/account/api" in str(exc_info.value)
