@@ -10,7 +10,7 @@ You can also check this cookbook in colab [here](https://drive.google.com/file/d
 
 The society module is one of the core modules of CAMEL. By simulating the information exchange process, this module studies the social behaviors among agents.
 
-Currently, the society module aims to enable agents to collaborate autonomously toward completing tasks while keeping consistent with human intentions and requiring minimal human intervention. It includes two frameworks: `RolePlaying` and `BabyAGI`, which are used to run the interaction behaviors of agents to achieve objectives.
+Currently, the society module aims to enable agents to collaborate autonomously toward completing tasks while keeping consistent with human intentions and requiring minimal human intervention. It includes `RolePlaying`, which is used to run the interaction behaviors of agents to achieve objectives.
 
 Taking `RolePlaying` as an example, this framework was designed in an instruction-following manner. These roles independently undertake the responsibilities of executing and planning tasks, respectively. The dialogue is continuously advanced through a turn-taking mechanism, thereby collaborating to complete tasks. The main concepts include:
 
@@ -69,10 +69,6 @@ When using `RolePlaying` framework in CAMEL, predefined prompts are used to crea
 | extend_sys_msg_meta_dicts | List[Dict] | A list of dicts to extend the system message meta dicts with. |
 | extend_task_specify_meta_dict | Dict | A dict to extend the task specify meta dict with. |
 | output_language | str | The language to be output by the agents. |
-
-### 2.2 `BabyAGI`
-
-Babyagi is framework from "[Task-driven Autonomous Agent](https://github.com/yoheinakajima/babyagi)"
 
 ## 3. Get Started
 

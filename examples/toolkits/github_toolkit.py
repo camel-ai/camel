@@ -41,7 +41,7 @@ test_data_explorer.py', 'apps/data_explorer/test/test_loader.py', 'apps/
 dilemma/database_connection.py', 'apps/dilemma/dilemma.py', 'apps/dilemma/
 requirements.txt', 'camel/__init__.py', 'camel/agents/__init__.py', 'camel/
 agents/base.py', 'camel/agents/chat_agent.py', 'camel/agents/critic_agent.py',
-'camel/agents/deductive_reasoner_agent.py',...
+'camel/agents/knowledge_graph_agent.py',...
 ===============================================================================
 """
 

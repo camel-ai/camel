@@ -116,8 +116,7 @@
                   "cookbooks/advanced_features/agents_with_tools",
                   "cookbooks/advanced_features/agents_with_tools_from_ACI",
                   "cookbooks/advanced_features/agents_with_tools_from_Composio",
-                  "cookbooks/advanced_features/critic_agents_and_tree_search",
-                  "cookbooks/advanced_features/embodied_agents"
+                  "cookbooks/advanced_features/critic_agents_and_tree_search"
                 ]
               },
               {
@@ -203,17 +202,13 @@
               "reference/camel.agents.base",
               "reference/camel.agents.chat_agent",
               "reference/camel.agents.critic_agent",
-              "reference/camel.agents.deductive_reasoner_agent",
-              "reference/camel.agents.embodied_agent",
               "reference/camel.agents.knowledge_graph_agent",
               "reference/camel.agents.mcp_agent",
               "reference/camel.agents.programmed_agent_instruction",
               "reference/camel.agents.repo_agent",
               "reference/camel.agents.role_assignment_agent",
               "reference/camel.agents.search_agent",
-              "reference/camel.agents.task_agent",
-              "reference/camel.agents.tool_agents.base",
-              "reference/camel.agents.tool_agents.hugging_face_tool_agent"
+              "reference/camel.agents.task_agent"
             ]
           },
           {
@@ -444,7 +439,6 @@
           {
             "group": "Societies",
             "pages": [
-              "reference/camel.societies.babyagi_playing",
               "reference/camel.societies.role_playing",
               "reference/camel.societies.workforce.base",
               "reference/camel.societies.workforce.role_playing_worker",
