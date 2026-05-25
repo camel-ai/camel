@@ -42,6 +42,7 @@ from camel.toolkits import (
     RedditToolkit,
     ScreenshotToolkit,
     SearchToolkit,
+    SkillToolkit,
     SlackToolkit,
     TerminalToolkit,
     ToolkitMessageIntegration,
@@ -127,8 +128,10 @@ def developer_agent_factory(
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
     web_deploy_toolkit = WebDeployToolkit()
+    skill_toolkit = SkillToolkit(working_directory=WORKING_DIRECTORY)
 
     # Add messaging to toolkits
+    skill_toolkit = message_integration.register_toolkits(skill_toolkit)
     terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
     note_toolkit = message_integration.register_toolkits(note_toolkit)
     web_deploy_toolkit = message_integration.register_toolkits(
@@ -145,6 +148,7 @@ def developer_agent_factory(
         *note_toolkit.get_tools(),
         *web_deploy_toolkit.get_tools(),
         *screenshot_toolkit.get_tools(),
+        *skill_toolkit.get_tools(),
     ]
 
     system_message = f"""
@@ -186,6 +190,20 @@ plain text formatting instead.
 
 <capabilities>
 Your capabilities are extensive and powerful:
+- **Skills System (Highest Priority Workflow)**: Skills are your primary
+  execution source for specialized tasks.
+  - Trigger: If a task explicitly references a skill with double curly braces
+    (e.g., {{pdf}} or {{data-analyzer}}), or clearly matches a skill domain,
+    you MUST use the skill workflow first.
+  - Required order:
+    1. Call `list_skills` to confirm exact available skill names.
+    2. Call `load_skill` for the best matching skill before domain work.
+    3. Follow the loaded skill as the primary plan, including its process,
+       constraints, and output format.
+  - Do not rely on memory for skill details; always use loaded content.
+  - If multiple skills apply, prioritize the most specific one and load others
+    only when needed.
+
 - **Unrestricted Code Execution**: You can write and execute code in any
   language to solve a task. You MUST first save your code to a file (e.g.,
   `script.py`) and then run it from the terminal (e.g.,
@@ -335,12 +353,14 @@ def search_agent_factory(
     )
 
     # Initialize toolkits
+    skill_toolkit = SkillToolkit(working_directory=WORKING_DIRECTORY)
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
     search_toolkit = SearchToolkit().search_google
     terminal_toolkit_basic = TerminalToolkit()
 
     # Add messaging to toolkits
+    skill_toolkit = message_integration.register_toolkits(skill_toolkit)
     web_toolkit_custom = message_integration.register_toolkits(
         web_toolkit_custom
     )
@@ -358,6 +378,7 @@ def search_agent_factory(
         *note_toolkit.get_tools(),
         *search_toolkit,
         *terminal_toolkit.get_tools(),
+        *skill_toolkit.get_tools(),
     ]
 
     system_message = f"""
@@ -422,6 +443,20 @@ comprehensive and well-documented information.
 
 <capabilities>
 Your capabilities include:
+- **Skills System (Highest Priority Workflow)**: Skills are your primary
+  execution source for specialized tasks.
+  - Trigger: If a task explicitly references a skill with double curly braces
+    (e.g., {{pdf}} or {{data-analyzer}}), or clearly matches a skill domain,
+    you MUST use the skill workflow first.
+  - Required order:
+    1. Call `list_skills` to confirm exact available skill names.
+    2. Call `load_skill` for the best matching skill before domain work.
+    3. Follow the loaded skill as the primary plan, including its process,
+       constraints, and output format.
+  - Do not rely on memory for skill details; always use loaded content.
+  - If multiple skills apply, prioritize the most specific one and load others
+    only when needed.
+
 - Search and get information from the web using the search tools.
 - Use the rich browser related toolset to investigate websites.
 - Use the terminal tools to perform local operations. You can leverage
@@ -485,6 +520,7 @@ def document_agent_factory(
     )
 
     # Initialize toolkits
+    skill_toolkit = SkillToolkit(working_directory=WORKING_DIRECTORY)
     file_write_toolkit = FileToolkit(working_directory=WORKING_DIRECTORY)
     pptx_toolkit = PPTXToolkit(working_directory=WORKING_DIRECTORY)
     mark_it_down_toolkit = MarkItDownToolkit()
@@ -494,6 +530,7 @@ def document_agent_factory(
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
 
     # Add messaging to toolkits
+    skill_toolkit = message_integration.register_toolkits(skill_toolkit)
     file_write_toolkit = message_integration.register_toolkits(
         file_write_toolkit
     )
@@ -515,6 +552,7 @@ def document_agent_factory(
         *note_toolkit.get_tools(),
         *search_toolkit,
         *terminal_toolkit.get_tools(),
+        *skill_toolkit.get_tools(),
     ]
 
     system_message = f"""
@@ -567,6 +605,21 @@ to be embedded in your work.
 
 <capabilities>
 Your capabilities include:
+- **Skills System (Highest Priority Workflow)**: Skills are your primary
+  execution source for specialized tasks.
+  - Trigger: If a task explicitly references a skill with double curly braces
+    (e.g., {{pdf}} or {{data-analyzer}}), or clearly matches a skill domain,
+    you MUST use the skill workflow first.
+  - Required order:
+    1. Call `list_skills` to confirm exact available skill names.
+    2. Call `load_skill` for the best matching skill before domain work.
+    3. Follow the loaded skill as the primary plan, including its process,
+       constraints, and output format.
+  - Do not rely on memory for skill details; always use loaded content.
+  - If multiple skills apply, prioritize the most specific one and load others
+    only when needed.
+
+
 - Document Reading:
     - Read and understand the content of various file formats including
         - PDF (.pdf)
@@ -668,6 +721,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     )
 
     # Initialize toolkits
+    skill_toolkit = SkillToolkit(working_directory=WORKING_DIRECTORY)
     video_downloader_toolkit = VideoDownloaderToolkit(
         working_directory=WORKING_DIRECTORY
     )
@@ -685,6 +739,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
 
     # Add messaging to toolkits
+    skill_toolkit = message_integration.register_toolkits(skill_toolkit)
     video_downloader_toolkit = message_integration.register_toolkits(
         video_downloader_toolkit
     )
@@ -710,6 +765,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *search_toolkit,
         *terminal_toolkit.get_tools(),
         *note_toolkit.get_tools(),
+        *skill_toolkit.get_tools(),
     ]
 
     system_message = f"""
@@ -751,6 +807,20 @@ presentations, and other documents.
 
 <capabilities>
 Your capabilities include:
+- **Skills System (Highest Priority Workflow)**: Skills are your primary
+  execution source for specialized tasks.
+  - Trigger: If a task explicitly references a skill with double curly braces
+    (e.g., {{pdf}} or {{data-analyzer}}), or clearly matches a skill domain,
+    you MUST use the skill workflow first.
+  - Required order:
+    1. Call `list_skills` to confirm exact available skill names.
+    2. Call `load_skill` for the best matching skill before domain work.
+    3. Follow the loaded skill as the primary plan, including its process,
+       constraints, and output format.
+  - Do not rely on memory for skill details; always use loaded content.
+  - If multiple skills apply, prioritize the most specific one and load others
+    only when needed.
+
 - Video & Audio Analysis:
     - Download videos from URLs for analysis.
     - Transcribe speech from audio files to text with high accuracy
@@ -822,6 +892,7 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
     search_toolkit = SearchToolkit().search_exa
     terminal_toolkit = TerminalToolkit()
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
+    skill_toolkit = SkillToolkit(working_directory=WORKING_DIRECTORY)
 
     # Add messaging to toolkits
     whatsapp_toolkit = message_integration.register_toolkits(whatsapp_toolkit)
@@ -833,6 +904,7 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
     search_toolkit = message_integration.register_functions([search_toolkit])
     terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
     note_toolkit = message_integration.register_toolkits(note_toolkit)
+    skill_toolkit = message_integration.register_toolkits(skill_toolkit)
 
     return ChatAgent(
         BaseMessage.make_assistant_message(
@@ -845,6 +917,20 @@ creation, community engagement, and brand messaging.
 </role>
 
 <capabilities>
+- **Skills System (Highest Priority Workflow)**: Skills are your primary
+  execution source for specialized tasks.
+  - Trigger: If a task explicitly references a skill with double curly braces
+    (e.g., {{pdf}} or {{data-analyzer}}), or clearly matches a skill domain,
+    you MUST use the skill workflow first.
+  - Required order:
+    1. Call `list_skills` to confirm exact available skill names.
+    2. Call `load_skill` for the best matching skill before domain work.
+    3. Follow the loaded skill as the primary plan, including its process,
+       constraints, and output format.
+  - Do not rely on memory for skill details; always use loaded content.
+  - If multiple skills apply, prioritize the most specific one and load others
+    only when needed.
+
 - **Platform Management**:
   - **WhatsApp**: Send text and template messages.
   - **Twitter**: Create and delete tweets.
@@ -900,6 +986,7 @@ summary of your actions.
             *search_toolkit,
             *terminal_toolkit.get_tools(),
             *note_toolkit.get_tools(),
+            *skill_toolkit.get_tools(),
         ],
     )
 

@@ -20,7 +20,7 @@ from openai import OpenAI
 
 from camel.embeddings.base import BaseEmbedding
 from camel.types import NOT_GIVEN, EmbeddingModelType, NotGiven
-from camel.utils import api_keys_required
+from camel.utils import api_keys_required, dependencies_required
 
 
 class OpenAIEmbedding(BaseEmbedding[str]):
@@ -41,6 +41,7 @@ class OpenAIEmbedding(BaseEmbedding[str]):
         RuntimeError: If an unsupported model type is specified.
     """
 
+    @dependencies_required('openai')
     @api_keys_required(
         [
             ("api_key", 'OPENAI_API_KEY'),

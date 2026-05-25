@@ -37,4 +37,4 @@ class Constants:
     DEFAULT_SIMILARITY_THRESHOLD = 0.7
 
     # Default timeout threshold value
-    TIMEOUT_THRESHOLD = 180.0
+    TIMEOUT_THRESHOLD = None

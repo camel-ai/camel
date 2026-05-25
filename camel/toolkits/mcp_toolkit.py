@@ -12,10 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import json
 import os
 import warnings
-from contextlib import AsyncExitStack
 from typing import Any, Dict, List, Optional
 
 from typing_extensions import TypeGuard
@@ -273,7 +273,7 @@ class MCPToolkit(BaseToolkit):
     Note:
         Both MCPClient and MCPToolkit now use the same async context manager
         pattern for consistent connection management. MCPToolkit automatically
-        manages multiple MCPClient instances using AsyncExitStack.
+        manages multiple MCPClient instances.
 
     Args:
         clients (Optional[List[MCPClient]], optional): List of :obj:`MCPClient`
@@ -336,6 +336,10 @@ class MCPToolkit(BaseToolkit):
         config_path: Optional[str] = None,
         config_dict: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = None,
+        skip_failed: bool = True,
+        per_client_timeout: Optional[float] = None,
+        max_retries: int = 2,
+        retry_delay: float = 3.0,
     ):
         # Call parent constructor first
         super().__init__(timeout=timeout)
@@ -353,7 +357,18 @@ class MCPToolkit(BaseToolkit):
 
         self.clients: List[MCPClient] = clients or []
         self._is_connected = False
-        self._exit_stack: Optional[AsyncExitStack] = None
+        self._connected_clients: List[MCPClient] = []
+
+        # Robustness options
+        # skip_failed: if True, log a warning for failed MCP connections
+        #   instead of aborting the whole toolkit
+        # per_client_timeout: independent timeout for each MCP client;
+        #   defaults to the overall toolkit timeout
+        # max_retries / retry_delay: retry each failed client before giving up
+        self._skip_failed = skip_failed
+        self._per_client_timeout = per_client_timeout or timeout or 60.0
+        self._max_retries = max_retries
+        self._retry_delay = retry_delay
 
         # Load clients from config sources
         if config_path:
@@ -366,10 +381,9 @@ class MCPToolkit(BaseToolkit):
             raise ValueError("No valid MCP clients could be created")
 
     async def connect(self) -> "MCPToolkit":
-        r"""Connect to all MCP servers using AsyncExitStack.
+        r"""Connect to all MCP servers.
 
-        Establishes connections to all configured MCP servers sequentially.
-        Uses :obj:`AsyncExitStack` to manage the lifecycle of all connections,
+        Establishes connections to all configured MCP servers concurrently,
         ensuring proper cleanup on exit or error.
 
         Returns:
@@ -401,74 +415,134 @@ class MCPToolkit(BaseToolkit):
             logger.warning("MCPToolkit is already connected")
             return self
 
-        self._exit_stack = AsyncExitStack()
+        self._connected_clients = []
 
         try:
-            # Apply timeout to the entire connection process
-            import asyncio
+            connected, failed = await self._connect_all_clients()
 
-            timeout_seconds = self.timeout or 30.0
-            await asyncio.wait_for(
-                self._connect_all_clients(), timeout=timeout_seconds
-            )
+            if failed and not self._skip_failed:
+                self._is_connected = False
+                await self._disconnect_all_clients()
+                error_msg = (
+                    f"Failed to connect to {len(failed)} MCP server(s): "
+                    + ", ".join(f"client {i+1}" for i in failed)
+                )
+                raise MCPConnectionError(error_msg)
+
+            if connected == 0:
+                self._is_connected = False
+                raise MCPConnectionError("All MCP servers failed to connect.")
 
             self._is_connected = True
-            msg = f"Successfully connected to {len(self.clients)} MCP servers"
+            msg = f"Connected to {connected}/{len(self.clients)} MCP servers"
+            if failed:
+                msg += f" ({len(failed)} skipped due to errors)"
             logger.info(msg)
             return self
 
-        except (asyncio.TimeoutError, asyncio.CancelledError):
-            self._is_connected = False
-            if self._exit_stack:
-                await self._exit_stack.aclose()
-                self._exit_stack = None
-
-            timeout_seconds = self.timeout or 30.0
-            error_msg = (
-                f"Connection timeout after {timeout_seconds}s. "
-                f"One or more MCP servers are not responding. "
-                f"Please check if the servers are running and accessible."
-            )
-            logger.error(error_msg)
-            raise MCPConnectionError(error_msg)
-
+        except MCPConnectionError:
+            raise
         except Exception:
             self._is_connected = False
-            if self._exit_stack:
-                await self._exit_stack.aclose()
-                self._exit_stack = None
+            await self._disconnect_all_clients()
             raise
 
-    async def _connect_all_clients(self):
-        r"""Connect to all clients sequentially."""
-        # Connect to all clients using AsyncExitStack
-        for i, client in enumerate(self.clients):
+    async def _connect_single_client(self, i: int, client):
+        r"""Connect one client with per-client timeout and retry.
+
+        Returns True on success, raises on final failure.
+        """
+        last_exc: Optional[BaseException] = None
+        for attempt in range(1, self._max_retries + 1):
             try:
-                # Use MCPClient directly as async context manager
-                await self._exit_stack.enter_async_context(client)
-                msg = f"Connected to client {i+1}/{len(self.clients)}"
-                logger.debug(msg)
+                await asyncio.wait_for(
+                    client.__aenter__(), timeout=self._per_client_timeout
+                )
+                self._connected_clients.append(client)
+                logger.debug(
+                    f"Connected to client {i+1}/{len(self.clients)}"
+                    + (f" (attempt {attempt})" if attempt > 1 else "")
+                )
+                return True
+            except asyncio.TimeoutError as e:
+                last_exc = e
+                # Clean up partially-established resources before retry
+                await client._cleanup_connection()
+                logger.warning(
+                    f"Client {i+1} timed out after "
+                    f"{self._per_client_timeout}s "
+                    f"(attempt {attempt}/{self._max_retries})"
+                )
+            except asyncio.CancelledError:
+                await client._cleanup_connection()
+                raise
             except Exception as e:
-                logger.error(f"Failed to connect to client {i+1}: {e}")
-                # AsyncExitStack will cleanup already connected clients
-                await self._exit_stack.aclose()
-                self._exit_stack = None
-                error_msg = f"Failed to connect to client {i+1}: {e}"
-                raise MCPConnectionError(error_msg) from e
+                last_exc = e
+                # Clean up partially-established resources before retry
+                await client._cleanup_connection()
+                logger.warning(
+                    f"Client {i+1} connection failed "
+                    f"(attempt {attempt}/{self._max_retries}): {e}"
+                )
+            if attempt < self._max_retries:
+                await asyncio.sleep(self._retry_delay)
+        raise ConnectionError(
+            f"Client {i+1} failed after {self._max_retries} attempts"
+        ) from last_exc
+
+    async def _connect_all_clients(self):
+        r"""Connect all clients with per-client timeout and retry.
+
+        Uses a semaphore to avoid overwhelming the system when many stdio
+        MCP servers each trigger a ``uv run`` / package-build step on first
+        launch.  Concurrency defaults to 4 but can be overridden by the
+        ``MCP_CONNECT_CONCURRENCY`` environment variable.
+
+        Returns (connected_count, failed_indices).
+        Clients that fail are skipped when skip_failed=True.
+        """
+        max_concurrent = int(os.environ.get("MCP_CONNECT_CONCURRENCY", "4"))
+        semaphore = asyncio.Semaphore(max_concurrent)
+
+        async def _guarded(i, client):
+            async with semaphore:
+                return await self._connect_single_client(i, client)
+
+        tasks = [
+            asyncio.create_task(_guarded(i, client))
+            for i, client in enumerate(self.clients)
+        ]
+
+        connected = 0
+        failed: list = []
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for i, result in enumerate(results):
+            if isinstance(result, asyncio.CancelledError):
+                raise result
+            if isinstance(result, Exception):
+                logger.error(f"Failed to connect to client {i+1}: {result}")
+                failed.append(i)
+            else:
+                connected += 1
+        return connected, failed
+
+    async def _disconnect_all_clients(self):
+        r"""Disconnect all successfully connected clients."""
+        for client in list(getattr(self, "_connected_clients", [])):
+            try:
+                await client.__aexit__(None, None, None)
+            except Exception as e:
+                logger.warning(f"Error during client disconnect: {e}")
+        self._connected_clients = []
 
     async def disconnect(self):
         r"""Disconnect from all MCP servers."""
-        if not self._is_connected:
+        if not self._is_connected and not getattr(
+            self, "_connected_clients", []
+        ):
             return
 
-        if self._exit_stack:
-            try:
-                await self._exit_stack.aclose()
-            except Exception as e:
-                logger.warning(f"Error during disconnect: {e}")
-            finally:
-                self._exit_stack = None
-
+        await self._disconnect_all_clients()
         self._is_connected = False
         logger.debug("Disconnected from all MCP servers")
 
@@ -477,14 +551,17 @@ class MCPToolkit(BaseToolkit):
         r"""Check if toolkit is connected.
 
         Returns:
-            bool: True if the toolkit is connected to all MCP servers,
-                False otherwise.
+            bool: True if the toolkit has at least one active client
+                connection, False otherwise.
         """
         if not self._is_connected:
             return False
 
-        # Check if all clients are connected
-        return all(client.is_connected() for client in self.clients)
+        # With skip_failed=True, only successfully connected clients matter
+        connected_clients = getattr(self, "_connected_clients", None)
+        if connected_clients is None:
+            connected_clients = self.clients
+        return any(client.is_connected() for client in connected_clients)
 
     def connect_sync(self):
         r"""Synchronously connect to all MCP servers."""
@@ -524,6 +601,10 @@ class MCPToolkit(BaseToolkit):
         config_path: Optional[str] = None,
         config_dict: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = None,
+        skip_failed: bool = True,
+        per_client_timeout: Optional[float] = None,
+        max_retries: int = 2,
+        retry_delay: float = 3.0,
     ) -> "MCPToolkit":
         r"""Factory method that creates and connects to all MCP servers.
 
@@ -569,6 +650,10 @@ class MCPToolkit(BaseToolkit):
             config_path=config_path,
             config_dict=config_dict,
             timeout=timeout,
+            skip_failed=skip_failed,
+            per_client_timeout=per_client_timeout,
+            max_retries=max_retries,
+            retry_delay=retry_delay,
         )
         try:
             await toolkit.connect()
@@ -588,10 +673,21 @@ class MCPToolkit(BaseToolkit):
         config_path: Optional[str] = None,
         config_dict: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = None,
+        skip_failed: bool = True,
+        per_client_timeout: Optional[float] = None,
+        max_retries: int = 2,
+        retry_delay: float = 3.0,
     ) -> "MCPToolkit":
         r"""Synchronously create and connect to all MCP servers."""
         return run_async(cls.create)(
-            clients, config_path, config_dict, timeout
+            clients,
+            config_path,
+            config_dict,
+            timeout,
+            skip_failed,
+            per_client_timeout,
+            max_retries,
+            retry_delay,
         )
 
     def _load_clients_from_config(self, config_path: str) -> List[MCPClient]:

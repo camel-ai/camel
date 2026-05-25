@@ -43,7 +43,9 @@ def test_aws_bedrock_model(model_type: ModelType):
         url="http://dummy.url",
     )
     assert model.model_type == model_type
-    assert model.model_config_dict == BedrockConfig().as_dict()
+    expected_config = BedrockConfig().as_dict()
+    expected_config.pop("cache_control", None)
+    assert model.model_config_dict == expected_config
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
@@ -71,3 +73,15 @@ async def test_aws_bedrock_async_supported():
     # and fail with a connection error (not NotImplementedError)
     with pytest.raises(APIConnectionError):
         await model._arun([{"role": "user", "content": "Test message"}])
+
+
+@pytest.mark.model_backend
+def test_bedrock_config_accepts_prompt_cache_params():
+    config = BedrockConfig(
+        temperature=0.3,
+        cache_control="5m",
+    )
+    config_dict = config.as_dict()
+
+    assert config_dict["temperature"] == 0.3
+    assert config_dict["cache_control"] == "5m"

@@ -18,7 +18,7 @@ from openai import OpenAI
 
 from camel.embeddings.base import BaseEmbedding
 from camel.logger import get_logger
-from camel.utils import api_keys_required
+from camel.utils import api_keys_required, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -41,6 +41,7 @@ class TogetherEmbedding(BaseEmbedding[str]):
         RuntimeError: If the API request fails.
     """
 
+    @dependencies_required('openai')
     @api_keys_required([("api_key", 'TOGETHER_API_KEY')])
     def __init__(
         self,

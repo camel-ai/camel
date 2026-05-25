@@ -21,14 +21,14 @@ from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
-from camel.toolkits import FileWriteToolkit, ThinkingToolkit
+from camel.toolkits import FileToolkit, ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
 def create_simple_workforce():
     r"""Create a simple workforce for demonstration."""
     thinking_toolkit = ThinkingToolkit()
-    file_write_toolkit = FileWriteToolkit()
+    file_write_toolkit = FileToolkit()
 
     # Create a simple search agent
     poet_agent = ChatAgent(

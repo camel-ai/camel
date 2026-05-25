@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import copy
 import json
 import os
 import time
-import warnings
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from openai import AsyncStream, Stream
@@ -32,8 +32,6 @@ from camel.utils import (
     get_current_agent_session_id,
     update_langfuse_trace,
 )
-
-ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS = "structured-outputs-2025-11-13"
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
@@ -119,8 +117,6 @@ class AnthropicModel(BaseModelBackend):
         async_client (Optional[Any], optional): A custom asynchronous Anthropic
             client instance. If provided, this client will be used instead of
             creating a new one. (default: :obj:`None`)
-        use_beta_for_structured_outputs (bool, optional): Whether to use the
-            beta API for structured outputs. (default: :obj:`False`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
     """
@@ -142,7 +138,6 @@ class AnthropicModel(BaseModelBackend):
         max_retries: int = 3,
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,
-        use_beta_for_structured_outputs: bool = False,
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
@@ -200,8 +195,7 @@ class AnthropicModel(BaseModelBackend):
                 "type": "ephemeral",
                 "ttl": cache_control,
             }
-
-        self._use_beta_for_structured_outputs = use_beta_for_structured_outputs
+        self._tool_call_thinking_blocks: Dict[str, List[Dict[str, Any]]] = {}
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -218,6 +212,193 @@ class AnthropicModel(BaseModelBackend):
                 base_url=self._url,
             )
         return self._token_counter
+
+    @property
+    def supports_tool_response_format(self) -> bool:
+        r"""Anthropic JSON outputs are independent from strict tool use."""
+        return True
+
+    @staticmethod
+    def _get_block_value(
+        block: Any,
+        key: str,
+        default: Any = None,
+    ) -> Any:
+        r"""Read a content block value from a dict or SDK object."""
+        if isinstance(block, dict):
+            return block.get(key, default)
+        return getattr(block, key, default)
+
+    @classmethod
+    def _content_block_to_dict(
+        cls,
+        block: Any,
+    ) -> Dict[str, Any]:
+        r"""Convert an Anthropic content block to a plain dictionary."""
+        if isinstance(block, dict):
+            return copy.deepcopy(block)
+
+        model_dump = getattr(block, "model_dump", None)
+        if callable(model_dump):
+            dumped = model_dump(exclude_none=True)
+            if isinstance(dumped, dict):
+                return dumped
+
+        block_type = cls._get_block_value(block, "type")
+        if not isinstance(block_type, str):
+            return {}
+
+        block_dict: Dict[str, Any] = {"type": block_type}
+        for key in ("thinking", "signature", "data"):
+            value = cls._get_block_value(block, key)
+            if value is not None:
+                block_dict[key] = value
+        return block_dict
+
+    @classmethod
+    def _extract_thinking_blocks_from_message(
+        cls,
+        message: OpenAIMessage,
+    ) -> List[Dict[str, Any]]:
+        r"""Extract raw Anthropic thinking blocks from an OpenAI message."""
+        raw_blocks = message.get("anthropic_thinking_blocks") or message.get(
+            "thinking_blocks"
+        )
+        if not isinstance(raw_blocks, list):
+            return []
+
+        thinking_blocks: List[Dict[str, Any]] = []
+        for block in raw_blocks:
+            block_dict = cls._content_block_to_dict(block)
+            if block_dict.get("type") in {"thinking", "redacted_thinking"}:
+                thinking_blocks.append(block_dict)
+        return thinking_blocks
+
+    @staticmethod
+    def _get_tool_call_id(tool_call: Any) -> Optional[str]:
+        r"""Extract an OpenAI-style tool call ID from a dict or SDK object."""
+        if isinstance(tool_call, dict):
+            tool_call_id = tool_call.get("id")
+        else:
+            tool_call_id = getattr(tool_call, "id", None)
+        return tool_call_id if isinstance(tool_call_id, str) else None
+
+    @classmethod
+    def _get_tool_call_extra_content(
+        cls,
+        tool_call: Any,
+    ) -> Optional[Dict[str, Any]]:
+        r"""Extract non-standard extra content from a tool call."""
+        if isinstance(tool_call, dict):
+            extra_content = tool_call.get("extra_content")
+        else:
+            extra_content = getattr(tool_call, "extra_content", None)
+        return extra_content if isinstance(extra_content, dict) else None
+
+    @classmethod
+    def _extract_thinking_blocks_from_tool_call(
+        cls,
+        tool_call: Any,
+    ) -> List[Dict[str, Any]]:
+        r"""Extract raw Anthropic thinking blocks from tool extra content."""
+        extra_content = cls._get_tool_call_extra_content(tool_call)
+        if not extra_content:
+            return []
+
+        raw_blocks = extra_content.get("anthropic_thinking_blocks")
+        if not isinstance(raw_blocks, list):
+            return []
+
+        thinking_blocks: List[Dict[str, Any]] = []
+        for block in raw_blocks:
+            block_dict = cls._content_block_to_dict(block)
+            if block_dict.get("type") in {"thinking", "redacted_thinking"}:
+                thinking_blocks.append(block_dict)
+        return thinking_blocks
+
+    def _get_cached_thinking_blocks_for_tool_calls(
+        self,
+        tool_calls: List[Any],
+    ) -> List[Dict[str, Any]]:
+        r"""Return cached thinking blocks for the first matching tool call."""
+        for tool_call in tool_calls:
+            thinking_blocks = self._extract_thinking_blocks_from_tool_call(
+                tool_call
+            )
+            if thinking_blocks:
+                return thinking_blocks
+
+            tool_call_id = self._get_tool_call_id(tool_call)
+            if tool_call_id in self._tool_call_thinking_blocks:
+                return copy.deepcopy(
+                    self._tool_call_thinking_blocks[tool_call_id]
+                )
+        return []
+
+    def _cache_thinking_blocks_for_tool_calls(
+        self,
+        thinking_blocks: List[Dict[str, Any]],
+        tool_calls: List[Any],
+    ) -> None:
+        r"""Cache raw thinking blocks for Anthropic tool-use continuation."""
+        if not thinking_blocks or not tool_calls:
+            return
+
+        for tool_call in tool_calls:
+            tool_call_id = self._get_tool_call_id(tool_call)
+            if tool_call_id:
+                self._tool_call_thinking_blocks[tool_call_id] = copy.deepcopy(
+                    thinking_blocks
+                )
+
+    @staticmethod
+    def _is_thinking_enabled(thinking: Any) -> bool:
+        r"""Return whether an Anthropic thinking config enables thinking."""
+        if thinking is None:
+            return False
+        if isinstance(thinking, dict):
+            return thinking.get("type") != "disabled"
+        return True
+
+    def _validate_tool_choice_for_thinking(
+        self,
+        thinking: Any,
+        tool_choice: Any,
+    ) -> None:
+        r"""Validate Anthropic's tool-choice limitation for thinking."""
+        if not self._is_thinking_enabled(thinking) or tool_choice is None:
+            return
+        if isinstance(tool_choice, dict) and tool_choice.get("type") in {
+            "auto",
+            "none",
+        }:
+            return
+        raise ValueError(
+            "Anthropic extended thinking with tools only supports "
+            "`tool_choice={'type': 'auto'}` or "
+            "`tool_choice={'type': 'none'}`."
+        )
+
+    def _build_request_output_config(
+        self,
+        response_format: Optional[Type[BaseModel]],
+        extra_body: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        r"""Build Anthropic output_config from config and response_format."""
+        output_config: Dict[str, Any] = {}
+
+        legacy_output_config = extra_body.pop("output_config", None)
+        if isinstance(legacy_output_config, dict):
+            output_config.update(copy.deepcopy(legacy_output_config))
+
+        configured_output_config = self.model_config_dict.get("output_config")
+        if isinstance(configured_output_config, dict):
+            output_config.update(copy.deepcopy(configured_output_config))
+
+        if response_format is not None:
+            output_config.update(self._build_output_config(response_format))
+
+        return output_config or None
 
     def _convert_openai_to_anthropic_messages(
         self,
@@ -273,6 +454,17 @@ class AnthropicModel(BaseModelBackend):
                 if msg.get("tool_calls"):
                     # Handle tool calls - Anthropic uses content blocks
                     content_blocks = []
+                    thinking_blocks = (
+                        self._extract_thinking_blocks_from_message(msg)
+                    )
+                    if not thinking_blocks:
+                        thinking_blocks = (
+                            self._get_cached_thinking_blocks_for_tool_calls(
+                                msg.get("tool_calls", [])  # type: ignore[arg-type]
+                            )
+                        )
+                    content_blocks.extend(thinking_blocks)
+
                     if content:
                         content_blocks.append(
                             {"type": "text", "text": str(content)}
@@ -319,7 +511,7 @@ class AnthropicModel(BaseModelBackend):
                     )
             elif role == "tool":
                 # Convert tool response message
-                tool_call_id = msg.get("tool_call_id", "")
+                tool_call_id = str(msg.get("tool_call_id", ""))
                 tool_content = (
                     content if isinstance(content, str) else str(content)
                 )
@@ -338,8 +530,86 @@ class AnthropicModel(BaseModelBackend):
 
         return system_message, anthropic_messages  # type: ignore[return-value]
 
+    @staticmethod
+    def _extract_usage(usage_obj: Any) -> Dict[str, Any]:
+        r"""Extract usage information from an Anthropic usage object."""
+
+        def _get_int(attr_name: str) -> int:
+            value = getattr(usage_obj, attr_name, 0)
+            return value if isinstance(value, int) else 0
+
+        input_tokens = _get_int("input_tokens")
+        output_tokens = _get_int("output_tokens")
+
+        usage: Dict[str, Any] = {
+            "prompt_tokens": input_tokens,
+            "completion_tokens": output_tokens,
+            "total_tokens": input_tokens + output_tokens,
+        }
+
+        # Prompt-caching fields are included only when actually set to int.
+        cache_read = getattr(usage_obj, "cache_read_input_tokens", None)
+        if isinstance(cache_read, int):
+            usage["cache_read_input_tokens"] = cache_read
+
+        cache_creation = getattr(
+            usage_obj, "cache_creation_input_tokens", None
+        )
+        if isinstance(cache_creation, int):
+            usage["cache_creation_input_tokens"] = cache_creation
+
+        cache_creation_detail = getattr(usage_obj, "cache_creation", None)
+        if isinstance(cache_creation_detail, dict):
+            usage["cache_creation"] = cache_creation_detail
+        elif isinstance(cache_creation_detail, BaseModel):
+            usage["cache_creation"] = cache_creation_detail.model_dump()
+
+        return usage
+
+    def _build_output_config(
+        self, response_format: Type[BaseModel]
+    ) -> Dict[str, Any]:
+        r"""Build Anthropic output_config.format from a Pydantic model."""
+        from anthropic import transform_schema
+
+        schema = transform_schema(response_format.model_json_schema())
+        return {
+            "format": {
+                "type": "json_schema",
+                "schema": schema,
+            }
+        }
+
+    @staticmethod
+    def _normalize_type_list_for_anthropic_schema(schema: Any) -> Any:
+        r"""Convert JSON Schema type lists to Anthropic SDK-supported anyOf."""
+        if isinstance(schema, dict):
+            normalized = {
+                key: AnthropicModel._normalize_type_list_for_anthropic_schema(
+                    value
+                )
+                for key, value in schema.items()
+            }
+            type_value = schema.get("type")
+            if (
+                isinstance(type_value, list)
+                and "anyOf" not in schema
+                and all(isinstance(item, str) for item in type_value)
+            ):
+                normalized.pop("type", None)
+                normalized["anyOf"] = [{"type": item} for item in type_value]
+            return normalized
+        if isinstance(schema, list):
+            return [
+                AnthropicModel._normalize_type_list_for_anthropic_schema(item)
+                for item in schema
+            ]
+        return schema
+
     def _convert_anthropic_to_openai_response(
-        self, response: Any, model: str
+        self,
+        response: Any,
+        model: str,
     ) -> ChatCompletion:
         r"""Convert Anthropic API response to OpenAI ChatCompletion format.
 
@@ -353,58 +623,60 @@ class AnthropicModel(BaseModelBackend):
         # Extract message content
         content = ""
         tool_calls = None
+        reasoning_content = None
+        thinking_blocks: List[Dict[str, Any]] = []
 
         if hasattr(response, "content"):
             content_blocks = response.content
             if content_blocks:
                 # Extract text content and tool calls
                 text_parts = []
+                reasoning_parts = []
                 tool_calls_list = []
                 for block in content_blocks:
-                    if hasattr(block, "type"):
-                        if block.type == "text":
-                            if hasattr(block, "text"):
-                                text_parts.append(block.text)
-                        elif block.type == "tool_use":
-                            tool_input = (
-                                block.input if hasattr(block, "input") else {}
-                            )
-                            tool_calls_list.append(
-                                {
-                                    "id": block.id
-                                    if hasattr(block, "id")
-                                    else "",
-                                    "type": "function",
-                                    "function": {
-                                        "name": block.name
-                                        if hasattr(block, "name")
-                                        else "",
-                                        "arguments": json.dumps(tool_input)
-                                        if isinstance(tool_input, dict)
-                                        else str(tool_input),
-                                    },
-                                }
-                            )
-                    elif isinstance(block, dict):
-                        if block.get("type") == "text":
-                            text_parts.append(block.get("text", ""))
-                        elif block.get("type") == "tool_use":
-                            tool_input = block.get("input", {})
-                            tool_calls_list.append(
-                                {
-                                    "id": block.get("id", ""),
-                                    "type": "function",
-                                    "function": {
-                                        "name": block.get("name", ""),
-                                        "arguments": json.dumps(tool_input)
-                                        if isinstance(tool_input, dict)
-                                        else str(tool_input),
-                                    },
-                                }
-                            )
+                    block_type = self._get_block_value(block, "type")
+                    if block_type == "text":
+                        text = self._get_block_value(block, "text", "")
+                        if isinstance(text, str):
+                            text_parts.append(text)
+                    elif block_type == "thinking":
+                        block_dict = self._content_block_to_dict(block)
+                        thinking_blocks.append(block_dict)
+                        thinking = block_dict.get("thinking")
+                        if isinstance(thinking, str) and thinking:
+                            reasoning_parts.append(thinking)
+                    elif block_type == "redacted_thinking":
+                        block_dict = self._content_block_to_dict(block)
+                        thinking_blocks.append(block_dict)
+                    elif block_type == "tool_use":
+                        tool_input = self._get_block_value(block, "input", {})
+                        tool_name = self._get_block_value(block, "name", "")
+                        tool_id = self._get_block_value(block, "id", "")
+                        tool_call = {
+                            "id": tool_id,
+                            "type": "function",
+                            "function": {
+                                "name": tool_name,
+                                "arguments": json.dumps(tool_input)
+                                if isinstance(tool_input, dict)
+                                else str(tool_input),
+                            },
+                        }
+                        if thinking_blocks:
+                            tool_call["extra_content"] = {
+                                "anthropic_thinking_blocks": copy.deepcopy(
+                                    thinking_blocks
+                                )
+                            }
+                        tool_calls_list.append(tool_call)
                 content = "".join(text_parts)
+                if reasoning_parts:
+                    reasoning_content = "\n".join(reasoning_parts)
                 if tool_calls_list:
                     tool_calls = tool_calls_list
+                    self._cache_thinking_blocks_for_tool_calls(
+                        thinking_blocks, tool_calls_list
+                    )
             else:
                 content = ""
         elif isinstance(response.content, str):
@@ -430,22 +702,17 @@ class AnthropicModel(BaseModelBackend):
             "role": "assistant",
             "content": content,
         }
+        if reasoning_content is not None:
+            message_dict["reasoning_content"] = reasoning_content
+        if thinking_blocks:
+            message_dict["anthropic_thinking_blocks"] = thinking_blocks
         if tool_calls:
             message_dict["tool_calls"] = tool_calls
 
         # Extract usage information
         usage = None
         if hasattr(response, "usage"):
-            usage = {
-                "prompt_tokens": getattr(response.usage, "input_tokens", 0),
-                "completion_tokens": getattr(
-                    response.usage, "output_tokens", 0
-                ),
-                "total_tokens": (
-                    getattr(response.usage, "input_tokens", 0)
-                    + getattr(response.usage, "output_tokens", 0)
-                ),
-            }
+            usage = self._extract_usage(response.usage)
 
         # Create ChatCompletion
         return ChatCompletion.construct(
@@ -469,6 +736,7 @@ class AnthropicModel(BaseModelBackend):
         model: str,
         tool_call_index: Dict[str, int],
         finish_reason_sent: bool = False,
+        thinking_state: Optional[Dict[str, Any]] = None,
     ) -> ChatCompletionChunk:
         r"""Convert Anthropic streaming chunk to OpenAI ChatCompletionChunk.
 
@@ -483,10 +751,13 @@ class AnthropicModel(BaseModelBackend):
             ChatCompletionChunk: Chunk in OpenAI format.
         """
         delta_content = ""
+        delta_reasoning = ""
         tool_calls = None
         finish_reason = None
         chunk_id = ""
         usage = None
+        if thinking_state is None:
+            thinking_state = {}
 
         if hasattr(chunk, "type"):
             chunk_type = chunk.type
@@ -494,21 +765,40 @@ class AnthropicModel(BaseModelBackend):
                 # Initialize message
                 if hasattr(chunk, "message") and hasattr(chunk.message, "id"):
                     chunk_id = chunk.message.id
+                # Extract usage from message_start (contains cache
+                # fields like cache_read_input_tokens)
+                msg_usage = None
+                if (
+                    hasattr(chunk, "message")
+                    and hasattr(chunk.message, "usage")
+                    and chunk.message.usage
+                ):
+                    msg_usage = self._extract_usage(chunk.message.usage)
                 return ChatCompletionChunk.construct(
                     id=chunk_id,
                     choices=[{"index": 0, "delta": {}, "finish_reason": None}],
                     created=int(time.time()),
                     model=model,
                     object="chat.completion.chunk",
+                    usage=msg_usage,
                 )
             elif chunk_type == "content_block_start":
                 # Content block starting
                 if hasattr(chunk, "content_block"):
                     block = chunk.content_block
-                    if hasattr(block, "type") and block.type == "tool_use":
+                    block_type = self._get_block_value(block, "type")
+                    if block_type in {"thinking", "redacted_thinking"}:
+                        chunk_idx = getattr(chunk, "index", 0)
+                        current_blocks = thinking_state.setdefault(
+                            "current_blocks", {}
+                        )
+                        current_blocks[chunk_idx] = (
+                            self._content_block_to_dict(block)
+                        )
+                    elif block_type == "tool_use":
                         # Tool use block starting
-                        tool_id = getattr(block, "id", "")
-                        tool_name = getattr(block, "name", "")
+                        tool_id = self._get_block_value(block, "id", "")
+                        tool_name = self._get_block_value(block, "name", "")
                         # Assign index for this tool call
                         idx = len(
                             [
@@ -521,17 +811,29 @@ class AnthropicModel(BaseModelBackend):
                         # Also map by chunk.index for content_block_delta
                         chunk_idx = getattr(chunk, "index", 0)
                         tool_call_index[f"_chunk_{chunk_idx}"] = idx
-                        tool_calls = [
-                            {
-                                "index": idx,
-                                "id": tool_id,
-                                "type": "function",
-                                "function": {
-                                    "name": tool_name,
-                                    "arguments": "",
-                                },
+                        self._cache_thinking_blocks_for_tool_calls(
+                            thinking_state.get("thinking_blocks", []),
+                            [{"id": tool_id}],
+                        )
+                        tool_call_delta = {
+                            "index": idx,
+                            "id": tool_id,
+                            "type": "function",
+                            "function": {
+                                "name": tool_name,
+                                "arguments": "",
+                            },
+                        }
+                        thinking_blocks = thinking_state.get(
+                            "thinking_blocks", []
+                        )
+                        if thinking_blocks:
+                            tool_call_delta["extra_content"] = {
+                                "anthropic_thinking_blocks": copy.deepcopy(
+                                    thinking_blocks
+                                )
                             }
-                        ]
+                        tool_calls = [tool_call_delta]
                 if tool_calls is None:
                     return ChatCompletionChunk.construct(
                         id=chunk_id,
@@ -547,10 +849,32 @@ class AnthropicModel(BaseModelBackend):
                 if hasattr(chunk, "delta"):
                     delta_obj = chunk.delta
                     delta_type = getattr(delta_obj, "type", "")
-                    if delta_type == "text_delta" or hasattr(
-                        delta_obj, "text"
-                    ):
+                    if delta_type == "text_delta":
                         delta_content = getattr(delta_obj, "text", "")
+                    elif delta_type == "thinking_delta":
+                        delta_reasoning = getattr(delta_obj, "thinking", "")
+                        chunk_idx = getattr(chunk, "index", 0)
+                        current_blocks = thinking_state.setdefault(
+                            "current_blocks", {}
+                        )
+                        block = current_blocks.setdefault(
+                            chunk_idx,
+                            {"type": "thinking", "thinking": ""},
+                        )
+                        block["thinking"] = (
+                            block.get("thinking", "") + delta_reasoning
+                        )
+                    elif delta_type == "signature_delta":
+                        signature = getattr(delta_obj, "signature", "")
+                        chunk_idx = getattr(chunk, "index", 0)
+                        current_blocks = thinking_state.setdefault(
+                            "current_blocks", {}
+                        )
+                        block = current_blocks.setdefault(
+                            chunk_idx,
+                            {"type": "thinking", "thinking": ""},
+                        )
+                        block["signature"] = signature
                     elif delta_type == "input_json_delta":
                         # Tool input arguments delta
                         partial_json = getattr(delta_obj, "partial_json", "")
@@ -569,7 +893,18 @@ class AnthropicModel(BaseModelBackend):
                             }
                         ]
             elif chunk_type == "content_block_stop":
-                # Content block finished - skip
+                chunk_idx = getattr(chunk, "index", 0)
+                current_blocks = thinking_state.setdefault(
+                    "current_blocks", {}
+                )
+                block = current_blocks.pop(chunk_idx, None)
+                if isinstance(block, dict) and block.get("type") in {
+                    "thinking",
+                    "redacted_thinking",
+                }:
+                    thinking_state.setdefault("thinking_blocks", []).append(
+                        block
+                    )
                 return ChatCompletionChunk.construct(
                     id=chunk_id,
                     choices=[{"index": 0, "delta": {}, "finish_reason": None}],
@@ -593,14 +928,7 @@ class AnthropicModel(BaseModelBackend):
                         finish_reason = "tool_calls"
                 # Extract usage info from message_delta
                 if hasattr(chunk, "usage") and chunk.usage:
-                    usage_obj = chunk.usage
-                    input_tokens = getattr(usage_obj, "input_tokens", 0)
-                    output_tokens = getattr(usage_obj, "output_tokens", 0)
-                    usage = {
-                        "prompt_tokens": input_tokens,
-                        "completion_tokens": output_tokens,
-                        "total_tokens": input_tokens + output_tokens,
-                    }
+                    usage = self._extract_usage(chunk.usage)
             elif chunk_type == "message_stop":
                 # Message finished - only set finish_reason if not already sent
                 # This prevents duplicate finish_reason triggers in chat_agent
@@ -622,6 +950,8 @@ class AnthropicModel(BaseModelBackend):
         delta: Dict[str, Any] = {}
         if delta_content:
             delta["content"] = delta_content
+        if delta_reasoning:
+            delta["reasoning_content"] = delta_reasoning
         if tool_calls:
             delta["tool_calls"] = tool_calls
 
@@ -654,12 +984,21 @@ class AnthropicModel(BaseModelBackend):
         for tool in tools:
             if "function" in tool:
                 func = tool["function"]
+                input_schema = func.get("parameters", {})
+                if func.get("strict") is True and input_schema:
+                    from anthropic import transform_schema
+
+                    input_schema = transform_schema(
+                        self._normalize_type_list_for_anthropic_schema(
+                            input_schema
+                        )
+                    )
                 anthropic_tool = {
                     "name": func.get("name", ""),
                     "description": func.get("description", ""),
-                    "input_schema": func.get("parameters", {}),
+                    "input_schema": input_schema,
                 }
-                if self._use_beta_for_structured_outputs:
+                if "strict" in func:
                     anthropic_tool["strict"] = func.get("strict", True)
                 anthropic_tools.append(anthropic_tool)
 
@@ -678,7 +1017,7 @@ class AnthropicModel(BaseModelBackend):
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
             response_format (Optional[Type[BaseModel]]): The format of the
-                response. (Not supported by Anthropic API directly)
+                response.
             tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
                 use for the request.
 
@@ -687,15 +1026,6 @@ class AnthropicModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        if response_format is not None:
-            warnings.warn(
-                "The 'response_format' parameter is not supported by the "
-                "Anthropic API and will be ignored. Consider using tools "
-                "for structured output instead.",
-                UserWarning,
-                stacklevel=2,
-            )
-
         # Update Langfuse trace with current agent session and metadata
         agent_session_id = get_current_agent_session_id()
         if agent_session_id:
@@ -720,7 +1050,7 @@ class AnthropicModel(BaseModelBackend):
         request_params: Dict[str, Any] = {
             "model": str(self.model_type),
             "messages": anthropic_messages,
-            "max_tokens": self.model_config_dict.get("max_tokens", 4096),
+            "max_tokens": self.model_config_dict.get("max_tokens", None),
         }
 
         if system_message:
@@ -760,32 +1090,61 @@ class AnthropicModel(BaseModelBackend):
                         ] = self._cache_control_config
 
         # Add config parameters
-        for key in ["temperature", "top_p", "top_k", "stop_sequences"]:
+        for key in [
+            "temperature",
+            "top_p",
+            "top_k",
+            "stop_sequences",
+            "metadata",
+        ]:
             if key in self.model_config_dict:
                 request_params[key] = self.model_config_dict[key]
 
-        # Convert tools
+        extra_headers = self.model_config_dict.get("extra_headers")
+        if extra_headers is not None:
+            request_params["extra_headers"] = extra_headers
+
+        thinking = self.model_config_dict.get("thinking")
+        if thinking is not None:
+            request_params["thinking"] = copy.deepcopy(thinking)
+
+        # Convert tools first so we know whether tools are present
         anthropic_tools = self._convert_openai_tools_to_anthropic(tools)
+
+        extra_body = copy.deepcopy(
+            self.model_config_dict.get("extra_body") or {}
+        )
+        output_config = self._build_request_output_config(
+            response_format, extra_body
+        )
+        if output_config:
+            request_params["output_config"] = output_config
+        if extra_body:
+            request_params["extra_body"] = extra_body
+
         if anthropic_tools:
             request_params["tools"] = anthropic_tools
+            tool_choice = self.model_config_dict.get("tool_choice")
+            if tool_choice is not None:
+                self._validate_tool_choice_for_thinking(thinking, tool_choice)
+                request_params["tool_choice"] = tool_choice
 
-        # Add beta for structured outputs if configured
-        if self._use_beta_for_structured_outputs:
-            request_params["betas"] = [ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS]
-            create_func = self._client.beta.messages.create
-        else:
-            create_func = self._client.messages.create
+        create_func = self._client.messages.create
 
         # Check if streaming
         is_streaming = self.model_config_dict.get("stream", False)
 
         if is_streaming:
             # Return streaming response
-            stream = create_func(**request_params, stream=True)
+            stream = self._call_client(
+                create_func,
+                **request_params,
+                stream=True,
+            )
             return self._wrap_anthropic_stream(stream, str(self.model_type))
         else:
             # Return non-streaming response
-            response = create_func(**request_params)
+            response = self._call_client(create_func, **request_params)
             return self._convert_anthropic_to_openai_response(
                 response, str(self.model_type)
             )
@@ -803,7 +1162,7 @@ class AnthropicModel(BaseModelBackend):
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
             response_format (Optional[Type[BaseModel]]): The format of the
-                response. (Not supported by Anthropic API directly)
+                response.
             tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
                 use for the request.
 
@@ -812,15 +1171,6 @@ class AnthropicModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        if response_format is not None:
-            warnings.warn(
-                "The 'response_format' parameter is not supported by the "
-                "Anthropic API and will be ignored. Consider using tools "
-                "for structured output instead.",
-                UserWarning,
-                stacklevel=2,
-            )
-
         # Update Langfuse trace with current agent session and metadata
         agent_session_id = get_current_agent_session_id()
         if agent_session_id:
@@ -845,7 +1195,7 @@ class AnthropicModel(BaseModelBackend):
         request_params: Dict[str, Any] = {
             "model": str(self.model_type),
             "messages": anthropic_messages,
-            "max_tokens": self.model_config_dict.get("max_tokens", 4096),
+            "max_tokens": self.model_config_dict.get("max_tokens", None),
         }
 
         if system_message:
@@ -885,40 +1235,71 @@ class AnthropicModel(BaseModelBackend):
                         ] = self._cache_control_config
 
         # Add config parameters
-        for key in ["temperature", "top_p", "top_k", "stop_sequences"]:
+        for key in [
+            "temperature",
+            "top_p",
+            "top_k",
+            "stop_sequences",
+            "metadata",
+        ]:
             if key in self.model_config_dict:
                 request_params[key] = self.model_config_dict[key]
 
-        # Convert tools
+        extra_headers = self.model_config_dict.get("extra_headers")
+        if extra_headers is not None:
+            request_params["extra_headers"] = extra_headers
+
+        thinking = self.model_config_dict.get("thinking")
+        if thinking is not None:
+            request_params["thinking"] = copy.deepcopy(thinking)
+
+        # Convert tools first so we know whether tools are present
         anthropic_tools = self._convert_openai_tools_to_anthropic(tools)
+
+        extra_body = copy.deepcopy(
+            self.model_config_dict.get("extra_body") or {}
+        )
+        output_config = self._build_request_output_config(
+            response_format, extra_body
+        )
+        if output_config:
+            request_params["output_config"] = output_config
+        if extra_body:
+            request_params["extra_body"] = extra_body
+
         if anthropic_tools:
             request_params["tools"] = anthropic_tools
+            tool_choice = self.model_config_dict.get("tool_choice")
+            if tool_choice is not None:
+                self._validate_tool_choice_for_thinking(thinking, tool_choice)
+                request_params["tool_choice"] = tool_choice
 
-        # Add beta for structured outputs if configured
-        if self._use_beta_for_structured_outputs:
-            request_params["betas"] = [ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS]
-            create_func = self._async_client.beta.messages.create
-        else:
-            create_func = self._async_client.messages.create
+        create_func = self._async_client.messages.create
 
         # Check if streaming
         is_streaming = self.model_config_dict.get("stream", False)
 
         if is_streaming:
             # Return streaming response
-            stream = await create_func(**request_params, stream=True)
+            stream = await self._acall_client(
+                create_func,
+                **request_params,
+                stream=True,
+            )
             return self._wrap_anthropic_async_stream(
                 stream, str(self.model_type)
             )
         else:
             # Return non-streaming response
-            response = await create_func(**request_params)
+            response = await self._acall_client(create_func, **request_params)
             return self._convert_anthropic_to_openai_response(
                 response, str(self.model_type)
             )
 
     def _wrap_anthropic_stream(
-        self, stream: Any, model: str
+        self,
+        stream: Any,
+        model: str,
     ) -> Stream[ChatCompletionChunk]:
         r"""Wrap Anthropic streaming response to OpenAI Stream format.
 
@@ -932,10 +1313,15 @@ class AnthropicModel(BaseModelBackend):
 
         def _generate_chunks():
             tool_call_index: Dict[str, int] = {}
+            thinking_state: Dict[str, Any] = {}
             finish_reason_sent = False
             for chunk in stream:
                 converted = self._convert_anthropic_stream_to_openai_chunk(
-                    chunk, model, tool_call_index, finish_reason_sent
+                    chunk,
+                    model,
+                    tool_call_index,
+                    finish_reason_sent,
+                    thinking_state,
                 )
                 # Track if we've sent a finish_reason to avoid duplicates
                 if converted.choices:
@@ -952,7 +1338,9 @@ class AnthropicModel(BaseModelBackend):
         return cast(Stream[ChatCompletionChunk], _generate_chunks())
 
     def _wrap_anthropic_async_stream(
-        self, stream: Any, model: str
+        self,
+        stream: Any,
+        model: str,
     ) -> AsyncStream[ChatCompletionChunk]:
         r"""Wrap Anthropic async streaming response to OpenAI AsyncStream.
 
@@ -966,10 +1354,15 @@ class AnthropicModel(BaseModelBackend):
 
         async def _generate_chunks():
             tool_call_index: Dict[str, int] = {}
+            thinking_state: Dict[str, Any] = {}
             finish_reason_sent = False
             async for chunk in stream:
                 converted = self._convert_anthropic_stream_to_openai_chunk(
-                    chunk, model, tool_call_index, finish_reason_sent
+                    chunk,
+                    model,
+                    tool_call_index,
+                    finish_reason_sent,
+                    thinking_state,
                 )
                 # Track if we've sent a finish_reason to avoid duplicates
                 if converted.choices:

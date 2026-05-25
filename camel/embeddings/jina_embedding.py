@@ -18,17 +18,17 @@ from __future__ import annotations
 import base64
 import io
 import os
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
-import requests
-from PIL import Image
+if TYPE_CHECKING:
+    from PIL import Image
 
 from camel.embeddings import BaseEmbedding
 from camel.types.enums import EmbeddingModelType
-from camel.utils import api_keys_required
+from camel.utils import api_keys_required, dependencies_required
 
 
-class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
+class JinaEmbedding(BaseEmbedding[Union[str, "Image.Image"]]):
     r"""Provides text and image embedding functionalities using Jina AI's API.
 
     Args:
@@ -52,6 +52,7 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             L2 norm. (default: :obj:`False`)
     """
 
+    @dependencies_required('requests', 'PIL')
     @api_keys_required([("api_key", 'JINA_API_KEY')])
     def __init__(
         self,
@@ -88,7 +89,7 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
 
     def embed_list(
         self,
-        objs: list[Union[str, Image.Image]],
+        objs: list[Union[str, "Image.Image"]],
         **kwargs: Any,
     ) -> list[list[float]]:
         r"""Generates embeddings for the given texts or images.
@@ -107,6 +108,7 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             ValueError: If the input type is not supported.
             RuntimeError: If the API request fails.
         """
+        import requests
 
         input_data = []
         for obj in objs:

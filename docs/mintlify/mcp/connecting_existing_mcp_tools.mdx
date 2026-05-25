@@ -2,6 +2,10 @@
 title: 'Connect to Existing MCP Tools in CAMEL ChatAgent'
 description: 'How to plug any MCP protocol tool (like file systems, web APIs) into your CAMEL ChatAgent for seamless tool-using agents.'
 icon: 'network'
+
+doc_code_map:
+  - "camel/toolkits/mcp_toolkit.py"
+  - "camel/utils/mcp_client.py"
 ---
 
 ## Overview

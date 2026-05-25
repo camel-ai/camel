@@ -2,11 +2,17 @@
 title: "CAMEL Agent as an MCP Server"
 icon: server
 description: "Turn your CAMEL ChatAgent into an MCP server—let any client (Claude, Cursor, custom apps) connect and use your agent as a universal AI backend."
+
+doc_code_map:
+  - "services/agent_mcp/agent_mcp_server.py"
+  - "camel/agents/mcp_agent.py"
 ---
 
 <Card title="Why export a ChatAgent as an MCP server?" icon="server">
-Publishing your <b>ChatAgent</b> as an MCP server turns your agent into a universal AI backend.
-Any MCP-compatible client (Claude, Cursor, editors, or your own app) can connect, chat, and run tools through your agent as if it were a native API—no custom integration required.
+  Publishing your <b>ChatAgent</b> as an MCP server turns your agent into a
+  universal AI backend. Any MCP-compatible client (Claude, Cursor, editors, or
+  your own app) can connect, chat, and run tools through your agent as if it
+  were a native API—no custom integration required.
 </Card>
 
 ## Quick Start
@@ -22,7 +28,7 @@ Configure your MCP client (Claude, Cursor, etc.) to connect:
   "camel-chat-agent": {
     "command": "/path/to/python",
     "args": [
-      "/path/to/camel/services/agent_mcp_server.py"
+      "/path/to/camel/services/agent_mcp/agent_mcp_server.py"
     ],
     "env": {
       "OPENAI_API_KEY": "...",
@@ -43,16 +49,20 @@ Turn any <code>ChatAgent</code> into an MCP server instantly with <code>to_mcp()
 from camel.agents import ChatAgent
 
 # Create a chat agent with your model
+
 agent = ChatAgent(model="gpt-4o-mini")
 
 # Convert to an MCP server
+
 mcp_server = agent.to_mcp(
-    name="demo", description="A demonstration of ChatAgent to MCP conversion"
+    name="demo",
+    description="A demonstration of ChatAgent to MCP conversion",
 )
 
 if __name__ == "__main__":
     print("Starting MCP server on http://localhost:8000")
     mcp_server.run(transport="streamable-http")
+
 ```
 <Info>
 <b>Supported transports:</b> <code>stdio</code>, <code>sse</code>, <code>streamable-http</code>

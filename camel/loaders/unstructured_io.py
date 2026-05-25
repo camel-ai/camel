@@ -97,7 +97,7 @@ class UnstructuredIO:
     def parse_file_or_url(
         input_path: str,
         **kwargs: Any,
-    ) -> Union[List["Element"], None]:
+    ) -> List["Element"]:
         r"""Loads a file or a URL and parses its contents into elements.
 
         Args:
@@ -105,8 +105,8 @@ class UnstructuredIO:
             **kwargs: Extra kwargs passed to the partition function.
 
         Returns:
-            Union[List[Element],None]: List of elements after parsing the file
-                or URL if success.
+            List[Element]: List of elements after parsing the file
+                or URL. Returns an empty list if parsing fails.
 
         Raises:
             FileNotFoundError: If the file does not exist at the path
@@ -123,23 +123,25 @@ class UnstructuredIO:
         import os
         from urllib.parse import urlparse
 
-        from unstructured.partition.auto import partition
-
         # Check if the input is a URL
         parsed_url = urlparse(input_path)
         is_url = all([parsed_url.scheme, parsed_url.netloc])
 
         # Handling URL
         if is_url:
+            from unstructured.partition.html import partition_html
+
             try:
-                elements = partition(url=input_path, **kwargs)
+                elements = partition_html(url=input_path, **kwargs)
                 return elements
             except Exception:
                 warnings.warn(f"Failed to parse the URL: {input_path}")
-                return None
+                return []
 
         # Handling file
         else:
+            from unstructured.partition.auto import partition
+
             # Check if the file exists
             if not os.path.exists(input_path):
                 raise FileNotFoundError(
@@ -153,12 +155,10 @@ class UnstructuredIO:
                     return elements
             except Exception:
                 warnings.warn(traceback.format_exc())
-                return None
+                return []
 
     @staticmethod
-    def parse_bytes(
-        file: IO[bytes], **kwargs: Any
-    ) -> Union[List["Element"], None]:
+    def parse_bytes(file: IO[bytes], **kwargs: Any) -> List["Element"]:
         r"""Parses a bytes stream and converts its contents into elements.
 
         Args:
@@ -166,8 +166,8 @@ class UnstructuredIO:
             **kwargs: Extra kwargs passed to the partition function.
 
         Returns:
-            Union[List[Element], None]: List of elements after parsing the file
-                if successful, otherwise `None`.
+            List[Element]: List of elements after parsing the file.
+                Returns an empty list if parsing fails.
 
         Notes:
             Supported file types:
@@ -186,7 +186,7 @@ class UnstructuredIO:
             return elements
         except Exception as e:
             warnings.warn(f"Failed to partition the file stream: {e}")
-            return None
+            return []
 
     @staticmethod
     def clean_text_data(

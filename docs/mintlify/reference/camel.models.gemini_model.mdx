@@ -38,6 +38,169 @@ def __init__(
 ):
 ```
 
+<a id="camel.models.gemini_model.GeminiModel.native_client"></a>
+
+### native_client
+
+```python
+def native_client(self):
+```
+
+**Returns:**
+
+  genai.Client: The native Google GenAI client.
+
+<a id="camel.models.gemini_model.GeminiModel.create_cache"></a>
+
+### create_cache
+
+```python
+def create_cache(
+    self,
+    contents: List[Dict[str, Any]],
+    ttl: str = '300s',
+    display_name: Optional[str] = None,
+    system_instruction: Optional[str] = None
+):
+```
+
+Create a cache for reusing content across requests.
+
+**Parameters:**
+
+- **contents** (List[Dict[str, Any]]): The content to cache. Should be a list of message dicts with 'role' and 'parts' keys.
+- **ttl** (str, optional): Time-to-live for the cache as an integer number of seconds followed by `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5____INLINE_CODE_6____INLINE_CODE_7__"300s"`)
+- **display_name** (str, optional): A human-readable name for the cache. (default: :obj:`None`)
+- **system_instruction** (str, optional): System instruction to cache. (default: :obj:`None`)
+
+**Returns:**
+
+  str: The cache name in format "cachedContents/\{cache_id\}".
+
+<a id="camel.models.gemini_model.GeminiModel.list_caches"></a>
+
+### list_caches
+
+```python
+def list_caches(self):
+```
+
+**Returns:**
+
+  List[CachedContent]: A list of cached content objects.
+
+<a id="camel.models.gemini_model.GeminiModel.get_cache"></a>
+
+### get_cache
+
+```python
+def get_cache(self, cache_name: str):
+```
+
+Get details of a specific cache.
+
+**Parameters:**
+
+- **cache_name** (str): The cache name in format "cachedContents/\{id\}".
+
+**Returns:**
+
+  CachedContent: The cached content object.
+
+<a id="camel.models.gemini_model.GeminiModel.update_cache"></a>
+
+### update_cache
+
+```python
+def update_cache(self, cache_name: str, ttl: str):
+```
+
+Update the TTL of an existing cache.
+
+**Parameters:**
+
+- **cache_name** (str): The cache name in format "cachedContents/\{id\}".
+- **ttl** (str): New time-to-live for the cache.
+
+**Returns:**
+
+  CachedContent: The updated cached content object.
+
+<a id="camel.models.gemini_model.GeminiModel.delete_cache"></a>
+
+### delete_cache
+
+```python
+def delete_cache(self, cache_name: str):
+```
+
+Delete a cache.
+
+**Parameters:**
+
+- **cache_name** (str): The cache name in format "cachedContents/\{id\}".
+
+<a id="camel.models.gemini_model.GeminiModel.cached_content"></a>
+
+### cached_content
+
+```python
+def cached_content(self):
+```
+
+**Returns:**
+
+  Optional[str]: The cache name or None if not set.
+
+<a id="camel.models.gemini_model.GeminiModel.cached_content"></a>
+
+### cached_content
+
+```python
+def cached_content(self, value: Optional[str]):
+```
+
+Set or clear the cached content to use for requests.
+
+**Parameters:**
+
+- **value** (Optional[str]): The cache name (e.g., "cachedContents/xxx") or None to clear.
+
+<a id="camel.models.gemini_model.GeminiModel._sanitize_tools_for_gemini"></a>
+
+### _sanitize_tools_for_gemini
+
+```python
+def _sanitize_tools_for_gemini(tools: List[Dict[str, Any]]):
+```
+
+<a id="camel.models.gemini_model.GeminiModel._prepare_request_config"></a>
+
+### _prepare_request_config
+
+```python
+def _prepare_request_config(self, tools: Optional[List[Dict[str, Any]]] = None):
+```
+
+<a id="camel.models.gemini_model.GeminiModel._is_stale_cached_content_error"></a>
+
+### _is_stale_cached_content_error
+
+```python
+def _is_stale_cached_content_error(self, err: Exception):
+```
+
+<a id="camel.models.gemini_model.GeminiModel._handle_stale_cache_error"></a>
+
+### _handle_stale_cache_error
+
+```python
+def _handle_stale_cache_error(self, err: Exception):
+```
+
+If *err* is a stale-cached-content error, log a warning and clear
+the cache so the caller can retry.  Otherwise re-raise *err*.
+
 <a id="camel.models.gemini_model.GeminiModel._process_messages"></a>
 
 ### _process_messages
@@ -165,6 +328,19 @@ Runs inference of Gemini chat completion.
 def _request_chat_completion(
     self,
     messages: List[OpenAIMessage],
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+<a id="camel.models.gemini_model.GeminiModel._request_parse"></a>
+
+### _request_parse
+
+```python
+def _request_parse(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Type[BaseModel],
     tools: Optional[List[Dict[str, Any]]] = None
 ):
 ```

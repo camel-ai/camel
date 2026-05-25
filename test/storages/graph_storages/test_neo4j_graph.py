@@ -34,6 +34,17 @@ username = os.environ.get("NEO4J_USERNAME", "Your_Username")
 password = os.environ.get("NEO4J_PASSWORD", "Your_Password")
 
 
+def _create_neo4j_graph(**kwargs) -> "Neo4jGraph":
+    r"""Try to create a Neo4jGraph instance; skip the test if connection
+    fails."""
+    try:
+        return Neo4jGraph(
+            url=url, username=username, password=password, **kwargs
+        )
+    except Exception as e:
+        pytest.skip(f"Neo4j connection unavailable: {e}")
+
+
 test_data = [
     GraphElement(
         nodes=[
@@ -56,11 +67,7 @@ def test_cypher_return_correct_schema() -> None:
     r"""Test that chain returns direct results.
     Tested graph.query and graph.refresh_schema.
     """
-    graph = Neo4jGraph(
-        url=url,
-        username=username,
-        password=password,
-    )
+    graph = _create_neo4j_graph()
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship
@@ -116,9 +123,7 @@ def test_cypher_return_correct_schema() -> None:
 
 def test_neo4j_timeout() -> None:
     r"""Test that neo4j uses the timeout correctly."""
-    graph = Neo4jGraph(
-        url=url, username=username, password=password, timeout=5
-    )
+    graph = _create_neo4j_graph(timeout=5)
     try:
         graph.query("UNWIND range(0,100000,1) AS i MERGE (:Foo {id:i})")
     except Exception as e:
@@ -133,9 +138,7 @@ def test_neo4j_timeout() -> None:
 
 def test_neo4j_truncate_values() -> None:
     r"""Test that neo4j uses the timeout correctly."""
-    graph = Neo4jGraph(
-        url=url, username=username, password=password, truncate=True
-    )
+    graph = _create_neo4j_graph(truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship
@@ -154,9 +157,7 @@ def test_neo4j_truncate_values() -> None:
 
 def test_neo4j_add_data() -> None:
     r"""Test that neo4j correctly import graph element."""
-    graph = Neo4jGraph(
-        url=url, username=username, password=password, truncate=True
-    )
+    graph = _create_neo4j_graph(truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
@@ -176,9 +177,7 @@ def test_neo4j_add_data() -> None:
 
 def test_neo4j_add_data_source() -> None:
     r"""Test that neo4j correctly import graph element with source."""
-    graph = Neo4jGraph(
-        url=url, username=username, password=password, truncate=True
-    )
+    graph = _create_neo4j_graph(truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
@@ -199,9 +198,7 @@ def test_neo4j_add_data_source() -> None:
 
 def test_neo4j_add_data_base() -> None:
     r"""Test that neo4j correctly import graph element with base_entity."""
-    graph = Neo4jGraph(
-        url=url, username=username, password=password, truncate=True
-    )
+    graph = _create_neo4j_graph(truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
@@ -223,9 +220,7 @@ def test_neo4j_add_data_base() -> None:
 def test_neo4j_add_data_base_source() -> None:
     r"""Test that neo4j correctly import graph element with base_entity and
     source."""
-    graph = Neo4jGraph(
-        url=url, username=username, password=password, truncate=True
-    )
+    graph = _create_neo4j_graph(truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
@@ -249,9 +244,7 @@ def test_neo4j_add_data_base_source() -> None:
 
 def test_neo4j_filtering_labels() -> None:
     r"""Test that neo4j correctly filters excluded labels."""
-    graph = Neo4jGraph(
-        url=url, username=username, password=password, truncate=True
-    )
+    graph = _create_neo4j_graph(truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
@@ -270,9 +263,7 @@ def test_neo4j_filtering_labels() -> None:
 @pytest.mark.skip(reason="Skipping since need GDS installation")
 def test_random_walk_with_restarts() -> None:
     r"""Test the random walk with restarts sampling algorithm."""
-    graph = Neo4jGraph(
-        url=url, username=username, password=password, truncate=True
-    )
+    graph = _create_neo4j_graph(truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create sample graph
@@ -297,9 +288,7 @@ def test_random_walk_with_restarts() -> None:
 @pytest.mark.skip(reason="Skipping since need GDS installation")
 def test_common_neighbour_aware_random_walk() -> None:
     r"""Test the common neighbour aware random walk sampling algorithm."""
-    graph = Neo4jGraph(
-        url=url, username=username, password=password, truncate=True
-    )
+    graph = _create_neo4j_graph(truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create sample graph
