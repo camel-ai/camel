@@ -85,8 +85,6 @@ def download_website_assets(project_name: str):
             repo_type="dataset",
             allow_patterns=project_pattern,
             local_dir=local_dir_root,
-            local_dir_use_symlinks=False,
-            # Use False for Windows compatibility
         )
         log.info(f"Snapshot downloaded to: {snapshot_path}")
 
