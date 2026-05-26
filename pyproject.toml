@@ -204,12 +204,13 @@ model_platforms = [
     "xai_sdk>=1.11.0",
 ]
 huggingface = [
-    "transformers>=4,<5",
-    "diffusers>=0.25.0,<0.26",
+    "transformers>=5,<6",
+    "diffusers>=0.38.0",
     "datasets>=3,<4",
     "soundfile>=0.13,<0.14",
+    "safetensors>=0.8.0rc0",
     "sentencepiece>=0.2,<0.3",
-    "huggingface-hub",
+    "huggingface-hub>=1.0",
 ]
 storage = [
     "qdrant-client>=1.9.0,<2",
@@ -240,7 +241,7 @@ owl = [
     "mcp-simple-arxiv==0.2.2",
     "mcp-server-fetch==2025.1.17",
     "python-dotenv>=1.0.0,<2",
-    "transformers>=4,<5",
+    "transformers>=5,<6",
     "sentencepiece>=0.2,<0.3",
     "anthropic>=0.89.0,<0.90.0",
     "datasets>=3,<4",
@@ -325,10 +326,11 @@ eigent = [
 ]
 all = [
     "numpy>=1.2,<=2.2",
-    "transformers>=4,<5",
-    "diffusers>=0.25.0,<0.26",
+    "transformers>=5,<6",
+    "diffusers>=0.38.0",
     "datasets>=3,<4",
     "soundfile>=0.13,<0.14",
+    "safetensors>=0.8.0rc0",
     "sentencepiece>=0.2,<0.3",
     "beautifulsoup4>=4,<5",
     "docx2txt>=0.8,<0.9",

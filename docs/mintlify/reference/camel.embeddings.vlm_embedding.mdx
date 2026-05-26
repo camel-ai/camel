@@ -1,5 +1,19 @@
 <a id="camel.embeddings.vlm_embedding"></a>
 
+<a id="camel.embeddings.vlm_embedding._feature_output_to_tensor"></a>
+
+## _feature_output_to_tensor
+
+```python
+def _feature_output_to_tensor(outputs: Any):
+```
+
+Return the embedding tensor from CLIP-like `get_*_features` results.
+
+Transformers v5 returns :class:`~transformers.modeling_outputs.
+BaseModelOutputWithPooling` with projected features in ``pooler_output``;
+older versions returned a raw tensor.
+
 <a id="camel.embeddings.vlm_embedding.VisionLanguageEmbedding"></a>
 
 ## VisionLanguageEmbedding
