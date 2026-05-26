@@ -19,13 +19,13 @@ from camel.retrievers import CohereRerankRetriever
 
 
 def test_initialization():
-    retriever = CohereRerankRetriever()
+    retriever = CohereRerankRetriever(api_key="test_key")
     assert retriever.model_name == "rerank-multilingual-v2.0"
 
 
 @pytest.fixture
 def cohere_rerank():
-    return CohereRerankRetriever()
+    return CohereRerankRetriever(api_key="test_key")
 
 
 @pytest.fixture

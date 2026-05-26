@@ -14,8 +14,6 @@
 import os
 from typing import Any, Dict, List, Union
 
-import requests
-
 from camel.retrievers import BaseRetriever
 from camel.types.enums import JinaRerankerModelType
 from camel.utils import api_keys_required, dependencies_required
@@ -105,6 +103,8 @@ class JinaRerankRetriever(BaseRetriever):
         Raises:
             requests.exceptions.RequestException: If the API request fails.
         """
+        import requests
+
         # Extract text content for reranking
         documents = []
         for item in retrieved_result:

@@ -141,7 +141,7 @@ def test_cohere_rerank_retriever_api_keys():
     """
     from camel.retrievers import CohereRerankRetriever
 
-    with patch.dict(os.environ, {}):
+    with patch.dict(os.environ, {}, clear=True):
         with pytest.raises(ValueError, match='COHERE_API_KEY'):
             CohereRerankRetriever()
 
@@ -154,6 +154,6 @@ def test_jina_rerank_retriever_api_keys():
     """
     from camel.retrievers import JinaRerankRetriever
 
-    with patch.dict(os.environ, {}):
+    with patch.dict(os.environ, {}, clear=True):
         with pytest.raises(ValueError, match='JINA_API_KEY'):
             JinaRerankRetriever()
