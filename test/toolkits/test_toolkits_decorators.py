@@ -37,6 +37,27 @@ def _mock_missing(module_name: str):
     return patch('camel.utils.commons.is_module_available', side_effect=fake)
 
 
+def _only_missing(module_name: str):
+    """Patch is_module_available so only `module_name` is reported missing;
+    every other module reports available. Use when a toolkit's __init__
+    requires deps not installed in the test env but we want to isolate a
+    method-level decorator check."""
+
+    def fake(m):
+        return m != module_name
+
+    return patch('camel.utils.commons.is_module_available', side_effect=fake)
+
+
+def _all_available():
+    """Patch is_module_available to report every module as installed. Use
+    to bypass __init__ dep decorators in the test env so a method-level
+    decorator can be exercised in isolation."""
+    return patch(
+        'camel.utils.commons.is_module_available', return_value=True
+    )
+
+
 def test_sympy_toolkit_missing_dependency():
     from camel.toolkits import SymPyToolkit
 
@@ -106,3 +127,115 @@ def test_reddit_toolkit_missing_api_keys(monkeypatch):
 
         with pytest.raises(ValueError, match="REDDIT_CLIENT_ID"):
             RedditToolkit()
+
+
+def test_excel_toolkit_extract_missing_tabulate():
+    from camel.toolkits import ExcelToolkit
+
+    with _all_available():
+        toolkit = ExcelToolkit()
+    with _only_missing('tabulate'):
+        with pytest.raises(ImportError, match="tabulate"):
+            toolkit.extract_excel_content("dummy.xlsx")
+
+
+def test_excel_toolkit_extract_missing_xls2xlsx():
+    from camel.toolkits import ExcelToolkit
+
+    with _all_available():
+        toolkit = ExcelToolkit()
+    with _only_missing('xls2xlsx'):
+        with pytest.raises(ImportError, match="xls2xlsx"):
+            toolkit.extract_excel_content("dummy.xlsx")
+
+
+def test_google_scholar_toolkit_get_full_paper_missing_arxiv2text():
+    from unittest.mock import MagicMock
+
+    scholarly_mock = MagicMock()
+    with patch.dict('sys.modules', {'scholarly': scholarly_mock}):
+        from camel.toolkits import GoogleScholarToolkit
+
+        with _all_available():
+            toolkit = GoogleScholarToolkit(author_identifier="Test Author")
+        with _only_missing('arxiv2text'):
+            with pytest.raises(ImportError, match="arxiv2text"):
+                toolkit.get_full_paper_content_by_link("http://x/pdf")
+
+
+def test_reddit_toolkit_sentiment_missing_textblob(monkeypatch):
+    from unittest.mock import MagicMock
+
+    monkeypatch.setenv("REDDIT_CLIENT_ID", "x")
+    monkeypatch.setenv("REDDIT_CLIENT_SECRET", "x")
+    monkeypatch.setenv("REDDIT_USER_AGENT", "x")
+
+    praw_mock = MagicMock()
+    with patch.dict('sys.modules', {'praw': praw_mock}):
+        from camel.toolkits import RedditToolkit
+
+        with _all_available():
+            toolkit = RedditToolkit()
+        with _only_missing('textblob'):
+            with pytest.raises(ImportError, match="textblob"):
+                toolkit.perform_sentiment_analysis([])
+
+
+def test_weather_toolkit_missing_dependency():
+    from camel.toolkits import WeatherToolkit
+
+    toolkit = WeatherToolkit()
+    with _mock_missing('pyowm'):
+        with pytest.raises(ImportError, match="pyowm"):
+            toolkit.get_weather_data("London")
+
+
+def test_slack_toolkit_missing_dependency():
+    from camel.toolkits import SlackToolkit
+
+    with _mock_missing('slack_sdk'):
+        with pytest.raises(ImportError, match="slack_sdk"):
+            SlackToolkit()
+
+
+def test_open_api_toolkit_missing_dependency():
+    from camel.toolkits import OpenAPIToolkit
+
+    toolkit = OpenAPIToolkit()
+    with _mock_missing('prance'):
+        with pytest.raises(ImportError, match="prance"):
+            toolkit.parse_openapi_file("dummy.yaml")
+
+
+def test_gmail_toolkit_missing_dependency():
+    from camel.toolkits import GmailToolkit
+
+    with _mock_missing('googleapiclient'):
+        with pytest.raises(ImportError, match="googleapiclient"):
+            GmailToolkit()
+
+
+def test_earth_science_toolkit_missing_numpy():
+    from camel.toolkits import EarthScienceToolkit
+
+    with _mock_missing('numpy'):
+        with pytest.raises(ImportError, match="numpy"):
+            EarthScienceToolkit()
+
+
+def test_earth_science_toolkit_missing_rasterio():
+    from camel.toolkits import EarthScienceToolkit
+
+    with _mock_missing('rasterio'):
+        with pytest.raises(ImportError, match="rasterio"):
+            EarthScienceToolkit()
+
+
+def test_earth_science_toolkit_scipy_method_missing_scipy():
+    from camel.toolkits import EarthScienceToolkit
+
+    with _all_available():
+        toolkit = EarthScienceToolkit()
+    with _only_missing('scipy'):
+        with pytest.raises(ImportError, match="scipy"):
+            toolkit.mann_kendall_test([1, 2, 3])

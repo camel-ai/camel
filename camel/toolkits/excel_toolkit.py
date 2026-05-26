@@ -104,6 +104,7 @@ class ExcelToolkit(BaseToolkit):
         md_table = tabulate(df, headers='keys', tablefmt='pipe')
         return str(md_table)
 
+    @dependencies_required('tabulate', 'xls2xlsx')
     def extract_excel_content(self, document_path: str) -> str:
         r"""Extract and analyze the full content of an Excel file (.xlsx/.xls/.
         csv).

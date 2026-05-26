@@ -128,6 +128,7 @@ class RedditToolkit(BaseToolkit):
 
         return data
 
+    @dependencies_required('textblob')
     def perform_sentiment_analysis(
         self, data: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
