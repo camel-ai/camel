@@ -32,7 +32,7 @@ from camel.storages import (
     TiDBStorage,
 )
 from camel.types import StorageType
-from camel.utils import Constants
+from camel.utils import Constants, dependencies_required
 
 if TYPE_CHECKING:
     from unstructured.documents.elements import Element
@@ -117,6 +117,7 @@ class AutoRetriever:
             f"Unsupported vector storage type: {self.storage_type}"
         )
 
+    @dependencies_required('hashlib', 'os', 'unstructured.documents.elements')
     def _collection_name_generator(
         self, content: Union[str, "Element"]
     ) -> str:
@@ -165,6 +166,7 @@ class AutoRetriever:
 
         return collection_name
 
+    @dependencies_required('unstructured.documents.elements')
     def run_vector_retriever(
         self,
         query: str,

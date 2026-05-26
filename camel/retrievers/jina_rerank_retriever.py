@@ -14,10 +14,9 @@
 import os
 from typing import Any, Dict, List, Union
 
-import requests
-
 from camel.retrievers import BaseRetriever
 from camel.types.enums import JinaRerankerModelType
+from camel.utils import api_keys_required, dependencies_required
 
 DEFAULT_TOP_K_RESULTS = 1
 JINA_RERANK_API_URL = "https://api.jina.ai/v1/rerank"
@@ -41,6 +40,7 @@ class JinaRerankRetriever(BaseRetriever):
         https://jina.ai/reranker/
     """
 
+    @api_keys_required([("api_key", 'JINA_API_KEY')])
     def __init__(
         self,
         model_name: Union[JinaRerankerModelType, str] = (
@@ -77,6 +77,7 @@ class JinaRerankRetriever(BaseRetriever):
         else:
             self.model_name = model_name
 
+    @dependencies_required('requests')
     def query(
         self,
         query: str,
@@ -102,6 +103,8 @@ class JinaRerankRetriever(BaseRetriever):
         Raises:
             requests.exceptions.RequestException: If the API request fails.
         """
+        import requests
+
         # Extract text content for reranking
         documents = []
         for item in retrieved_result:
