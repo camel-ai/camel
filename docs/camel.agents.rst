@@ -1,14 +1,6 @@
 camel.agents package
 ====================
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   camel.agents.tool_agents
-
 Submodules
 ----------
 
@@ -32,22 +24,6 @@ camel.agents.critic\_agent module
 ---------------------------------
 
 .. automodule:: camel.agents.critic_agent
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-camel.agents.deductive\_reasoner\_agent module
-----------------------------------------------
-
-.. automodule:: camel.agents.deductive_reasoner_agent
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-camel.agents.embodied\_agent module
------------------------------------
-
-.. automodule:: camel.agents.embodied_agent
    :members:
    :undoc-members:
    :show-inheritance:

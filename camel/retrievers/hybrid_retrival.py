@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 from camel.embeddings import BaseEmbedding
 from camel.retrievers import BaseRetriever, BM25Retriever, VectorRetriever
 from camel.storages import BaseVectorStorage
+from camel.utils import dependencies_required
 
 
 class HybridRetriever(BaseRetriever):
@@ -54,6 +55,7 @@ class HybridRetriever(BaseRetriever):
         self.vr.process(content=self.content_input_path)
         self.bm25.process(content_input_path=self.content_input_path)
 
+    @dependencies_required('numpy')
     def _sort_rrf_scores(
         self,
         vector_retriever_results: List[Dict[str, Any]],

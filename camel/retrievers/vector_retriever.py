@@ -26,7 +26,7 @@ from camel.storages import (
     VectorDBQuery,
     VectorRecord,
 )
-from camel.utils import Constants
+from camel.utils import Constants, dependencies_required
 from camel.utils.chunker import BaseChunker, UnstructuredIOChunker
 
 if TYPE_CHECKING:
@@ -70,6 +70,7 @@ class VectorRetriever(BaseRetriever):
         )
         self.uio: UnstructuredIO = UnstructuredIO()
 
+    @dependencies_required('unstructured.documents.elements')
     def process(
         self,
         content: Union[str, "Element", IO[bytes]],
