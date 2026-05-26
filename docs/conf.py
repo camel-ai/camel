@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'CAMEL'
 copyright = '2024, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
-release = '0.2.90'
+release = '0.2.91a4'
 
 html_favicon = (
     'https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png'
@@ -94,7 +94,6 @@ nbsphinx_prolog = r"""
 rediraffe_redirects = {
     "cookbooks/create_your_first_agent": "cookbooks/basic_concepts/create_your_first_agent",
     "cookbooks/create_your_first_agents_society": "cookbooks/basic_concepts/create_your_first_agents_society",
-    "cookbooks/embodied_agents": "cookbooks/advanced_features/embodied_agents",
     "cookbooks/critic_agents_and_tree_search": "cookbooks/advanced_features/critic_agents_and_tree_search",
     "cookbooks/agents_society": "cookbooks/basic_concepts/create_your_first_agents_society",
     "cookbooks/agents_message": "cookbooks/basic_concepts/agents_message",

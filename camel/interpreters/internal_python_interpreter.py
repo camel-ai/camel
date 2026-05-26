@@ -14,6 +14,7 @@
 import ast
 import difflib
 import importlib
+import operator
 import os
 import subprocess
 import typing
@@ -65,9 +66,9 @@ class InternalPythonInterpreter(BaseInterpreter):
             names to their corresponding functions or objects. The interpreter
             can only execute functions that are either directly listed in this
             dictionary or are member functions of objects listed in this
-            dictionary. The concept of :obj:`action_space` is derived from
-            EmbodiedAgent, representing the actions that an agent is capable of
-            performing. If `None`, set to empty dict. (default: :obj:`None`)
+            dictionary. The concept of :obj:`action_space` represents the
+            actions that an agent is capable of performing. If `None`, set to
+            empty dict. (default: :obj:`None`)
         import_white_list (List[str], optional): A list that stores
             the Python modules or functions that can be imported in the code.
             All submodules and functions of the modules listed in this list are
@@ -294,6 +295,10 @@ class InternalPythonInterpreter(BaseInterpreter):
             # update the state. We return the variable assigned as it may
             # be used to determine the final result.
             return self._execute_assign(expression)
+        elif isinstance(expression, ast.AugAssign):
+            # Augmented assignment (+=, -=, *=, etc.) -> update the state
+            # and return the new value
+            return self._execute_augassign(expression)
         elif isinstance(expression, ast.Attribute):
             value = self._execute_ast(expression.value)
             return getattr(value, expression.attr)
@@ -396,6 +401,55 @@ class InternalPythonInterpreter(BaseInterpreter):
                 f"{target.__class__.__name__} instead."
             )
 
+    def _execute_augassign(self, augassign: ast.AugAssign) -> Any:
+        # Get the current value of the target variable
+        target = augassign.target
+        if not isinstance(target, ast.Name):
+            raise InterpreterError(
+                f"Unsupported target for augmented assignment. "
+                f"Expected ast.Name, got {target.__class__.__name__} instead."
+            )
+
+        current_value = self._get_value_from_state(target.id)
+        operator_node = augassign.op
+        right_value = self._execute_ast(augassign.value)
+
+        # Apply the operation based on the operator type
+        if isinstance(operator_node, ast.Add):
+            result = operator.iadd(current_value, right_value)
+        elif isinstance(operator_node, ast.Sub):
+            result = operator.isub(current_value, right_value)
+        elif isinstance(operator_node, ast.Mult):
+            result = operator.imul(current_value, right_value)
+        elif isinstance(operator_node, ast.Div):
+            result = operator.itruediv(current_value, right_value)
+        elif isinstance(operator_node, ast.FloorDiv):
+            result = operator.ifloordiv(current_value, right_value)
+        elif isinstance(operator_node, ast.Mod):
+            result = operator.imod(current_value, right_value)
+        elif isinstance(operator_node, ast.Pow):
+            result = operator.ipow(current_value, right_value)
+        elif isinstance(operator_node, ast.LShift):
+            result = operator.ilshift(current_value, right_value)
+        elif isinstance(operator_node, ast.RShift):
+            result = operator.irshift(current_value, right_value)
+        elif isinstance(operator_node, ast.BitOr):
+            result = operator.ior(current_value, right_value)
+        elif isinstance(operator_node, ast.BitXor):
+            result = operator.ixor(current_value, right_value)
+        elif isinstance(operator_node, ast.BitAnd):
+            result = operator.iand(current_value, right_value)
+        elif isinstance(operator_node, ast.MatMult):
+            result = operator.imatmul(current_value, right_value)
+        else:
+            raise InterpreterError(
+                f"Unsupported augmented assignment operator: {operator_node}"
+            )
+
+        # Update the state with the new value
+        self.state[target.id] = result
+        return result
+
     def _execute_call(self, call: ast.Call) -> Any:
         callable_func = self._execute_ast(call.func)
 
@@ -405,7 +459,7 @@ class InternalPythonInterpreter(BaseInterpreter):
             keyword.arg: self._execute_ast(keyword.value)
             for keyword in call.keywords
         }
-        return callable_func(*args, **kwargs)
+        return callable_func(*args, **kwargs)  # type: ignore[arg-type]
 
     def _execute_subscript(self, subscript: ast.Subscript):
         index = self._execute_ast(subscript.slice)

@@ -76,9 +76,6 @@ class SkyworkRewardModel(BaseRewardModel):
             return_tensors="pt",
         )
         with torch.no_grad():
-            # apply_chat_template(..., tokenize=True, return_tensors="pt")
-            # returns BatchEncoding (UserDict), not builtins.dict; use
-            # **kwargs. Pass a raw tensor positionally for older paths.
             if isinstance(inputs, torch.Tensor):
                 score = self._client(inputs).logits[0][0].item()
             else:

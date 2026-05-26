@@ -14,7 +14,6 @@
 from .base import BaseAgent
 from .chat_agent import ChatAgent
 from .critic_agent import CriticAgent
-from .embodied_agent import EmbodiedAgent
 from .knowledge_graph_agent import KnowledgeGraphAgent
 from .mcp_agent import MCPAgent
 from .repo_agent import RepoAgent
@@ -26,8 +25,6 @@ from .task_agent import (
     TaskPrioritizationAgent,
     TaskSpecifyAgent,
 )
-from .tool_agents.base import BaseToolAgent
-from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
 
 __all__ = [
     'BaseAgent',
@@ -37,9 +34,6 @@ __all__ = [
     'TaskCreationAgent',
     'TaskPrioritizationAgent',
     'CriticAgent',
-    'BaseToolAgent',
-    'HuggingFaceToolAgent',
-    'EmbodiedAgent',
     'RoleAssignmentAgent',
     'SearchAgent',
     'KnowledgeGraphAgent',
