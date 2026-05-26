@@ -319,7 +319,6 @@ pip install camel-ai
 
 - **[初めてのエージェントを作成](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent)**
 - **[初めてのエージェント社会を作成](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society)**
-- **[具現化されたエージェント](https://docs.camel-ai.org/cookbooks/advanced_features/embodied_agents)**
 - **[批評エージェント](https://docs.camel-ai.org/cookbooks/advanced_features/critic_agents_and_tree_search)**
 
 ### ヘルプを求める
@@ -583,7 +582,7 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
 また、プロジェクトの初期ロゴをデザインしてくださったHaya Hammoud氏にも感謝いたします。
 
 私たちは、エージェントを構築、比較、カスタマイズするための他の作品から素晴らしい研究アイデアを実装しました。これらのモジュールを使用する場合は、元の作品を引用してください：
-- `TaskCreationAgent`、`TaskPrioritizationAgent`、`BabyAGI`：*Nakajima et al.*から：[Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/)。[[例](https://github.com/camel-ai/camel/blob/master/examples/ai_society/babyagi_playing.py)]
+- `TaskCreationAgent`と`TaskPrioritizationAgent`：*Nakajima et al.*から：[Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/)。
 
 - `PersonaHub`：*Tao Ge et al.*から：[Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094)。[[例](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
 

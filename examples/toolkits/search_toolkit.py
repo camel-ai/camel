@@ -184,7 +184,7 @@ search_bocha_response = SearchToolkit().search_bocha(
     query="阿里巴巴2024年的esg报告",
     freshness="noLimit",
     summary=False,
-    count=10,
+    number_of_result_pages=10,
 )
 print(search_bocha_response)
 
@@ -284,7 +284,7 @@ print(response.msgs[0].content)
 exa_response = SearchToolkit().search_exa(
     query="What is CAMEL-AI?",
     category="github",
-    num_results=1,
+    number_of_result_pages=1,
     text=True,
 )
 
@@ -554,4 +554,15 @@ querit_agent = ChatAgent(
 
 usr_msg = "What are the latest developments in multi-agent AI systems?"
 response = querit_agent.step(input_message=usr_msg, response_format=None)
+print(response.msgs[0].content)
+
+# Example with ChatAgent using Perplexity search
+perplexity_agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use Perplexity
+        search engine to answer questions.""",
+    tools=[FunctionTool(SearchToolkit().search_perplexity)],
+)
+
+usr_msg = "What are the latest developments in multi-agent AI systems?"
+response = perplexity_agent.step(input_message=usr_msg, response_format=None)
 print(response.msgs[0].content)
