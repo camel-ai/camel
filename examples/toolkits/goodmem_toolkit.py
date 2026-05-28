@@ -36,13 +36,13 @@ goodmem_toolkit = GoodMemToolkit(verify_ssl=verify_ssl)
 
 embedder_id = goodmem_toolkit.goodmem_list_embedders()[0]["embedderId"]
 space_id = goodmem_toolkit.goodmem_create_space(
-    name="camel-goodmem-chatagent-example", embedder_id=embedder_id
+    name="camel-goodmem-example", embedder_id=embedder_id
 )["spaceId"]
 team_space_id = goodmem_toolkit.goodmem_create_space(
-    name="camel-goodmem-chatagent-example-team", embedder_id=embedder_id
+    name="camel-goodmem-example-team", embedder_id=embedder_id
 )["spaceId"]
 tagged_space_id = goodmem_toolkit.goodmem_create_space(
-    name="camel-goodmem-chatagent-example-tagged",
+    name="camel-goodmem-example-tagged",
     embedder_id=embedder_id,
 )["spaceId"]
 
