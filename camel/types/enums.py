@@ -240,6 +240,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_OPUS_4_5 = "claude-opus-4-5"
     CLAUDE_OPUS_4_6 = "claude-opus-4-6"
     CLAUDE_OPUS_4_7 = "claude-opus-4-7"
+    CLAUDE_OPUS_4_8 = "claude-opus-4-8"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -759,6 +760,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_OPUS_4_5,
             ModelType.CLAUDE_OPUS_4_6,
             ModelType.CLAUDE_OPUS_4_7,
+            ModelType.CLAUDE_OPUS_4_8,
         }
 
     @property
@@ -1724,6 +1726,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_3_CODER_PLUS,
             ModelType.CLAUDE_SONNET_4_6,
             ModelType.CLAUDE_OPUS_4_7,
+            ModelType.CLAUDE_OPUS_4_8,
             ModelType.DEEPSEEK_V4_FLASH,
             ModelType.DEEPSEEK_V4_PRO,
             ModelType.GPT_5_4,
