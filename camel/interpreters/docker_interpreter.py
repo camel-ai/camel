@@ -24,7 +24,7 @@ from colorama import Fore
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
 from camel.logger import get_logger
-from camel.utils import is_docker_running
+from camel.utils import dependencies_required, is_docker_running
 
 if TYPE_CHECKING:
     from docker.models.containers import Container
@@ -80,6 +80,7 @@ class DockerInterpreter(BaseInterpreter):
         "ts": "node",
     }
 
+    @dependencies_required('docker')
     def __init__(
         self,
         require_confirm: bool = True,

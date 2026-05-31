@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
+from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
     from jupyter_client import BlockingKernelClient, KernelManager
@@ -37,6 +38,7 @@ class JupyterKernelInterpreter(BaseInterpreter):
             of the executed code. Defaults to `True`.
     """
 
+    @dependencies_required('jupyter_client')
     def __init__(
         self,
         require_confirm: bool = True,
