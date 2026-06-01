@@ -1986,6 +1986,7 @@ class ModelPlatformType(Enum):
     QIANFAN = "qianfan"
     CRYNUX = "crynux"
     AIHUBMIX = "aihubmix"
+    EVOLINK = "evolink"
     MINIMAX = "minimax"
     CEREBRAS = "cerebras"
     FUNCTION_GEMMA = "function-gemma"
@@ -2184,6 +2185,11 @@ class ModelPlatformType(Enum):
     def is_aihubmix(self) -> bool:
         r"""Returns whether this platform is AihubMix."""
         return self is ModelPlatformType.AIHUBMIX
+
+    @property
+    def is_evolink(self) -> bool:
+        r"""Returns whether this platform is Evolink."""
+        return self is ModelPlatformType.EVOLINK
 
     @property
     def is_minimax(self) -> bool:

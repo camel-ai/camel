@@ -30,6 +30,7 @@ from camel.models.cohere_model import CohereModel
 from camel.models.cometapi_model import CometAPIModel
 from camel.models.crynux_model import CrynuxModel
 from camel.models.deepseek_model import DeepSeekModel
+from camel.models.evolink_model import EvolinkModel
 from camel.models.function_gemma_model import FunctionGemmaModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
@@ -122,6 +123,7 @@ class ModelFactory:
         ModelPlatformType.QIANFAN: QianfanModel,
         ModelPlatformType.CRYNUX: CrynuxModel,
         ModelPlatformType.AIHUBMIX: AihubMixModel,
+        ModelPlatformType.EVOLINK: EvolinkModel,
         ModelPlatformType.AVIAN: AvianModel,
         ModelPlatformType.FUNCTION_GEMMA: FunctionGemmaModel,
         ModelPlatformType.XAI: XAIModel,
