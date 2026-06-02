@@ -27,6 +27,10 @@ class TestMinimaxModel:
             ModelType.MINIMAX_M3,
             ModelType.MINIMAX_M2_7,
             ModelType.MINIMAX_M2_7_HIGHSPEED,
+            ModelType.MINIMAX_M2_5,
+            ModelType.MINIMAX_M2_1,
+            ModelType.MINIMAX_M2_1_LIGHTNING,
+            ModelType.MINIMAX_M2,
         ],
     )
     def test_minimax_model_create(self, model_type: ModelType, monkeypatch):
@@ -92,6 +96,10 @@ class TestMinimaxModel:
             ModelType.MINIMAX_M3,
             ModelType.MINIMAX_M2_7,
             ModelType.MINIMAX_M2_7_HIGHSPEED,
+            ModelType.MINIMAX_M2_5,
+            ModelType.MINIMAX_M2_1,
+            ModelType.MINIMAX_M2_1_LIGHTNING,
+            ModelType.MINIMAX_M2,
         ],
     )
     def test_minimax_model_types_available(
@@ -102,6 +110,23 @@ class TestMinimaxModel:
         assert model_type.is_minimax
         model = MinimaxModel(model_type)
         assert isinstance(model.model_type, ModelType)
+
+    @pytest.mark.parametrize(
+        ("model_type", "token_limit"),
+        [
+            (ModelType.MINIMAX_M3, 1_000_000),
+            (ModelType.MINIMAX_M2_7, 204_800),
+            (ModelType.MINIMAX_M2_7_HIGHSPEED, 204_800),
+            (ModelType.MINIMAX_M2_5, 204_800),
+            (ModelType.MINIMAX_M2_1, 204_800),
+            (ModelType.MINIMAX_M2_1_LIGHTNING, 204_800),
+            (ModelType.MINIMAX_M2, 204_800),
+        ],
+    )
+    def test_minimax_model_token_limits(
+        self, model_type: ModelType, token_limit: int
+    ):
+        assert model_type.token_limit == token_limit
 
     def test_minimax_model_interleaved_thinking_config(self, monkeypatch):
         # Test interleaved thinking configuration

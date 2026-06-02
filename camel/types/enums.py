@@ -548,6 +548,10 @@ class ModelType(UnifiedModelType, Enum):
     MINIMAX_M3 = "MiniMax-M3"
     MINIMAX_M2_7 = "MiniMax-M2.7"
     MINIMAX_M2_7_HIGHSPEED = "MiniMax-M2.7-highspeed"
+    MINIMAX_M2_5 = "MiniMax-M2.5"
+    MINIMAX_M2_1 = "MiniMax-M2.1"
+    MINIMAX_M2_1_LIGHTNING = "MiniMax-M2.1-lightning"
+    MINIMAX_M2 = "MiniMax-M2"
 
     # Avian models
     AVIAN_DEEPSEEK_V3_2 = "deepseek/deepseek-v3.2"
@@ -1024,6 +1028,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MINIMAX_M3,
             ModelType.MINIMAX_M2_7,
             ModelType.MINIMAX_M2_7_HIGHSPEED,
+            ModelType.MINIMAX_M2_5,
+            ModelType.MINIMAX_M2_1,
+            ModelType.MINIMAX_M2_1_LIGHTNING,
+            ModelType.MINIMAX_M2,
         }
 
     @property
@@ -1736,10 +1744,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
+        elif self is ModelType.MINIMAX_M3:
+            return 1_000_000
         elif self in {
-            ModelType.MINIMAX_M3,
             ModelType.MINIMAX_M2_7,
             ModelType.MINIMAX_M2_7_HIGHSPEED,
+            ModelType.MINIMAX_M2_5,
+            ModelType.MINIMAX_M2_1,
+            ModelType.MINIMAX_M2_1_LIGHTNING,
+            ModelType.MINIMAX_M2,
         }:
             return 204_800
 
