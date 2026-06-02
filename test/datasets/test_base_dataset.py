@@ -20,7 +20,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from datasets import Dataset as HFDataset
 from pydantic import ValidationError
-from torch.utils.data import Dataset
+
+try:
+    from torch.utils.data import Dataset
+except ImportError:
+
+    class Dataset:  # type: ignore[no-redef]
+        pass
 
 from camel.datasets import (
     DataPoint,
