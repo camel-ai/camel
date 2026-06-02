@@ -20,6 +20,7 @@ import os
 import time
 import uuid
 from collections import deque
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -170,6 +171,18 @@ class WorkforceSnapshot:
         self.current_task_index = current_task_index
         self.description = description
         self.timestamp = time.time()
+
+
+@dataclass
+class WorkforcePlan:
+    r"""Headless plan object for two-phase workforce execution."""
+
+    task: Task
+    subtasks: List[Task] = field(default_factory=list)
+    dependency_graph: Dict[str, List[str]] = field(default_factory=dict)
+    planner_raw_text: Optional[str] = None
+    planner_summary: Optional[str] = None
+    events_emitted: bool = False
 
 
 class Workforce(BaseNode):
@@ -670,9 +683,7 @@ class Workforce(BaseNode):
     ) -> None:
         r"""Emit a worker-created event to all registered callbacks."""
         if metadata is None:
-            _metadata: Dict[str, Any] = {
-                'description': worker_node.description
-            }
+            _metadata = self._build_worker_event_metadata(worker_node)
         else:
             _metadata = metadata.copy()
             _metadata.setdefault("description", worker_node.description)
@@ -685,6 +696,35 @@ class Workforce(BaseNode):
         )
         for cb in self._callbacks:
             cb.log_worker_created(event)
+
+    def _build_worker_event_metadata(
+        self, worker_node: BaseNode
+    ) -> Dict[str, Any]:
+        metadata: Dict[str, Any] = {"description": worker_node.description}
+        if isinstance(worker_node, SingleAgentWorker):
+            worker_agent = worker_node.worker
+            model_type = getattr(worker_agent, "model_type", None)
+            metadata.update(
+                {
+                    "agent_id": getattr(worker_agent, "agent_id", None),
+                    "agent_name": getattr(worker_agent, "role_name", None),
+                    "model_type": (
+                        getattr(model_type, "value", None)
+                        or (
+                            str(model_type) if model_type is not None else None
+                        )
+                    ),
+                    "pool_config": {
+                        "use_agent_pool": worker_node.use_agent_pool,
+                        "pool_max_size": (
+                            worker_node.agent_pool.max_size
+                            if worker_node.agent_pool is not None
+                            else None
+                        ),
+                    },
+                }
+            )
+        return metadata
 
     def _get_or_create_shared_context_utility(
         self,
@@ -1500,7 +1540,7 @@ class Workforce(BaseNode):
             TASK_DECOMPOSE_PROMPT.format(
                 content=task.content,
                 child_nodes_info=self._get_child_nodes_info(),
-                additional_info=task.additional_info,
+                additional_info=self._get_decompose_additional_info(task),
             )
         )
         self.task_agent.reset()
@@ -1530,6 +1570,168 @@ class Workforce(BaseNode):
             if subtasks:
                 self._update_dependencies_for_decomposition(task, subtasks)
             return subtasks
+
+    def _get_decompose_additional_info(self, task: Task) -> Any:
+        r"""Return additional information included in the decompose prompt.
+
+        Subclasses can override this protected hook to adapt planner-only
+        prompt context without changing the public Workforce API.
+        """
+        return task.additional_info
+
+    def _build_plan_summary(self, subtasks: List[Task]) -> Optional[str]:
+        if not subtasks:
+            return None
+        return "\n".join(
+            f"{index + 1}. {task.content}"
+            for index, task in enumerate(subtasks)
+        )
+
+    def _emit_plan_events(self, task: Task, subtasks: List[Task]) -> None:
+        task_created_event = TaskCreatedEvent(
+            task_id=task.id,
+            description=task.content,
+            task_type=task.type,
+            metadata=task.additional_info,
+        )
+        for cb in self._callbacks:
+            cb.log_task_created(task_created_event)
+
+        if not subtasks:
+            return
+
+        task_decomposed_event = TaskDecomposedEvent(
+            parent_task_id=task.id,
+            subtask_ids=[st.id for st in subtasks],
+        )
+        for cb in self._callbacks:
+            cb.log_task_decomposed(task_decomposed_event)
+        for subtask in subtasks:
+            subtask_created_event = TaskCreatedEvent(
+                task_id=subtask.id,
+                description=subtask.content,
+                parent_task_id=task.id,
+                task_type=subtask.type,
+                metadata=subtask.additional_info,
+            )
+            for cb in self._callbacks:
+                cb.log_task_created(subtask_created_event)
+
+    def _append_plan_to_pending(self, plan: WorkforcePlan) -> None:
+        if plan.subtasks:
+            self._pending_tasks.extendleft(reversed(plan.subtasks))
+        else:
+            self._pending_tasks.append(plan.task)
+
+    def _finalize_task_from_subtasks(self, task: Task) -> Task:
+        if not task.subtasks:
+            return task
+
+        task.result = "\n\n".join(
+            f"--- Subtask {sub.id} Result ---\n{sub.result}"
+            for sub in task.subtasks
+            if sub.result
+        )
+        if task.subtasks and all(
+            sub.state == TaskState.DONE for sub in task.subtasks
+        ):
+            task.state = TaskState.DONE
+        else:
+            task.state = TaskState.FAILED
+        return task
+
+    def _sync_task_to_parent(self, task: Task) -> None:
+        parent = task.parent
+        if not parent or not parent.subtasks:
+            return
+
+        for subtask in parent.subtasks:
+            if subtask.id == task.id:
+                subtask.state = task.state
+                subtask.result = task.result
+                subtask.failure_count = task.failure_count
+                return
+
+    async def _plan_task_internal(
+        self,
+        task: Task,
+        *,
+        reset: bool,
+        append_to_pending: bool,
+        raw_text_callback: Optional[
+            Callable[["ChatAgentResponse"], None]
+        ] = None,
+        subtask_batch_callback: Optional[
+            Callable[[List[Task], bool], Any]
+        ] = None,
+    ) -> WorkforcePlan:
+        if not validate_task_content(task.content, task.id):
+            task.state = TaskState.FAILED
+            task.result = "Task failed: Invalid or empty content provided"
+            logger.warning(
+                f"Task {task.id} rejected: Invalid or empty content. "
+                f"Content preview: '{task.content}'"
+            )
+            return WorkforcePlan(task=task, subtasks=[task])
+
+        if reset and self._state != WorkforceState.RUNNING:
+            self.reset()
+            logger.info("Workforce reset before handling task.")
+
+        self._task = task
+        task.state = TaskState.FAILED
+
+        planner_raw_text = ""
+
+        def combined_stream_callback(chunk: "ChatAgentResponse") -> None:
+            nonlocal planner_raw_text
+            content = chunk.msg.content if chunk.msg else ""
+            mode = None
+            if getattr(chunk, "info", None):
+                mode = chunk.info.get("stream_accumulate_mode")
+            if mode == "delta":
+                planner_raw_text += content
+            else:
+                planner_raw_text = content
+            self._on_stream_callback(chunk)
+            if raw_text_callback is not None:
+                raw_text_callback(chunk)
+
+        subtasks_result = self._decompose_task(
+            task,
+            stream_callback=combined_stream_callback,
+        )
+
+        subtasks: List[Task] = []
+        if isinstance(subtasks_result, Generator):
+            for new_tasks in subtasks_result:
+                subtasks.extend(new_tasks)
+                if subtask_batch_callback is not None and new_tasks:
+                    subtask_batch_callback(new_tasks, False)
+        else:
+            subtasks = subtasks_result
+
+        if subtask_batch_callback is not None:
+            subtask_batch_callback(subtasks, True)
+
+        plan = WorkforcePlan(
+            task=task,
+            subtasks=subtasks,
+            dependency_graph={
+                subtask.id: self._task_dependencies.get(subtask.id, []).copy()
+                for subtask in subtasks
+            },
+            planner_raw_text=planner_raw_text or None,
+            planner_summary=self._build_plan_summary(subtasks),
+        )
+
+        self._emit_plan_events(task, subtasks)
+        plan.events_emitted = True
+
+        if append_to_pending:
+            self._append_plan_to_pending(plan)
+
+        return plan
 
     def _get_available_strategies_text(self) -> str:
         r"""Generate the available strategies text for the analysis prompt.
@@ -1883,7 +2085,7 @@ class Workforce(BaseNode):
                     f"Task {task.id} will be decomposed due to {reason}"
                 )
                 subtasks_result = self._decompose_task(
-                    task, self._on_stream_callback
+                    task, stream_callback=self._on_stream_callback
                 )
 
                 # Handle both streaming and non-streaming results
@@ -2522,73 +2724,73 @@ class Workforce(BaseNode):
         Returns:
             List[Task]: The decomposed subtasks or the original task.
         """
-        if not validate_task_content(task.content, task.id):
-            task.state = TaskState.FAILED
-            task.result = "Task failed: Invalid or empty content provided"
-            logger.warning(
-                f"Task {task.id} rejected: Invalid or empty content. "
-                f"Content preview: '{task.content}'"
-            )
-            return [task]
+        plan = await self._plan_task_internal(
+            task,
+            reset=reset,
+            append_to_pending=True,
+        )
+        return plan.subtasks
 
+    async def plan_task_async(
+        self,
+        task: Task,
+        *,
+        reset: bool = True,
+        raw_text_callback: Optional[
+            Callable[["ChatAgentResponse"], None]
+        ] = None,
+        subtask_batch_callback: Optional[
+            Callable[[List[Task], bool], Any]
+        ] = None,
+    ) -> WorkforcePlan:
+        r"""Create a headless execution plan without starting the workforce."""
+        return await self._plan_task_internal(
+            task,
+            reset=reset,
+            append_to_pending=False,
+            raw_text_callback=raw_text_callback,
+            subtask_batch_callback=subtask_batch_callback,
+        )
+
+    async def run_plan_async(
+        self,
+        plan: WorkforcePlan,
+        *,
+        reset: bool = True,
+        interactive: bool = False,
+    ) -> Task:
+        r"""Execute a previously created plan, optionally after edits."""
         if reset and self._state != WorkforceState.RUNNING:
             self.reset()
-            logger.info("Workforce reset before handling task.")
 
-        # Focus on the new task
-        self._task = task
-        task.state = TaskState.FAILED
+        self._task = plan.task
+        plan.task.subtasks = plan.subtasks
+        for subtask in plan.subtasks:
+            subtask.parent = plan.task
+            if subtask.additional_info is None:
+                subtask.additional_info = plan.task.additional_info
 
-        task_created_event = TaskCreatedEvent(
-            task_id=task.id,
-            description=task.content,
-            task_type=task.type,
-            metadata=task.additional_info,
-        )
-        for cb in self._callbacks:
-            cb.log_task_created(task_created_event)
+        if not plan.events_emitted:
+            self._emit_plan_events(plan.task, plan.subtasks)
+            plan.events_emitted = True
 
-        # The agent tend to be overconfident on the whole task, so we
-        # decompose the task into subtasks first
-        subtasks_result = self._decompose_task(task, self._on_stream_callback)
+        self._append_plan_to_pending(plan)
+        self.set_channel(TaskChannel())
 
-        # Handle both streaming and non-streaming results
-        if isinstance(subtasks_result, Generator):
-            # This is a generator (streaming mode)
-            subtasks = []
-            for new_tasks in subtasks_result:
-                subtasks.extend(new_tasks)
-        else:
-            # This is a regular list (non-streaming mode)
-            subtasks = subtasks_result
-        if subtasks:
-            task_decomposed_event = TaskDecomposedEvent(
-                parent_task_id=task.id,
-                subtask_ids=[st.id for st in subtasks],
-            )
-            for cb in self._callbacks:
-                cb.log_task_decomposed(task_decomposed_event)
-            for subtask in subtasks:
-                task_created_event = TaskCreatedEvent(
-                    task_id=subtask.id,
-                    description=subtask.content,
-                    parent_task_id=task.id,
-                    task_type=subtask.type,
-                    metadata=subtask.additional_info,
-                )
-                for cb in self._callbacks:
-                    cb.log_task_created(task_created_event)
+        if interactive:
+            self.save_snapshot("Initial task decomposition")
 
-        if subtasks:
-            # _pending_tasks will contain both undecomposed
-            # and decomposed tasks, so we use additional_info
-            # to mark the tasks that need decomposition instead
-            self._pending_tasks.extendleft(reversed(subtasks))
-        else:
-            # If no decomposition, execute the original task.
-            self._pending_tasks.append(task)
+        try:
+            await self.start()
+        except Exception as e:
+            logger.error(f"Error in workforce execution: {e}")
+            self._state = WorkforceState.STOPPED
+            raise
+        finally:
+            if self._state != WorkforceState.STOPPED:
+                self._state = WorkforceState.IDLE
 
-        return subtasks
+        return self._finalize_task_from_subtasks(plan.task)
 
     @check_if_running(False)
     async def process_task_async(
@@ -2615,26 +2817,16 @@ class Workforce(BaseNode):
             return await self._process_task_with_pipeline(task)
         else:
             # AUTO_DECOMPOSE mode (default)
-            subtasks = await self.handle_decompose_append_task(task)
-
+            plan = await self._plan_task_internal(
+                task,
+                reset=True,
+                append_to_pending=True,
+            )
             self.set_channel(TaskChannel())
 
             await self.start()
 
-            if subtasks:
-                task.result = "\n\n".join(
-                    f"--- Subtask {sub.id} Result ---\n{sub.result}"
-                    for sub in task.subtasks
-                    if sub.result
-                )
-                if task.subtasks and all(
-                    sub.state == TaskState.DONE for sub in task.subtasks
-                ):
-                    task.state = TaskState.DONE
-                else:
-                    task.state = TaskState.FAILED
-
-            return task
+            return self._finalize_task_from_subtasks(plan.task)
 
     async def _process_task_with_pipeline(self, task: Task) -> Task:
         """Process task using predefined pipeline tasks."""
@@ -4077,7 +4269,12 @@ class Workforce(BaseNode):
         task.assigned_worker_id = assignee_id
 
         task_started_event = TaskStartedEvent(
-            task_id=task.id, worker_id=assignee_id
+            task_id=task.id,
+            worker_id=assignee_id,
+            metadata={
+                "task_content": task.content,
+                "failure_count": task.failure_count,
+            },
         )
         for cb in self._callbacks:
             cb.log_task_started(task_started_event)
@@ -4354,11 +4551,13 @@ class Workforce(BaseNode):
                 f"Requesting assignment..."
             )
             batch_result = await self._find_assignee(tasks_to_assign)
+            task_lookup = {task.id: task for task in tasks_to_assign}
             logger.debug(
                 f"Coordinator returned assignments:\n"
                 f"{json.dumps(batch_result.model_dump(), indent=2)}"
             )
             for assignment in batch_result.assignments:
+                assignment_task = task_lookup.get(assignment.task_id)
                 # For pipeline mode, dependencies are already set, only
                 # update assignees.
                 # For other modes, update both dependencies and assignees.
@@ -4373,6 +4572,19 @@ class Workforce(BaseNode):
                     worker_id=assignment.assignee_id,
                     dependencies=assignment.dependencies,
                     queue_time_seconds=None,
+                    metadata={
+                        "task_content": (
+                            assignment_task.content
+                            if assignment_task is not None
+                            else None
+                        ),
+                        "failure_count": (
+                            assignment_task.failure_count
+                            if assignment_task is not None
+                            else 0
+                        ),
+                        "worker_node_id": assignment.assignee_id,
+                    },
                 )
                 for cb in self._callbacks:
                     # queue_time_seconds can be derived by logger if task
@@ -4521,6 +4733,7 @@ class Workforce(BaseNode):
                                 f"failed dependencies: "
                                 f"{permanently_failed_deps}"
                             )
+                            self._sync_task_to_parent(task)
 
                             # Log the failure to metrics
                             task_failed_event = TaskFailedEvent(
@@ -4858,12 +5071,14 @@ class Workforce(BaseNode):
             task (Task): The task to mark as permanently failed.
         """
         task.state = TaskState.FAILED
+        self._sync_task_to_parent(task)
         self._cleanup_task_tracking(task.id)
         self._completed_tasks.append(task)
         if task.id in self._assignees:
             await self._channel.archive_task(task.id)
 
     async def _handle_completed_task(self, task: Task) -> None:
+        self._sync_task_to_parent(task)
         worker_id = task.assigned_worker_id or "unknown"
         processing_time_seconds = None
         token_usage = None
@@ -4915,7 +5130,11 @@ class Workforce(BaseNode):
             result_summary=task.result if task.result else "Completed",
             processing_time_seconds=processing_time_seconds,
             token_usage=token_usage,
-            metadata={'current_state': task.state.value},
+            metadata={
+                'current_state': task.state.value,
+                'task_content': task.content,
+                'failure_count': task.failure_count,
+            },
         )
         for cb in self._callbacks:
             cb.log_task_completed(task_completed_event)
