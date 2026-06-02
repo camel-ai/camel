@@ -12,6 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+r"""Extraction strategies for Python literal structures.
+
+This module provides strategies for extracting and normalizing Python
+data structures such as lists, dicts, sets, tuples, and boxed content
+from LLM responses.
+"""
+
 import ast
 from typing import Optional
 
@@ -102,7 +109,6 @@ class PythonListStrategy(BaseExtractorStrategy):
         Returns:
             Optional[str]: Normalized list as a string if found, else None.
         """
-
         text = text.strip()
         if not (text.startswith('[') and text.endswith(']')):
             logger.debug("Content is not a list format (missing brackets)")
@@ -136,7 +142,6 @@ class PythonDictStrategy(BaseExtractorStrategy):
         Returns:
             Optional[str]: Normalized dictionary as a string, else None.
         """
-
         text = text.strip()
         if not (text.startswith('{') and text.endswith('}')):
             logger.debug("Content is not a dictionary format (missing braces)")
@@ -174,7 +179,6 @@ class PythonSetStrategy(BaseExtractorStrategy):
         Returns:
             Optional[str]: Normalized set as a string if found, else None.
         """
-
         text = text.strip()
         # Check for set syntax: {1, 2, 3} or set([1, 2, 3])
         if not (
@@ -212,7 +216,6 @@ class PythonTupleStrategy(BaseExtractorStrategy):
         Returns:
             Optional[str]: Normalized tuple as a string if found, else None.
         """
-
         text = text.strip()
         # Check for tuple syntax: (1, 2, 3) or (1,)
         if not (text.startswith('(') and text.endswith(')')):

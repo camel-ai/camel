@@ -12,6 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+r"""Base classes for the extraction framework.
+
+This module defines the abstract base strategy and the main extractor
+that orchestrates a multi-stage pipeline for processing LLM responses.
+"""
+
 import asyncio
 from abc import ABC, abstractmethod
 from types import TracebackType
@@ -84,7 +90,6 @@ class BaseExtractor:
                 scaling down. (default: :obj:`85.0`)
             **kwargs: Additional extractor parameters.
         """
-
         self._metadata = {
             'cache_templates': cache_templates,
             'max_cache_size': max_cache_size,
@@ -226,8 +231,10 @@ class BaseExtractor:
         await self.cleanup()
 
     async def extract(self, response: str) -> Optional[str]:
-        r"""Extracts a normalized, comparable part of the LLM response
-        using the fixed multi-stage strategy pipeline.
+        r"""Extract a normalized, comparable part of an LLM response.
+
+        This method uses the fixed multi-stage strategy pipeline to
+        extract and normalize content from the raw response text.
 
         Args:
             response (str): The raw response text.

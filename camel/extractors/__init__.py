@@ -11,6 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+
+r"""Extraction strategies and base classes for processing LLM responses.
+
+This module provides a flexible framework for extracting structured
+content from LLM responses using configurable strategy pipelines.
+"""
+
 from .base import BaseExtractor, BaseExtractorStrategy
 from .python_strategies import (
     BoxedStrategy,
@@ -24,8 +31,8 @@ __all__ = [
     "BaseExtractor",
     "BaseExtractorStrategy",
     "BoxedStrategy",
-    "PythonListStrategy",
     "PythonDictStrategy",
+    "PythonListStrategy",
     "PythonSetStrategy",
     "PythonTupleStrategy",
 ]
