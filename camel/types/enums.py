@@ -1735,6 +1735,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_5_4_PRO,
             ModelType.GPT_5_5,
             ModelType.GPT_5_5_PRO,
+            ModelType.MINIMAX_M3,
             ModelType.ORCAROUTER_CLAUDE_OPUS_4_7,
             ModelType.ORCAROUTER_GROK_4_3,
         }:
@@ -1744,8 +1745,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
-        elif self is ModelType.MINIMAX_M3:
-            return 1_000_000
         elif self in {
             ModelType.MINIMAX_M2_7,
             ModelType.MINIMAX_M2_7_HIGHSPEED,
