@@ -11,34 +11,63 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+"""
+This example demonstrates how to build a single-agent RAG (Retrieval-Augmented
+Generation) pipeline using CAMEL's HybridRetriever, which combines dense
+vector search with BM25 sparse retrieval for improved context relevance.
+
+Usage:
+    Run this script directly to query a Wikipedia article using hybrid RAG:
+        $ python examples/rag/single_agent_with_hybrid_rag.py
+"""
+
 from camel.agents import ChatAgent
 from camel.retrievers import HybridRetriever
 
 
 def single_agent(query: str) -> str:
-    # Set agent role
+    """Answer a query using a hybrid RAG pipeline and a CAMEL ChatAgent.
+
+    This function:
+    1. Initialises a HybridRetriever that combines vector (dense) search
+       and BM25 (sparse) search.
+    2. Ingests content from a URL into the retriever's index.
+    3. Retrieves the top-k most relevant chunks for the given query.
+    4. Passes the retrieved context to a ChatAgent for answer generation.
+
+    Args:
+        query (str): The natural-language question to answer.
+
+    Returns:
+        str: The assistant's answer grounded in the retrieved context.
+    """
+    # System prompt instructs the agent to answer strictly from retrieved context
     assistant_sys_msg = """You are a helpful assistant to answer question,
          I will give you the Original Query and Retrieved Context,
         answer the Original Query based on the Retrieved Context,
         if you can't answer the question just say I don't know."""
 
+    # Initialise the hybrid retriever (vector + BM25)
     hybrid_retriever = HybridRetriever()
+
+    # Ingest content from the target URL into the retriever index
     hybrid_retriever.process(
         content_input_path="https://en.wikipedia.org/wiki/King_Abdullah_University_of_Science_and_Technology"
     )
 
+    # Retrieve the most relevant chunks using both retrieval strategies
     retrieved_info = hybrid_retriever.query(
         query=query,
-        top_k=5,
-        vector_retriever_top_k=10,
-        bm25_retriever_top_k=10,
+        top_k=5,              # final number of chunks returned after re-ranking
+        vector_retriever_top_k=10,  # candidates from dense vector search
+        bm25_retriever_top_k=10,    # candidates from BM25 sparse search
     )
 
-    # Pass the retrieved information to agent
+    # Build the user message from retrieved context and run the agent
     user_msg = str(retrieved_info)
     agent = ChatAgent(assistant_sys_msg)
 
-    # Get response
+    # Get response from the agent
     assistant_response = agent.step(user_msg)
     return assistant_response.msg.content
 
