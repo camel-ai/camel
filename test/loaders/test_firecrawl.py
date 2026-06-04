@@ -21,7 +21,7 @@ from camel.loaders import Firecrawl
 
 
 def test_init():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         api_key = 'test_api_key'
         api_url = 'https://api.test.com'
@@ -33,27 +33,27 @@ def test_init():
 
 
 def test_crawl_success():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
             api_key='test_api_key', api_url='https://api.test.com'
         )
         url = 'https://example.com'
-        response = 'Crawl content'
-        mock_app.crawl_url.return_value = response
+        response = {'status': 'completed', 'data': []}
+        mock_app.crawl.return_value = response
 
         result = firecrawl.crawl(url)
         assert result == response
 
 
 def test_crawl_failure():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
             api_key='test_api_key', api_url='https://api.test.com'
         )
         url = 'https://example.com'
-        mock_app.crawl_url.side_effect = Exception('Error')
+        mock_app.crawl.side_effect = Exception('Error')
 
         try:
             firecrawl.crawl(url)
@@ -62,27 +62,27 @@ def test_crawl_failure():
 
 
 def test_check_crawl_job_success():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
             api_key='test_api_key', api_url='https://api.test.com'
         )
         job_id = 'job_123'
-        response = 'Job status'
-        mock_app.check_crawl_status.return_value = response
+        response = {'status': 'completed'}
+        mock_app.get_crawl_status.return_value = response
 
         result = firecrawl.check_crawl_job(job_id)
         assert result == response
 
 
 def test_check_crawl_job_failure():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
             api_key='test_api_key', api_url='https://api.test.com'
         )
         job_id = 'job_123'
-        mock_app.check_crawl_status.side_effect = Exception('Error')
+        mock_app.get_crawl_status.side_effect = Exception('Error')
 
         try:
             firecrawl.check_crawl_job(job_id)
@@ -91,27 +91,27 @@ def test_check_crawl_job_failure():
 
 
 def test_scrape_success():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
             api_key='test_api_key', api_url='https://api.test.com'
         )
         url = 'https://example.com'
-        response = 'Scraped content'
-        mock_app.scrape_url.return_value = response
+        response = {'markdown': 'Scraped content'}
+        mock_app.scrape.return_value = response
 
         result = firecrawl.scrape(url)
         assert result == response
 
 
 def test_scrape_failure():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
             api_key='test_api_key', api_url='https://api.test.com'
         )
         url = 'https://example.com'
-        mock_app.scrape_url.side_effect = Exception('Error')
+        mock_app.scrape.side_effect = Exception('Error')
 
         try:
             firecrawl.scrape(url)
@@ -132,15 +132,30 @@ class TopArticlesSchema(BaseModel):
     )
 
 
-def test_structured_scrape_failure():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
+def test_structured_scrape_success():
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
             api_key='test_api_key', api_url='https://api.test.com'
         )
         url = 'https://example.com'
         response_format = TopArticlesSchema
-        mock_app.scrape_url.side_effect = Exception('Error')
+        extracted = {'top': []}
+        mock_app.scrape.return_value = {'json': extracted}
+
+        result = firecrawl.structured_scrape(url, response_format)
+        assert result == extracted
+
+
+def test_structured_scrape_failure():
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
+        mock_app = MockFirecrawlApp.return_value
+        firecrawl = Firecrawl(
+            api_key='test_api_key', api_url='https://api.test.com'
+        )
+        url = 'https://example.com'
+        response_format = TopArticlesSchema
+        mock_app.scrape.side_effect = Exception('Error')
 
         try:
             firecrawl.structured_scrape(url, response_format)
@@ -149,27 +164,33 @@ def test_structured_scrape_failure():
 
 
 def test_map_site_success():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
             api_key='test_api_key', api_url='https://api.test.com'
         )
         url = 'https://example.com'
-        map_result = ['https://example.com']
-        mock_app.map_url.return_value = map_result
+
+        class _Link:
+            def __init__(self, url):
+                self.url = url
+
+        mock_app.map.return_value = type(
+            'MapData', (), {'links': [_Link('https://example.com')]}
+        )()
 
         result = firecrawl.map_site(url)
-        assert result == map_result
+        assert result == ['https://example.com']
 
 
 def test_map_site_failure():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
             api_key='test_api_key', api_url='https://api.test.com'
         )
         url = 'https://example.com'
-        mock_app.map_url.side_effect = Exception('Error')
+        mock_app.map.side_effect = Exception('Error')
 
         try:
             firecrawl.map_site(url)
