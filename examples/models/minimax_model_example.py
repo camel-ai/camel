@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.MINIMAX,
-    model_type=ModelType.MINIMAX_M2,
+    model_type=ModelType.MINIMAX_M3,
     # For users in China, please use
     # https://api.minimaxi.com/v1 instead.
     base_url="https://api.minimaxi.io/v1",

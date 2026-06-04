@@ -545,6 +545,7 @@ class ModelType(UnifiedModelType, Enum):
     CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
 
     # Minimax models
+    MINIMAX_M3 = "MiniMax-M3"
     MINIMAX_M2_7 = "MiniMax-M2.7"
     MINIMAX_M2_7_HIGHSPEED = "MiniMax-M2.7-highspeed"
     MINIMAX_M2_5 = "MiniMax-M2.5"
@@ -1024,6 +1025,7 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def is_minimax(self) -> bool:
         return self in {
+            ModelType.MINIMAX_M3,
             ModelType.MINIMAX_M2_7,
             ModelType.MINIMAX_M2_7_HIGHSPEED,
             ModelType.MINIMAX_M2_5,
@@ -1733,6 +1735,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_5_4_PRO,
             ModelType.GPT_5_5,
             ModelType.GPT_5_5_PRO,
+            ModelType.MINIMAX_M3,
             ModelType.ORCAROUTER_CLAUDE_OPUS_4_7,
             ModelType.ORCAROUTER_GROK_4_3,
         }:
