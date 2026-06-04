@@ -267,7 +267,7 @@ class ZeroGPUToolkit(BaseToolkit):
             Dict[str, Any]: The classification results.
         """
 
-        metadata = {
+        metadata: Dict[str, Any] = {
             "task": "structured-classification",
             "schema": schema_definition,
         }
@@ -309,7 +309,7 @@ class ZeroGPUToolkit(BaseToolkit):
             Dict[str, Any]: The entity extraction results.
         """
 
-        metadata = {
+        metadata: Dict[str, Any] = {
             "task": "entity-extraction",
             "labels": labels,
         }
@@ -354,7 +354,7 @@ class ZeroGPUToolkit(BaseToolkit):
             Dict[str, Any]: The JSON extraction results.
         """
 
-        metadata = {
+        metadata: Dict[str, Any] = {
             "task": "json-extraction",
             "schema": schema,
         }
@@ -399,7 +399,7 @@ class ZeroGPUToolkit(BaseToolkit):
             Dict[str, Any]: The PII extraction results.
         """
 
-        metadata = {
+        metadata: Dict[str, Any] = {
             "usecase": "extract-pii",
             "threshold": threshold,
         }
