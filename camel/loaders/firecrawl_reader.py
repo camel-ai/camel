@@ -200,3 +200,25 @@ class Firecrawl:
             return urls
         except Exception as e:
             raise RuntimeError(f"Failed to map the site: {e}")
+
+    def search(
+        self, query: str, params: Optional[Dict[str, Any]] = None
+    ) -> Any:
+        r"""Search the web and optionally scrape the result pages.
+
+        Args:
+            query (str): The search query.
+            params (Optional[Dict[str, Any]]): Additional parameters for the
+                search request (e.g. ``limit``, ``sources``, ``location``,
+                ``scrape_options``). Defaults to `None`.
+
+        Returns:
+            Any: The search results, grouped by source.
+
+        Raises:
+            RuntimeError: If the search process fails.
+        """
+        try:
+            return _to_dict(self.app.search(query, **(params or {})))
+        except Exception as e:
+            raise RuntimeError(f"Failed to search: {e}")
