@@ -210,6 +210,26 @@ def test_subprocess_default_confirmation_blocks_command(monkeypatch):
     assert "Execution halted" in str(exc_info.value)
 
 
+def test_subprocess_default_confirmation_blocks_empty_code(monkeypatch):
+    toolkit = CodeExecutionToolkit()
+    monkeypatch.setattr('builtins.input', lambda _: '')
+
+    with pytest.raises(InterpreterError) as exc_info:
+        toolkit.execute_code("print('blocked')")
+
+    assert "Execution halted" in str(exc_info.value)
+
+
+def test_subprocess_default_confirmation_blocks_empty_command(monkeypatch):
+    toolkit = CodeExecutionToolkit()
+    monkeypatch.setattr('builtins.input', lambda _: '')
+
+    with pytest.raises(InterpreterError) as exc_info:
+        toolkit.execute_command("echo blocked")
+
+    assert "Execution halted" in str(exc_info.value)
+
+
 def test_subprocess_confirmation_can_be_disabled():
     toolkit = CodeExecutionToolkit(sandbox="subprocess", require_confirm=False)
 

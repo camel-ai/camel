@@ -155,6 +155,7 @@ def test_execute_command_require_confirm(subprocess_interpreter, monkeypatch):
     with pytest.raises(InterpreterError) as exc_info:
         subprocess_interpreter.execute_command("echo Hello")
     assert "Execution halted" in str(exc_info.value)
+    assert "Error executing command" not in str(exc_info.value)
 
     monkeypatch.setattr('builtins.input', lambda _: 'y')
 

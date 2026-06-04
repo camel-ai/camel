@@ -295,7 +295,7 @@ class SubprocessInterpreter(BaseInterpreter):
                     f"The following {code_type} code will run on your "
                     f"computer: {code}"
                 ),
-                prompt="Running code? [Y/n]:",
+                prompt="Running code? [y/N]:",
                 declined_message=(
                     "Execution halted: User opted not to run the code. "
                     "This choice stops the current operation and any "
@@ -383,9 +383,9 @@ class SubprocessInterpreter(BaseInterpreter):
         logger.info(message)
         while True:
             choice = input(prompt).lower().strip()
-            if choice in ["y", "yes", "ye", ""]:
+            if choice in ["y", "yes", "ye"]:
                 return
-            if choice in ["no", "n"]:
+            if choice in ["no", "n", ""]:
                 raise InterpreterError(declined_message)
             print("Please enter 'y' or 'n'.")
 
@@ -448,21 +448,21 @@ class SubprocessInterpreter(BaseInterpreter):
         Raises:
             InterpreterError: If the command execution fails.
         """
-        try:
-            if self.require_confirm:
-                self._confirm_execution(
-                    message=(
-                        "The following shell command will run on your "
-                        f"computer: {command}"
-                    ),
-                    prompt="Running command? [Y/n]:",
-                    declined_message=(
-                        "Execution halted: User opted not to run the "
-                        "command. This choice stops the current operation "
-                        "and any further command execution."
-                    ),
-                )
+        if self.require_confirm:
+            self._confirm_execution(
+                message=(
+                    "The following shell command will run on your "
+                    f"computer: {command}"
+                ),
+                prompt="Running command? [y/N]:",
+                declined_message=(
+                    "Execution halted: User opted not to run the "
+                    "command. This choice stops the current operation "
+                    "and any further command execution."
+                ),
+            )
 
+        try:
             # Get current Python executable's environment
             env = os.environ.copy()
 
