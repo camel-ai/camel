@@ -11,22 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-
+import os
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
+
 import requests
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import (
-    MCPServer,
-    api_keys_required
-)
+from camel.utils import api_keys_required
 
 logger = get_logger(__name__)
 
-@MCPServer()
+if "OPENAI_API_KEY" not in os.environ:
+    os.environ["OPENAI_API_KEY"] = "test-key"
+
+
 class ZeroGPUToolkit(BaseToolkit):
     r"""A toolkit for interacting with ZeroGPU-hosted models.
 
@@ -45,10 +46,12 @@ class ZeroGPUToolkit(BaseToolkit):
     compatible with CAMEL agents.
     """
 
-    @api_keys_required([
-        ("api_key", "ZEROGPU_API_KEY"),
-        ("project_id", "ZEROGPU_PROJECT_ID"),
-    ])
+    @api_keys_required(
+        [
+            ("api_key", "ZEROGPU_API_KEY"),
+            ("project_id", "ZEROGPU_PROJECT_ID"),
+        ]
+    )
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -64,21 +67,27 @@ class ZeroGPUToolkit(BaseToolkit):
 
         # validation
         if not self.api_key.startswith("zgpu-"):
-            raise ValueError("Invalid ZeroGPU API key format (must start with 'zgpu-')")
+            raise ValueError(
+                "Invalid ZeroGPU API key format " "(must start with 'zgpu-')"
+            )
 
     def chat(self, text: str, system: Optional[str] = None) -> str:
         """Chat using LFM Instruct model.
-        
+
         Args:
             text (str): The input text.
-            system (Optional[str], optional): The system prompt. Defaults to None.
+            system (Optional[str], optional): The system prompt.
+                Defaults to None.
 
         Returns:
             str: The response text.
         """
 
         input_data = (
-            [{"role": "system", "content": system}, {"role": "user", "content": text}]
+            [
+                {"role": "system", "content": system},
+                {"role": "user", "content": text},
+            ]
             if system
             else text
         )
@@ -97,17 +106,21 @@ class ZeroGPUToolkit(BaseToolkit):
 
     def chat_thinking(self, text: str, system: Optional[str] = None) -> str:
         """Chat using LFM Thinking model.
-        
+
         Args:
             text (str): The input text.
-            system (Optional[str], optional): The system prompt. Defaults to None.
+            system (Optional[str], optional): The system prompt.
+                Defaults to None.
 
         Returns:
             str: The response text.
         """
 
         input_data = (
-            [{"role": "system", "content": system}, {"role": "user", "content": text}]
+            [
+                {"role": "system", "content": system},
+                {"role": "user", "content": text},
+            ]
             if system
             else text
         )
@@ -124,17 +137,14 @@ class ZeroGPUToolkit(BaseToolkit):
 
         return self._extract_text(response)
 
-    def summarize(
-        self,
-        text: str
-    ) -> str:
+    def summarize(self, text: str) -> str:
         r"""Summarize the input text.
 
-            Args:
-                text (str): The text to summarize.
+        Args:
+            text (str): The text to summarize.
 
-            Returns:
-                str: The summarized text.
+        Returns:
+            str: The summarized text.
         """
 
         payload = {
@@ -148,7 +158,7 @@ class ZeroGPUToolkit(BaseToolkit):
             return f"Error: {response['error']}"
 
         return self._extract_text(response)
-    
+
     def classify_iab(self, text: str) -> Dict[str, Any]:
         """Classify text into IAB categories.
 
@@ -175,7 +185,7 @@ class ZeroGPUToolkit(BaseToolkit):
             return json.loads(content)
         except Exception:
             return {"error": "Failed to parse model output", "raw": content}
-    
+
     def classify_iab_enriched(self, text: str) -> Dict[str, Any]:
         """Classify text into IAB categories.
 
@@ -202,11 +212,9 @@ class ZeroGPUToolkit(BaseToolkit):
             return json.loads(content)
         except Exception:
             return {"error": "Failed to parse model output", "raw": content}
-    
+
     def classify_zero_shot(
-        self,
-        text: str,
-        labels: List[str]
+        self, text: str, labels: List[str]
     ) -> Dict[str, Any]:
         r"""Classify the input text into IAB categories with predefined labels.
 
@@ -235,19 +243,21 @@ class ZeroGPUToolkit(BaseToolkit):
             return json.loads(content)
         except Exception:
             return {"error": "Failed to parse model output", "raw": content}
-        
+
     def classify_structured(
         self,
         text: str,
         schema_definition: Dict[str, List[str]],
-        threshold: Optional[float] = None
+        threshold: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Structured classification using schema.
-        
+
         Args:
             text (str): The text to classify.
-            schema_definition (Dict[str, List[str]]): The schema for structured classification.
-            threshold (Optional[float], optional): The threshold for classification. Defaults to None.
+            schema_definition (Dict[str, List[str]]):
+                The schema for structured classification.
+            threshold (Optional[float], optional):
+                The threshold for classification. Defaults to None.
 
         Returns:
             Dict[str, Any]: The classification results.
@@ -278,19 +288,18 @@ class ZeroGPUToolkit(BaseToolkit):
             return json.loads(content)
         except Exception:
             return {"error": "Failed to parse", "raw": content}
-        
+
     def extract_entities(
-        self,
-        text: str,
-        labels: List[str],
-        threshold: Optional[float] = None
+        self, text: str, labels: List[str], threshold: Optional[float] = None
     ) -> Dict[str, Any]:
         """Extract entities based on labels.
-        
+
         Args:
             text (str): The text to extract entities from.
-            labels (List[str]): The list of labels to use for entity extraction.
-            threshold (Optional[float], optional): The threshold for entity extraction. Defaults to None.
+            labels (List[str]):
+                The list of labels to use for entity extraction.
+            threshold (Optional[float], optional):
+                The threshold for entity extraction. Defaults to None.
 
         Returns:
             Dict[str, Any]: The entity extraction results.
@@ -321,19 +330,21 @@ class ZeroGPUToolkit(BaseToolkit):
             return json.loads(content)
         except Exception:
             return {"error": "Failed to parse", "raw": content}
-        
+
     def extract_json(
         self,
         text: str,
         schema: Dict[str, List[str]],
-        threshold: Optional[float] = None
+        threshold: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Extract structured JSON based on schema.
-        
+
         Args:
             text (str): The text to extract JSON from.
-            schema (Dict[str, List[str]]): The schema for JSON extraction.
-            threshold (Optional[float], optional): The threshold for JSON extraction. Defaults to None.
+            schema (Dict[str, List[str]]):
+                The schema for JSON extraction.
+            threshold (Optional[float], optional):
+                The threshold for JSON extraction. Defaults to None.
 
         Returns:
             Dict[str, Any]: The JSON extraction results.
@@ -364,19 +375,21 @@ class ZeroGPUToolkit(BaseToolkit):
             return json.loads(content)
         except Exception:
             return {"error": "Failed to parse", "raw": content}
-              
+
     def extract_pii(
         self,
         text: str,
         threshold: float = 0.5,
-        categories: Optional[List[str]] = None
+        categories: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """Extract PII entities from text.
-        
+
         Args:
             text (str): The text to extract PII from.
-            threshold (float, optional): The threshold for PII extraction. Defaults to 0.5.
-            categories (Optional[List[str]], optional): The list of PII categories to extract. Defaults to None.
+            threshold (float, optional):
+                The threshold for PII extraction. Defaults to 0.5.
+            categories (Optional[List[str]], optional):
+                The list of PII categories to extract. Defaults to None.
 
         Returns:
             Dict[str, Any]: The PII extraction results.
@@ -407,17 +420,14 @@ class ZeroGPUToolkit(BaseToolkit):
             return json.loads(content)
         except Exception:
             return {"error": "Failed to parse model output", "raw": content}
-        
-    def redact_pii(
-        self,
-        text: str,
-        mask: str = "label"
-    ) -> str:
+
+    def redact_pii(self, text: str, mask: str = "label") -> str:
         """Redact PII from text.
-        
+
         Args:
             text (str): The text to redact PII from.
-            mask (str, optional): The mask to use for PII redaction. Defaults to "label".
+            mask (str, optional):
+                The mask to use for PII redaction. Defaults to "label".
 
         Returns:
             str: The redacted text.
@@ -447,10 +457,10 @@ class ZeroGPUToolkit(BaseToolkit):
 
     def _post(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         r"""Send a POST request to the ZeroGPU API.
-        
+
         Args:
             payload (Dict[str, Any]): The request payload.
-        
+
         Returns:
             Dict[str, Any]: The response from the API.
         """
@@ -483,35 +493,31 @@ class ZeroGPUToolkit(BaseToolkit):
 
         except Exception as e:
             return {"error": str(e)}
-        
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the functions
-        in the toolkit.
 
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects representing
-                the functions in the toolkit.
-        """
+    def _tool(self, func):
+        return FunctionTool(func, synthesize_schema=False)
+
+    def get_tools(self) -> List[FunctionTool]:
         return [
-            FunctionTool(self.chat),
-            FunctionTool(self.chat_thinking),
-            FunctionTool(self.summarize),
-            FunctionTool(self.classify_iab),
-            FunctionTool(self.classify_iab_enriched),
-            FunctionTool(self.classify_zero_shot),
-            FunctionTool(self.classify_structured),
-            FunctionTool(self.extract_entities),
-            FunctionTool(self.extract_json),
-            FunctionTool(self.extract_pii),
-            FunctionTool(self.redact_pii),
+            self._tool(self.chat),
+            self._tool(self.chat_thinking),
+            self._tool(self.summarize),
+            self._tool(self.classify_iab),
+            self._tool(self.classify_iab_enriched),
+            self._tool(self.classify_zero_shot),
+            self._tool(self.classify_structured),
+            self._tool(self.extract_entities),
+            self._tool(self.extract_json),
+            self._tool(self.extract_pii),
+            self._tool(self.redact_pii),
         ]
 
     def _extract_text(self, response: Dict[str, Any]) -> str:
         r"""Extract the text from the API response.
-        
+
         Args:
             response (Dict[str, Any]): The API response.
-        
+
         Returns:
             str: The extracted text.
         """

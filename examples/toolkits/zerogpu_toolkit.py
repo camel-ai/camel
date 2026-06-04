@@ -13,8 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.toolkits import ZeroGPUToolkit, FunctionTool
-
+from camel.toolkits import FunctionTool, ZeroGPUToolkit
 
 toolkit = ZeroGPUToolkit(
     api_key="your-api-key",

@@ -23,7 +23,7 @@ def toolkit():
     return ZeroGPUToolkit(
         api_key="zgpu-api-test",
         project_id="test-project",
-        base_url="https://api.zerogpu.ai"
+        base_url="https://api.zerogpu.ai",
     )
 
 
@@ -32,15 +32,7 @@ def mock_success_response(text_output):
         status_code = 200
 
         def json(self):
-            return {
-                "output": [
-                    {
-                        "content": [
-                            {"text": text_output}
-                        ]
-                    }
-                ]
-            }
+            return {"output": [{"content": [{"text": text_output}]}]}
 
     return MockResponse()
 
@@ -127,7 +119,9 @@ def test_classify_zero_shot(monkeypatch, toolkit):
     labels = ["sports", "finance"]
     toolkit.classify_zero_shot("text", labels)
 
-    assert "categories" in captured["json"] or "instructions" in captured["json"]
+    assert (
+        "categories" in captured["json"] or "instructions" in captured["json"]
+    )
 
 
 def test_extract_pii_categories(monkeypatch, toolkit):
@@ -152,9 +146,7 @@ def test_redact_pii(monkeypatch, toolkit):
 
     def mock_post(*args, **kwargs):
         captured["json"] = kwargs.get("json")
-        return mock_success_response(
-            '{"redacted_text": "Hello [PERSON]"}'
-        )
+        return mock_success_response('{"redacted_text": "Hello [PERSON]"}')
 
     monkeypatch.setattr(requests, "post", mock_post)
 
