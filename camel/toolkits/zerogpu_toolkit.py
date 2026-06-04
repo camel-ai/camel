@@ -20,7 +20,10 @@ import requests
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import api_keys_required
+from camel.utils import (
+    MCPServer,
+    api_keys_required,
+)
 
 logger = get_logger(__name__)
 
@@ -28,6 +31,7 @@ if "OPENAI_API_KEY" not in os.environ:
     os.environ["OPENAI_API_KEY"] = "test-key"
 
 
+@MCPServer()
 class ZeroGPUToolkit(BaseToolkit):
     r"""A toolkit for interacting with ZeroGPU-hosted models.
 
@@ -66,7 +70,7 @@ class ZeroGPUToolkit(BaseToolkit):
         self.base_url = base_url or "https://api.zerogpu.ai"
 
         # validation
-        if not self.api_key.startswith("zgpu-"):
+        if not self.api_key or not self.api_key.startswith("zgpu-"):
             raise ValueError(
                 "Invalid ZeroGPU API key format " "(must start with 'zgpu-')"
             )
