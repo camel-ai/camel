@@ -105,6 +105,7 @@ from .skill_toolkit import SkillToolkit
 from .headless_browser_search_toolkit import HeadlessBrowserSearchToolkit
 from .agent_toolkit import AgentToolkit
 from .planning_worktree_toolkit import PlanningWorktreeToolkit
+from .computer_use_toolkit import ComputerUseToolkit
 from .todo_toolkit import TodoItem, TodoToolkit
 from .web_fetch_toolkit import WebFetchToolkit
 
@@ -133,6 +134,7 @@ __all__ = [
     'OpenAPIToolkit',
     'LinkedInToolkit',
     'RedditToolkit',
+    'ComputerUseToolkit',
     'CodeExecutionToolkit',
     'AskNewsToolkit',
     'AsyncAskNewsToolkit',
