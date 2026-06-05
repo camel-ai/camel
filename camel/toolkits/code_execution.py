@@ -42,8 +42,9 @@ class CodeExecutionToolkit(BaseToolkit):
             by `eval()` without any security check. (default: :obj:`False`)
         import_white_list (Optional[List[str]]): A list of allowed imports.
             (default: :obj:`None`)
-        require_confirm (bool): Whether to require confirmation before
-            executing code. (default: :obj:`False`)
+        require_confirm (Optional[bool]): Whether to require confirmation
+            before executing code. If `None`, subprocess execution requires
+            confirmation by default. (default: :obj:`None`)
         timeout (Optional[float]): General timeout for toolkit operations.
             (default: :obj:`None`)
         microsandbox_config (Optional[dict]): Configuration for microsandbox
@@ -65,7 +66,7 @@ class CodeExecutionToolkit(BaseToolkit):
         verbose: bool = False,
         unsafe_mode: bool = False,
         import_white_list: Optional[List[str]] = None,
-        require_confirm: bool = False,
+        require_confirm: Optional[bool] = None,
         timeout: Optional[float] = None,
         # Microsandbox configuration dictionary
         microsandbox_config: Optional[dict] = None,
@@ -74,6 +75,11 @@ class CodeExecutionToolkit(BaseToolkit):
         self.verbose = verbose
         self.unsafe_mode = unsafe_mode
         self.import_white_list = import_white_list or list()
+        resolved_require_confirm = (
+            sandbox == "subprocess"
+            if require_confirm is None
+            else require_confirm
+        )
 
         # Type annotation for interpreter to allow all possible types
         self.interpreter: Union[
@@ -92,30 +98,32 @@ class CodeExecutionToolkit(BaseToolkit):
             )
         elif sandbox == "jupyter":
             self.interpreter = JupyterKernelInterpreter(
-                require_confirm=require_confirm,
+                require_confirm=resolved_require_confirm,
                 print_stdout=self.verbose,
                 print_stderr=self.verbose,
             )
         elif sandbox == "docker":
             self.interpreter = DockerInterpreter(
-                require_confirm=require_confirm,
+                require_confirm=resolved_require_confirm,
                 print_stdout=self.verbose,
                 print_stderr=self.verbose,
             )
         elif sandbox == "subprocess":
             self.interpreter = SubprocessInterpreter(
-                require_confirm=require_confirm,
+                require_confirm=resolved_require_confirm,
                 print_stdout=self.verbose,
                 print_stderr=self.verbose,
             )
         elif sandbox == "e2b":
-            self.interpreter = E2BInterpreter(require_confirm=require_confirm)
+            self.interpreter = E2BInterpreter(
+                require_confirm=resolved_require_confirm
+            )
         elif sandbox == "microsandbox":
             # Extract parameters with proper types for microsandbox
             config = microsandbox_config or {}
 
             self.interpreter = MicrosandboxInterpreter(
-                require_confirm=require_confirm,
+                require_confirm=resolved_require_confirm,
                 server_url=config.get("server_url"),
                 api_key=config.get("api_key"),
                 namespace=config.get("namespace", "default"),
