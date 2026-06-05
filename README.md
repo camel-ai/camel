@@ -651,3 +651,8 @@ For more information please contact camel-ai@eigent.ai
 [join-us]:https://eigent-ai.notion.site/eigent-ai-careers
 [join-us-image]:https://img.shields.io/badge/Join%20Us-yellow?style=plastic
 [image-join-us]: https://camel-ai.github.io/camel_asset/graphics/join_us.png
+
+
+## Benchmarks
+
+- [REFUTE](https://huggingface.co/datasets/BGPT-OFFICIAL/refute) — Scientific critique & epistemic calibration on recent science summaries (Apache-2.0). [Leaderboard](https://huggingface.co/spaces/BGPT-OFFICIAL/refute-leaderboard) · [Technical report](https://huggingface.co/datasets/BGPT-OFFICIAL/refute/blob/main/TECHNICAL_REPORT.md) · [Integrators](https://huggingface.co/datasets/BGPT-OFFICIAL/refute/blob/main/INTEGRATORS.md)
