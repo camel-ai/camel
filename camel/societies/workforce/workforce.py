@@ -43,6 +43,11 @@ from .workforce_metrics import WorkforceMetrics
 
 if TYPE_CHECKING:
     from camel.responses import ChatAgentResponse
+    from camel.triggers import (
+        BaseTriggerStore,
+        TriggerEvent,
+        TriggerManager,
+    )
     from camel.utils.context_utils import ContextUtility, WorkflowSummary
 
 
@@ -396,6 +401,13 @@ class Workforce(BaseNode):
         # Optional user callback for worker streaming text chunks.
         self._user_stream_callback = stream_callback
         self._stream_progress: Dict[Tuple[str, str], str] = {}
+        # Agentic trigger support: a TriggerManager (schedules, webhooks, ...)
+        # whose fired events are injected into this workforce as subtasks.
+        # Set via ``enable_triggers()``. When active, the listen loop stays
+        # alive while idle so triggers can fire into a long-running session.
+        self._trigger_manager: Optional["TriggerManager"] = None
+        # Woken when a trigger injects a task into an idle loop, or on stop.
+        self._trigger_wakeup = asyncio.Event()
         self._initialize_callbacks(callbacks)
 
         # Set up coordinator agent with default system message
@@ -2018,6 +2030,7 @@ class Workforce(BaseNode):
         self._stop_requested = True
         if self._pause_event.is_set() is False:
             self._pause_event.set()  # Resume if paused to process stop
+        self._trigger_wakeup.set()  # Wake an idle (trigger-waiting) loop
         logger.info(f"Workforce {self.node_id} stop requested.")
 
     def stop_gracefully(self) -> None:
@@ -2059,6 +2072,7 @@ class Workforce(BaseNode):
 
         self._stop_requested = True
         self._pause_event.set()
+        self._trigger_wakeup.set()  # Wake an idle (trigger-waiting) loop
         logger.info(f"Workforce {self.node_id} force stop requested.")
 
         # Remove pending tasks and clear channel postings to avoid new work
@@ -5203,6 +5217,103 @@ class Workforce(BaseNode):
             logger.info("No pending tasks available, acting like stop.")
             return True  # Stop processing
 
+    # ------------------------------------------------------------------
+    # Agentic triggers
+    # ------------------------------------------------------------------
+
+    def enable_triggers(
+        self,
+        store: Optional["BaseTriggerStore"] = None,
+        webhook_host: str = "127.0.0.1",
+        webhook_port: int = 8080,
+    ) -> "TriggerManager":
+        r"""Enable agentic triggers (schedules, webhooks, ...) on this
+        workforce.
+
+        Creates and attaches a :class:`~camel.triggers.manager.TriggerManager`
+        whose fired events are injected into this workforce as subtasks. While
+        any trigger is active, the listen loop stays alive when idle, turning
+        the workforce into a long-running, trigger-driven service.
+
+        Pair this with a
+        :class:`~camel.toolkits.trigger_toolkit.TriggerToolkit` (constructed
+        with the returned manager) so an agent can CRUD its own triggers.
+
+        Args:
+            store (Optional[BaseTriggerStore]): Persistence backend for trigger
+                specs. Defaults to an in-memory store.
+            webhook_host (str): Host for the shared webhook server.
+            webhook_port (int): Port for the shared webhook server.
+
+        Returns:
+            TriggerManager: The attached manager.
+        """
+        from camel.triggers import TriggerManager
+
+        self._trigger_manager = TriggerManager(
+            store=store,
+            emit=self._inject_trigger_event,
+            webhook_host=webhook_host,
+            webhook_port=webhook_port,
+        )
+        return self._trigger_manager
+
+    @property
+    def trigger_manager(self) -> Optional["TriggerManager"]:
+        r"""The attached :class:`TriggerManager`, or ``None`` if triggers are
+        not enabled."""
+        return self._trigger_manager
+
+    def _has_active_triggers(self) -> bool:
+        r"""Whether the loop should stay alive for pending trigger fires."""
+        return (
+            self._trigger_manager is not None
+            and self._trigger_manager.is_running
+            and self._trigger_manager.has_active_triggers
+        )
+
+    async def _wait_for_trigger(self) -> None:
+        r"""Park the idle loop until a trigger fires or stop/skip is set.
+
+        Waits on :attr:`_trigger_wakeup`, which is set both when a trigger
+        injects a task and by the stop paths. A short timeout bounds the wait
+        so the loop re-evaluates its exit conditions (stop, exhausted
+        triggers) even without an explicit wakeup.
+        """
+        self._trigger_wakeup.clear()
+        if self._stop_requested or self._skip_requested:
+            return
+        try:
+            await asyncio.wait_for(self._trigger_wakeup.wait(), timeout=5.0)
+        except asyncio.TimeoutError:
+            pass
+
+    async def _inject_trigger_event(self, event: "TriggerEvent") -> None:
+        r"""Sink callback: inject a fired trigger as a pending subtask.
+
+        Runs on the workforce event loop (the manager fires here), so the
+        ``_pending_tasks`` append is on the loop thread and needs no lock. The
+        wakeup event releases an idling loop immediately. The event's
+        idempotency key becomes the task id, deduping coalesced misfires.
+        """
+        if self._stop_requested:
+            return
+        task = Task(
+            content=event.to_task_content(),
+            id=event.idempotency_key,
+            additional_info={
+                "_trigger_id": event.trigger_id,
+                "_trigger_name": event.trigger_name,
+                "_trigger_type": event.trigger_type,
+            },
+        )
+        self._pending_tasks.append(task)
+        logger.info(
+            f"Trigger '{event.trigger_name}' fired; injected task "
+            f"{task.id} into workforce {self.node_id}."
+        )
+        self._trigger_wakeup.set()
+
     @check_if_running(False)
     async def _listen_to_channel(self) -> None:
         r"""Continuously listen to the channel, post task to the channel and
@@ -5214,12 +5325,18 @@ class Workforce(BaseNode):
         self._state = WorkforceState.RUNNING
         logger.info(f"Workforce {self.node_id} started.")
 
+        if self._trigger_manager is not None and not (
+            self._trigger_manager.is_running
+        ):
+            await self._trigger_manager.start()
+
         await self._post_ready_tasks()
 
         while (
             self._task is None
             or self._pending_tasks
             or self._in_flight_tasks > 0
+            or self._has_active_triggers()
         ) and not self._stop_requested:
             try:
                 # Check for pause request at the beginning of each loop
@@ -5246,6 +5363,11 @@ class Workforce(BaseNode):
                 # Only decompose when no tasks are in flight and pending queue
                 # is empty
                 if not self._pending_tasks and self._in_flight_tasks == 0:
+                    if self._has_active_triggers():
+                        # Idle but alive: park until a trigger injects a task
+                        # or a stop/skip is requested, then re-evaluate.
+                        await self._wait_for_trigger()
+                        continue
                     # All tasks completed, will exit loop
                     break
 
@@ -5722,6 +5844,15 @@ class Workforce(BaseNode):
             all_tasks_completed_event = AllTasksCompletedEvent()
             for cb in self._callbacks:
                 cb.log_all_tasks_completed(all_tasks_completed_event)
+
+        # Stop trigger sources before tearing down the workforce tree.
+        if self._trigger_manager is not None and (
+            self._trigger_manager.is_running
+        ):
+            try:
+                await self._trigger_manager.stop()
+            except Exception as e:
+                logger.warning(f"Error stopping trigger manager: {e}")
 
         # shut down the whole workforce tree
         self.stop()
