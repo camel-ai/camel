@@ -105,21 +105,6 @@ Creates a temporary file with the given code and extension.
 def _check_code_type(self, code_type: str):
 ```
 
-<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter._confirm_execution"></a>
-
-### _confirm_execution
-
-```python
-def _confirm_execution(
-    self,
-    message: str,
-    prompt: str,
-    declined_message: str
-):
-```
-
-Prompt the user before executing local subprocess work.
-
 <a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter.supported_code_types"></a>
 
 ### supported_code_types
