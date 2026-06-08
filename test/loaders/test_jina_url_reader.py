@@ -15,7 +15,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from camel.loaders import JinaURLReader
+from camel.loaders import JinaURLLoader
 
 SUCCESSFUL_RESP = """Title: Hollow Knight
 
@@ -50,9 +50,9 @@ FAILED_RESP = r'''{"data":null,"cause":{"name":"TimeoutError"},"code":422,"name"
 def test_read_content_success(mock_get: Mock):
     mock_get.return_value.text = SUCCESSFUL_RESP
     mock_get.return_value.status_code = 200
-    reader = JinaURLReader()
+    reader = JinaURLLoader({})
     test_url = "https://en.wikipedia.org/wiki/Hollow_Knight"
-    content = reader.read_content(test_url)
+    content = reader.load(test_url)
     assert "Title: Hollow Knight" in content
 
 
@@ -65,7 +65,7 @@ def test_read_content_fail(mock_get: Mock):
         "30000 ms exceeded"
     )
 
-    reader = JinaURLReader()
+    reader = JinaURLLoader({})
     test_url = "bad_url"
     with pytest.raises(ValueError):
-        reader.read_content(test_url)
+        reader.load(test_url)

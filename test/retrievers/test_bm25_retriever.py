@@ -21,7 +21,7 @@ from camel.retrievers import BM25Retriever
 
 @pytest.fixture
 def mock_unstructured_modules():
-    with patch('camel.retrievers.bm25_retriever.UnstructuredIO') as mock:
+    with patch('camel.retrievers.bm25_retriever.UnstructuredIOLoader') as mock:
         yield mock
 
 
@@ -39,14 +39,14 @@ def test_process(mock_unstructured_modules):
     mock_chunk.metadata.to_dict.return_value = {'mock_key': 'mock_value'}
 
     # Setup mock behavior
-    mock_instance.parse_file_or_url.return_value = ["mock_element"]
+    mock_instance.load.return_value = ["mock_element"]
     mock_instance.chunk_elements.return_value = [mock_chunk]
 
     bm25_retriever = BM25Retriever()
     bm25_retriever.process(content_input_path="mock_path")
 
     # Assert that methods are called as expected
-    mock_instance.parse_file_or_url.assert_called_once_with("mock_path")
+    mock_instance.load.assert_called_once_with("mock_path")
     mock_instance.chunk_elements.assert_called_once()
 
 

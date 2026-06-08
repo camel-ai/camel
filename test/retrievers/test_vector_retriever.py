@@ -45,7 +45,9 @@ def vector_retriever(mock_embedding_model, mock_vector_storage):
 
 @pytest.fixture
 def mock_unstructured_modules():
-    with patch('camel.retrievers.vector_retriever.UnstructuredIO') as mock:
+    with patch(
+        'camel.retrievers.vector_retriever.UnstructuredIOLoader'
+    ) as mock:
         yield mock
 
 
@@ -63,8 +65,17 @@ def test_initialization_with_default_embedding():
 
 
 # Test process method
-def test_process(mock_unstructured_modules, monkeypatch):
-    # Create a VectorRetriever instance
+def test_process(mock_unstructured_modules):
+    mock_instance = mock_unstructured_modules.return_value
+
+    # Create a mock chunk with metadata
+    mock_chunk = MagicMock()
+    mock_chunk.metadata.to_dict.return_value = {'mock_key': 'mock_value'}
+
+    # Setup mock behavior
+    mock_instance.load.return_value = ["mock_element"]
+    mock_instance.chunk_elements.return_value = [mock_chunk]
+
     vector_retriever = VectorRetriever()
 
     def mock_process(content, **kwargs):
@@ -78,8 +89,11 @@ def test_process(mock_unstructured_modules, monkeypatch):
     # Call the mocked process method
     vector_retriever.process(content="https://www.camel-ai.org/")
 
-    # Verify that the mock_unstructured_modules fixture was created correctly
-    assert mock_unstructured_modules is not None
+    # Assert that methods are called as expected
+    mock_instance.load.assert_called_once_with(
+        source="https://www.camel-ai.org/", metadata_filename=None
+    )
+    mock_instance.chunk_elements.assert_called_once()
 
 
 # Test query
