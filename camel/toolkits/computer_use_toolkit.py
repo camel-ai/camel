@@ -42,9 +42,16 @@ import logging
 import os
 import shlex
 import time
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Tuple
 
-from camel.toolkits import BaseToolkit, FunctionTool
+from camel.toolkits.base import BaseToolkit
+from camel.toolkits.function_tool import FunctionTool
+
+try:
+    from docker.errors import APIError, NotFound
+except ImportError:
+    APIError = None  # type: ignore[assignment]
+    NotFound = None  # type: ignore[assignment]
 
 if TYPE_CHECKING:
     pass
@@ -96,9 +103,7 @@ class ComputerUseToolkit(BaseToolkit):
         if self.use_docker:
             self._init_docker_sandbox()
         else:
-            logger.info(
-                "Running in local mode — operating on host display."
-            )
+            logger.info("Running in local mode — operating on host display.")
 
     def _init_docker_sandbox(self) -> None:
         r"""Initialize the Docker sandbox with Xvfb and xdotool.
@@ -193,9 +198,9 @@ class ComputerUseToolkit(BaseToolkit):
                 )
 
             return exit_code, output
-        except Exception as e:
+        except (APIError, NotFound) as e:
             raise RuntimeError(
-                f"Docker sandbox error for '{command[:80]}': {e}"
+                f"Docker API error for '{command[:80]}': {e}"
             ) from e
 
     # ── Screenshot ──────────────────────────────────────────────
@@ -214,9 +219,9 @@ class ComputerUseToolkit(BaseToolkit):
         """
         if self.use_docker:
             cmd = (
-                f"import -window root "
+                f"sh -lc 'import -window root "
                 f"-resize {self.display_width}x{self.display_height}! "
-                f"PNG:- | base64 -w 0"
+                f"PNG:- | base64 -w 0'"
             )
             _, output = self._docker_exec(cmd, check_exit_code=False)
             return output.strip()
@@ -318,14 +323,14 @@ class ComputerUseToolkit(BaseToolkit):
         r"""Type the given text into the active window.
 
         Args:
-            text: The text to type. Special characters are handled by
-                  xdotool's type command.
+            text: The text to type.  The ``--`` separator is prepended
+                so that text beginning with a dash is handled correctly.
 
         Returns:
             Status message.
         """
-        safe_text = shlex.quote(text)
-        self._exec_xdotool(f"type {safe_text}")
+        # -- ensures text starting with "-" is not parsed as an option
+        self._exec_xdotool(f"type -- {shlex.quote(text)}")
         preview = text[:50] + ("..." if len(text) > 50 else "")
         return f"Typed: {preview}"
 
@@ -387,15 +392,26 @@ class ComputerUseToolkit(BaseToolkit):
     # ── Internal ────────────────────────────────────────────────
 
     def _exec_xdotool(self, action: str) -> None:
-        r"""Execute an xdotool action inside the sandbox."""
-        cmd = f"DISPLAY=:99 xdotool {action}"
+        r"""Execute an xdotool action inside the sandbox.
+
+        Uses the Docker SDK's native argument-passing (list form) in
+        sandbox mode to avoid shell injection risks.  In local mode a
+        ``shell=True`` subprocess is used so that ``DISPLAY`` is
+        honoured from the host environment.
+        """
         if self.use_docker:
-            self._docker_exec(cmd, check_exit_code=False)
+            args = shlex.split(action)
+            exec_id = self._docker_api_client.exec_create(
+                self._container_id,
+                ["xdotool", *args],
+                environment={"DISPLAY": ":99"},
+            )["Id"]
+            self._docker_api_client.exec_start(exec_id)
         else:
             import subprocess
 
             subprocess.run(
-                cmd,
+                f"DISPLAY=:99 xdotool {action}",
                 shell=True,
                 capture_output=True,
                 check=False,
@@ -437,9 +453,7 @@ class ComputerUseToolkit(BaseToolkit):
                     self.sandbox_container_name,
                 )
             except Exception as e:
-                logger.warning(
-                    "Failed to clean up sandbox container: %s", e
-                )
+                logger.warning("Failed to clean up sandbox container: %s", e)
 
     def __del__(self) -> None:
         r"""Attempt cleanup on garbage collection."""

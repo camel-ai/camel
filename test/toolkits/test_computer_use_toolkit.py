@@ -13,11 +13,12 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """Tests for the ComputerUseToolkit."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from camel.toolkits import ComputerUseToolkit, FunctionTool
+from camel.toolkits.computer_use_toolkit import ComputerUseToolkit
+from camel.toolkits.function_tool import FunctionTool
 
 
 class TestComputerUseToolkit:
@@ -48,7 +49,7 @@ class TestComputerUseToolkit:
         """Mouse coordinates are clamped to display bounds."""
         result = toolkit.mouse_move(2000, 2000)
         assert "1023" in result  # Clamped to width-1
-        assert "767" in result   # Clamped to height-1
+        assert "767" in result  # Clamped to height-1
 
     def test_mouse_move_within_bounds(self, toolkit):
         """Mouse coordinates within bounds are used directly."""
@@ -105,5 +106,5 @@ class TestComputerUseToolkit:
         with patch("subprocess.run"):
             long_text = "A" * 100
             result = toolkit.type_text(long_text)
-            assert "...]]" in result or "..." in result
+            assert "..." in result
             assert len(result) < 200
