@@ -15,6 +15,7 @@
 from typing import List
 from unittest.mock import patch
 
+import pytest
 from pydantic import BaseModel, Field
 
 from camel.loaders import Firecrawl
@@ -196,3 +197,32 @@ def test_map_site_failure():
             firecrawl.map_site(url)
         except RuntimeError as e:
             assert 'Failed to map the site' in str(e)
+
+
+def test_search_success():
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
+        mock_app = MockFirecrawlApp.return_value
+        firecrawl = Firecrawl(
+            api_key='test_api_key', api_url='https://api.test.com'
+        )
+        query = 'camel ai'
+        response = {'web': [{'url': 'https://example.com'}]}
+        mock_app.search.return_value = response
+
+        result = firecrawl.search(query, params={'limit': 1})
+
+        assert result == response
+        mock_app.search.assert_called_once_with(query, limit=1)
+
+
+def test_search_failure():
+    with patch('firecrawl.Firecrawl') as MockFirecrawlApp:
+        mock_app = MockFirecrawlApp.return_value
+        firecrawl = Firecrawl(
+            api_key='test_api_key', api_url='https://api.test.com'
+        )
+        mock_app.search.side_effect = Exception('Error')
+
+        with pytest.raises(RuntimeError) as exc_info:
+            firecrawl.search('camel ai')
+        assert 'Failed to search' in str(exc_info.value)
