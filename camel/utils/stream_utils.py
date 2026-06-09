@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-"""Utilities to detect and normalize streaming chat responses."""
+r"""Utilities for detecting and normalizing streaming chat responses."""
 
 from __future__ import annotations
 
@@ -28,14 +28,19 @@ logger = get_logger(__name__)
 
 
 def _is_cumulative(contents: list[str]) -> bool:
-    """Return True if each string is a prefix of the next one.
+    r"""Return whether each content piece grows from the previous one.
 
-    Streaming heuristic:
-    - Gather non-empty ``chunk.msg.content`` pieces.
-    - If each later piece strictly grows in length and starts with the
-      previous, treat as cumulative (covers ``stream_accumulate=True``) and
-      use the last piece.
-    - Otherwise concatenate pieces in order (covers delta streaming).
+    This identifies cumulative streaming output, such as streams produced
+    with ``stream_accumulate=True``. Delta streaming output should be
+    concatenated instead.
+
+    Args:
+        contents (list[str]): Non-empty ``chunk.msg.content`` pieces
+            collected from a streaming response.
+
+    Returns:
+        bool: Whether each later content string strictly grows in length and
+            starts with the previous content string.
     """
 
     return all(
@@ -48,7 +53,18 @@ def _is_cumulative(contents: list[str]) -> bool:
 def _finalize_stream(
     contents: list[str], final_response: Optional[ChatAgentResponse]
 ) -> Tuple[ChatAgentResponse, str]:
-    """Normalize collected chunks into ``(final_response, content)``."""
+    r"""Normalize collected stream chunks into a final response and content.
+
+    Args:
+        contents (list[str]): Message content pieces collected from the
+            stream.
+        final_response (Optional[ChatAgentResponse]): Last response chunk
+            observed while consuming the stream.
+
+    Returns:
+        Tuple[ChatAgentResponse, str]: Final response object and assembled
+            message content.
+    """
 
     from camel.responses import (
         ChatAgentResponse,  # local import to avoid cycles
@@ -73,7 +89,17 @@ def _collect_sync_stream(
     response: Any,
     stream_callback: Optional[Callable[[ChatAgentResponse], None]] = None,
 ) -> Tuple[Optional[ChatAgentResponse], list[str]]:
-    """Collect chunks from a sync streaming response."""
+    r"""Collect chunks from a synchronous streaming response.
+
+    Args:
+        response (Any): Iterable synchronous streaming response.
+        stream_callback (Optional[Callable[[ChatAgentResponse], None]]):
+            Optional callback executed for each observed chunk.
+
+    Returns:
+        Tuple[Optional[ChatAgentResponse], list[str]]: Last observed response
+            chunk and the collected non-empty content pieces.
+    """
 
     final_response: Optional[ChatAgentResponse] = None
     contents: list[str] = []
@@ -100,7 +126,18 @@ async def _collect_async_stream(
         Callable[[ChatAgentResponse], Optional[Awaitable[None]]]
     ] = None,
 ) -> Tuple[Optional[ChatAgentResponse], list[str]]:
-    """Collect chunks from an async streaming response."""
+    r"""Collect chunks from an asynchronous streaming response.
+
+    Args:
+        response (Any): Async or sync iterable streaming response.
+        stream_callback (Optional[Callable[[ChatAgentResponse],
+            Optional[Awaitable[None]]]]): Optional sync or async callback
+            executed for each observed chunk.
+
+    Returns:
+        Tuple[Optional[ChatAgentResponse], list[str]]: Last observed response
+            chunk and the collected non-empty content pieces.
+    """
 
     final_response: Optional[ChatAgentResponse] = None
     contents: list[str] = []
@@ -134,17 +171,16 @@ async def _collect_async_stream(
 
 
 def is_streaming_response(response: Any) -> bool:
-    """Return True when the object represents a streaming sync response.
+    r"""Return whether an object represents a streaming chat response.
 
     Args:
-        response: Any object that might represent a chat response. Typically
-            a ``StreamingChatAgentResponse`` instance, a generator of
-            response chunks, or any iterable that does not expose a
-            ``msg`` attribute.
+        response (Any): Object that may represent a chat response. Typically
+            a :obj:`StreamingChatAgentResponse`, a generator of response
+            chunks, or an iterable that does not expose a ``msg`` attribute.
 
     Returns:
-        bool: ``True`` if the object is detected as streaming according
-        to the heuristics above, otherwise ``False``.
+        bool: Whether the object is detected as streaming according to the
+            response heuristics.
     """
     from camel.agents.chat_agent import (
         AsyncStreamingChatAgentResponse,
@@ -172,19 +208,22 @@ def consume_response_content(
     response: Any,
     stream_callback: Optional[Callable[[ChatAgentResponse], None]] = None,
 ) -> Tuple[Any, str]:
-    """Consume a sync response (streaming or not) into final_response, content.
+    r"""Consume a synchronous response into final response and content.
 
     Args:
-        response: A complete ``ChatAgentResponse`` or a streaming
-            iterable of partial responses/chunks.
-        stream_callback: Optional callable executed for each chunk as it
-            is produced. The callback receives the current chunk and is
-            intended for side effects such as logging or UI updates.
+        response (Any): Complete :obj:`ChatAgentResponse` or streaming
+            iterable of partial response chunks.
+        stream_callback (Optional[Callable[[ChatAgentResponse], None]]):
+            Optional callable executed for each chunk as it is produced.
 
     Returns:
-        Tuple[Any, str]: The last chunk observed (or an empty
-        ``ChatAgentResponse`` placeholder) and the assembled message
-        content string derived from the streamed pieces.
+        Tuple[Any, str]: Last chunk observed, or an empty
+            :obj:`ChatAgentResponse` placeholder, and the assembled message
+            content string.
+
+    Raises:
+        RuntimeError: If an async streaming response is consumed while an
+            event loop is already running.
     """
     from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
 
@@ -218,10 +257,23 @@ async def consume_response_content_async(
         Callable[[ChatAgentResponse], Optional[Awaitable[None]]]
     ] = None,
 ) -> Tuple[Any, str]:
-    """Async-friendly variant of :func:`consume_response_content`.
+    r"""Consume an async-friendly response into final response and content.
 
-    This version handles ``AsyncStreamingChatAgentResponse`` objects using
-    ``async for`` while retaining the same return contract.
+    This variant handles :obj:`AsyncStreamingChatAgentResponse` objects with
+    ``async for`` while keeping the same return contract as
+    :func:`consume_response_content`.
+
+    Args:
+        response (Any): Complete :obj:`ChatAgentResponse`, synchronous
+            streaming iterable, or asynchronous streaming response.
+        stream_callback (Optional[Callable[[ChatAgentResponse],
+            Optional[Awaitable[None]]]]): Optional sync or async callback
+            executed for each observed chunk.
+
+    Returns:
+        Tuple[Any, str]: Last chunk observed, or an empty
+            :obj:`ChatAgentResponse` placeholder, and the assembled message
+            content string.
     """
 
     if not is_streaming_response(response):
