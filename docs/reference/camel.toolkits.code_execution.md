@@ -16,7 +16,7 @@ A toolkit for code execution.
 - **verbose** (bool): Whether to print the output of the code execution. (default: :obj:`False`)
 - **unsafe_mode** (bool): If `True`, the interpreter runs the code by `eval()` without any security check. (default: :obj:`False`)
 - **import_white_list** (Optional[List[str]]): A list of allowed imports. (default: :obj:`None`)
-- **require_confirm** (Optional[bool]): Whether to require confirmation before executing code. If `None`, subprocess execution requires confirmation by default. (default: :obj:`None`)
+- **require_confirm** (Optional[bool]): Whether to require confirmation before executing code. If None, subprocess execution requires confirmation by default. (default: :obj:`None`)
 - **timeout** (Optional[float]): General timeout for toolkit operations. (default: :obj:`None`)
 - **microsandbox_config** (Optional[dict]): Configuration for microsandbox interpreter. Available keys: 'server_url', 'api_key', 'namespace', 'sandbox_name', 'timeout'. If None, uses default configuration. (default: :obj:`None`)
 

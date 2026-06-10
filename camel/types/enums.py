@@ -235,6 +235,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
     CLAUDE_SONNET_4_6 = "claude-sonnet-4-6"
     CLAUDE_HAIKU_4_5 = "claude-haiku-4-5"
+    CLAUDE_FABLE_5 = "claude-fable-5"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
     CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
     CLAUDE_OPUS_4_5 = "claude-opus-4-5"
@@ -756,6 +757,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_SONNET_4_6,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_HAIKU_4_5,
+            ModelType.CLAUDE_FABLE_5,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
             ModelType.CLAUDE_OPUS_4_5,
@@ -1729,6 +1731,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_SONNET_4_6,
             ModelType.CLAUDE_OPUS_4_7,
             ModelType.CLAUDE_OPUS_4_8,
+            ModelType.CLAUDE_FABLE_5,
             ModelType.DEEPSEEK_V4_FLASH,
             ModelType.DEEPSEEK_V4_PRO,
             ModelType.GPT_5_4,

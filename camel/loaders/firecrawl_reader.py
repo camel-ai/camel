@@ -31,7 +31,8 @@ def _to_dict(response: Any) -> Any:
 
 
 class Firecrawl:
-    r"""Firecrawl allows you to turn entire websites into LLM-ready markdown.
+    r"""[Firecrawl](https://www.firecrawl.dev) allows you to turn entire
+    websites into LLM-ready markdown.
 
     Args:
         api_key (Optional[str]): API key for authenticating with the Firecrawl

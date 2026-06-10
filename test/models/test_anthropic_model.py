@@ -44,6 +44,7 @@ class TravelResponse(BaseModel):
         ModelType.CLAUDE_OPUS_4_6,
         ModelType.CLAUDE_OPUS_4_8,
         ModelType.CLAUDE_HAIKU_4_5,
+        ModelType.CLAUDE_FABLE_5,
         ModelType.CLAUDE_SONNET_4,
         ModelType.CLAUDE_OPUS_4,
         ModelType.CLAUDE_OPUS_4_1,
@@ -61,6 +62,12 @@ def test_anthropic_model(model_type: ModelType):
 def test_claude_opus_4_8_metadata():
     assert ModelType.CLAUDE_OPUS_4_8.is_anthropic
     assert ModelType.CLAUDE_OPUS_4_8.token_limit == 1_000_000
+
+
+def test_claude_fable_5_metadata():
+    assert ModelType.CLAUDE_FABLE_5.value == "claude-fable-5"
+    assert ModelType.CLAUDE_FABLE_5.is_anthropic
+    assert ModelType.CLAUDE_FABLE_5.token_limit == 1_000_000
 
 
 def test_anthropic_model_uses_provided_token_counter():

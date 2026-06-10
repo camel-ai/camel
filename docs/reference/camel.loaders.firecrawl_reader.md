@@ -8,13 +8,13 @@
 class Firecrawl:
 ```
 
-Firecrawl allows you to turn entire websites into LLM-ready markdown.
+[Firecrawl](https://www.firecrawl.dev) allows you to turn entire websites into LLM-ready markdown.
 
 **Parameters:**
 
 - **api_key** (Optional[str]): API key for authenticating with the Firecrawl API.
 - **api_url** (Optional[str]): Base URL for the Firecrawl API.
-- **References**:
+- **References**: 
 - **https**: //docs.firecrawl.dev/introduction
 
 <a id="camel.loaders.firecrawl_reader.Firecrawl.__init__"></a>
