@@ -34,7 +34,8 @@ class SearchToolkit(BaseToolkit):
     r"""A class representing a toolkit for web search.
 
     This class provides methods for searching information on the web using
-    search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave.
+    search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave,
+    Perplexity.
     """
 
     def __init__(
@@ -1665,6 +1666,105 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Unexpected error during Querit search: {e!s}"}
 
+    @api_keys_required([(None, 'PERPLEXITY_API_KEY')])
+    def search_perplexity(
+        self,
+        query: Union[str, List[str]],
+        max_results: int = 10,
+        max_tokens: Optional[int] = None,
+        max_tokens_per_page: Optional[int] = None,
+        country: Optional[str] = None,
+        search_recency_filter: Optional[
+            Literal["hour", "day", "week", "month", "year"]
+        ] = None,
+        search_domain_filter: Optional[List[str]] = None,
+        search_language_filter: Optional[List[str]] = None,
+        extra_params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        r"""Use Perplexity Search API to retrieve web search results.
+
+        See https://docs.perplexity.ai/api-reference/search-post for details.
+
+        Args:
+            query (Union[str, List[str]]): The search query string, or a list
+                of search query strings.
+            max_results (int): Maximum number of results to return. Must be
+                between 1 and 20. (default: :obj:`10`)
+            max_tokens (Optional[int]): Maximum tokens for context (between 1
+                and 1,000,000). (default: :obj:`None`)
+            max_tokens_per_page (Optional[int]): Maximum number of tokens to
+                include from each result page (between 1 and 1,000,000).
+                (default: :obj:`None`)
+            country (Optional[str]): ISO 3166-1 alpha-2 country code used to
+                bias results to a specific country. (default: :obj:`None`)
+            search_recency_filter (Optional[Literal["hour", "day", "week", "month", "year"]]):
+                Filter results by recency. (default: :obj:`None`)
+            search_domain_filter (Optional[List[str]]): Up to 20 domains to
+                restrict the search to. (default: :obj:`None`)
+            search_language_filter (Optional[List[str]]): ISO 639-1 language
+                codes to restrict the search to. (default: :obj:`None`)
+            extra_params (Optional[Dict[str, Any]]): Additional request body
+                parameters supported by the Perplexity Search API. Explicit
+                arguments take precedence when keys overlap.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: The Perplexity Search API response. On success,
+                contains a ``results`` list (each entry includes ``title``,
+                ``url``, ``snippet``, and may include ``date`` and
+                ``last_updated``) along with ``id`` and ``server_time`` fields.
+                On failure, returns a dictionary with an ``error`` key.
+        """
+        from camel import __version__ as camel_version
+
+        PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
+
+        url = "https://api.perplexity.ai/search"
+        headers = {
+            "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
+            "Content-Type": "application/json",
+            "X-Pplx-Integration": f"camel-ai/{camel_version}",
+        }
+
+        payload: Dict[str, Any] = {
+            "query": query,
+            "max_results": max_results,
+        }
+        optional_params: Dict[str, Any] = {
+            "max_tokens": max_tokens,
+            "max_tokens_per_page": max_tokens_per_page,
+            "country": country,
+            "search_recency_filter": search_recency_filter,
+            "search_domain_filter": search_domain_filter,
+            "search_language_filter": search_language_filter,
+        }
+        for key, value in optional_params.items():
+            if value is not None:
+                payload[key] = value
+        if extra_params:
+            for key, value in extra_params.items():
+                if value is not None and key not in payload:
+                    payload[key] = value
+
+        try:
+            response = requests.post(
+                url, headers=headers, json=payload, timeout=self.timeout
+            )
+            if response.status_code != 200:
+                return {
+                    "error": (
+                        f"Perplexity API failed with status "
+                        f"{response.status_code}: {response.text}"
+                    )
+                }
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Perplexity search request failed: {e!s}"}
+        except Exception as e:
+            return {
+                "error": f"Unexpected error during Perplexity search: {e!s}"
+            }
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -1689,6 +1789,7 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_metaso),
             FunctionTool(self.search_serpapi),
             FunctionTool(self.search_querit),
+            FunctionTool(self.search_perplexity),
         ]
 
     # Deprecated method alias for backward compatibility

@@ -42,6 +42,7 @@ class TravelResponse(BaseModel):
         ModelType.CLAUDE_SONNET_4_5,
         ModelType.CLAUDE_OPUS_4_5,
         ModelType.CLAUDE_OPUS_4_6,
+        ModelType.CLAUDE_OPUS_4_8,
         ModelType.CLAUDE_HAIKU_4_5,
         ModelType.CLAUDE_SONNET_4,
         ModelType.CLAUDE_OPUS_4,
@@ -55,6 +56,11 @@ def test_anthropic_model(model_type: ModelType):
     assert isinstance(model.token_counter, AnthropicTokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
+
+
+def test_claude_opus_4_8_metadata():
+    assert ModelType.CLAUDE_OPUS_4_8.is_anthropic
+    assert ModelType.CLAUDE_OPUS_4_8.token_limit == 1_000_000
 
 
 def test_anthropic_model_uses_provided_token_counter():

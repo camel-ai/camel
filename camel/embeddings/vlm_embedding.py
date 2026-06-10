@@ -15,15 +15,44 @@
 # Enables postponed evaluation of annotations (for string-based type hints)
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Union
 
 from PIL import Image
+
+if TYPE_CHECKING:
+    import torch
 
 from camel.embeddings import BaseEmbedding
 from camel.logger import get_logger
 from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
+
+
+def _feature_output_to_tensor(outputs: Any) -> torch.Tensor:
+    r"""Return the embedding tensor from CLIP-like `get_*_features` results.
+
+    Transformers v5 returns :class:`~transformers.modeling_outputs.
+    BaseModelOutputWithPooling` with projected features in ``pooler_output``;
+    older versions returned a raw tensor.
+    """
+    import torch
+
+    pooled = getattr(outputs, "pooler_output", None)
+    if pooled is not None:
+        return pooled
+    if isinstance(outputs, torch.Tensor):
+        return outputs
+    if isinstance(outputs, (list, tuple)) and outputs:
+        if len(outputs) > 1 and isinstance(outputs[1], torch.Tensor):
+            return outputs[1]
+        first_output = outputs[0]
+        if isinstance(first_output, torch.Tensor):
+            return first_output
+    raise TypeError(
+        "Expected tensor or object with pooler_output from get_*_features; "
+        f"got {type(outputs)!r}"
+    )
 
 
 class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
@@ -96,11 +125,13 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         if not objs:
             raise ValueError("Input objs list is empty.")
 
-        image_processor_kwargs: dict = (
+        image_processor_kwargs: Mapping[str, Any] = (
             kwargs.get('image_processor_kwargs', {}) or {}
         )
-        tokenizer_kwargs: dict = kwargs.get('tokenizer_kwargs', {}) or {}
-        model_kwargs: dict = kwargs.get('model_kwargs', {}) or {}
+        tokenizer_kwargs: Mapping[str, Any] = (
+            kwargs.get('tokenizer_kwargs', {}) or {}
+        )
+        model_kwargs: Mapping[str, Any] = kwargs.get('model_kwargs', {}) or {}
 
         result_list = []
         for obj in objs:
@@ -115,8 +146,10 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                     **(image_processor_kwargs or {}),
                 )
                 image_feature = (
-                    self.model.get_image_features(
-                        **image_input, **(model_kwargs or {})
+                    _feature_output_to_tensor(
+                        self.model.get_image_features(
+                            **image_input, **model_kwargs
+                        )
                     )
                     .squeeze(dim=0)
                     .tolist()
@@ -130,8 +163,10 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                     **(tokenizer_kwargs or {}),
                 )
                 text_feature = (
-                    self.model.get_text_features(
-                        **text_input, **(model_kwargs or {})
+                    _feature_output_to_tensor(
+                        self.model.get_text_features(
+                            **text_input, **model_kwargs
+                        )
                     )
                     .squeeze(dim=0)
                     .tolist()
@@ -156,5 +191,7 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         if self.dim is None:
             text = 'dimension'
             inputs = self.processor(text=[text], return_tensors="pt")
-            self.dim = self.model.get_text_features(**inputs).shape[1]
+            self.dim = _feature_output_to_tensor(
+                self.model.get_text_features(**inputs)
+            ).shape[1]
         return self.dim

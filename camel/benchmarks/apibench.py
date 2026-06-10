@@ -172,7 +172,6 @@ class APIBenchBenchmark(BaseBenchmark):
             repo_id="gorilla-llm/APIBench",
             repo_type="dataset",
             local_dir=self.data_dir,
-            local_dir_use_symlinks=True,
         )
 
         repo = "ShishirPatil/gorilla"

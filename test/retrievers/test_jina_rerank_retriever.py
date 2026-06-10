@@ -36,7 +36,7 @@ def test_initialization_without_api_key():
     with patch.dict(os.environ, {}, clear=True):
         # Remove the JINA_API_KEY if it exists
         os.environ.pop("JINA_API_KEY", None)
-        with pytest.raises(ValueError, match="Must pass in Jina API key"):
+        with pytest.raises(ValueError, match="JINA_API_KEY"):
             JinaRerankRetriever()
 
 

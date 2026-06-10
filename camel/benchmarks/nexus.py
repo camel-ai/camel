@@ -116,7 +116,6 @@ class NexusBenchmark(BaseBenchmark):
                 repo_id=repo_id,
                 repo_type="dataset",
                 local_dir=local_dir,
-                local_dir_use_symlinks=True,
             )
 
     def load(self, dataset_name: str, force_download: bool = False):  # type: ignore[override]

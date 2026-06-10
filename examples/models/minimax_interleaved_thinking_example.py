@@ -40,7 +40,7 @@ calculate_total_tool = FunctionTool(calculate_total)
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.MINIMAX,
-    model_type=ModelType.MINIMAX_M2,
+    model_type=ModelType.MINIMAX_M3,
     model_config_dict=MinimaxConfig(
         temperature=0.2,
         interleaved_thinking=True,

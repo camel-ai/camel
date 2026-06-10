@@ -5,10 +5,14 @@
 ## AzureOpenAIModel
 
 ```python
-class AzureOpenAIModel(BaseModelBackend):
+class AzureOpenAIModel(OpenAIModel):
 ```
 
 Azure OpenAI API in a unified BaseModelBackend interface.
+
+Inherits all Responses API, chat completion, and streaming methods
+from :obj:`OpenAIModel`. Only the client initialization and
+Azure-specific configuration are different.
 
 **Parameters:**
 
@@ -24,7 +28,8 @@ Azure OpenAI API in a unified BaseModelBackend interface.
 - **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
 - **client** (Optional[Any], optional): A custom synchronous AzureOpenAI client instance. If provided, this client will be used instead of creating a new one. Useful for RL frameworks like AReaL or rLLM that provide Azure OpenAI-compatible clients. The client should implement the AzureOpenAI client interface with `.chat.completions.create()` and `.beta.chat.completions.parse()` methods. (default: :obj:`None`)
 - **async_client** (Optional[Any], optional): A custom asynchronous AzureOpenAI client instance. If provided, this client will be used instead of creating a new one. The client should implement the AsyncAzureOpenAI client interface. (default: :obj:`None`)
-- **azure_deployment_name** (Optional[str], optional): **Deprecated**. Use `model_type` parameter instead. This parameter is kept for backward compatibility and will be removed in a future version. (default: :obj:`None`) **kwargs (Any): Additional arguments to pass to the client initialization. Ignored if custom clients are provided.
+- **azure_deployment_name** (Optional[str], optional): **Deprecated**. Use `model_type` parameter instead. This parameter is kept for backward compatibility and will be removed in a future version. (default: :obj:`None`)
+- **api_mode** (`Literal["chat_completions", "responses"], optional`): Azure OpenAI API mode to use. Supported values: `"chat_completions"` (default) and `"responses"`. The `"responses"` mode uses the Azure OpenAI Responses API, which supports stateful response chaining via `previous_response_id`. (default: :obj:`"chat_completions"`) **kwargs (Any): Additional arguments to pass to the client initialization. Ignored if custom clients are provided.
 - **References**: 
 - **https**: //learn.microsoft.com/en-us/azure/ai-services/openai/
 
@@ -48,100 +53,27 @@ def __init__(
     client: Optional[Any] = None,
     async_client: Optional[Any] = None,
     azure_deployment_name: Optional[str] = None,
+    api_mode: Literal['chat_completions', 'responses'] = 'chat_completions',
     **kwargs: Any
 ):
 ```
 
-<a id="camel.models.azure_openai_model.AzureOpenAIModel.token_counter"></a>
+<a id="camel.models.azure_openai_model.AzureOpenAIModel._sanitize_config"></a>
 
-### token_counter
-
-```python
-def token_counter(self):
-```
-
-**Returns:**
-
-  BaseTokenCounter: The token counter following the model's
-tokenization style.
-
-<a id="camel.models.azure_openai_model.AzureOpenAIModel._run"></a>
-
-### _run
+### _sanitize_config
 
 ```python
-def _run(
-    self,
-    messages: List[OpenAIMessage],
-    response_format: Optional[Type[BaseModel]] = None,
-    tools: Optional[List[Dict[str, Any]]] = None
-):
+def _sanitize_config(self, config_dict: Dict[str, Any]):
 ```
 
-Runs inference of Azure OpenAI chat completion.
+No-op (Azure does not need)
 
-**Parameters:**
+<a id="camel.models.azure_openai_model.AzureOpenAIModel._adapt_messages_for_o1_models"></a>
 
-- **messages** (List[OpenAIMessage]): Message list with the chat history in OpenAI API format.
-- **response_format** (Optional[Type[BaseModel]]): The format of the response.
-- **tools** (Optional[List[Dict[str, Any]]]): The schema of the tools to use for the request.
-
-**Returns:**
-
-  Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-`ChatCompletion` in the non-stream mode, or
-`Stream[ChatCompletionChunk]` in the stream mode.
-`ChatCompletionStreamManager[BaseModel]` for
-structured output streaming.
-
-<a id="camel.models.azure_openai_model.AzureOpenAIModel._request_chat_completion"></a>
-
-### _request_chat_completion
+### _adapt_messages_for_o1_models
 
 ```python
-def _request_chat_completion(
-    self,
-    messages: List[OpenAIMessage],
-    tools: Optional[List[Dict[str, Any]]] = None
-):
+def _adapt_messages_for_o1_models(self, messages: List[OpenAIMessage]):
 ```
 
-<a id="camel.models.azure_openai_model.AzureOpenAIModel._request_parse"></a>
-
-### _request_parse
-
-```python
-def _request_parse(
-    self,
-    messages: List[OpenAIMessage],
-    response_format: Type[BaseModel],
-    tools: Optional[List[Dict[str, Any]]] = None
-):
-```
-
-<a id="camel.models.azure_openai_model.AzureOpenAIModel._request_stream_parse"></a>
-
-### _request_stream_parse
-
-```python
-def _request_stream_parse(
-    self,
-    messages: List[OpenAIMessage],
-    response_format: Type[BaseModel],
-    tools: Optional[List[Dict[str, Any]]] = None
-):
-```
-
-Request streaming structured output parsing.
-
-<a id="camel.models.azure_openai_model.AzureOpenAIModel.stream"></a>
-
-### stream
-
-```python
-def stream(self):
-```
-
-**Returns:**
-
-  bool: Whether the model is in stream mode.
+No-op (Azure does not need)

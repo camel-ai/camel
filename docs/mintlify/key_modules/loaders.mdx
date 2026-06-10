@@ -45,7 +45,7 @@ doc_code_map:
 
 {" "}
 <Accordion title="Firecrawl Reader" icon="fire">
-  Converts entire websites into LLM-ready markdown using the Firecrawl API.<br></br>
+  Converts entire websites into LLM-ready markdown using the [Firecrawl](https://www.firecrawl.dev) API.<br></br>
   Useful for quickly ingesting web content as clean text.
 </Accordion>
 

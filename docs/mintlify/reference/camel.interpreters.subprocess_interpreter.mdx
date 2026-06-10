@@ -14,11 +14,11 @@ strings in a subprocess.
 This class handles the execution of code in different scripting languages
 (currently Python and Bash) within a subprocess, capturing their
 stdout and stderr streams, and allowing user checking before executing code
-strings.
+strings or shell commands.
 
 **Parameters:**
 
-- **require_confirm** (bool, optional): If True, prompt user before running code strings for security. (default: :obj:`True`)
+- **require_confirm** (bool, optional): If True, prompt user before running code strings or shell commands for security. (default: :obj:`True`)
 - **print_stdout** (bool, optional): If True, print the standard output of the executed code. (default: :obj:`False`)
 - **print_stderr** (bool, optional): If True, print the standard error of the executed code. (default: :obj:`True`)
 - **execution_timeout** (int, optional): Maximum time in seconds to wait for code execution to complete. (default: :obj:`60`)
@@ -104,6 +104,21 @@ Creates a temporary file with the given code and extension.
 ```python
 def _check_code_type(self, code_type: str):
 ```
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter._confirm_execution"></a>
+
+### _confirm_execution
+
+```python
+def _confirm_execution(
+    self,
+    message: str,
+    prompt: str,
+    declined_message: str
+):
+```
+
+Prompt the user before executing local subprocess work.
 
 <a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter.supported_code_types"></a>
 

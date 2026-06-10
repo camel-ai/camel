@@ -16,6 +16,7 @@ import socket
 
 import pytest
 
+from camel.interpreters import InterpreterError, SubprocessInterpreter
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.utils import is_docker_running
 
@@ -39,7 +40,7 @@ def is_microsandbox_available(
 
 @pytest.fixture
 def code_execution_toolkit():
-    return CodeExecutionToolkit()
+    return CodeExecutionToolkit(require_confirm=False)
 
 
 @pytest.fixture
@@ -180,6 +181,60 @@ print(x[10])
 """
     result = subprocess_code_execution_toolkit.execute_code(code)
     assert "IndexError: list index out of range" in result
+
+
+def test_subprocess_requires_confirmation_by_default():
+    toolkit = CodeExecutionToolkit()
+
+    assert isinstance(toolkit.interpreter, SubprocessInterpreter)
+    assert toolkit.interpreter.require_confirm is True
+
+
+def test_subprocess_default_confirmation_blocks_code(monkeypatch):
+    toolkit = CodeExecutionToolkit()
+    monkeypatch.setattr('builtins.input', lambda _: 'n')
+
+    with pytest.raises(InterpreterError) as exc_info:
+        toolkit.execute_code("print('blocked')")
+
+    assert "Execution halted" in str(exc_info.value)
+
+
+def test_subprocess_default_confirmation_blocks_command(monkeypatch):
+    toolkit = CodeExecutionToolkit()
+    monkeypatch.setattr('builtins.input', lambda _: 'n')
+
+    with pytest.raises(InterpreterError) as exc_info:
+        toolkit.execute_command("echo blocked")
+
+    assert "Execution halted" in str(exc_info.value)
+
+
+def test_subprocess_default_confirmation_blocks_empty_code(monkeypatch):
+    toolkit = CodeExecutionToolkit()
+    monkeypatch.setattr('builtins.input', lambda _: '')
+
+    with pytest.raises(InterpreterError) as exc_info:
+        toolkit.execute_code("print('blocked')")
+
+    assert "Execution halted" in str(exc_info.value)
+
+
+def test_subprocess_default_confirmation_blocks_empty_command(monkeypatch):
+    toolkit = CodeExecutionToolkit()
+    monkeypatch.setattr('builtins.input', lambda _: '')
+
+    with pytest.raises(InterpreterError) as exc_info:
+        toolkit.execute_command("echo blocked")
+
+    assert "Execution halted" in str(exc_info.value)
+
+
+def test_subprocess_confirmation_can_be_disabled():
+    toolkit = CodeExecutionToolkit(sandbox="subprocess", require_confirm=False)
+
+    assert isinstance(toolkit.interpreter, SubprocessInterpreter)
+    assert toolkit.interpreter.require_confirm is False
 
 
 def test_invalid_sandbox_type():

@@ -122,6 +122,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_orcarouter(self) -> bool:
+        r"""Returns whether the model is a OrcaRouter served model."""
+        return True
+
+    @property
     def is_avian(self) -> bool:
         r"""Returns whether the model is an Avian served model."""
         return True

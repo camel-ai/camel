@@ -224,18 +224,21 @@ class AWSBedrockConverseModel(BaseModelBackend):
 
     @staticmethod
     def _parse_json_or_text(value: Any) -> Dict[str, Any]:
+        # Bedrock Converse requires `toolResult.content[].json` objects.
         if isinstance(value, dict):
             return {"json": value}
         if isinstance(value, list):
-            return {"json": value}
+            return {"json": {"__camel_tool_result__": value}}
         if isinstance(value, str):
             stripped = value.strip()
             if not stripped:
                 return {"text": ""}
             try:
                 parsed = json.loads(stripped)
-                if isinstance(parsed, (dict, list)):
+                if isinstance(parsed, dict):
                     return {"json": parsed}
+                if isinstance(parsed, list):
+                    return {"json": {"__camel_tool_result__": parsed}}
                 return {"text": stripped}
             except Exception:
                 return {"text": value}
