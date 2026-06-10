@@ -54,14 +54,6 @@ from openai import (
     RateLimitError,
     Stream,
 )
-
-try:
-    from anthropic import RateLimitError as AnthropicRateLimitError
-
-    _RATE_LIMIT_ERRORS: tuple = (RateLimitError, AnthropicRateLimitError)
-except ImportError:
-    _RATE_LIMIT_ERRORS: tuple = (RateLimitError,)  # type: ignore[misc]
-
 from pydantic import BaseModel, ValidationError
 
 from camel.agents._types import ModelResponse, ToolCallRequest
@@ -158,6 +150,31 @@ elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
         from camel.utils import observe
 else:
     from camel.utils import observe
+
+
+def _is_rate_limit_error(error: BaseException) -> bool:
+    r"""Check whether an exception is a provider rate-limit error.
+
+    Covers the OpenAI client (also used by the many OpenAI-compatible
+    backends) via an isinstance check, and any other provider SDK
+    (e.g. Anthropic, Mistral, Google GenAI) by inspecting the HTTP
+    status code exposed on the exception, without requiring those
+    optional SDKs to be installed.
+
+    Args:
+        error (BaseException): The exception raised by a model backend.
+
+    Returns:
+        bool: Whether the exception indicates an HTTP 429 rate limit.
+    """
+    if isinstance(error, RateLimitError):
+        return True
+    status = getattr(error, "status_code", None)
+    if status is None:
+        status = getattr(error, "code", None)
+    if status is None:
+        status = getattr(getattr(error, "response", None), "status_code", None)
+    return str(status) == "429"
 
 
 SIMPLE_FORMAT_PROMPT = TextPrompt(
@@ -3603,7 +3620,12 @@ class ChatAgent(BaseAgent):
                 )
                 if response:
                     break
-            except _RATE_LIMIT_ERRORS as e:
+            except Exception as e:
+                if not _is_rate_limit_error(e):
+                    logger.error(
+                        f"Model error: {self.model_backend.model_type}",
+                    )
+                    raise
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
@@ -3618,11 +3640,6 @@ class ChatAgent(BaseAgent):
                         f"Rate limit exhausted after "
                         f"{self.retry_attempts} attempts"
                     )
-            except Exception:
-                logger.error(
-                    f"Model error: {self.model_backend.model_type}",
-                )
-                raise
         else:
             # Loop completed without success
             raise ModelProcessingError(
@@ -3665,7 +3682,13 @@ class ChatAgent(BaseAgent):
                 )
                 if response:
                     break
-            except _RATE_LIMIT_ERRORS as e:
+            except Exception as e:
+                if not _is_rate_limit_error(e):
+                    logger.error(
+                        f"Model error: {self.model_backend.model_type}",
+                        exc_info=True,
+                    )
+                    raise
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
@@ -3681,12 +3704,6 @@ class ChatAgent(BaseAgent):
                         f"Rate limit exhausted after "
                         f"{self.retry_attempts} attempts"
                     )
-            except Exception:
-                logger.error(
-                    f"Model error: {self.model_backend.model_type}",
-                    exc_info=True,
-                )
-                raise
         else:
             # Loop completed without success
             raise ModelProcessingError(
