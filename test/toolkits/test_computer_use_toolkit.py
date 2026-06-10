@@ -85,9 +85,9 @@ class TestComputerUseToolkit:
             assert "down" in result
 
     def test_wait_capped_at_10(self, toolkit):
-        """wait() caps at 10 seconds."""
+        """wait() caps at 10 seconds and returns actual duration."""
         result = toolkit.wait(15.0)
-        assert "10" in result  # Capped
+        assert "Waited 10.0s" in result
 
     def test_key_combination(self, toolkit):
         """key_combination builds correct xdotool command."""

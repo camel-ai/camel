@@ -152,7 +152,6 @@ class ComputerUseToolkit(BaseToolkit):
                 },
                 detach=True,
                 stdin_open=True,
-                privileged=True,  # Required by Xvfb
             )
             self._container_id = container.id
 
@@ -290,6 +289,9 @@ class ComputerUseToolkit(BaseToolkit):
     def left_click_drag(self, x: int, y: int) -> str:
         r"""Click and drag from the current position to (x, y).
 
+        Coordinates are clamped to display bounds, consistent with
+        :meth:`mouse_move`.
+
         Args:
             x: Target X coordinate.
             y: Target Y coordinate.
@@ -297,6 +299,8 @@ class ComputerUseToolkit(BaseToolkit):
         Returns:
             Status message with drag information.
         """
+        x = max(0, min(x, self.display_width - 1))
+        y = max(0, min(y, self.display_height - 1))
         cx, cy = self._cursor_position
         self._exec_xdotool(f"mousedown 1 mousemove {x} {y} mouseup 1")
         self._cursor_position = (x, y)
@@ -368,10 +372,11 @@ class ComputerUseToolkit(BaseToolkit):
             seconds: Duration to wait in seconds (capped at 10).
 
         Returns:
-            Status message.
+            Status message with the actual duration slept.
         """
-        time.sleep(min(seconds, 10.0))
-        return f"Waited {seconds}s"
+        actual = min(seconds, 10.0)
+        time.sleep(actual)
+        return f"Waited {actual}s"
 
     def get_screen_size(self) -> dict:
         r"""Get the virtual display dimensions.
@@ -455,9 +460,3 @@ class ComputerUseToolkit(BaseToolkit):
             except Exception as e:
                 logger.warning("Failed to clean up sandbox container: %s", e)
 
-    def __del__(self) -> None:
-        r"""Attempt cleanup on garbage collection."""
-        try:
-            self.cleanup()
-        except Exception:
-            pass
