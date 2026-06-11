@@ -41,13 +41,31 @@ logger = get_logger(__name__)
 class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
     r"""Logs events and metrics for a Workforce instance."""
 
-    def __init__(self, workforce_id: str):
+    def __init__(
+        self,
+        workforce_id: str,
+        *,
+        log_stream_chunks: bool = False,
+        stream_chunk_text_limit: Optional[int] = 1000,
+    ):
         """Initializes the WorkforceLogger.
 
         Args:
             workforce_id (str): The unique identifier for the workforce.
+            log_stream_chunks (bool): Whether to persist streaming chunk
+                events. Disabled by default to avoid unbounded in-memory logs
+                for high-volume streams.
+            stream_chunk_text_limit (Optional[int]): Maximum number of
+                characters to store for each stream chunk when
+                `log_stream_chunks` is enabled. Set to `None` to store full
+                chunk text.
         """
+        if stream_chunk_text_limit is not None and stream_chunk_text_limit < 0:
+            raise ValueError("stream_chunk_text_limit must be non-negative")
+
         self.workforce_id: str = workforce_id
+        self.log_stream_chunks: bool = log_stream_chunks
+        self.stream_chunk_text_limit: Optional[int] = stream_chunk_text_limit
         self.log_entries: List[Dict[str, Any]] = []
         self._task_hierarchy: Dict[str, Dict[str, Any]] = {}
         self._worker_information: Dict[str, Dict[str, Any]] = {}
@@ -60,9 +78,24 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
 
     def log_stream_chunk(self, event: StreamChunkEvent) -> None:
         r"""Logs streaming chunk events."""
+        if not self.log_stream_chunks:
+            return
+
+        text = event.text
+        text_length = len(text)
+        text_truncated = False
+        if (
+            self.stream_chunk_text_limit is not None
+            and text_length > self.stream_chunk_text_limit
+        ):
+            text = text[: self.stream_chunk_text_limit]
+            text_truncated = True
+
         self._log_event(
             event_type=event.event_type,
-            text=event.text,
+            text=text,
+            text_length=text_length,
+            text_truncated=text_truncated,
             stream_accumulate_mode=event.stream_accumulate_mode,
             task_id=event.task_id,
             worker_id=event.worker_id,

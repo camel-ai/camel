@@ -630,27 +630,32 @@ class Workforce(BaseNode):
     ) -> None:
         r"""Normalize worker stream chunks, emit a `StreamChunkEvent`,
         and dispatch to the user callback."""
+        stream_id = f"{worker_id}:{task_id}"
         stream_payload = self._extract_stream_chunk(
             chunk,
-            stream_id=f"{worker_id}:{task_id}",
-        )
-        if stream_payload is None:
-            return
-
-        text, stream_accumulate_mode = stream_payload
-        self._emit_stream_chunk_event(
-            text=text,
-            stream_accumulate_mode=stream_accumulate_mode,
-            task_id=task_id,
-            worker_id=worker_id,
+            stream_id=stream_id,
         )
 
-        if self._user_stream_callback is not None:
-            maybe = self._user_stream_callback(
-                worker_id, task_id, text, stream_accumulate_mode
+        try:
+            if stream_payload is None:
+                return
+
+            text, stream_accumulate_mode = stream_payload
+            self._emit_stream_chunk_event(
+                text=text,
+                stream_accumulate_mode=stream_accumulate_mode,
+                task_id=task_id,
+                worker_id=worker_id,
             )
-            if asyncio.iscoroutine(maybe):
-                await maybe
+
+            if self._user_stream_callback is not None:
+                maybe = self._user_stream_callback(
+                    worker_id, task_id, text, stream_accumulate_mode
+                )
+                if asyncio.iscoroutine(maybe):
+                    await maybe
+        finally:
+            self._clear_stream_progress_if_final(chunk, stream_id)
 
     def _notify_worker_created(
         self,
@@ -1322,6 +1327,18 @@ class Workforce(BaseNode):
         for cb in self._callbacks:
             cb.log_stream_chunk(event)
 
+    def _clear_stream_progress_if_final(
+        self,
+        chunk: ChatAgentResponse,
+        stream_id: str,
+    ) -> None:
+        r"""Clear accumulated stream progress when a stream is complete."""
+        chunk_info = getattr(chunk, "info", None)
+        if getattr(chunk, "terminated", False) or (
+            isinstance(chunk_info, dict) and chunk_info.get("partial") is False
+        ):
+            self._stream_progress.pop(("stream", stream_id), None)
+
     def _on_stream_callback(
         self,
         chunk: ChatAgentResponse,
@@ -1341,12 +1358,7 @@ class Workforce(BaseNode):
                 stream_accumulate_mode=stream_accumulate_mode,
             )
         finally:
-            chunk_info = getattr(chunk, "info", None)
-            if getattr(chunk, "terminated", False) or (
-                isinstance(chunk_info, dict)
-                and chunk_info.get("partial") is False
-            ):
-                self._stream_progress.pop(("stream", stream_id), None)
+            self._clear_stream_progress_if_final(chunk, stream_id)
 
     def _share_memory_with_agents(
         self, shared_memory: Dict[str, List]
