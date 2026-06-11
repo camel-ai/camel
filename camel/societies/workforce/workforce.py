@@ -1326,18 +1326,27 @@ class Workforce(BaseNode):
         self,
         chunk: ChatAgentResponse,
     ) -> None:
+        stream_id = "internal"
         stream_payload = self._extract_stream_chunk(
             chunk,
-            stream_id="internal",
+            stream_id=stream_id,
         )
-        if stream_payload is None:
-            return
+        try:
+            if stream_payload is None:
+                return
 
-        text, stream_accumulate_mode = stream_payload
-        self._emit_stream_chunk_event(
-            text=text,
-            stream_accumulate_mode=stream_accumulate_mode,
-        )
+            text, stream_accumulate_mode = stream_payload
+            self._emit_stream_chunk_event(
+                text=text,
+                stream_accumulate_mode=stream_accumulate_mode,
+            )
+        finally:
+            chunk_info = getattr(chunk, "info", None)
+            if getattr(chunk, "terminated", False) or (
+                isinstance(chunk_info, dict)
+                and chunk_info.get("partial") is False
+            ):
+                self._stream_progress.pop(("stream", stream_id), None)
 
     def _share_memory_with_agents(
         self, shared_memory: Dict[str, List]

@@ -247,6 +247,58 @@ async def test_workforce_callback_receives_internal_stream_chunk_events():
 
 
 @pytest.mark.asyncio
+async def test_internal_stream_progress_resets_after_final_chunk():
+    callback = _NonMetricsCallback()
+    workforce = Workforce("CB Stream Reset Test", callbacks=[callback])
+
+    first_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate", "partial": True},
+    )
+    final_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello world",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate", "partial": False},
+    )
+    next_response_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello world again",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate", "partial": True},
+    )
+
+    workforce._on_stream_callback(first_chunk)
+    workforce._on_stream_callback(final_chunk)
+    workforce._on_stream_callback(next_response_chunk)
+
+    stream_events = [
+        event
+        for event in callback.events
+        if isinstance(event, StreamChunkEvent)
+    ]
+    assert [event.text for event in stream_events] == [
+        "Hello",
+        " world",
+        "Hello world again",
+    ]
+
+
+@pytest.mark.asyncio
 async def test_workforce_callback_receives_worker_stream_chunk_events():
     callback = _NonMetricsCallback()
     workforce = Workforce("CB Worker Stream Test", callbacks=[callback])
