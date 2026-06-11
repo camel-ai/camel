@@ -628,7 +628,8 @@ class Workforce(BaseNode):
     async def _on_worker_stream_chunk(
         self, chunk: "ChatAgentResponse", worker_id: str, task_id: str
     ) -> None:
-        r"""Normalize worker stream chunks, emit a `StreamChunkEvent`, and dispatch to the user callback."""
+        r"""Normalize worker stream chunks, emit a `StreamChunkEvent`,
+        and dispatch to the user callback."""
         stream_payload = self._extract_stream_chunk(
             chunk,
             stream_id=f"{worker_id}:{task_id}",
