@@ -59,6 +59,14 @@ def test_jupyter_kernel_interpreter_missing_dependency():
             JupyterKernelInterpreter()
 
 
+def test_jupyter_kernel_interpreter_missing_ipykernel():
+    from camel.interpreters import JupyterKernelInterpreter
+
+    with _mock_missing('ipykernel'):
+        with pytest.raises(ImportError, match="ipykernel"):
+            JupyterKernelInterpreter()
+
+
 def test_microsandbox_interpreter_missing_dependency():
     from camel.interpreters import MicrosandboxInterpreter
 

@@ -38,7 +38,7 @@ class JupyterKernelInterpreter(BaseInterpreter):
             of the executed code. Defaults to `True`.
     """
 
-    @dependencies_required('jupyter_client')
+    @dependencies_required('jupyter_client', 'ipykernel')
     def __init__(
         self,
         require_confirm: bool = True,
@@ -55,10 +55,12 @@ class JupyterKernelInterpreter(BaseInterpreter):
     def __del__(self) -> None:
         r"""Clean up the kernel and client."""
 
-        if self.kernel_manager:
-            self.kernel_manager.shutdown_kernel()
-        if self.client:
-            self.client.stop_channels()
+        kernel_manager = getattr(self, 'kernel_manager', None)
+        if kernel_manager:
+            kernel_manager.shutdown_kernel()
+        client = getattr(self, 'client', None)
+        if client:
+            client.stop_channels()
 
     def _initialize_if_needed(self) -> None:
         r"""Initialize the kernel manager and client if they are not already

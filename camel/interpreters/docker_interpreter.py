@@ -100,9 +100,11 @@ class DockerInterpreter(BaseInterpreter):
         This method ensures that the Docker container is removed when the
         interpreter is deleted.
         """
+        container = getattr(self, '_container', None)
+        if container is None:
+            return
         try:
-            if self._container is not None:
-                self.cleanup()
+            self.cleanup()
         except ImportError as e:
             logger.warning(f"Error during container cleanup: {e}")
 
