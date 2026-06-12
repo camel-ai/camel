@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/camel-ai-camel-badge.png)](https://mseep.ai/app/camel-ai-camel)
+
 <div align="center">
   <a href="https://www.camel-ai.org/">
     <img src="docs/images/banner.png" alt="Banner">
