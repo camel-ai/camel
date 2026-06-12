@@ -13,13 +13,26 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
 
+def _to_dict(response: Any) -> Any:
+    r"""Normalize a Firecrawl SDK response into plain Python data.
+
+    The Firecrawl v2 SDK returns typed pydantic models (e.g. ``Document``,
+    ``CrawlJob``). Convert these to dictionaries so the loader keeps returning
+    JSON-like, dict-subscriptable data as before.
+    """
+    if isinstance(response, BaseModel):
+        return response.model_dump()
+    return response
+
+
 class Firecrawl:
-    r"""Firecrawl allows you to turn entire websites into LLM-ready markdown.
+    r"""[Firecrawl](https://www.firecrawl.dev) allows you to turn entire
+    websites into LLM-ready markdown.
 
     Args:
         api_key (Optional[str]): API key for authenticating with the Firecrawl
@@ -35,12 +48,17 @@ class Firecrawl:
         api_key: Optional[str] = None,
         api_url: Optional[str] = None,
     ) -> None:
-        from firecrawl import FirecrawlApp
+        from firecrawl import Firecrawl as FirecrawlApp
 
         self._api_key = api_key or os.environ.get("FIRECRAWL_API_KEY")
         self._api_url = api_url or os.environ.get("FIRECRAWL_API_URL")
 
-        self.app = FirecrawlApp(api_key=self._api_key, api_url=self._api_url)
+        # The v2 client defaults ``api_url`` to the production endpoint, so
+        # only forward it when an explicit value is provided.
+        kwargs: Dict[str, Any] = {"api_key": self._api_key}
+        if self._api_url is not None:
+            kwargs["api_url"] = self._api_url
+        self.app = FirecrawlApp(**kwargs)
 
     def crawl(
         self,
@@ -55,25 +73,26 @@ class Firecrawl:
         Args:
             url (str): The URL to crawl.
             params (Optional[Dict[str, Any]]): Additional parameters for the
-                crawl request. Defaults to `None`.
-            **kwargs (Any): Additional keyword arguments, such as
-                `poll_interval`, `idempotency_key`.
+                crawl request (e.g. ``limit``, ``include_paths``,
+                ``scrape_options``). Defaults to `None`.
+            **kwargs (Any): Additional keyword arguments forwarded to the
+                Firecrawl client, such as ``poll_interval`` or ``timeout``.
 
         Returns:
-            Any: The crawl job ID or the crawl results if waiting until
-                completion.
+            Any: The crawl job result, including its status and the crawled
+                documents.
 
         Raises:
             RuntimeError: If the crawling process fails.
         """
 
         try:
-            crawl_response = self.app.crawl_url(
+            crawl_response = self.app.crawl(
                 url=url,
-                params=params,
+                **(params or {}),
                 **kwargs,
             )
-            return crawl_response
+            return _to_dict(crawl_response)
         except Exception as e:
             raise RuntimeError(f"Failed to crawl the URL: {e}")
 
@@ -91,15 +110,15 @@ class Firecrawl:
         """
 
         try:
-            return self.app.check_crawl_status(job_id)
+            return _to_dict(self.app.get_crawl_status(job_id))
         except Exception as e:
             raise RuntimeError(f"Failed to check the crawl job status: {e}")
 
     def scrape(
         self,
         url: str,
-        params: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, str]:
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         r"""To scrape a single URL. This function supports advanced scraping
         by setting different parameters and returns the full scraped data as a
         dictionary.
@@ -108,17 +127,18 @@ class Firecrawl:
 
         Args:
             url (str): The URL to read.
-            params (Optional[Dict[str, str]]): Additional parameters for the
-                scrape request.
+            params (Optional[Dict[str, Any]]): Additional parameters for the
+                scrape request (e.g. ``formats``, ``only_main_content``).
+                Defaults to `None`.
 
         Returns:
-            Dict[str, str]: The scraped data.
+            Dict[str, Any]: The scraped data.
 
         Raises:
             RuntimeError: If the scrape process fails.
         """
         try:
-            return self.app.scrape_url(url=url, params=params)
+            return _to_dict(self.app.scrape(url, **(params or {})))
         except Exception as e:
             raise RuntimeError(f"Failed to scrape the URL: {e}")
 
@@ -133,40 +153,73 @@ class Firecrawl:
                 in defining the expected output format.
 
         Returns:
-            Dict: The content of the URL.
+            Dict: The structured data extracted from the URL.
 
         Raises:
             RuntimeError: If the scrape process fails.
         """
         try:
-            data = self.app.scrape_url(
+            document = self.app.scrape(
                 url,
-                {
-                    'formats': ['extract'],
-                    'extract': {'schema': response_format.model_json_schema()},
-                },
+                formats=[
+                    {
+                        "type": "json",
+                        "schema": response_format.model_json_schema(),
+                    }
+                ],
             )
-            return data.get("extract", {})
+            data = _to_dict(document)
+            return data.get("json", {})
         except Exception as e:
             raise RuntimeError(f"Failed to perform structured scrape: {e}")
 
     def map_site(
         self, url: str, params: Optional[Dict[str, Any]] = None
-    ) -> list:
+    ) -> List[str]:
         r"""Map a website to retrieve all accessible URLs.
 
         Args:
             url (str): The URL of the site to map.
             params (Optional[Dict[str, Any]]): Additional parameters for the
-                map request. Defaults to `None`.
+                map request (e.g. ``search``, ``limit``). Defaults to `None`.
 
         Returns:
-            list: A list containing the URLs found on the site.
+            List[str]: A list containing the URLs found on the site.
 
         Raises:
             RuntimeError: If the mapping process fails.
         """
         try:
-            return self.app.map_url(url=url, params=params)
+            map_result = self.app.map(url=url, **(params or {}))
+            links = getattr(map_result, "links", map_result)
+            urls: List[str] = []
+            for link in links or []:
+                url_value = getattr(link, "url", None)
+                if url_value is None and isinstance(link, dict):
+                    url_value = link.get("url")
+                urls.append(url_value if url_value is not None else link)
+            return urls
         except Exception as e:
             raise RuntimeError(f"Failed to map the site: {e}")
+
+    def search(
+        self, query: str, params: Optional[Dict[str, Any]] = None
+    ) -> Any:
+        r"""Search the web and optionally scrape the result pages.
+
+        Args:
+            query (str): The search query.
+            params (Optional[Dict[str, Any]]): Additional parameters for the
+                search request (e.g. ``limit``, ``sources``, ``location``,
+                ``scrape_options``). Defaults to `None`.
+
+        Returns:
+            Any: The search results, grouped by source.
+
+        Raises:
+            RuntimeError: If the search process fails.
+        """
+        try:
+            return _to_dict(self.app.search(query, **(params or {})))
+        except Exception as e:
+            raise RuntimeError(f"Failed to search: {e}")

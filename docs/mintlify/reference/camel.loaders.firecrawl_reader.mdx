@@ -1,5 +1,19 @@
 <a id="camel.loaders.firecrawl_reader"></a>
 
+<a id="camel.loaders.firecrawl_reader._to_dict"></a>
+
+## _to_dict
+
+```python
+def _to_dict(response: Any):
+```
+
+Normalize a Firecrawl SDK response into plain Python data.
+
+The Firecrawl v2 SDK returns typed pydantic models (e.g. `__INLINE_CODE_0__`,
+`__INLINE_CODE_1__`). Convert these to dictionaries so the loader keeps returning
+JSON-like, dict-subscriptable data as before.
+
 <a id="camel.loaders.firecrawl_reader.Firecrawl"></a>
 
 ## Firecrawl
@@ -8,7 +22,8 @@
 class Firecrawl:
 ```
 
-Firecrawl allows you to turn entire websites into LLM-ready markdown.
+[Firecrawl](https://www.firecrawl.dev) allows you to turn entire
+websites into LLM-ready markdown.
 
 **Parameters:**
 
@@ -49,12 +64,12 @@ ID based on the specified options.
 **Parameters:**
 
 - **url** (str): The URL to crawl.
-- **params** (Optional[Dict[str, Any]]): Additional parameters for the crawl request. Defaults to `None`. **kwargs (Any): Additional keyword arguments, such as `poll_interval`, `idempotency_key`.
+- **params** (Optional[Dict[str, Any]]): Additional parameters for the crawl request (e.g. `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5__None__INLINE_CODE_6____INLINE_CODE_7____INLINE_CODE_8____INLINE_CODE_9__`.
 
 **Returns:**
 
-  Any: The crawl job ID or the crawl results if waiting until
-completion.
+  Any: The crawl job result, including its status and the crawled
+documents.
 
 <a id="camel.loaders.firecrawl_reader.Firecrawl.check_crawl_job"></a>
 
@@ -79,7 +94,7 @@ Check the status of a crawl job.
 ### scrape
 
 ```python
-def scrape(self, url: str, params: Optional[Dict[str, str]] = None):
+def scrape(self, url: str, params: Optional[Dict[str, Any]] = None):
 ```
 
 To scrape a single URL. This function supports advanced scraping
@@ -91,11 +106,11 @@ Reference: https://docs.firecrawl.dev/advanced-scraping-guide
 **Parameters:**
 
 - **url** (str): The URL to read.
-- **params** (Optional[Dict[str, str]]): Additional parameters for the scrape request.
+- **params** (Optional[Dict[str, Any]]): Additional parameters for the scrape request (e.g. `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3__None`.
 
 **Returns:**
 
-  Dict[str, str]: The scraped data.
+  Dict[str, Any]: The scraped data.
 
 <a id="camel.loaders.firecrawl_reader.Firecrawl.structured_scrape"></a>
 
@@ -114,7 +129,7 @@ Use LLM to extract structured data from given URL.
 
 **Returns:**
 
-  Dict: The content of the URL.
+  Dict: The structured data extracted from the URL.
 
 <a id="camel.loaders.firecrawl_reader.Firecrawl.map_site"></a>
 
@@ -129,8 +144,27 @@ Map a website to retrieve all accessible URLs.
 **Parameters:**
 
 - **url** (str): The URL of the site to map.
-- **params** (Optional[Dict[str, Any]]): Additional parameters for the map request. Defaults to `None`.
+- **params** (Optional[Dict[str, Any]]): Additional parameters for the map request (e.g. `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3__None`.
 
 **Returns:**
 
-  list: A list containing the URLs found on the site.
+  List[str]: A list containing the URLs found on the site.
+
+<a id="camel.loaders.firecrawl_reader.Firecrawl.search"></a>
+
+### search
+
+```python
+def search(self, query: str, params: Optional[Dict[str, Any]] = None):
+```
+
+Search the web and optionally scrape the result pages.
+
+**Parameters:**
+
+- **query** (str): The search query.
+- **params** (Optional[Dict[str, Any]]): Additional parameters for the search request (e.g. `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5____INLINE_CODE_6____INLINE_CODE_7__None`.
+
+**Returns:**
+
+  Any: The search results, grouped by source.
