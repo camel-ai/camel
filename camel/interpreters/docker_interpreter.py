@@ -24,7 +24,7 @@ from colorama import Fore
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
 from camel.logger import get_logger
-from camel.utils import is_docker_running
+from camel.utils import dependencies_required, is_docker_running
 
 if TYPE_CHECKING:
     from docker.models.containers import Container
@@ -80,6 +80,7 @@ class DockerInterpreter(BaseInterpreter):
         "ts": "node",
     }
 
+    @dependencies_required('docker')
     def __init__(
         self,
         require_confirm: bool = True,
@@ -99,9 +100,11 @@ class DockerInterpreter(BaseInterpreter):
         This method ensures that the Docker container is removed when the
         interpreter is deleted.
         """
+        container = getattr(self, '_container', None)
+        if container is None:
+            return
         try:
-            if self._container is not None:
-                self.cleanup()
+            self.cleanup()
         except ImportError as e:
             logger.warning(f"Error during container cleanup: {e}")
 

@@ -35,11 +35,12 @@ class SubprocessInterpreter(BaseInterpreter):
     This class handles the execution of code in different scripting languages
     (currently Python and Bash) within a subprocess, capturing their
     stdout and stderr streams, and allowing user checking before executing code
-    strings.
+    strings or shell commands.
 
     Args:
         require_confirm (bool, optional): If True, prompt user before running
-            code strings for security. (default: :obj:`True`)
+            code strings or shell commands for security.
+            (default: :obj:`True`)
         print_stdout (bool, optional): If True, print the standard output of
             the executed code. (default: :obj:`False`)
         print_stderr (bool, optional): If True, print the standard error of the
@@ -288,24 +289,19 @@ class SubprocessInterpreter(BaseInterpreter):
         """
         code_type = self._check_code_type(code_type)
 
-        # Print code for security checking
         if self.require_confirm:
-            logger.info(
-                f"The following {code_type} code will run on your "
-                f"computer: {code}"
+            self._confirm_execution(
+                message=(
+                    f"The following {code_type} code will run on your "
+                    f"computer: {code}"
+                ),
+                prompt="Running code? [y/N]:",
+                declined_message=(
+                    "Execution halted: User opted not to run the code. "
+                    "This choice stops the current operation and any "
+                    "further code execution."
+                ),
             )
-            while True:
-                choice = input("Running code? [Y/n]:").lower().strip()
-                if choice in ["y", "yes", "ye", ""]:
-                    break
-                elif choice in ["no", "n"]:
-                    raise InterpreterError(
-                        "Execution halted: User opted not to run the code. "
-                        "This choice stops the current operation and any "
-                        "further code execution."
-                    )
-                else:
-                    print("Please enter 'y' or 'n'.")
 
         temp_file_path = None
         temp_dir = None
@@ -380,6 +376,19 @@ class SubprocessInterpreter(BaseInterpreter):
             )
         return self._CODE_TYPE_MAPPING[code_type]
 
+    def _confirm_execution(
+        self, message: str, prompt: str, declined_message: str
+    ) -> None:
+        r"""Prompt the user before executing local subprocess work."""
+        logger.info(message)
+        while True:
+            choice = input(prompt).lower().strip()
+            if choice in ["y", "yes", "ye"]:
+                return
+            if choice in ["no", "n", ""]:
+                raise InterpreterError(declined_message)
+            print("Please enter 'y' or 'n'.")
+
     def supported_code_types(self) -> List[str]:
         r"""Provides supported code types by the interpreter."""
         return list(self._CODE_EXTENSION_MAPPING.keys())
@@ -439,6 +448,20 @@ class SubprocessInterpreter(BaseInterpreter):
         Raises:
             InterpreterError: If the command execution fails.
         """
+        if self.require_confirm:
+            self._confirm_execution(
+                message=(
+                    "The following shell command will run on your "
+                    f"computer: {command}"
+                ),
+                prompt="Running command? [y/N]:",
+                declined_message=(
+                    "Execution halted: User opted not to run the "
+                    "command. This choice stops the current operation "
+                    "and any further command execution."
+                ),
+            )
+
         try:
             # Get current Python executable's environment
             env = os.environ.copy()

@@ -235,11 +235,13 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
     CLAUDE_SONNET_4_6 = "claude-sonnet-4-6"
     CLAUDE_HAIKU_4_5 = "claude-haiku-4-5"
+    CLAUDE_FABLE_5 = "claude-fable-5"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
     CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
     CLAUDE_OPUS_4_5 = "claude-opus-4-5"
     CLAUDE_OPUS_4_6 = "claude-opus-4-6"
     CLAUDE_OPUS_4_7 = "claude-opus-4-7"
+    CLAUDE_OPUS_4_8 = "claude-opus-4-8"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -544,6 +546,7 @@ class ModelType(UnifiedModelType, Enum):
     CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
 
     # Minimax models
+    MINIMAX_M3 = "MiniMax-M3"
     MINIMAX_M2_7 = "MiniMax-M2.7"
     MINIMAX_M2_7_HIGHSPEED = "MiniMax-M2.7-highspeed"
     MINIMAX_M2_5 = "MiniMax-M2.5"
@@ -754,11 +757,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_SONNET_4_6,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_HAIKU_4_5,
+            ModelType.CLAUDE_FABLE_5,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
             ModelType.CLAUDE_OPUS_4_5,
             ModelType.CLAUDE_OPUS_4_6,
             ModelType.CLAUDE_OPUS_4_7,
+            ModelType.CLAUDE_OPUS_4_8,
         }
 
     @property
@@ -1022,6 +1027,7 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def is_minimax(self) -> bool:
         return self in {
+            ModelType.MINIMAX_M3,
             ModelType.MINIMAX_M2_7,
             ModelType.MINIMAX_M2_7_HIGHSPEED,
             ModelType.MINIMAX_M2_5,
@@ -1724,12 +1730,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_3_CODER_PLUS,
             ModelType.CLAUDE_SONNET_4_6,
             ModelType.CLAUDE_OPUS_4_7,
+            ModelType.CLAUDE_OPUS_4_8,
+            ModelType.CLAUDE_FABLE_5,
             ModelType.DEEPSEEK_V4_FLASH,
             ModelType.DEEPSEEK_V4_PRO,
             ModelType.GPT_5_4,
             ModelType.GPT_5_4_PRO,
             ModelType.GPT_5_5,
             ModelType.GPT_5_5_PRO,
+            ModelType.MINIMAX_M3,
             ModelType.ORCAROUTER_CLAUDE_OPUS_4_7,
             ModelType.ORCAROUTER_GROK_4_3,
         }:

@@ -17,6 +17,7 @@ from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
 from camel.logger import get_logger
+from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
 
@@ -74,6 +75,7 @@ class MicrosandboxInterpreter(BaseInterpreter):
         "sh": "shell_command",
     }
 
+    @dependencies_required('microsandbox')
     def __init__(
         self,
         require_confirm: bool = True,

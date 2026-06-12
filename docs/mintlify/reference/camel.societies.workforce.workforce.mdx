@@ -484,6 +484,36 @@ def _collect_shared_memory(self):
 records. Contains entries for 'coordinator', 'task_agent',
 and 'workers'.
 
+<a id="camel.societies.workforce.workforce.Workforce._extract_stream_chunk"></a>
+
+### _extract_stream_chunk
+
+```python
+def _extract_stream_chunk(self, chunk: ChatAgentResponse):
+```
+
+Extract normalized text and mode from a stream chunk.
+
+<a id="camel.societies.workforce.workforce.Workforce._emit_stream_chunk_event"></a>
+
+### _emit_stream_chunk_event
+
+```python
+def _emit_stream_chunk_event(self):
+```
+
+Emit a stream chunk event to all registered callbacks.
+
+<a id="camel.societies.workforce.workforce.Workforce._clear_stream_progress_if_final"></a>
+
+### _clear_stream_progress_if_final
+
+```python
+def _clear_stream_progress_if_final(self, chunk: ChatAgentResponse, stream_id: str):
+```
+
+Clear accumulated stream progress when a stream is complete.
+
 <a id="camel.societies.workforce.workforce.Workforce._on_stream_callback"></a>
 
 ### _on_stream_callback
