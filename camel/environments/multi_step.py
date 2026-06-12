@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from camel.environments.models import Action, Observation, StepResult
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
+from camel.utils.commons import dependencies_required
 
 logger = get_logger(__name__)
 
@@ -265,9 +266,114 @@ class MultiStepEnv(ABC):
 
     @property
     def current_step(self) -> int:
-        r"""Get the current step number.
+        r"""Returns the current step number."""
+        return self._current_step
+
+    @dependencies_required("mcp")
+    def to_mcp(
+        self,
+        name: str = "CAMEL-MultiStepEnv",
+        description: str = "A multi-step environment for RL with LLMs.",
+        dependencies: Optional[List[str]] = None,
+        host: str = "localhost",
+        port: int = 8000,
+    ):
+        r"""Expose this MultiStepEnv as an MCP server.
+
+        Args:
+            name (str): Name of the MCP server.
+                (default: :obj:`CAMEL-MultiStepEnv`)
+            description (str): Description of the environment.
+                (default: :obj:`A multi-step environment for RL with LLMs.`)
+            dependencies (Optional[List[str]]): Additional dependencies for
+                the MCP server. (default: :obj:`None`)
+            host (str): Host to bind to for HTTP transport.
+                (default: :obj:`localhost`)
+            port (int): Port to bind to for HTTP transport.
+                (default: :obj:`8000`)
 
         Returns:
-            int: The number of the step we are currently in.
+            FastMCP: An MCP server instance that can be run.
         """
-        return self._current_step
+        from mcp.server.fastmcp import FastMCP
+
+        # Combine dependencies
+        all_dependencies = ["camel-ai[all]"]
+        if dependencies:
+            all_dependencies.extend(dependencies)
+
+        mcp_server = FastMCP(
+            name,
+            dependencies=all_dependencies,
+            host=host,
+            port=port,
+        )
+
+        # Store environment reference
+        env_instance = self
+
+        # Define core functions
+        async def setup():
+            r"""Set up the environment."""
+            await env_instance.setup()
+            return {"status": "success", "message": "Environment setup"}
+
+        async def close():
+            r"""Close the environment."""
+            await env_instance.close()
+            return {"status": "success", "message": "Environment closed"}
+
+        async def reset():
+            r"""Reset the environment."""
+            observation = await env_instance.reset()
+            return {
+                "status": "success",
+                "observation": (
+                    observation.to_dict()
+                    if hasattr(observation, "to_dict")
+                    else observation
+                ),
+            }
+
+        async def step(action):
+            r"""Take a step in the environment."""
+            observation, reward, done, info = await env_instance.step(action)
+            return {
+                "status": "success",
+                "observation": (
+                    observation.to_dict()
+                    if hasattr(observation, "to_dict")
+                    else observation
+                ),
+                "reward": reward,
+                "done": done,
+                "info": info,
+            }
+
+        def get_metadata():
+            r"""Get environment metadata."""
+            return {
+                "status": "success",
+                "metadata": env_instance.metadata,
+            }
+
+        def get_current_step():
+            r"""Get current step number."""
+            return {
+                "status": "success",
+                "current_step": env_instance.current_step,
+            }
+
+        # Register functions with MCP server
+        mcp_server.tool()(setup)
+        mcp_server.tool()(close)
+        mcp_server.tool()(reset)
+        mcp_server.tool()(step)
+        mcp_server.tool()(get_metadata)
+        mcp_server.tool()(get_current_step)
+
+        # Register resources
+        mcp_server.resource("metadata://")(get_metadata)
+        mcp_server.resource("step://")(get_current_step)
+
+        return mcp_server
