@@ -1279,13 +1279,12 @@ class Workforce(BaseNode):
 
         stream_accumulate_mode: str = "accumulate"
         if chunk.info:
+            # `mode` is a legacy/custom chunk fallback; current producers use
+            # `stream_accumulate_mode`.
             raw_stream_accumulate_mode = chunk.info.get(
-                "stream_accumulate_mode", stream_accumulate_mode
+                "stream_accumulate_mode",
+                chunk.info.get("mode", stream_accumulate_mode),
             )
-            if "stream_accumulate_mode" in chunk.info:
-                raw_stream_accumulate_mode = chunk.info[
-                    "stream_accumulate_mode"
-                ]
             if raw_stream_accumulate_mode in ("delta", "accumulate"):
                 stream_accumulate_mode = raw_stream_accumulate_mode
 
