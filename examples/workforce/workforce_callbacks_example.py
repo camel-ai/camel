@@ -92,7 +92,10 @@ class PrintCallback(WorkforceCallback):
         )
 
     def log_stream_chunk(self, event: StreamChunkEvent) -> None:
-        key = (event.worker_id or "0", event.task_id or "0")
+        if not event.worker_id or not event.task_id:
+            return
+
+        key = (event.worker_id, event.task_id)
         self._stream_buffers.setdefault(key, []).append(event.text)
 
         now = time.monotonic()
@@ -164,6 +167,10 @@ class PrintCallback(WorkforceCallback):
             f"[PrintCallback] task_failed: task={event.task_id}, "
             f"err={event.error_message}"
         )
+        if event.worker_id:
+            key = (event.worker_id, event.task_id)
+            self._stream_buffers.pop(key, None)
+            self._stream_stats.pop(key, None)
 
     def log_worker_created(self, event: WorkerCreatedEvent) -> None:
         print(
