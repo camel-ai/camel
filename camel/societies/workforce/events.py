@@ -23,6 +23,7 @@ class WorkforceEventBase(BaseModel):
     model_config = ConfigDict(frozen=True, extra='forbid')
     event_type: Literal[
         "log",
+        "stream_chunk",
         "task_decomposed",
         "task_created",
         "task_assigned",
@@ -58,6 +59,14 @@ class LogEvent(WorkforceEventBase):
         ]
         | None
     ) = None
+
+
+class StreamChunkEvent(WorkforceEventBase):
+    event_type: Literal["stream_chunk"] = "stream_chunk"
+    text: str
+    stream_accumulate_mode: str = "accumulate"
+    task_id: Optional[str] = None
+    worker_id: Optional[str] = None
 
 
 class WorkerCreatedEvent(WorkforceEventBase):
@@ -144,6 +153,7 @@ class QueueStatusEvent(WorkforceEventBase):
 
 WorkforceEvent = Union[
     LogEvent,
+    StreamChunkEvent,
     TaskDecomposedEvent,
     TaskCreatedEvent,
     TaskAssignedEvent,

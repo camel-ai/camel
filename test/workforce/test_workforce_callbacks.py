@@ -18,9 +18,11 @@ import pytest
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
+from camel.responses import ChatAgentResponse
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
     LogEvent,
+    StreamChunkEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -48,6 +50,9 @@ class _NonMetricsCallback(WorkforceCallback):
 
     def log_message(self, event: LogEvent) -> None:
         pass
+
+    def log_stream_chunk(self, event: StreamChunkEvent) -> None:
+        self.events.append(event)
 
     # Task events
     def log_task_created(self, event: TaskCreatedEvent) -> None:
@@ -95,6 +100,9 @@ class _MetricsCallback(WorkforceCallback, WorkforceMetrics):
 
     def log_message(self, event: LogEvent) -> None:
         pass
+
+    def log_stream_chunk(self, event: StreamChunkEvent) -> None:
+        self.events.append(event)
 
     # WorkforceMetrics interface
     def reset_task_data(self) -> None:
@@ -186,6 +194,247 @@ def test_workforce_callback_registration_and_metrics_handling():
         Workforce("CB Test - Invalid", callbacks=[object()])
 
 
+def test_workforce_logger_skips_stream_chunks_by_default():
+    logger = WorkforceLogger("wf-test")
+
+    logger.log_stream_chunk(
+        StreamChunkEvent(
+            text="high-volume stream text",
+            stream_accumulate_mode="delta",
+            task_id="task-1",
+            worker_id="worker-1",
+        )
+    )
+
+    assert logger.log_entries == []
+
+
+def test_workforce_logger_can_persist_truncated_stream_chunks():
+    logger = WorkforceLogger(
+        "wf-test",
+        log_stream_chunks=True,
+        stream_chunk_text_limit=5,
+    )
+
+    logger.log_stream_chunk(
+        StreamChunkEvent(
+            text="stream text",
+            stream_accumulate_mode="delta",
+            task_id="task-1",
+            worker_id="worker-1",
+            metadata={"source": "unit-test"},
+        )
+    )
+
+    assert len(logger.log_entries) == 1
+    entry = logger.log_entries[0]
+    assert entry["event_type"] == "stream_chunk"
+    assert entry["text"] == "strea"
+    assert entry["text_length"] == len("stream text")
+    assert entry["text_truncated"] is True
+    assert entry["stream_accumulate_mode"] == "delta"
+    assert entry["task_id"] == "task-1"
+    assert entry["worker_id"] == "worker-1"
+    assert entry["metadata"] == {"source": "unit-test"}
+
+
+def test_workforce_logger_rejects_negative_stream_chunk_limit():
+    with pytest.raises(ValueError, match="stream_chunk_text_limit"):
+        WorkforceLogger("wf-test", stream_chunk_text_limit=-1)
+
+
+@pytest.mark.asyncio
+async def test_workforce_callback_receives_internal_stream_chunk_events():
+    callback = _NonMetricsCallback()
+    workforce = Workforce("CB Stream Test", callbacks=[callback])
+
+    first_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate"},
+    )
+    second_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello world",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate"},
+    )
+
+    workforce._on_stream_callback(
+        first_chunk,
+    )
+    workforce._on_stream_callback(
+        second_chunk,
+    )
+
+    stream_events = [
+        event
+        for event in callback.events
+        if isinstance(event, StreamChunkEvent)
+    ]
+    assert [
+        (
+            event.task_id,
+            event.worker_id,
+            event.text,
+            event.stream_accumulate_mode,
+        )
+        for event in stream_events
+    ] == [
+        (None, None, "Hello", "accumulate"),
+        (None, None, " world", "accumulate"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_internal_stream_progress_resets_after_final_chunk():
+    callback = _NonMetricsCallback()
+    workforce = Workforce("CB Stream Reset Test", callbacks=[callback])
+
+    first_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate", "partial": True},
+    )
+    final_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello world",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate", "partial": False},
+    )
+    next_response_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello world again",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate", "partial": True},
+    )
+
+    workforce._on_stream_callback(first_chunk)
+    workforce._on_stream_callback(final_chunk)
+    workforce._on_stream_callback(next_response_chunk)
+
+    stream_events = [
+        event
+        for event in callback.events
+        if isinstance(event, StreamChunkEvent)
+    ]
+    assert [event.text for event in stream_events] == [
+        "Hello",
+        " world",
+        "Hello world again",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_workforce_callback_receives_worker_stream_chunk_events():
+    callback = _NonMetricsCallback()
+    workforce = Workforce("CB Worker Stream Test", callbacks=[callback])
+
+    chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="partial",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "delta"},
+    )
+
+    await workforce._on_worker_stream_chunk(chunk, "worker-1", "task-1")
+
+    stream_events = [
+        event
+        for event in callback.events
+        if isinstance(event, StreamChunkEvent)
+    ]
+    assert [
+        (
+            event.task_id,
+            event.worker_id,
+            event.text,
+            event.stream_accumulate_mode,
+        )
+        for event in stream_events
+    ] == [("task-1", "worker-1", "partial", "delta")]
+
+
+@pytest.mark.asyncio
+async def test_worker_stream_progress_resets_after_final_chunk():
+    callback = _NonMetricsCallback()
+    workforce = Workforce("CB Worker Stream Reset Test", callbacks=[callback])
+
+    first_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate", "partial": True},
+    )
+    final_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello world",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate", "partial": False},
+    )
+    next_response_chunk = ChatAgentResponse(
+        msgs=[
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="Hello world again",
+            )
+        ],
+        terminated=False,
+        info={"stream_accumulate_mode": "accumulate", "partial": True},
+    )
+
+    await workforce._on_worker_stream_chunk(first_chunk, "worker-1", "task-1")
+    await workforce._on_worker_stream_chunk(final_chunk, "worker-1", "task-1")
+    await workforce._on_worker_stream_chunk(
+        next_response_chunk, "worker-1", "task-1"
+    )
+
+    stream_events = [
+        event
+        for event in callback.events
+        if isinstance(event, StreamChunkEvent)
+    ]
+    assert [event.text for event in stream_events] == [
+        "Hello",
+        " world",
+        "Hello world again",
+    ]
+
+
 def assert_event_sequence(
     events: list[type[WorkforceEvent]], min_worker_count: int
 ):
@@ -260,6 +509,7 @@ def assert_event_sequence(
     allowed_events = {
         WorkerCreatedEvent,
         WorkerDeletedEvent,
+        StreamChunkEvent,
         TaskCreatedEvent,
         TaskDecomposedEvent,
         TaskAssignedEvent,
