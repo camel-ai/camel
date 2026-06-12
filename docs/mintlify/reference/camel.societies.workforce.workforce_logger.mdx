@@ -23,6 +23,8 @@ Initializes the WorkforceLogger.
 **Parameters:**
 
 - **workforce_id** (str): The unique identifier for the workforce.
+- **log_stream_chunks** (bool): Whether to persist streaming chunk events. Disabled by default to avoid unbounded in-memory logs for high-volume streams.
+- **stream_chunk_text_limit** (Optional[int]): Maximum number of characters to store for each stream chunk when `log_stream_chunks` is enabled. Set to `None` to store full chunk text.
 
 <a id="camel.societies.workforce.workforce_logger.WorkforceLogger.log_message"></a>
 
@@ -33,6 +35,16 @@ def log_message(self, event: LogEvent):
 ```
 
 Logs a message to the console with color.
+
+<a id="camel.societies.workforce.workforce_logger.WorkforceLogger.log_stream_chunk"></a>
+
+### log_stream_chunk
+
+```python
+def log_stream_chunk(self, event: StreamChunkEvent):
+```
+
+Logs streaming chunk events.
 
 <a id="camel.societies.workforce.workforce_logger.WorkforceLogger._log_event"></a>
 
