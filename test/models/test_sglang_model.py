@@ -98,7 +98,7 @@ def test_sglang_function_call(sglang_model_cleanup):
     )
 
     # Create a mock response object
-    from openai.types.chat.chat_completion_message_function_tool_call import (
+    from openai.types.chat.chat_completion_message_tool_call import (
         ChatCompletionMessageFunctionToolCall,
     )
 
