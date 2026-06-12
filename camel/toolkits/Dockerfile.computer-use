@@ -1,0 +1,35 @@
+# Dockerfile for the ComputerUseToolkit sandbox
+#
+# Build:
+#   docker build -t camel/computer-use:latest \
+#     -f camel/toolkits/Dockerfile.computer-use .
+#
+# The image provides Xvfb (virtual framebuffer) + xdotool for headless
+# GUI automation inside a Docker container.
+
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    xvfb \
+    xdotool \
+    imagemagick \
+    x11-utils \
+    fluxbox \
+    && rm -rf /var/lib/apt/lists/*
+
+# Start Xvfb on display :99 with a minimal window manager
+COPY <<EOF /entrypoint.sh
+#!/bin/bash
+set -e
+Xvfb :99 -screen 0 "${WIDTH:-1280}x${HEIGHT:-720}x24" &
+sleep 1
+fluxbox -display :99 &
+sleep 1
+exec "$@"
+EOF
+
+RUN chmod +x /entrypoint.sh
+
+ENV DISPLAY=:99
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["sleep", "infinity"]
