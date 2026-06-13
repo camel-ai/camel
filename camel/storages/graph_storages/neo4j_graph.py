@@ -613,13 +613,13 @@ class Neo4jGraph(BaseGraphStorage):
                 original graph from which the sampling random walks will start.
             restart_probability (float, optional): The probability that a
                 sampling random walk restarts from one of the start nodes.
-                Defaults to `0.1`.
+                (default: :obj:0.1)
             node_label_stratification (bool, optional): If true, preserves the
-                node label distribution of the original graph. Defaults to
-                `False`.
+                node label distribution of the original graph.
+                (default: :obj:False)
             relationship_weight_property (Optional[str], optional): Name of
                 the relationship property to use as weights. If unspecified,
-                the algorithm runs unweighted. Defaults to `None`.
+                the algorithm runs unweighted. (default: :obj:None)
 
         Returns:
             Dict[str, Any]: A dictionary with the results of the RWR sampling.
@@ -683,11 +683,11 @@ class Neo4jGraph(BaseGraphStorage):
             start_node_ids (List[int]): IDs of the initial set of nodes of the
                 original graph from which the sampling random walks will start.
             node_label_stratification (bool, optional): If true, preserves the
-                node label distribution of the original graph. Defaults to
-                `False`.
+                node label distribution of the original graph.
+                (default: :obj:False)
             relationship_weight_property (Optional[str], optional): Name of
                 the relationship property to use as weights. If unspecified,
-                the algorithm runs unweighted. Defaults to `None`.
+                the algorithm runs unweighted. (default: :obj:None)
 
         Returns:
             Dict[str, Any]: A dictionary with the results of the CNARW
@@ -741,15 +741,15 @@ class Neo4jGraph(BaseGraphStorage):
         not specified, returns all matching triplets.
 
         Args:
-            subj (Optional[str]): The ID of the subject node.
+            subj (Optional[str], optional): The ID of the subject node.
                 If None, matches any subject node.
-                (default: :obj:`None`)
-            obj (Optional[str]): The ID of the object node.
+                (default: :obj:None)
+            obj (Optional[str], optional): The ID of the object node.
                 If None, matches any object node.
-                (default: :obj:`None`)
-            rel (Optional[str]): The type of relationship.
+                (default: :obj:None)
+            rel (Optional[str], optional): The type of relationship.
                 If None, matches any relationship type.
-                (default: :obj:`None`)
+                (default: :obj:None)
 
         Returns:
             List[Dict[str, Any]]: A list of matching triplets,
