@@ -26,11 +26,13 @@ except ImportError:
 class Node(BaseModel):
     r"""Represents a node in a graph with associated properties.
 
-    Attributes:
+    Args:
         id (Union[str, int]): A unique identifier for the node.
-        type (str):  The type of the relationship.
-        properties (dict): Additional properties and metadata associated with
-            the node.
+        type (str, optional): The type of the node.
+            (default: :obj:`"Node"`)
+        properties (dict, optional): Additional properties and metadata
+            associated with the node.
+            (default: :obj:`dict`)
     """
 
     id: Union[str, int]
@@ -41,13 +43,16 @@ class Node(BaseModel):
 class Relationship(BaseModel):
     r"""Represents a directed relationship between two nodes in a graph.
 
-    Attributes:
+    Args:
         subj (Node): The subject/source node of the relationship.
         obj (Node): The object/target node of the relationship.
-        type (str):  The type of the relationship.
+        type (str, optional): The type of the relationship.
+            (default: :obj:`"Relationship"`)
         timestamp (str, optional): The timestamp of the relationship.
-        properties (dict): Additional properties associated with the
-            relationship.
+            (default: :obj:`None`)
+        properties (dict, optional): Additional properties associated
+            with the relationship.
+            (default: :obj:`dict`)
     """
 
     subj: Node
@@ -58,14 +63,14 @@ class Relationship(BaseModel):
 
 
 class GraphElement(BaseModel):
-    r"""A graph element with lists of nodes and relationships.
+    r"""Graph element containing nodes and relationships.
 
-    Attributes:
+    Args:
         nodes (List[Node]): A list of nodes in the graph.
-        relationships (List[Relationship]): A list of relationships in the
-            graph.
-        source (Element): The element from which the graph information is
-            derived.
+        relationships (List[Relationship]): A list of relationships in
+            the graph.
+        source (Element): The element from which the graph information
+            is derived.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -75,6 +80,9 @@ class GraphElement(BaseModel):
     source: Element
 
     def __post_init__(self):
+        r"""Validate required dependencies for the source element."""
         if "Element" not in globals():
-            raise ImportError("""The 'unstructured' package is required to use
-                              the 'source' attribute.""")
+            raise ImportError(
+                "The 'unstructured' package is required to use "
+                "the 'source' attribute."
+            )
