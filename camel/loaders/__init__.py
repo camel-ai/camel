@@ -16,6 +16,7 @@ from .apify_reader import Apify
 from .base_io import File, create_file, create_file_from_raw_bytes
 from .chunkr_reader import ChunkrReader, ChunkrReaderConfig
 from .crawl4ai_reader import Crawl4AI
+from .crw_reader import CrwReader
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
 from .markitdown import MarkItDownLoader
@@ -31,6 +32,7 @@ __all__ = [
     'UnstructuredIO',
     'JinaURLReader',
     'Firecrawl',
+    'CrwReader',
     'Apify',
     'ChunkrReader',
     'ChunkrReaderConfig',
