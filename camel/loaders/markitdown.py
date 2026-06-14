@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import ClassVar, Dict, List, Optional
 
 from camel.logger import get_logger
+from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
 
@@ -66,6 +67,7 @@ class MarkItDownLoader:
         ".md",
     ]
 
+    @dependencies_required('markitdown')
     def __init__(
         self,
         llm_client: Optional[object] = None,

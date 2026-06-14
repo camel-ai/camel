@@ -18,6 +18,8 @@ from typing import Any, Dict, List, Optional, Set
 
 from pydantic import BaseModel, ValidationError
 
+from camel.utils import dependencies_required
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,6 +33,7 @@ class Crawl4AI:
         https://docs.crawl4ai.com/
     """
 
+    @dependencies_required('crawl4ai')
     def __init__(self) -> None:
         from crawl4ai import AsyncWebCrawler
 
