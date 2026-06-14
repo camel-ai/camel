@@ -18,6 +18,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
+from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
@@ -31,6 +32,7 @@ class RedisStorage(BaseKeyValueStorage):
     persistence and high availability.
     """
 
+    @dependencies_required('redis')
     def __init__(
         self,
         sid: str,
@@ -49,16 +51,9 @@ class RedisStorage(BaseKeyValueStorage):
                       configuration.
 
         Raises:
-            ImportError: If the `redis.asyncio` module is not installed.
+            ImportError: If the `redis` module is not installed.
         """
-        try:
-            import redis.asyncio as aredis
-        except ImportError as exc:
-            logger.error(
-                "Please install `redis` first. You can install it by "
-                "running `pip install redis`."
-            )
-            raise exc
+        import redis.asyncio as aredis
 
         self._client: Optional[aredis.Redis] = None
         self._url = url

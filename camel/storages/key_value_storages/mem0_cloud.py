@@ -22,6 +22,7 @@ from camel.memories.records import MemoryRecord
 from camel.messages import BaseMessage
 from camel.storages.key_value_storages import BaseKeyValueStorage
 from camel.types import OpenAIBackendRole, RoleType
+from camel.utils import api_keys_required, dependencies_required
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,12 @@ class Mem0Storage(BaseKeyValueStorage):
         https://docs.mem0.ai
     """
 
+    @dependencies_required('mem0')
+    @api_keys_required(
+        [
+            ("api_key", "MEM0_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         agent_id: str,
@@ -52,22 +59,9 @@ class Mem0Storage(BaseKeyValueStorage):
         user_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
-        try:
-            from mem0 import MemoryClient
-        except ImportError as exc:
-            logger.error(
-                "Please install `mem0` first. You can install it by "
-                "running `pip install mem0ai`."
-            )
-            raise exc
+        from mem0 import MemoryClient
 
         self.api_key = api_key or os.getenv("MEM0_API_KEY")
-        if not self.api_key:
-            raise ValueError(
-                "API key must be provided either through constructor "
-                "or MEM0_API_KEY environment variable."
-            )
-
         self.client = MemoryClient(api_key=self.api_key)
         self.agent_id = agent_id
         self.user_id = user_id
