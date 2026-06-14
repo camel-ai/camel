@@ -18,6 +18,7 @@ from warnings import warn
 
 from camel.loaders import File, create_file_from_raw_bytes
 from camel.storages.object_storages.base import BaseObjectStorage
+from camel.utils import dependencies_required
 
 
 class AzureBlobStorage(BaseObjectStorage):
@@ -34,6 +35,7 @@ class AzureBlobStorage(BaseObjectStorage):
         https://azure.microsoft.com/en-us/products/storage/blobs
     """
 
+    @dependencies_required('azure.storage.blob')
     def __init__(
         self,
         storage_account_name: str,
