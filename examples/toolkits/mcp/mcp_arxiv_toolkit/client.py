@@ -20,6 +20,16 @@ from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
 
 
 async def run_example_http():
+    r"""Run the example against a streamable-http MCP server.
+
+    This requires the arxiv toolkit server to be already running in
+    streamable-http mode in a separate process, e.g.:
+
+        cd examples/toolkits/mcp/mcp_arxiv_toolkit
+        python arxiv_toolkit_server.py --mode streamable-http
+
+    Otherwise, connecting to the server will hang.
+    """
     config = {
         "mcpServers": {
             "arxiv_toolkit": {
@@ -109,5 +119,9 @@ async def run_example_stdio():
 
 
 if __name__ == "__main__":
-    asyncio.run(run_example_http())
+    # run_example_stdio() is self-contained and spawns its own server, so
+    # it is run by default. run_example_http() requires a separately
+    # running streamable-http server (see its docstring) and is therefore
+    # not run by default.
     asyncio.run(run_example_stdio())
+    # asyncio.run(run_example_http())

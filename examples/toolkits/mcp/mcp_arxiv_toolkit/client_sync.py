@@ -18,6 +18,16 @@ from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
 
 
 def run_example():
+    r"""Run the example against a streamable-http MCP server.
+
+    This requires the arxiv toolkit server to be already running in
+    streamable-http mode in a separate process, e.g.:
+
+        cd examples/toolkits/mcp/mcp_arxiv_toolkit
+        python arxiv_toolkit_server.py --mode streamable-http
+
+    Otherwise, connecting to the server will hang.
+    """
     mcp_toolkit = MCPToolkit(
         config_dict={
             "mcpServers": {
