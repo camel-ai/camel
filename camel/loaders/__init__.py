@@ -16,6 +16,7 @@ from .apify_reader import Apify
 from .base_io import File, create_file, create_file_from_raw_bytes
 from .chunkr_reader import ChunkrReader, ChunkrReaderConfig
 from .crawl4ai_reader import Crawl4AI
+from .crw_reader import CrwReader
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
 from .markitdown import MarkItDownLoader
@@ -25,20 +26,21 @@ from .scrapegraph_reader import ScrapeGraphAI
 from .unstructured_io import UnstructuredIO
 
 __all__ = [
-    'File',
-    'create_file',
-    'create_file_from_raw_bytes',
-    'UnstructuredIO',
-    'JinaURLReader',
-    'Firecrawl',
     'Apify',
     'ChunkrReader',
     'ChunkrReaderConfig',
-    'MinerU',
     'Crawl4AI',
+    'CrwReader',
+    'File',
+    'Firecrawl',
+    'JinaURLReader',
     'MarkItDownLoader',
-    'ScrapeGraphAI',
+    'MinerU',
     'MistralReader',
+    'ScrapeGraphAI',
+    'UnstructuredIO',
+    'create_file',
+    'create_file_from_raw_bytes',
 ]
 
 
