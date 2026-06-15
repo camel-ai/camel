@@ -36,9 +36,7 @@ def test_init():
 def test_crawl_success():
     with patch('crw.CrwClient') as MockCrwClient:
         mock_app = MockCrwClient.return_value
-        crw = CrwReader(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
+        crw = CrwReader(api_key='test_api_key', api_url='https://api.test.com')
         url = 'https://example.com'
         response = {'status': 'completed', 'data': []}
         mock_app.crawl.return_value = response
@@ -50,9 +48,7 @@ def test_crawl_success():
 def test_crawl_failure():
     with patch('crw.CrwClient') as MockCrwClient:
         mock_app = MockCrwClient.return_value
-        crw = CrwReader(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
+        crw = CrwReader(api_key='test_api_key', api_url='https://api.test.com')
         url = 'https://example.com'
         mock_app.crawl.side_effect = Exception('Error')
 
@@ -65,9 +61,7 @@ def test_crawl_failure():
 def test_scrape_success():
     with patch('crw.CrwClient') as MockCrwClient:
         mock_app = MockCrwClient.return_value
-        crw = CrwReader(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
+        crw = CrwReader(api_key='test_api_key', api_url='https://api.test.com')
         url = 'https://example.com'
         response = {'markdown': 'Scraped content'}
         mock_app.scrape.return_value = response
@@ -79,9 +73,7 @@ def test_scrape_success():
 def test_scrape_failure():
     with patch('crw.CrwClient') as MockCrwClient:
         mock_app = MockCrwClient.return_value
-        crw = CrwReader(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
+        crw = CrwReader(api_key='test_api_key', api_url='https://api.test.com')
         url = 'https://example.com'
         mock_app.scrape.side_effect = Exception('Error')
 
@@ -107,9 +99,7 @@ class TopArticlesSchema(BaseModel):
 def test_structured_scrape_success():
     with patch('crw.CrwClient') as MockCrwClient:
         mock_app = MockCrwClient.return_value
-        crw = CrwReader(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
+        crw = CrwReader(api_key='test_api_key', api_url='https://api.test.com')
         url = 'https://example.com'
         response_format = TopArticlesSchema
         extracted = {'top': []}
@@ -122,9 +112,7 @@ def test_structured_scrape_success():
 def test_structured_scrape_failure():
     with patch('crw.CrwClient') as MockCrwClient:
         mock_app = MockCrwClient.return_value
-        crw = CrwReader(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
+        crw = CrwReader(api_key='test_api_key', api_url='https://api.test.com')
         url = 'https://example.com'
         response_format = TopArticlesSchema
         mock_app.scrape.side_effect = Exception('Error')
@@ -138,9 +126,7 @@ def test_structured_scrape_failure():
 def test_map_site_success():
     with patch('crw.CrwClient') as MockCrwClient:
         mock_app = MockCrwClient.return_value
-        crw = CrwReader(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
+        crw = CrwReader(api_key='test_api_key', api_url='https://api.test.com')
         url = 'https://example.com'
 
         class _Link:
@@ -158,9 +144,7 @@ def test_map_site_success():
 def test_map_site_failure():
     with patch('crw.CrwClient') as MockCrwClient:
         mock_app = MockCrwClient.return_value
-        crw = CrwReader(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
+        crw = CrwReader(api_key='test_api_key', api_url='https://api.test.com')
         url = 'https://example.com'
         mock_app.map.side_effect = Exception('Error')
 
@@ -173,9 +157,7 @@ def test_map_site_failure():
 def test_search_success():
     with patch('crw.CrwClient') as MockCrwClient:
         mock_app = MockCrwClient.return_value
-        crw = CrwReader(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
+        crw = CrwReader(api_key='test_api_key', api_url='https://api.test.com')
         query = 'camel ai'
         response = {'web': [{'url': 'https://example.com'}]}
         mock_app.search.return_value = response
@@ -189,9 +171,7 @@ def test_search_success():
 def test_search_failure():
     with patch('crw.CrwClient') as MockCrwClient:
         mock_app = MockCrwClient.return_value
-        crw = CrwReader(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
+        crw = CrwReader(api_key='test_api_key', api_url='https://api.test.com')
         mock_app.search.side_effect = Exception('Error')
 
         with pytest.raises(RuntimeError) as exc_info:
