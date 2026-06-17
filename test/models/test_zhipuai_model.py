@@ -28,6 +28,7 @@ from camel.utils import OpenAITokenCounter
     [
         # GLM-5 series (latest)
         ModelType.GLM_5_2,
+        ModelType.GLM_5_1,
         ModelType.GLM_5,
         # GLM-4.7 series
         ModelType.GLM_4_7,
@@ -79,6 +80,11 @@ def test_zhipuai_model(model_type: ModelType, monkeypatch):
 @pytest.mark.model_backend
 def test_zhipuai_glm_5_2_token_limit():
     assert ModelType.GLM_5_2.token_limit == 1_000_000
+
+
+@pytest.mark.model_backend
+def test_zhipuai_glm_5_1_token_limit():
+    assert ModelType.GLM_5_1.token_limit == 200_000
 
 
 @pytest.mark.model_backend

@@ -77,6 +77,7 @@ class ModelType(UnifiedModelType, Enum):
 
     # ZhipuAI GLM-5 series (latest)
     GLM_5_2 = "glm-5.2"
+    GLM_5_1 = "glm-5.1"
     GLM_5 = "glm-5"
     GLM_4_7 = "glm-4.7"
     GLM_4_7_FLASHX = "glm-4.7-flashx"
@@ -735,6 +736,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_FLASH_250414,
             ModelType.GLM_ZERO_PREVIEW,
             ModelType.GLM_5_2,
+            ModelType.GLM_5_1,
             ModelType.GLM_5,
             ModelType.GLM_4_7,
             ModelType.GLM_4_7_FLASHX,
@@ -1664,6 +1666,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_CLAUDE_OPUS_4_1,
             ModelType.O4_MINI,
             ModelType.O3,
+            ModelType.GLM_5_1,
             ModelType.GLM_5,
             ModelType.GLM_4_7,
             ModelType.GLM_4_7_FLASHX,
