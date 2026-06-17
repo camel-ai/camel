@@ -26,7 +26,10 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        # GLM-4.7 series (latest)
+        # GLM-5 series (latest)
+        ModelType.GLM_5_2,
+        ModelType.GLM_5,
+        # GLM-4.7 series
         ModelType.GLM_4_7,
         ModelType.GLM_4_7_FLASHX,
         ModelType.GLM_4_7_FLASH,
@@ -70,6 +73,25 @@ def test_zhipuai_model(model_type: ModelType, monkeypatch):
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
+    assert model.model_type.is_zhipuai
+
+
+@pytest.mark.model_backend
+def test_zhipuai_glm_5_2_token_limit():
+    assert ModelType.GLM_5_2.token_limit == 1_000_000
+
+
+@pytest.mark.model_backend
+def test_zhipuai_model_reasoning_effort_config(monkeypatch):
+    monkeypatch.setenv("ZHIPUAI_API_KEY", "test_key")
+    config = ZhipuAIConfig(reasoning_effort="high")
+    model = ZhipuAIModel(
+        ModelType.GLM_5_2,
+        model_config_dict=config.as_dict(),
+    )
+
+    request_config = model._prepare_request_config()
+    assert request_config["reasoning_effort"] == "high"
 
 
 @pytest.mark.model_backend
