@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import re
 from typing import Dict, Generator, List, Optional
 
 from camel.logger import get_logger
@@ -35,6 +36,29 @@ class ArxivToolkit(BaseToolkit):
         import arxiv
 
         self.client = arxiv.Client()
+
+    def _sanitize_filename(self, title: str, max_length: int = 200) -> str:
+        r"""Sanitizes a paper title so it can be used as a filename.
+
+        Replaces characters that are illegal in filenames on common
+        operating systems (Windows/Linux/macOS) with underscores and trims
+        the result to a safe length.
+
+        Args:
+            title (str): The raw paper title.
+            max_length (int): Maximum length of the returned filename stem.
+                (default: :obj:`200`)
+
+        Returns:
+            str: A filesystem-safe filename stem.
+        """
+        # Replace characters that are illegal in filenames.
+        sanitized = re.sub(r'[\\/:*?"<>|]', '_', title)
+        # Collapse whitespace and strip leading/trailing dots and spaces.
+        sanitized = re.sub(r'\s+', ' ', sanitized).strip(' .')
+        # Guard against an empty result.
+        sanitized = sanitized or "untitled"
+        return sanitized[:max_length]
 
     def _get_search_results(
         self,
@@ -153,9 +177,8 @@ class ArxivToolkit(BaseToolkit):
             )
 
             for paper in search_results:
-                paper.download_pdf(
-                    dirpath=output_dir, filename=f"{paper.title}" + ".pdf"
-                )
+                filename = f"{self._sanitize_filename(paper.title)}.pdf"
+                paper.download_pdf(dirpath=output_dir, filename=filename)
             return "papers downloaded successfully"
         except Exception as e:
             return f"An error occurred: {e}"
