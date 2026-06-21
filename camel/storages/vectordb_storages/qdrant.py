@@ -284,10 +284,9 @@ class QdrantStorage(BaseVectorStorage):
         r"""Return self so the storage can be used as a context manager."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         r"""Close the client on context-manager exit to flush buffered data."""
         self.close_client()
-        return False
 
     def close_client(self, **kwargs):
         r"""Closes the client connection to the Qdrant storage.
