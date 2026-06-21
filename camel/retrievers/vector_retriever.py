@@ -196,6 +196,10 @@ class VectorRetriever(BaseRetriever):
 
                 self.storage.add(records=records)
 
+        # Flush any buffered writes so the data is immediately visible to
+        # other processes or scripts that open the same storage path.
+        self.storage.save()
+
     def query(
         self,
         query: str,

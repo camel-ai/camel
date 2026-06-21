@@ -192,6 +192,20 @@ class BaseVectorStorage(ABC):
         r"""Provides access to the underlying vector database client."""
         pass
 
+    def save(self) -> None:
+        r"""Persist any buffered data to the underlying storage backend.
+
+        Storage implementations that buffer writes in memory (e.g. FAISS
+        local mode, Qdrant Python-only local mode) should override this method
+        to flush data to disk.  The default implementation is a no-op for
+        backends that already persist data synchronously (e.g. remote Qdrant
+        with ``wait=True``).
+
+        ``VectorRetriever.process()`` calls this after all records have been
+        added so that the data is immediately visible to other processes or
+        scripts that open the same storage path.
+        """
+
     def get_payloads_by_vector(
         self,
         vector: List[float],

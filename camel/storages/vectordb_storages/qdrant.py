@@ -97,17 +97,29 @@ class QdrantStorage(BaseVectorStorage):
 
     def __del__(self):
         r"""Deletes the collection if :obj:`del_collection` is set to
-        :obj:`True`.
+        :obj:`True`, and closes the underlying client when the last reference
+        to a local-path-based storage is released so that all buffered data
+        is flushed to disk.
         """
-        # If the client is a local client, decrease count by 1
+        should_close_client = False
+
+        # Track reference counts for local (path-based) clients.
         if self._local_path is not None:
-            # if count decrease to 0, remove it from the map
-            _client, _count = _qdrant_local_client_map.pop(self._local_path)
-            if _count > 1:
-                _qdrant_local_client_map[self._local_path] = (
-                    _client,
-                    _count - 1,
+            try:
+                _client, _count = _qdrant_local_client_map.pop(
+                    self._local_path
                 )
+                if _count > 1:
+                    _qdrant_local_client_map[self._local_path] = (
+                        _client,
+                        _count - 1,
+                    )
+                else:
+                    # Last reference — close the client after any cleanup so
+                    # that all buffered writes are flushed to disk.
+                    should_close_client = True
+            except (KeyError, Exception):
+                pass
 
         if (
             hasattr(self, "delete_collection_on_del")
@@ -120,6 +132,16 @@ class QdrantStorage(BaseVectorStorage):
                     f"Failed to delete collection"
                     f" '{self.collection_name}': {e}"
                 )
+
+        # Explicitly close the client so the qdrant-client local backend
+        # (Python-only mode) flushes in-memory data to disk.  Without this
+        # call the data may not survive process exit, causing a second script
+        # that opens the same path to see an empty collection.
+        if should_close_client:
+            try:
+                self._client.close()
+            except Exception:
+                pass
 
     def _create_client(
         self,
@@ -250,14 +272,53 @@ class QdrantStorage(BaseVectorStorage):
             "vector_dim": vector_config.size
             if isinstance(vector_config, VectorParams)
             else None,
-            "vector_count": collection_info.points_count,
+            # points_count can be None in newer Qdrant server versions where
+            # the count is maintained lazily; fall back to 0 so callers that
+            # check ``== 0`` still work correctly.
+            "vector_count": collection_info.points_count or 0,
             "status": collection_info.status,
             "config": collection_info.config,
         }
 
+    def __enter__(self) -> "QdrantStorage":
+        r"""Return self so the storage can be used as a context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        r"""Close the client on context-manager exit to flush buffered data."""
+        self.close_client()
+        return False
+
     def close_client(self, **kwargs):
-        r"""Closes the client connection to the Qdrant storage."""
+        r"""Closes the client connection to the Qdrant storage.
+
+        For local path-based storage this also removes the entry from the
+        shared client registry (:data:`_qdrant_local_client_map`) so that
+        any subsequent :class:`QdrantStorage` instance created at the same
+        path will open a fresh connection rather than reusing the now-closed
+        one.
+        """
+        if self._local_path is not None:
+            _qdrant_local_client_map.pop(self._local_path, None)
         self._client.close(**kwargs)
+
+    def save(self) -> None:
+        r"""No-op for Qdrant storage.
+
+        Qdrant's local backend (both the embedded Rust binary and the
+        Python-only fallback) stores data in a SQLite database that operates
+        in WAL mode.  Every ``upsert`` call issued with ``wait=True`` commits
+        the transaction and the WAL is ``fsync``'d to disk before the call
+        returns, so data is already durable once :meth:`add` completes.
+
+        Any new :class:`QdrantStorage` instance (or an entirely separate
+        process) that opens the same local path will therefore see all
+        previously written data without requiring an explicit flush.
+
+        Remote Qdrant (``url_and_api_key``) has the same guarantee from the
+        server side.  Pure in-memory storage (no ``path``, no
+        ``url_and_api_key``) is intentionally not persistent.
+        """
 
     def add(
         self,
