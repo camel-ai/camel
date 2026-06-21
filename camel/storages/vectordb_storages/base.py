@@ -192,7 +192,7 @@ class BaseVectorStorage(ABC):
         r"""Provides access to the underlying vector database client."""
         pass
 
-    def save(self) -> None:
+    def save(self) -> None:  # noqa: B027
         r"""Persist any buffered data to the underlying storage backend.
 
         Storage implementations that buffer writes in memory (e.g. FAISS
@@ -205,6 +205,7 @@ class BaseVectorStorage(ABC):
         added so that the data is immediately visible to other processes or
         scripts that open the same storage path.
         """
+        pass
 
     def get_payloads_by_vector(
         self,
