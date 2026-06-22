@@ -15,7 +15,46 @@ import unittest
 
 from pydantic import BaseModel, ValidationError
 
-from camel.utils.response_format import model_from_json_schema
+from camel.utils.response_format import (
+    get_pydantic_model,
+    model_from_json_schema,
+)
+
+
+class TestGetPydanticModel(unittest.TestCase):
+    def test_basemodel_returned_as_is(self):
+        class Trip(BaseModel):
+            city: str
+
+        # A BaseModel subclass (which is itself callable) must be returned
+        # directly rather than wrapped from its __init__ signature.
+        self.assertIs(get_pydantic_model(Trip), Trip)
+
+    def test_json_string_converted_to_model(self):
+        template = (
+            '{"location": "Beijing", "date": "2023-09-01", '
+            '"temperature": 30.0}'
+        )
+        Model = get_pydantic_model(template)
+        self.assertTrue(issubclass(Model, BaseModel))
+        self.assertEqual(
+            set(Model.model_fields.keys()),
+            {"location", "date", "temperature"},
+        )
+
+    def test_callable_converted_to_model(self):
+        def get_temperature(location: str, date: str, temperature: float): ...
+
+        Model = get_pydantic_model(get_temperature)
+        self.assertTrue(issubclass(Model, BaseModel))
+        self.assertEqual(
+            set(Model.model_fields.keys()),
+            {"location", "date", "temperature"},
+        )
+
+    def test_invalid_input_raises(self):
+        with self.assertRaises(ValueError):
+            get_pydantic_model(123)
 
 
 class TestModelFromJsonSchema(unittest.TestCase):

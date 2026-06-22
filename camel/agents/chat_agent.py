@@ -101,6 +101,7 @@ from camel.types.agents import ToolCallingRecord
 from camel.utils import (
     Constants,
     get_model_encoding,
+    get_pydantic_model,
     model_from_json_schema,
 )
 from camel.utils.commons import dependencies_required
@@ -2539,6 +2540,31 @@ class ChatAgent(BaseAgent):
         """
         self.update_memory(message, OpenAIBackendRole.ASSISTANT)
 
+    def _normalize_response_format(
+        self,
+        response_format: Optional[Union[Type[BaseModel], str, Callable]],
+    ) -> Optional[Type[BaseModel]]:
+        r"""Normalize a response format specification into a Pydantic model.
+
+        This unifies how a structured-output schema is converted into a
+        :obj:`BaseModel` across CAMEL (e.g. with
+        :obj:`OpenAISchemaConverter`) by routing through the shared
+        :obj:`get_pydantic_model` utility.
+
+        Args:
+            response_format (Optional[Union[Type[BaseModel], str, Callable]]):
+                The response format specification. May be a Pydantic model
+                class, a JSON-encoded string template, or a callable whose
+                signature defines the expected fields. (default: :obj:`None`)
+
+        Returns:
+            Optional[Type[BaseModel]]: The corresponding Pydantic model class,
+                or :obj:`None` if no response format was provided.
+        """
+        if response_format is None:
+            return None
+        return get_pydantic_model(response_format)
+
     def _try_format_message(
         self, message: BaseMessage, response_format: Type[BaseModel]
     ) -> bool:
@@ -2831,7 +2857,9 @@ class ChatAgent(BaseAgent):
     def step(
         self,
         input_message: Union[BaseMessage, str],
-        response_format: Optional[Type[BaseModel]] = None,
+        response_format: Optional[
+            Union[Type[BaseModel], str, Callable]
+        ] = None,
     ) -> Union[ChatAgentResponse, StreamingChatAgentResponse]:
         r"""Executes a single step in the chat session, generating a response
         to the input message.
@@ -2840,8 +2868,10 @@ class ChatAgent(BaseAgent):
             input_message (Union[BaseMessage, str]): The input message for the
                 agent. If provided as a BaseMessage, the `role` is adjusted to
                 `user` to indicate an external message.
-            response_format (Optional[Type[BaseModel]], optional): A Pydantic
-                model defining the expected structure of the response. Used to
+            response_format (Optional[Union[Type[BaseModel], str, Callable]],
+                optional): Defines the expected structure of the response.
+                Accepts a Pydantic model class, a JSON-encoded string template,
+                or a callable whose signature defines the fields. Used to
                 generate a structured response if provided. (default:
                 :obj:`None`)
 
@@ -2855,6 +2885,7 @@ class ChatAgent(BaseAgent):
         Raises:
             TimeoutError: If the step operation exceeds the configured timeout.
         """
+        response_format = self._normalize_response_format(response_format)
 
         stream = self.model_backend.model_config_dict.get("stream", False)
 
@@ -3128,7 +3159,9 @@ class ChatAgent(BaseAgent):
     async def astep(
         self,
         input_message: Union[BaseMessage, str],
-        response_format: Optional[Type[BaseModel]] = None,
+        response_format: Optional[
+            Union[Type[BaseModel], str, Callable]
+        ] = None,
     ) -> Union[ChatAgentResponse, AsyncStreamingChatAgentResponse]:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
@@ -3140,11 +3173,11 @@ class ChatAgent(BaseAgent):
                 will be set to `user` anyway since for the self agent any
                 incoming message is external. For str input, the `role_name`
                 would be `User`.
-            response_format (Optional[Type[BaseModel]], optional): A pydantic
-                model class that includes value types and field descriptions
-                used to generate a structured response by LLM. This schema
-                helps in defining the expected output format. (default:
-                :obj:`None`)
+            response_format (Optional[Union[Type[BaseModel], str, Callable]],
+                optional): Defines the expected structure of the response.
+                Accepts a Pydantic model class, a JSON-encoded string template,
+                or a callable whose signature defines the fields. Used to
+                generate a structured response by LLM. (default: :obj:`None`)
         Returns:
             Union[ChatAgentResponse, AsyncStreamingChatAgentResponse]:
                 If stream is False, returns a ChatAgentResponse. If stream is
@@ -3156,6 +3189,8 @@ class ChatAgent(BaseAgent):
             asyncio.TimeoutError: If the step operation exceeds the configured
                 timeout.
         """
+        response_format = self._normalize_response_format(response_format)
+
         # Set agent_id in context-local storage for logging
         from camel.utils.agent_context import set_current_agent_id
 

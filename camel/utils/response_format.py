@@ -31,9 +31,9 @@ def get_pydantic_model(
     input_data (Union[str, type, Callable]):
         - If a string is provided, it should be a JSON-encoded string
             that will be converted into a BaseModel.
+        - If a BaseModel class is provided, it will be returned directly.
         - If a function is provided, it will be decorated such that
             its arguments are converted into a BaseModel.
-        - If a BaseModel class is provided, it will be returned directly.
 
     Returns:
         Type[BaseModel]: The BaseModel class that will be used to
@@ -47,7 +47,13 @@ def get_pydantic_model(
         )
         return TemporaryModel(**data_dict).__class__
 
-    elif callable(input_data):
+    # A BaseModel subclass must be checked before the ``callable`` branch
+    # below, because a class is itself callable and would otherwise be
+    # wrongly wrapped into a new model from its ``__init__`` signature.
+    if isinstance(input_data, type) and issubclass(input_data, BaseModel):
+        return input_data
+
+    if callable(input_data):
         WrapperClass = create_model(  # type: ignore[call-overload]
             f"{input_data.__name__.capitalize()}Model",
             **{
@@ -58,8 +64,6 @@ def get_pydantic_model(
             },
         )
         return WrapperClass
-    if issubclass(input_data, BaseModel):
-        return input_data
     raise ValueError("Invalid input data provided.")
 
 

@@ -93,12 +93,10 @@ class OpenAISchemaConverter(BaseConverter):
         prompt = prompt or DEFAULT_CONVERTER_PROMPTS
         if output_schema is None:
             raise ValueError("Expected an output schema, got None.")
-        if not isinstance(output_schema, type):
-            output_schema = get_pydantic_model(output_schema)
-        elif not issubclass(output_schema, BaseModel):
-            raise ValueError(
-                f"Expected a BaseModel, got {type(output_schema)}"
-            )
+        # Normalize the schema (BaseModel / JSON string / callable) into a
+        # Pydantic model via the shared utility, unifying the conversion with
+        # the rest of CAMEL (e.g. ``ChatAgent``).
+        output_schema = get_pydantic_model(output_schema)
 
         self.model_config_dict["response_format"] = output_schema
         response = self._client.beta.chat.completions.parse(

@@ -243,6 +243,47 @@ def test_native_structured_output_backend_keeps_response_format_with_tools():
     assert used_prompt_formatting is False
 
 
+def test_normalize_response_format_handles_all_schema_types():
+    r"""``ChatAgent`` should accept a Pydantic model, a JSON-encoded string,
+    or a callable as ``response_format`` and unify them into a BaseModel via
+    the shared ``get_pydantic_model`` utility (issue #1242)."""
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=DummyModel(ModelType.GPT_4O_MINI),
+    )
+
+    # None passes through unchanged.
+    assert agent._normalize_response_format(None) is None
+
+    # A BaseModel subclass is returned as-is.
+    assert agent._normalize_response_format(TripSchema) is TripSchema
+
+    # A JSON-encoded string template is converted into a BaseModel.
+    template = (
+        '{"location": "Beijing", "date": "2023-09-01", "temperature": 30.0}'
+    )
+    str_model = agent._normalize_response_format(template)
+    assert str_model is not None
+    assert issubclass(str_model, BaseModel)
+    assert set(str_model.model_fields.keys()) == {
+        "location",
+        "date",
+        "temperature",
+    }
+
+    # A callable's signature defines the fields of the converted BaseModel.
+    def get_temperature(location: str, date: str, temperature: float): ...
+
+    callable_model = agent._normalize_response_format(get_temperature)
+    assert callable_model is not None
+    assert issubclass(callable_model, BaseModel)
+    assert set(callable_model.model_fields.keys()) == {
+        "location",
+        "date",
+        "temperature",
+    }
+
+
 def test_chat_agent_reset_clears_tool_output_history():
     model = DummyModel(ModelType.GPT_4O_MINI)
     assistant = ChatAgent(
@@ -389,6 +430,51 @@ def test_chat_agent_step_with_structure_response(step_call_count=3):
                 f"Error in calling round {i + 1}: "
                 f"Key {key} not found in response content"
             )
+
+
+@pytest.mark.model_backend
+def test_chat_agent_step_with_str_and_callable_response_format():
+    r"""``step`` should accept a JSON-encoded string template or a callable as
+    ``response_format``, unifying it with ``OpenAISchemaConverter.convert``
+    (issue #1242)."""
+    system_msg = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+
+    def get_temperature(location: str, date: str, temperature: float): ...
+
+    temperature_template = (
+        '{"location": "Beijing", "date": "2023-09-01", "temperature": 30.0}'
+    )
+
+    structured_content = (
+        '{"location": "Beijing", "date": "2023-09-01", "temperature": 30.0}'
+    )
+
+    for response_format in (temperature_template, get_temperature):
+        assistant = ChatAgent(system_message=system_msg)
+
+        model_backend_rsp = deepcopy(model_backend_rsp_base)
+        model_backend_rsp.choices[0].message.content = structured_content
+        model_backend_rsp.choices[0].message.tool_calls = []
+        assistant.model_backend.run = MagicMock(return_value=model_backend_rsp)
+
+        user_msg = BaseMessage.make_user_message(
+            role_name="User",
+            content="Today is 2023-09-01, Beijing is 30 degrees.",
+        )
+
+        response = assistant.step(user_msg, response_format=response_format)
+        response_content_json = json.loads(response.msg.content)
+
+        assert set(response_content_json.keys()) == {
+            "location",
+            "date",
+            "temperature",
+        }
 
 
 @pytest.mark.model_backend
