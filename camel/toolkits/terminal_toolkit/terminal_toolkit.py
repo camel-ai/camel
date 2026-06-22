@@ -21,7 +21,7 @@ import threading
 import time
 import uuid
 from queue import Empty, Full, Queue
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from camel.logger import get_logger
 from camel.toolkits import manual_timeout
@@ -66,6 +66,28 @@ def _to_plain(text: str) -> str:
         return text
 
 
+def _default_console_approval(command: str) -> bool:
+    r"""Console-based approval prompt shown before each shell command.
+
+    Prints the pending command and asks the user to allow or deny
+    execution via stdin.  Returns ``False`` when stdin is not a tty
+    (e.g. in CI pipelines) so the safe default is to deny.
+
+    Args:
+        command (str): The shell command awaiting approval.
+
+    Returns:
+        bool: ``True`` if the user types ``y`` or ``yes``, ``False``
+            for anything else or when stdin is closed.
+    """
+    print(f"\n[TerminalToolkit] Pending shell command:\n  > {command}")
+    try:
+        answer = input("Allow execution? [y/N]: ").strip().lower()
+        return answer in ("y", "yes")
+    except EOFError:
+        return False
+
+
 @MCPServer()
 class TerminalToolkit(BaseToolkit):
     r"""A toolkit for LLM agents to execute and interact with terminal commands
@@ -100,6 +122,14 @@ class TerminalToolkit(BaseToolkit):
             ``Runtime.GO`` and ``Runtime.JAVA``. If empty (the default),
             only the Python runtime is configured. Example:
             ``enable_other_runtimes=[Runtime.GO, Runtime.JAVA]``.
+        require_approval (Optional[Callable[[str], bool]]): A callable
+            invoked with the command string before every ``shell_exec``
+            call.  Execution proceeds only when the callable returns
+            ``True``; otherwise ``shell_exec`` returns an error string
+            without running anything.  Defaults to
+            :func:`_default_console_approval`, which interactively
+            prompts the user via stdin.  Pass ``None`` to disable the
+            approval gate entirely (opt-in to unrestricted execution).
     """
 
     def __init__(
@@ -114,6 +144,9 @@ class TerminalToolkit(BaseToolkit):
         clone_current_env: bool = False,
         install_dependencies: Optional[List[str]] = None,
         enable_other_runtimes: list[Runtime] | None = None,
+        require_approval: Optional[Callable[[str], bool]] = (
+            _default_console_approval
+        ),
     ):
         # auto-detect if running inside a CAMEL runtime container
         # when inside a runtime, use local execution (already sandboxed)
@@ -166,6 +199,7 @@ class TerminalToolkit(BaseToolkit):
         if not os.path.exists(self.working_dir):
             os.makedirs(self.working_dir, exist_ok=True)
         self.safe_mode = safe_mode
+        self._require_approval = require_approval
 
         # Initialize whitelist of allowed commands if provided
         self.allowed_commands = (
@@ -717,6 +751,11 @@ class TerminalToolkit(BaseToolkit):
                     f"{message}"
                 )
             command = message
+
+        if self._require_approval is not None and not self._require_approval(
+            command
+        ):
+            return "Error: Command rejected by approval policy."
 
         if self.use_docker_backend:
             # For Docker, we always run commands in a shell

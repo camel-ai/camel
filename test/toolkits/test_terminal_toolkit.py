@@ -24,7 +24,11 @@ from camel.toolkits.terminal_toolkit.utils import sanitize_command
 
 @pytest.fixture
 def terminal_toolkit(temp_dir, request):
-    toolkit = TerminalToolkit(working_directory=temp_dir, safe_mode=False)
+    toolkit = TerminalToolkit(
+        working_directory=temp_dir,
+        safe_mode=False,
+        require_approval=None,
+    )
     # Ensure cleanup happens after test completes
     request.addfinalizer(toolkit.cleanup)
     return toolkit
@@ -62,12 +66,12 @@ def test_shell_exec(terminal_toolkit, temp_dir):
     )
     assert "Hello World" in result
 
-    # Test command with error
+    # Test command with error (error wording differs by OS)
     result = terminal_toolkit.shell_exec(
         "test_session",
         "nonexistent_command",
     )
-    assert "not found" in result.lower()
+    assert "not found" in result.lower() or "not recognized" in result.lower()
 
     # Test session persistence - use non-blocking mode to create sessions
     session_id = "persistent_session"
@@ -365,3 +369,91 @@ def test_sanitize_command_respects_customized_dangerous_commands(
     )
     assert not is_safe
     assert "echo" in message.lower()
+
+
+# ---------------------------------------------------------------------------
+# require_approval tests
+# ---------------------------------------------------------------------------
+
+
+def test_require_approval_blocks_when_callback_returns_false(
+    temp_dir, request
+):
+    r"""A callback that always returns False must prevent command execution."""
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=False,
+        require_approval=lambda cmd: False,
+    )
+    request.addfinalizer(toolkit.cleanup)
+
+    result = toolkit.shell_exec("s_reject", "echo hello")
+    assert "error" in result.lower()
+    assert "rejected by approval policy" in result.lower()
+
+
+def test_require_approval_allows_when_callback_returns_true(temp_dir, request):
+    r"""A callback that always returns True must let the command run."""
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=False,
+        require_approval=lambda cmd: True,
+    )
+    request.addfinalizer(toolkit.cleanup)
+
+    result = toolkit.shell_exec("s_allow", "echo hello")
+    assert "hello" in result.lower()
+
+
+def test_require_approval_none_disables_gate(temp_dir, request):
+    r"""Passing require_approval=None must skip the approval check entirely."""
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=False,
+        require_approval=None,
+    )
+    request.addfinalizer(toolkit.cleanup)
+
+    result = toolkit.shell_exec("s_none", "echo hello")
+    assert "hello" in result.lower()
+
+
+def test_require_approval_callback_receives_command(temp_dir, request):
+    r"""The approval callback must be called with the exact command string."""
+    received: list = []
+
+    def capture(cmd: str) -> bool:
+        received.append(cmd)
+        return True
+
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=False,
+        require_approval=capture,
+    )
+    request.addfinalizer(toolkit.cleanup)
+
+    toolkit.shell_exec("s_capture", "echo test_cmd")
+    assert len(received) == 1
+    assert "echo test_cmd" in received[0]
+
+
+def test_require_approval_not_called_after_safe_mode_rejection(
+    temp_dir, request
+):
+    r"""Approval callback must not fire for commands already blocked by
+    safe mode."""
+    called: list = []
+
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=True,
+        require_approval=lambda cmd: called.append(cmd) or True,
+    )
+    request.addfinalizer(toolkit.cleanup)
+
+    result = toolkit.shell_exec("s_safe", "rm -rf /")
+    assert "safe mode" in result.lower()
+    assert (
+        called == []
+    ), "Approval callback should not be invoked for safe-mode-blocked commands"
