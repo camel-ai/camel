@@ -4,12 +4,6 @@
 name: Pytest Gradio Apps and Examples
 
 on:
-  push:
-    branches: [ "master", "qa" ]
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-      - "LICENSE"
   pull_request:
     branches: [ "master", "qa" ]
     paths-ignore:
