@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import re
 from typing import Dict, Generator, List, Optional
 
 from camel.logger import get_logger
@@ -36,29 +35,6 @@ class ArxivToolkit(BaseToolkit):
         import arxiv
 
         self.client = arxiv.Client()
-
-    def _sanitize_filename(self, title: str, max_length: int = 200) -> str:
-        r"""Sanitizes a paper title so it can be used as a filename.
-
-        Replaces characters that are illegal in filenames on common
-        operating systems (Windows/Linux/macOS) with underscores and trims
-        the result to a safe length.
-
-        Args:
-            title (str): The raw paper title.
-            max_length (int): Maximum length of the returned filename stem.
-                (default: :obj:`200`)
-
-        Returns:
-            str: A filesystem-safe filename stem.
-        """
-        # Replace characters that are illegal in filenames.
-        sanitized = re.sub(r'[\\/:*?"<>|]', '_', title)
-        # Collapse whitespace and strip leading/trailing dots and spaces.
-        sanitized = re.sub(r'\s+', ' ', sanitized).strip(' .')
-        # Guard against an empty result.
-        sanitized = sanitized or "untitled"
-        return sanitized[:max_length]
 
     def _get_search_results(
         self,
@@ -155,6 +131,7 @@ class ArxivToolkit(BaseToolkit):
         paper_ids: Optional[List[str]] = None,
         max_results: Optional[int] = 5,
         output_dir: Optional[str] = "./",
+        filename: Optional[str] = None,
     ) -> str:
         r"""Downloads PDFs of academic papers from arXiv based on the provided
         query.
@@ -167,6 +144,10 @@ class ArxivToolkit(BaseToolkit):
                 to download. (default: :obj:`5`)
             output_dir (str, optional): The directory to save the downloaded
                 PDFs. Defaults to the current directory.
+            filename (str, optional): The exact filename to use when exactly
+                one paper is downloaded. Use this when the default title-based
+                filename is not suitable for the target filesystem. (default:
+                :obj:`None`)
 
         Returns:
             str: Status message indicating success or failure.
@@ -176,9 +157,17 @@ class ArxivToolkit(BaseToolkit):
                 query, paper_ids, max_results
             )
 
-            for paper in search_results:
-                filename = f"{self._sanitize_filename(paper.title)}.pdf"
-                paper.download_pdf(dirpath=output_dir, filename=filename)
+            papers = list(search_results)
+            if filename is not None and len(papers) != 1:
+                return (
+                    "An error occurred: filename can only be used when "
+                    f"exactly one paper is downloaded; got {len(papers)} "
+                    "papers."
+                )
+
+            for paper in papers:
+                paper_filename = filename or f"{paper.title}.pdf"
+                paper.download_pdf(dirpath=output_dir, filename=paper_filename)
             return "papers downloaded successfully"
         except Exception as e:
             return f"An error occurred: {e}"

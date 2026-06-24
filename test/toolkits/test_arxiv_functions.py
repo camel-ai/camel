@@ -87,29 +87,54 @@ def test_download_papers(mock_search, mock_client):
 
 @patch('arxiv.Client')
 @patch('arxiv.Search')
-def test_download_papers_sanitizes_filename(mock_search, mock_client):
+def test_download_papers_uses_custom_filename(mock_search, mock_client):
     toolkit = ArxivToolkit()
     mock_client_instance = mock_client.return_value
 
-    # Title containing characters that are illegal in filenames.
+    # Title containing characters that may not suit the target filesystem.
     mock_paper = MagicMock()
     mock_paper.title = 'CAMEL: Agents for "Mind" Exploration / v2'
     mock_client_instance.results.return_value = iter([mock_paper])
 
-    toolkit.download_papers("agents", max_results=1, output_dir="./downloads")
+    toolkit.download_papers(
+        "agents",
+        max_results=1,
+        output_dir="./downloads",
+        filename="camel_agents.pdf",
+    )
 
     mock_paper.download_pdf.assert_called_once_with(
         dirpath="./downloads",
-        filename='CAMEL_ Agents for _Mind_ Exploration _ v2.pdf',
+        filename="camel_agents.pdf",
     )
 
 
 @patch('arxiv.Client')
-def test_sanitize_filename(mock_client):
+@patch('arxiv.Search')
+def test_download_papers_rejects_single_filename_for_multiple_papers(
+    mock_search, mock_client
+):
     toolkit = ArxivToolkit()
-    assert toolkit._sanitize_filename("a/b:c") == "a_b_c"
-    assert toolkit._sanitize_filename("   ...   ") == "untitled"
-    assert toolkit._sanitize_filename("Normal Title") == "Normal Title"
+    mock_client_instance = mock_client.return_value
+
+    mock_paper_1 = MagicMock()
+    mock_paper_1.title = "First Paper"
+    mock_paper_2 = MagicMock()
+    mock_paper_2.title = "Second Paper"
+    mock_client_instance.results.return_value = iter(
+        [mock_paper_1, mock_paper_2]
+    )
+
+    result = toolkit.download_papers(
+        "agents",
+        max_results=2,
+        output_dir="./downloads",
+        filename="camel_agents.pdf",
+    )
+
+    assert "filename can only be used when exactly one paper" in result
+    mock_paper_1.download_pdf.assert_not_called()
+    mock_paper_2.download_pdf.assert_not_called()
 
 
 def test_get_tools():
