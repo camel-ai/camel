@@ -242,35 +242,48 @@ class OpenAIAudioModels(BaseAudioModel):
                 audio_chunks = self._split_audio(audio_file_path)
                 texts = []
                 for chunk_path in audio_chunks:
-                    audio_data = open(chunk_path, "rb")
-                    if translate_into_english:
-                        translation = self._client.audio.translations.create(
-                            model="whisper-1", file=audio_data, **kwargs
-                        )
-                        texts.append(translation.text)
-                    else:
-                        transcription = (
-                            self._client.audio.transcriptions.create(
-                                model="whisper-1", file=audio_data, **kwargs
+                    with open(chunk_path, "rb") as audio_data:
+                        if translate_into_english:
+                            translation = (
+                                self._client.audio.translations.create(
+                                    model="whisper-1",
+                                    file=audio_data,
+                                    **kwargs,
+                                )
                             )
-                        )
-                        texts.append(transcription.text)
+                            texts.append(translation.text)
+                        else:
+                            transcription = (
+                                self._client.audio.transcriptions.create(
+                                    model="whisper-1",
+                                    file=audio_data,
+                                    **kwargs,
+                                )
+                            )
+                            texts.append(transcription.text)
                     os.remove(chunk_path)  # Delete temporary chunk file
                 return " ".join(texts)
             else:
                 # Process the entire audio file
-                audio_data = open(audio_file_path, "rb")
-
-                if translate_into_english:
-                    translation = self._client.audio.translations.create(
-                        model="whisper-1", file=audio_data, **kwargs
-                    )
-                    return translation.text
-                else:
-                    transcription = self._client.audio.transcriptions.create(
-                        model="whisper-1", file=audio_data, **kwargs
-                    )
-                    return transcription.text
+                with open(audio_file_path, "rb") as audio_data:
+                    if translate_into_english:
+                        translation = (
+                            self._client.audio.translations.create(
+                                model="whisper-1",
+                                file=audio_data,
+                                **kwargs,
+                            )
+                        )
+                        return translation.text
+                    else:
+                        transcription = (
+                            self._client.audio.transcriptions.create(
+                                model="whisper-1",
+                                file=audio_data,
+                                **kwargs,
+                            )
+                        )
+                        return transcription.text
         except Exception as e:
             raise Exception("Error during STT API call") from e
 
