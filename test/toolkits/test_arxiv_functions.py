@@ -98,6 +98,7 @@ def test_download_papers_uses_custom_filenames(mock_search, mock_client):
 
     toolkit.download_papers(
         "agents",
+        paper_ids=["2403.00001"],
         max_results=1,
         output_dir="./downloads",
         filenames=["camel_agents.pdf"],
@@ -127,6 +128,7 @@ def test_download_papers_uses_custom_filenames_for_multiple_papers(
 
     result = toolkit.download_papers(
         "agents",
+        paper_ids=["2403.00001", "2403.00002"],
         max_results=2,
         output_dir="./downloads",
         filenames=["first.pdf", "second.pdf"],
@@ -159,14 +161,34 @@ def test_download_papers_rejects_mismatched_filenames(
 
     result = toolkit.download_papers(
         "agents",
+        paper_ids=["2403.00001", "2403.00002"],
         max_results=2,
         output_dir="./downloads",
         filenames=["only_one.pdf"],
     )
 
-    assert "filenames must match the number of papers" in result
+    assert "filenames must match the number of paper_ids" in result
     mock_paper_1.download_pdf.assert_not_called()
     mock_paper_2.download_pdf.assert_not_called()
+
+
+@patch('arxiv.Client')
+@patch('arxiv.Search')
+def test_download_papers_rejects_filenames_without_paper_ids(
+    mock_search, mock_client
+):
+    toolkit = ArxivToolkit()
+    mock_client_instance = mock_client.return_value
+
+    result = toolkit.download_papers(
+        "agents",
+        max_results=1,
+        output_dir="./downloads",
+        filenames=["camel_agents.pdf"],
+    )
+
+    assert "filenames can only be used when paper_ids are provided" in result
+    mock_client_instance.results.assert_not_called()
 
 
 def test_get_tools():
