@@ -87,7 +87,7 @@ def test_download_papers(mock_search, mock_client):
 
 @patch('arxiv.Client')
 @patch('arxiv.Search')
-def test_download_papers_uses_custom_filename(mock_search, mock_client):
+def test_download_papers_uses_custom_filenames(mock_search, mock_client):
     toolkit = ArxivToolkit()
     mock_client_instance = mock_client.return_value
 
@@ -100,7 +100,7 @@ def test_download_papers_uses_custom_filename(mock_search, mock_client):
         "agents",
         max_results=1,
         output_dir="./downloads",
-        filename="camel_agents.pdf",
+        filenames=["camel_agents.pdf"],
     )
 
     mock_paper.download_pdf.assert_called_once_with(
@@ -111,7 +111,7 @@ def test_download_papers_uses_custom_filename(mock_search, mock_client):
 
 @patch('arxiv.Client')
 @patch('arxiv.Search')
-def test_download_papers_rejects_single_filename_for_multiple_papers(
+def test_download_papers_uses_custom_filenames_for_multiple_papers(
     mock_search, mock_client
 ):
     toolkit = ArxivToolkit()
@@ -129,10 +129,42 @@ def test_download_papers_rejects_single_filename_for_multiple_papers(
         "agents",
         max_results=2,
         output_dir="./downloads",
-        filename="camel_agents.pdf",
+        filenames=["first.pdf", "second.pdf"],
     )
 
-    assert "filename can only be used when exactly one paper" in result
+    assert result == "papers downloaded successfully"
+    mock_paper_1.download_pdf.assert_called_once_with(
+        dirpath="./downloads", filename="first.pdf"
+    )
+    mock_paper_2.download_pdf.assert_called_once_with(
+        dirpath="./downloads", filename="second.pdf"
+    )
+
+
+@patch('arxiv.Client')
+@patch('arxiv.Search')
+def test_download_papers_rejects_mismatched_filenames(
+    mock_search, mock_client
+):
+    toolkit = ArxivToolkit()
+    mock_client_instance = mock_client.return_value
+
+    mock_paper_1 = MagicMock()
+    mock_paper_1.title = "First Paper"
+    mock_paper_2 = MagicMock()
+    mock_paper_2.title = "Second Paper"
+    mock_client_instance.results.return_value = iter(
+        [mock_paper_1, mock_paper_2]
+    )
+
+    result = toolkit.download_papers(
+        "agents",
+        max_results=2,
+        output_dir="./downloads",
+        filenames=["only_one.pdf"],
+    )
+
+    assert "filenames must match the number of papers" in result
     mock_paper_1.download_pdf.assert_not_called()
     mock_paper_2.download_pdf.assert_not_called()
 

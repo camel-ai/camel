@@ -131,7 +131,7 @@ class ArxivToolkit(BaseToolkit):
         paper_ids: Optional[List[str]] = None,
         max_results: Optional[int] = 5,
         output_dir: Optional[str] = "./",
-        filename: Optional[str] = None,
+        filenames: Optional[List[str]] = None,
     ) -> str:
         r"""Downloads PDFs of academic papers from arXiv based on the provided
         query.
@@ -144,10 +144,9 @@ class ArxivToolkit(BaseToolkit):
                 to download. (default: :obj:`5`)
             output_dir (str, optional): The directory to save the downloaded
                 PDFs. Defaults to the current directory.
-            filename (str, optional): The exact filename to use when exactly
-                one paper is downloaded. Use this when the default title-based
-                filename is not suitable for the target filesystem. (default:
-                :obj:`None`)
+            filenames (List[str], optional): Exact filenames to use for the
+                downloaded papers. When provided, the list length must match
+                the number of papers returned. (default: :obj:`None`)
 
         Returns:
             str: Status message indicating success or failure.
@@ -158,15 +157,17 @@ class ArxivToolkit(BaseToolkit):
             )
 
             papers = list(search_results)
-            if filename is not None and len(papers) != 1:
+            if filenames is not None and len(filenames) != len(papers):
                 return (
-                    "An error occurred: filename can only be used when "
-                    f"exactly one paper is downloaded; got {len(papers)} "
-                    "papers."
+                    "An error occurred: filenames must match the number of "
+                    f"papers downloaded; got {len(filenames)} filenames for "
+                    f"{len(papers)} papers."
                 )
 
-            for paper in papers:
-                paper_filename = filename or f"{paper.title}.pdf"
+            for index, paper in enumerate(papers):
+                paper_filename = (
+                    filenames[index] if filenames else f"{paper.title}.pdf"
+                )
                 paper.download_pdf(dirpath=output_dir, filename=paper_filename)
             return "papers downloaded successfully"
         except Exception as e:
