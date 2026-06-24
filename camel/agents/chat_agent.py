@@ -1019,8 +1019,14 @@ class ChatAgent(BaseAgent):
 
         if summary_token_count > self.token_limit * self.summary_window_ratio:
             logger.warning(
-                f"Summary tokens ({summary_token_count}) "
-                f"exceed limit, full compression."
+                "Context compression triggered",
+                extra={
+                    "event_type": "context_compression",
+                    "compression_mode": "full",
+                    "summary_token_count": summary_token_count,
+                    "token_limit": self.token_limit,
+                    "summary_window_ratio": self.summary_window_ratio,
+                },
             )
             summary = self.summarize(include_summaries=True)
             self._update_memory_with_summary(
@@ -1031,8 +1037,14 @@ class ChatAgent(BaseAgent):
         threshold = self._calculate_next_summary_threshold()
         if num_tokens > threshold:
             logger.warning(
-                f"Token count ({num_tokens}) exceed threshold "
-                f"({threshold}). Triggering summarization."
+                "Context compression triggered",
+                extra={
+                    "event_type": "context_compression",
+                    "compression_mode": "progressive",
+                    "num_tokens": num_tokens,
+                    "threshold": threshold,
+                    "token_limit": self.token_limit,
+                },
             )
             summary = self.summarize(include_summaries=False)
             self._update_memory_with_summary(
@@ -1055,8 +1067,14 @@ class ChatAgent(BaseAgent):
 
         if summary_token_count > self.token_limit * self.summary_window_ratio:
             logger.warning(
-                f"Summary tokens ({summary_token_count}) "
-                f"exceed limit, full compression."
+                "Context compression triggered",
+                extra={
+                    "event_type": "context_compression",
+                    "compression_mode": "full",
+                    "summary_token_count": summary_token_count,
+                    "token_limit": self.token_limit,
+                    "summary_window_ratio": self.summary_window_ratio,
+                },
             )
             summary = await self.asummarize(include_summaries=True)
             self._update_memory_with_summary(
@@ -1067,8 +1085,14 @@ class ChatAgent(BaseAgent):
         threshold = self._calculate_next_summary_threshold()
         if num_tokens > threshold:
             logger.warning(
-                f"Token count ({num_tokens}) exceed threshold "
-                f"({threshold}). Triggering summarization."
+                "Context compression triggered",
+                extra={
+                    "event_type": "context_compression",
+                    "compression_mode": "progressive",
+                    "num_tokens": num_tokens,
+                    "threshold": threshold,
+                    "token_limit": self.token_limit,
+                },
             )
             summary = await self.asummarize(include_summaries=False)
             self._update_memory_with_summary(
