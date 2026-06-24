@@ -23,6 +23,7 @@ import venv
 from typing import Any, List, Optional, Tuple
 
 from camel.extractors.base import BaseExtractor
+from camel.interpreters.base import BaseInterpreter
 from camel.logger import get_logger
 from camel.verifiers import BaseVerifier
 
@@ -33,7 +34,7 @@ logger = get_logger(__name__)
 
 class PythonVerifier(BaseVerifier):
     r"""The PythonVerifier class verifies Python-based implementations
-    by executing them in an isolated virtual environment.
+    by executing them in an isolated environment.
 
     Features:
     - Creates a virtual environment with a specified Python version.
@@ -41,9 +42,20 @@ class PythonVerifier(BaseVerifier):
     - Executes the script and compares the output against a ground truth,
       if supplied.
     - Automatically cleans up the virtual environment after execution.
+    - Supports pluggable CAMEL interpreters for code execution, with
+      :class:`SubprocessInterpreter` as the default.
 
     The verification process ensures that the code runs in a controlled
     environment, minimizing external dependencies and conflicts.
+
+    Args:
+        interpreter (Optional[BaseInterpreter], optional): A CAMEL
+            interpreter instance used to execute code. When provided,
+            this interpreter handles all code execution within the venv,
+            replacing the manual subprocess approach. When ``None``,
+            defaults to a :class:`SubprocessInterpreter` configured
+            automatically from the venv Python on first use.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -52,6 +64,7 @@ class PythonVerifier(BaseVerifier):
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
         float_tolerance: Optional[float] = None,
+        interpreter: Optional[BaseInterpreter] = None,
         **kwargs,
     ):
         r"""Initializes the PythonVerifier.
@@ -66,12 +79,20 @@ class PythonVerifier(BaseVerifier):
                 (default: :obj:`None`)
             float_tolerance (Optional[float], optional): The tolerance for
                 floating point comparisons. (default: :obj:`None`)
+            interpreter (Optional[BaseInterpreter], optional): A CAMEL
+                interpreter instance used to execute code. When provided,
+                this interpreter handles all code execution within the venv,
+                replacing the manual subprocess approach. When ``None``,
+                defaults to a :class:`SubprocessInterpreter` configured
+                automatically from the venv Python on first use.
+                (default: :obj:`None`)
         """
-        # TODO: Use CAMEL's Interpreter to execute the code
         super().__init__(extractor=extractor, timeout=timeout, **kwargs)
         self.venv_path: Optional[str] = None
         self.required_packages = required_packages or []
         self.float_tolerance = float_tolerance
+        self._interpreter: Optional[BaseInterpreter] = interpreter
+        self._default_interpreter_created: bool = False
 
         if os.name == 'nt':  # Windows
             self.bin_dir = 'Scripts'
@@ -385,14 +406,45 @@ class PythonVerifier(BaseVerifier):
                 error_message=f"Unexpected error: {e}",
             )
 
+    def _get_interpreter(self, venv_python: str) -> BaseInterpreter:
+        r"""Return the configured interpreter, lazily creating a default
+        :class:`SubprocessInterpreter` targeting the venv Python when no
+        interpreter was explicitly provided.
+
+        Args:
+            venv_python (str): Path to the venv Python binary. Used only
+                when creating the default interpreter.
+
+        Returns:
+            BaseInterpreter: The interpreter instance to use for code
+                execution.
+        """
+        if self._interpreter is not None:
+            return self._interpreter
+
+        if not self._default_interpreter_created:
+            from camel.interpreters import SubprocessInterpreter
+
+            self._interpreter = SubprocessInterpreter(
+                require_confirm=False,
+                print_stdout=False,
+                print_stderr=False,
+                execution_timeout=int(self._timeout or 30),
+                python_exec=venv_python,
+            )
+            self._default_interpreter_created = True
+
+        return self._interpreter
+
     async def _run_code_block(
         self, code: str, venv_path: str
     ) -> Tuple[str, str, int]:
         r"""Executes a block of Python code in the virtual environment.
 
-        The code is written to a temporary file, executed using the Python
-        interpreter from the specified virtual environment, and
-        its output and error streams are captured.
+        The code is executed using the configured CAMEL interpreter
+        (defaulting to a :class:`SubprocessInterpreter` targeting the venv
+        Python). When no interpreter is available and no venv is set up,
+        falls back to manual subprocess execution.
 
         Args:
             code (str): The Python code to execute.
@@ -403,28 +455,49 @@ class PythonVerifier(BaseVerifier):
             Tuple[str, str, int]: A tuple containing the stdout output,
             stderr output, and return code from the executed script.
         """
-        # No longer checking for expressions since they're handled separately
-        with tempfile.NamedTemporaryFile(
-            "w+", suffix=".py", delete=False
-        ) as tmp:
-            tmp.write(code)
-            tmp_path = tmp.name
+        interpreter = self._get_interpreter(venv_path)
 
-        proc = await asyncio.create_subprocess_exec(
-            venv_path,
-            tmp_path,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await asyncio.wait_for(
-            proc.communicate(), timeout=self._timeout
-        )
-        os.remove(tmp_path)
-        return (
-            stdout.decode().strip(),
-            stderr.decode().strip(),
-            proc.returncode if proc.returncode is not None else -1,
-        )
+        # Use the interpreter via run_in_executor to avoid blocking the
+        # event loop (interpreters are synchronous)
+        loop = asyncio.get_running_loop()
+        try:
+            output = await asyncio.wait_for(
+                loop.run_in_executor(
+                    None, interpreter.run, code, "python"
+                ),
+                timeout=self._timeout,
+            )
+        except asyncio.TimeoutError:
+            raise
+
+        # Interpret the output: check for error markers from
+        # SubprocessInterpreter
+        if "(Execution failed with return code" in output:
+            # Extract stdout and stderr portions
+            stderr_marker = "(stderr: "
+            if stderr_marker in output:
+                stdout_part, rest = output.split(stderr_marker, 1)
+                stderr_part = rest.rstrip(")")
+                return (
+                    stdout_part.strip(),
+                    stderr_part.strip(),
+                    -1,
+                )
+            return ("", output.strip(), -1)
+
+        # Clean output: SubprocessInterpreter may include stderr annotations
+        # even on success
+        stderr_marker = "(stderr: "
+        if stderr_marker in output:
+            stdout_part, rest = output.split(stderr_marker, 1)
+            stderr_part = rest.rstrip(")")
+            return (
+                stdout_part.strip(),
+                stderr_part.strip(),
+                0,
+            )
+
+        return (output.strip(), "", 0)
 
     def _is_expression(self, code: str) -> bool:
         r"""Determines whether a given string of code is a single expression.
