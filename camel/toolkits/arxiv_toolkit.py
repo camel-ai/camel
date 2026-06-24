@@ -131,6 +131,7 @@ class ArxivToolkit(BaseToolkit):
         paper_ids: Optional[List[str]] = None,
         max_results: Optional[int] = 5,
         output_dir: Optional[str] = "./",
+        filenames: Optional[List[str]] = None,
     ) -> str:
         r"""Downloads PDFs of academic papers from arXiv based on the provided
         query.
@@ -143,19 +144,45 @@ class ArxivToolkit(BaseToolkit):
                 to download. (default: :obj:`5`)
             output_dir (str, optional): The directory to save the downloaded
                 PDFs. Defaults to the current directory.
+            filenames (List[str], optional): Exact filenames to use for the
+                downloaded papers. This can only be used with ``paper_ids``;
+                when provided, the list length must match the number of paper
+                IDs. (default: :obj:`None`)
 
         Returns:
             str: Status message indicating success or failure.
         """
         try:
+            if filenames is not None:
+                if not paper_ids:
+                    return (
+                        "An error occurred: filenames can only be used when "
+                        "paper_ids are provided."
+                    )
+                if len(filenames) != len(paper_ids):
+                    return (
+                        "An error occurred: filenames must match the number "
+                        f"of paper_ids; got {len(filenames)} filenames for "
+                        f"{len(paper_ids)} paper_ids."
+                    )
+
             search_results = self._get_search_results(
                 query, paper_ids, max_results
             )
 
-            for paper in search_results:
-                paper.download_pdf(
-                    dirpath=output_dir, filename=f"{paper.title}" + ".pdf"
+            papers = list(search_results)
+            if filenames is not None and len(filenames) != len(papers):
+                return (
+                    "An error occurred: filenames must match the number of "
+                    "papers returned by arXiv; got "
+                    f"{len(filenames)} filenames for {len(papers)} papers."
                 )
+
+            for index, paper in enumerate(papers):
+                paper_filename = (
+                    filenames[index] if filenames else f"{paper.title}.pdf"
+                )
+                paper.download_pdf(dirpath=output_dir, filename=paper_filename)
             return "papers downloaded successfully"
         except Exception as e:
             return f"An error occurred: {e}"

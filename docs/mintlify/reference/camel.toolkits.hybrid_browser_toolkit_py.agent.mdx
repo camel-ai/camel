@@ -8,7 +8,17 @@
 class PlaywrightLLMAgent:
 ```
 
-High-level orchestration: snapshot ↔ LLM ↔ action executor.
+High-level orchestration layer connecting page snapshots, an LLM,
+and an action executor for browser automation.
+
+**Parameters:**
+
+- **user_data_dir** (str, optional): Path to the browser user data directory for persistent sessions. (default: :obj:`None`)
+- **headless** (bool, optional): Whether to run the browser in headless mode. (default: :obj:`False`)
+- **stealth** (bool, optional): Whether to enable stealth mode to avoid bot detection. (default: :obj:`False`)
+- **model_backend** (BaseModelBackend, optional): The model backend to use for LLM calls. If :obj:`None`, defaults to :obj:`ModelFactory` with :obj:`ModelPlatformType.DEFAULT` and :obj:`ModelType.DEFAULT`. (default: :obj:`None`)
+- **default_timeout** (int, optional): Default timeout in milliseconds for browser actions. If :obj:`None`, uses the configured default. (default: :obj:`None`)
+- **short_timeout** (int, optional): Short timeout in milliseconds for quick browser operations. If :obj:`None`, uses the configured default. (default: :obj:`None`)
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.agent.PlaywrightLLMAgent.__init__"></a>
 
@@ -26,7 +36,10 @@ def __init__(self):
 def _get_chat_agent(self):
 ```
 
-Get or create the ChatAgent instance.
+**Returns:**
+
+  ChatAgent: The existing or newly created :obj:`ChatAgent`
+initialized with the system prompt and model backend.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.agent.PlaywrightLLMAgent._safe_parse_json"></a>
 
@@ -36,8 +49,21 @@ Get or create the ChatAgent instance.
 def _safe_parse_json(self, content: str):
 ```
 
-Safely parse JSON from LLM response with multiple fallback
+Safely parse JSON from an LLM response with multiple fallback
 strategies.
+
+Attempts direct parsing first, then regex-based extraction, then
+line-by-line parsing. Falls back to a default structure if all
+strategies fail.
+
+**Parameters:**
+
+- **content** (str): The raw LLM response string to parse.
+
+**Returns:**
+
+  Dict[str, Any]: The parsed JSON as a dictionary, or a fallback
+response structure if parsing fails.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.agent.PlaywrightLLMAgent._get_fallback_response"></a>
 
@@ -47,7 +73,16 @@ strategies.
 def _get_fallback_response(self, error_msg: str):
 ```
 
-Generate a fallback response structure.
+Generate a fallback response structure for parsing failures.
+
+**Parameters:**
+
+- **error_msg** (str): A description of the error that caused the fallback.
+
+**Returns:**
+
+  Dict[str, Any]: A default response dictionary with a
+`__INLINE_CODE_0__` action and the error message as summary.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.agent.PlaywrightLLMAgent._llm_call"></a>
 
@@ -63,4 +98,17 @@ def _llm_call(
 ):
 ```
 
-Call the LLM (via CAMEL ChatAgent) to get plan & next action.
+Call the LLM via :obj:`ChatAgent` to get a plan and next action.
+
+**Parameters:**
+
+- **prompt** (str): The user task description.
+- **snapshot** (str): The current page snapshot text.
+- **is_initial** (bool): Whether this is the first LLM call for the task. If :obj:`True`, no action history is included.
+- **history** (List[Dict[str, Any]], optional): List of previous actions and their results. Only used when `__INLINE_CODE_0__`
+- **is**: obj:`False`. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: The parsed LLM response containing `__INLINE_CODE_0__`
+(List[str]) and `__INLINE_CODE_1__` (Dict[str, Any]).
