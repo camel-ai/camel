@@ -92,7 +92,6 @@ class PythonVerifier(BaseVerifier):
         self.required_packages = required_packages or []
         self.float_tolerance = float_tolerance
         self._interpreter: Optional[BaseInterpreter] = interpreter
-        self._default_interpreter_created: bool = False
 
         if os.name == 'nt':  # Windows
             self.bin_dir = 'Scripts'
@@ -355,8 +354,7 @@ class PythonVerifier(BaseVerifier):
                         return VerificationResult(
                             status=VerificationOutcome.ERROR,
                             result="",
-                            error_message="Ground truth evaluation error:"
-                            f"{e}",
+                            error_message=f"Ground truth evaluation error:{e}",
                         )
                     if self.float_tolerance is not None:
                         equal = self._is_equal_with_tolerance(sol_val, gt_val)
@@ -422,19 +420,17 @@ class PythonVerifier(BaseVerifier):
         if self._interpreter is not None:
             return self._interpreter
 
-        if not self._default_interpreter_created:
-            from camel.interpreters import SubprocessInterpreter
+        from camel.interpreters import SubprocessInterpreter
 
-            self._interpreter = SubprocessInterpreter(
-                require_confirm=False,
-                print_stdout=False,
-                print_stderr=False,
-                execution_timeout=int(self._timeout or 30),
-                python_exec=venv_python,
-            )
-            self._default_interpreter_created = True
-
-        return self._interpreter
+        interpreter = SubprocessInterpreter(
+            require_confirm=False,
+            print_stdout=False,
+            print_stderr=False,
+            execution_timeout=int(self._timeout or 30),
+            python_exec=venv_python,
+        )
+        self._interpreter = interpreter
+        return interpreter
 
     async def _run_code_block(
         self, code: str, venv_path: str
@@ -462,9 +458,7 @@ class PythonVerifier(BaseVerifier):
         loop = asyncio.get_running_loop()
         try:
             output = await asyncio.wait_for(
-                loop.run_in_executor(
-                    None, interpreter.run, code, "python"
-                ),
+                loop.run_in_executor(None, interpreter.run, code, "python"),
                 timeout=self._timeout,
             )
         except asyncio.TimeoutError:

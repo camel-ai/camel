@@ -120,6 +120,7 @@ class SubprocessInterpreter(BaseInterpreter):
             # Parse the source code
             try:
                 import astor
+
                 tree = ast.parse(source)
                 # Get the last node
                 if tree.body:
@@ -409,7 +410,7 @@ class SubprocessInterpreter(BaseInterpreter):
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
         raise RuntimeError(
-            "SubprocessInterpreter doesn't support " "`action_space`."
+            "SubprocessInterpreter doesn't support `action_space`."
         )
 
     def _is_command_available(self, command: str) -> bool:
