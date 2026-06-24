@@ -1022,7 +1022,9 @@ class ChatAgent(BaseAgent):
                 f"Summary tokens ({summary_token_count}) "
                 f"exceed limit, full compression."
             )
-            summary = self.summarize(include_summaries=True)
+            summary = self.summarize(
+                include_summaries=True, exclude_last_user_message=True
+            )
             self._update_memory_with_summary(
                 summary.get("summary", ""), include_summaries=True
             )
@@ -1034,7 +1036,9 @@ class ChatAgent(BaseAgent):
                 f"Token count ({num_tokens}) exceed threshold "
                 f"({threshold}). Triggering summarization."
             )
-            summary = self.summarize(include_summaries=False)
+            summary = self.summarize(
+                include_summaries=False, exclude_last_user_message=True
+            )
             self._update_memory_with_summary(
                 summary.get("summary", ""), include_summaries=False
             )
@@ -1058,7 +1062,9 @@ class ChatAgent(BaseAgent):
                 f"Summary tokens ({summary_token_count}) "
                 f"exceed limit, full compression."
             )
-            summary = await self.asummarize(include_summaries=True)
+            summary = await self.asummarize(
+                include_summaries=True, exclude_last_user_message=True
+            )
             self._update_memory_with_summary(
                 summary.get("summary", ""), include_summaries=True
             )
@@ -1070,7 +1076,9 @@ class ChatAgent(BaseAgent):
                 f"Token count ({num_tokens}) exceed threshold "
                 f"({threshold}). Triggering summarization."
             )
-            summary = await self.asummarize(include_summaries=False)
+            summary = await self.asummarize(
+                include_summaries=False, exclude_last_user_message=True
+            )
             self._update_memory_with_summary(
                 summary.get("summary", ""), include_summaries=False
             )
@@ -1164,9 +1172,11 @@ class ChatAgent(BaseAgent):
         )
         self.update_memory(new_summary_msg, OpenAIBackendRole.ASSISTANT)
 
-        # Restore last user message to maintain conversation structure
-        # The summary already contains all user messages, but we keep the
-        # latest one so the model knows what to respond to
+        # Restore the last user message verbatim to maintain conversation
+        # structure. The automatic summarization flow summarizes the context
+        # up to (but excluding) this message, so re-appending it here keeps the
+        # model's most recent instruction intact instead of folded into the
+        # summary.
         if last_user_message:
             # Avoid duplicate prefix - check if already prefixed
             context_prefix = (
@@ -1723,6 +1733,7 @@ class ChatAgent(BaseAgent):
         working_directory: Optional[Union[str, Path]] = None,
         include_summaries: bool = False,
         add_user_messages: bool = True,
+        exclude_last_user_message: bool = False,
     ) -> Dict[str, Any]:
         r"""Summarize the agent's current conversation context and persist it
         to a markdown file.
@@ -1752,6 +1763,10 @@ class ChatAgent(BaseAgent):
                 directory used by ContextUtility.
             add_user_messages (bool): Whether add user messages to summary.
                 (default: :obj:`True`)
+            exclude_last_user_message (bool): Whether to exclude the most
+                recent user message from the summarized content. Used by the
+                automatic summarization flow, which re-appends that message
+                verbatim after the summary. (default: :obj:`False`)
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
                 path, status message, and optionally structured_summary if
@@ -1798,7 +1813,7 @@ class ChatAgent(BaseAgent):
             # build conversation text using shared helper
             conversation_text, user_messages = (
                 self._build_conversation_text_from_messages(
-                    messages, include_summaries
+                    messages, include_summaries, exclude_last_user_message
                 )
             )
 
@@ -1955,6 +1970,7 @@ class ChatAgent(BaseAgent):
         self,
         messages: List[Any],
         include_summaries: bool = False,
+        exclude_last_user_message: bool = False,
     ) -> tuple[str, List[str]]:
         r"""Build conversation text from messages for summarization.
 
@@ -1966,16 +1982,37 @@ class ChatAgent(BaseAgent):
             messages (List[Any]): List of messages to convert.
             include_summaries (bool): Whether to include messages starting
                 with [CONTEXT_SUMMARY]. (default: :obj:`False`)
+            exclude_last_user_message (bool): Whether to exclude the most
+                recent user message from the conversation text. This is used
+                by the automatic summarization flow, which re-appends the last
+                user message verbatim after the summary so the model always
+                sees the latest instruction intact instead of folded into the
+                summary. (default: :obj:`False`)
 
         Returns:
             tuple[str, List[str]]: A tuple containing:
                 - Formatted conversation text
                 - List of user messages extracted from the conversation
         """
+        # Locate the most recent user message so it can be excluded from the
+        # summarized content when requested.
+        last_user_index = -1
+        if exclude_last_user_message:
+            for index, message in enumerate(messages):
+                content = message.get('content', '')
+                if (
+                    message.get('role') == 'user'
+                    and isinstance(content, str)
+                    and content
+                ):
+                    last_user_index = index
+
         # Convert messages to conversation text
         conversation_lines = []
         user_messages: List[str] = []
-        for message in messages:
+        for index, message in enumerate(messages):
+            if exclude_last_user_message and index == last_user_index:
+                continue
             role = message.get('role', 'unknown')
             content = message.get('content', '')
 
@@ -2172,6 +2209,7 @@ class ChatAgent(BaseAgent):
         working_directory: Optional[Union[str, Path]] = None,
         include_summaries: bool = False,
         add_user_messages: bool = True,
+        exclude_last_user_message: bool = False,
     ) -> Dict[str, Any]:
         r"""Asynchronously summarize the agent's current conversation context
         and persist it to a markdown file.
@@ -2201,6 +2239,10 @@ class ChatAgent(BaseAgent):
                 (full compression). (default: :obj:`False`)
             add_user_messages (bool): Whether add user messages to summary.
                 (default: :obj:`True`)
+            exclude_last_user_message (bool): Whether to exclude the most
+                recent user message from the summarized content. Used by the
+                automatic summarization flow, which re-appends that message
+                verbatim after the summary. (default: :obj:`False`)
 
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
@@ -2238,7 +2280,7 @@ class ChatAgent(BaseAgent):
             # build conversation text using shared helper
             conversation_text, user_messages = (
                 self._build_conversation_text_from_messages(
-                    messages, include_summaries
+                    messages, include_summaries, exclude_last_user_message
                 )
             )
 
