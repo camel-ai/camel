@@ -34,6 +34,7 @@ from camel.toolkits.function_tool import FunctionTool
 from camel.utils.tool_result import ToolResult
 
 from .config_loader import ConfigLoader
+from .extension_proxy_wrapper import ExtensionProxyWrapper
 from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
 
 
@@ -302,6 +303,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_console_exec",
         "browser_sheet_input",
         "browser_sheet_read",
+        "browser_set_trigger",
     ]
 
     def __init__(
@@ -329,6 +331,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         cdp_url: Optional[str] = None,
         cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
+        extension_proxy_mode: bool = False,
+        extension_proxy_host: str = "localhost",
+        extension_proxy_port: int = 8765,
         download_dir: Optional[str] = None,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
@@ -382,9 +387,19 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             full_visual_mode (bool): When True, browser actions like click,
             browser_open, visit_page, etc. will not return snapshots.
             Defaults to False.
+            extension_proxy_mode (bool): When True, uses a Chrome extension
+            as a proxy to control the browser. This allows controlling a
+            normal Chrome browser without requiring --remote-debugging-port.
+            The extension connects to a WebSocket server hosted by this toolkit.
+            Defaults to False.
+            extension_proxy_host (str): Host for the extension proxy WebSocket
+            server. Defaults to "localhost".
+            extension_proxy_port (int): Port for the extension proxy WebSocket
+            server. Defaults to 8765.
             download_dir (Optional[str]): Directory path where downloaded
             files will be saved when using browser_download_file tool.
             Defaults to None.
+
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -465,20 +480,76 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         logger.info(f"Enabled tools: {self.enabled_tools}")
 
         self._ws_wrapper: Optional[WebSocketBrowserWrapper] = None
+        self._extension_proxy_wrapper: Optional[ExtensionProxyWrapper] = None
         self._ws_config = self.config_loader.to_ws_config()
+
+        # Extension proxy mode settings
+        self._extension_proxy_mode = extension_proxy_mode
+        self._extension_proxy_host = extension_proxy_host
+        self._extension_proxy_port = extension_proxy_port
+
+        if extension_proxy_mode:
+            logger.info(
+                f"Extension proxy mode enabled. "
+                f"Server will listen on ws://{extension_proxy_host}:{extension_proxy_port}"
+            )
 
     async def _ensure_ws_wrapper(self):
         """Ensure WebSocket wrapper is initialized."""
-        if self._ws_wrapper is None:
-            self._ws_wrapper = WebSocketBrowserWrapper(self._ws_config)
-            await self._ws_wrapper.start()
+        if self._extension_proxy_mode:
+            # Use extension proxy wrapper
+            if self._extension_proxy_wrapper is None:
+                self._extension_proxy_wrapper = ExtensionProxyWrapper(
+                    config=self._ws_config,
+                    host=self._extension_proxy_host,
+                    port=self._extension_proxy_port,
+                )
+                await self._extension_proxy_wrapper.start()
+        else:
+            # Use standard WebSocket wrapper
+            if self._ws_wrapper is None:
+                self._ws_wrapper = WebSocketBrowserWrapper(self._ws_config)
+                await self._ws_wrapper.start()
 
-    async def _get_ws_wrapper(self) -> WebSocketBrowserWrapper:
-        """Get the WebSocket wrapper, initializing if needed."""
+    async def _get_ws_wrapper(self):
+        """Get the WebSocket wrapper, initializing if needed.
+
+        Returns WebSocketBrowserWrapper or ExtensionProxyWrapper depending on mode.
+        """
         await self._ensure_ws_wrapper()
-        if self._ws_wrapper is None:
-            raise RuntimeError("Failed to initialize WebSocket wrapper")
-        return self._ws_wrapper
+
+        if self._extension_proxy_mode:
+            if self._extension_proxy_wrapper is None:
+                raise RuntimeError(
+                    "Failed to initialize Extension Proxy wrapper"
+                )
+            return self._extension_proxy_wrapper
+        else:
+            if self._ws_wrapper is None:
+                raise RuntimeError("Failed to initialize WebSocket wrapper")
+            return self._ws_wrapper
+
+    async def wait_for_extension(self, timeout: float = 60.0) -> bool:
+        """Wait for Chrome extension to connect (extension proxy mode only).
+
+        Args:
+            timeout: Maximum time to wait in seconds.
+
+        Returns:
+            True if extension connected, False if timeout.
+        """
+        if not self._extension_proxy_mode:
+            logger.warning(
+                "wait_for_extension called but not in extension proxy mode"
+            )
+            return True
+
+        await self._ensure_ws_wrapper()
+        if self._extension_proxy_wrapper:
+            return await self._extension_proxy_wrapper.wait_for_connection(
+                timeout
+            )
+        return False
 
     def __del__(self):
         r"""Cleanup browser resources on garbage collection."""
@@ -496,11 +567,22 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 else False
             )
 
+            is_extension_proxy = getattr(self, '_extension_proxy_mode', False)
+
             try:
                 loop = asyncio.get_event_loop()
                 if not loop.is_closed() and not loop.is_running():
                     try:
-                        if is_cdp:
+                        if is_extension_proxy:
+                            # Extension proxy: just stop the server
+                            if self._extension_proxy_wrapper:
+                                loop.run_until_complete(
+                                    asyncio.wait_for(
+                                        self._extension_proxy_wrapper.stop(),
+                                        timeout=2.0,
+                                    )
+                                )
+                        elif is_cdp:
                             # CDP: disconnect only
                             loop.run_until_complete(
                                 asyncio.wait_for(
@@ -2098,6 +2180,46 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_get_som_screenshot",
     ]
 
+    async def browser_set_trigger(
+        self,
+        *,
+        code: str,
+        description: str,
+    ) -> str:
+        r"""Sets a trigger that monitors a condition on the page.
+
+        The code should be a JavaScript arrow function that returns true
+        when the condition is met. The agent will be automatically notified
+        when the trigger fires, and can then proceed with the next action.
+
+        Args:
+            code (str): A JavaScript arrow function returning boolean.
+                IMPORTANT: Must be a plain arrow function, NOT an IIFE.
+                Do NOT wrap in (() => ...)() — just provide () => ...
+                Examples:
+                - "() => !document.querySelector('.buy-btn')?.disabled"
+                - "() => document.querySelector('.result') !== null"
+                - "() => new Date().getHours() === 12"
+                - "() => { const el = document.querySelector('#box'); return el && getComputedStyle(el).backgroundColor !== 'rgb(76, 175, 80)'; }"
+            description (str): Human-readable description of the trigger.
+
+        Returns:
+            str: Confirmation message.
+        """
+        import uuid
+
+        trigger_id = str(uuid.uuid4())[:8]
+        wrapper = self._extension_proxy_wrapper
+        if wrapper is None:
+            return "Error: trigger is only available in extension proxy mode."
+
+        await wrapper.set_trigger(code, trigger_id, description)
+        return (
+            f"Trigger '{description}' set (id={trigger_id}). "
+            f"You will be automatically notified when the condition is met. "
+            f"Do NOT call any other tools until the trigger fires."
+        )
+
     def _create_mode_wrapper(
         self,
         method: Callable[..., Any],
@@ -2379,6 +2501,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_console_exec": self.browser_console_exec,
             "browser_sheet_input": self.browser_sheet_input,
             "browser_sheet_read": self.browser_sheet_read,
+            "browser_set_trigger": self.browser_set_trigger,
         }
 
         # Tools that need mode-specific wrappers (different signatures)
