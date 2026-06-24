@@ -28,13 +28,13 @@ class BaseGraphStorage(ABC):
     @property
     @abstractmethod
     def get_schema(self) -> str:
-        r"""Get the schema of the graph storage"""
+        r"""Get the schema of the graph storage."""
         pass
 
     @property
     @abstractmethod
     def get_structured_schema(self) -> Dict[str, Any]:
-        r"""Get the structured schema of the graph storage"""
+        r"""Get the structured schema of the graph storage."""
         pass
 
     @abstractmethod
@@ -73,8 +73,9 @@ class BaseGraphStorage(ABC):
 
         Args:
             query (str): The query to be executed.
-            params (Optional[Dict[str, Any]]): A dictionary of parameters to
-                be used in the query. Defaults to `None`.
+            params (Optional[Dict[str, Any]], optional): A dictionary of
+                parameters to be used in the query.
+                (default: :obj:`None`)
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries, each

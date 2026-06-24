@@ -1,0 +1,157 @@
+[1mdiff --git a/camel/storages/graph_storages/base.py b/camel/storages/graph_storages/base.py[m
+[1mindex 1b4d2596..b1e79264 100644[m
+[1m--- a/camel/storages/graph_storages/base.py[m
+[1m+++ b/camel/storages/graph_storages/base.py[m
+[36m@@ -28,13 +28,13 @@[m [mclass BaseGraphStorage(ABC):[m
+     @property[m
+     @abstractmethod[m
+     def get_schema(self) -> str:[m
+[31m-        r"""Get the schema of the graph storage"""[m
+[32m+[m[32m        r"""Get the schema of the graph storage."""[m
+         pass[m
+ [m
+     @property[m
+     @abstractmethod[m
+     def get_structured_schema(self) -> Dict[str, Any]:[m
+[31m-        r"""Get the structured schema of the graph storage"""[m
+[32m+[m[32m        r"""Get the structured schema of the graph storage."""[m
+         pass[m
+ [m
+     @abstractmethod[m
+[36m@@ -73,8 +73,9 @@[m [mclass BaseGraphStorage(ABC):[m
+ [m
+         Args:[m
+             query (str): The query to be executed.[m
+[31m-            params (Optional[Dict[str, Any]]): A dictionary of parameters to[m
+[31m-                be used in the query. Defaults to `None`.[m
+[32m+[m[32m            params (Optional[Dict[str, Any]], optional): A dictionary of[m
+[32m+[m[32m                parameters to be used in the query.[m
+[32m+[m[32m                (default: :obj:`None`)[m
+ [m
+         Returns:[m
+             List[Dict[str, Any]]: A list of dictionaries, each[m
+[1mdiff --git a/camel/storages/graph_storages/graph_element.py b/camel/storages/graph_storages/graph_element.py[m
+[1mindex 761aea3b..350c00d3 100644[m
+[1m--- a/camel/storages/graph_storages/graph_element.py[m
+[1m+++ b/camel/storages/graph_storages/graph_element.py[m
+[36m@@ -26,11 +26,13 @@[m [mexcept ImportError:[m
+ class Node(BaseModel):[m
+     r"""Represents a node in a graph with associated properties.[m
+ [m
+[31m-    Attributes:[m
+[32m+[m[32m    Args:[m
+         id (Union[str, int]): A unique identifier for the node.[m
+[31m-        type (str):  The type of the relationship.[m
+[31m-        properties (dict): Additional properties and metadata associated with[m
+[31m-            the node.[m
+[32m+[m[32m        type (str, optional): The type of the node.[m
+[32m+[m[32m            (default: :obj:`"Node"`)[m
+[32m+[m[32m        properties (dict, optional): Additional properties and metadata[m
+[32m+[m[32m            associated with the node.[m
+[32m+[m[32m            (default: :obj:`dict`)[m
+     """[m
+ [m
+     id: Union[str, int][m
+[36m@@ -41,13 +43,16 @@[m [mclass Node(BaseModel):[m
+ class Relationship(BaseModel):[m
+     r"""Represents a directed relationship between two nodes in a graph.[m
+ [m
+[31m-    Attributes:[m
+[32m+[m[32m    Args:[m
+         subj (Node): The subject/source node of the relationship.[m
+         obj (Node): The object/target node of the relationship.[m
+[31m-        type (str):  The type of the relationship.[m
+[32m+[m[32m        type (str, optional): The type of the relationship.[m
+[32m+[m[32m            (default: :obj:`"Relationship"`)[m
+         timestamp (str, optional): The timestamp of the relationship.[m
+[31m-        properties (dict): Additional properties associated with the[m
+[31m-            relationship.[m
+[32m+[m[32m            (default: :obj:`None`)[m
+[32m+[m[32m        properties (dict, optional): Additional properties associated[m
+[32m+[m[32m            with the relationship.[m
+[32m+[m[32m            (default: :obj:`dict`)[m
+     """[m
+ [m
+     subj: Node[m
+[36m@@ -58,14 +63,14 @@[m [mclass Relationship(BaseModel):[m
+ [m
+ [m
+ class GraphElement(BaseModel):[m
+[31m-    r"""A graph element with lists of nodes and relationships.[m
+[32m+[m[32m    r"""Graph element containing nodes and relationships.[m
+ [m
+[31m-    Attributes:[m
+[32m+[m[32m    Args:[m
+         nodes (List[Node]): A list of nodes in the graph.[m
+[31m-        relationships (List[Relationship]): A list of relationships in the[m
+[31m-            graph.[m
+[31m-        source (Element): The element from which the graph information is[m
+[31m-            derived.[m
+[32m+[m[32m        relationships (List[Relationship]): A list of relationships in[m
+[32m+[m[32m            the graph.[m
+[32m+[m[32m        source (Element): The element from which the graph information[m
+[32m+[m[32m            is derived.[m
+     """[m
+ [m
+     model_config = ConfigDict(arbitrary_types_allowed=True)[m
+[36m@@ -75,6 +80,9 @@[m [mclass GraphElement(BaseModel):[m
+     source: Element[m
+ [m
+     def __post_init__(self):[m
+[32m+[m[32m        r"""Validate required dependencies for the source element."""[m
+         if "Element" not in globals():[m
+[31m-            raise ImportError("""The 'unstructured' package is required to use[m
+[31m-                              the 'source' attribute.""")[m
+[32m+[m[32m            raise ImportError([m
+[32m+[m[32m                "The 'unstructured' package is required to use "[m
+[32m+[m[32m                "the 'source' attribute."[m
+[32m+[m[32m            )[m
+[1mdiff --git a/camel/storages/graph_storages/neo4j_graph.py b/camel/storages/graph_storages/neo4j_graph.py[m
+[1mindex 9078f254..737cf7fa 100644[m
+[1m--- a/camel/storages/graph_storages/neo4j_graph.py[m
+[1m+++ b/camel/storages/graph_storages/neo4j_graph.py[m
+[36m@@ -613,13 +613,13 @@[m [mclass Neo4jGraph(BaseGraphStorage):[m
+                 original graph from which the sampling random walks will start.[m
+             restart_probability (float, optional): The probability that a[m
+                 sampling random walk restarts from one of the start nodes.[m
+[31m-                Defaults to `0.1`.[m
+[32m+[m[32m                (default: :obj:0.1)[m
+             node_label_stratification (bool, optional): If true, preserves the[m
+[31m-                node label distribution of the original graph. Defaults to[m
+[31m-                `False`.[m
+[32m+[m[32m                node label distribution of the original graph.[m
+[32m+[m[32m                (default: :obj:False)[m
+             relationship_weight_property (Optional[str], optional): Name of[m
+                 the relationship property to use as weights. If unspecified,[m
+[31m-                the algorithm runs unweighted. Defaults to `None`.[m
+[32m+[m[32m                the algorithm runs unweighted. (default: :obj:None)[m
+ [m
+         Returns:[m
+             Dict[str, Any]: A dictionary with the results of the RWR sampling.[m
+[36m@@ -683,11 +683,11 @@[m [mclass Neo4jGraph(BaseGraphStorage):[m
+             start_node_ids (List[int]): IDs of the initial set of nodes of the[m
+                 original graph from which the sampling random walks will start.[m
+             node_label_stratification (bool, optional): If true, preserves the[m
+[31m-                node label distribution of the original graph. Defaults to[m
+[31m-                `False`.[m
+[32m+[m[32m                node label distribution of the original graph.[m
+[32m+[m[32m                (default: :obj:False)[m
+             relationship_weight_property (Optional[str], optional): Name of[m
+                 the relationship property to use as weights. If unspecified,[m
+[31m-                the algorithm runs unweighted. Defaults to `None`.[m
+[32m+[m[32m                the algorithm runs unweighted. (default: :obj:None)[m
+ [m
+         Returns:[m
+             Dict[str, Any]: A dictionary with the results of the CNARW[m
+[36m@@ -741,15 +741,15 @@[m [mclass Neo4jGraph(BaseGraphStorage):[m
+         not specified, returns all matching triplets.[m
+ [m
+         Args:[m
+[31m-            subj (Optional[str]): The ID of the subject node.[m
+[32m+[m[32m            subj (Optional[str], optional): The ID of the subject node.[m
+                 If None, matches any subject node.[m
+[31m-                (default: :obj:`None`)[m
+[31m-            obj (Optional[str]): The ID of the object node.[m
+[32m+[m[32m                (default: :obj:None)[m
+[32m+[m[32m            obj (Optional[str], optional): The ID of the object node.[m
+    
