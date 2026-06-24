@@ -16,6 +16,7 @@ import random
 from collections.abc import Sequence
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -24,9 +25,20 @@ from typing import (
     Union,
 )
 
-from datasets import Dataset as HFDataset
 from pydantic import ValidationError
-from torch.utils.data import Dataset
+
+try:
+    from datasets import Dataset as HFDataset
+except ImportError:
+    HFDataset = None  # type: ignore[assignment,misc]
+
+try:
+    from torch.utils.data import Dataset
+except ImportError:
+
+    class Dataset:  # type: ignore[no-redef]
+        r"""Fallback when PyTorch is not installed."""
+        pass
 
 from camel.logger import get_logger
 
@@ -116,7 +128,7 @@ class StaticDataset(Dataset):
             ValueError: If the Path has an unsupported file extension.
         """
 
-        if isinstance(data, HFDataset):
+        if HFDataset is not None and isinstance(data, HFDataset):
             raw_data = self._init_from_hf_dataset(data)
         elif isinstance(data, Dataset):
             raw_data = self._init_from_pytorch_dataset(data)
