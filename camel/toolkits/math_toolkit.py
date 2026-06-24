@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import warnings
-from typing import List
+from typing import List, Union
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -70,7 +70,7 @@ class MathToolkit(BaseToolkit):
 
     def math_divide(
         self, a: float, b: float, decimal_places: int = 2
-    ) -> float:
+    ) -> Union[float, str]:
         r"""Divides two numbers.
 
         Args:
@@ -80,8 +80,11 @@ class MathToolkit(BaseToolkit):
                 decimal places to round to. Defaults to 2.
 
         Returns:
-            float: The result of dividing :obj:`a` by :obj:`b`.
+            Union[float, str]: The result of dividing :obj:`a` by :obj:`b`,
+                or an error message if :obj:`b` is zero.
         """
+        if b == 0:
+            return "Error: Cannot divide by zero."
         return round(a / b, decimal_places)
 
     def math_round(self, a: float, decimal_places: int = 0) -> float:
