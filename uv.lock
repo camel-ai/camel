@@ -1058,6 +1058,7 @@ all = [
     { name = "transformers" },
     { name = "tree-sitter" },
     { name = "tree-sitter-python" },
+    { name = "twelvelabs" },
     { name = "typer" },
     { name = "types-colorama" },
     { name = "types-mock" },
@@ -1238,6 +1239,7 @@ media-tools = [
     { name = "pydub" },
     { name = "pytesseract" },
     { name = "scenedetect" },
+    { name = "twelvelabs" },
     { name = "yt-dlp" },
 ]
 model-platforms = [
@@ -1299,6 +1301,7 @@ owl = [
     { name = "transformers" },
     { name = "tree-sitter" },
     { name = "tree-sitter-python" },
+    { name = "twelvelabs" },
     { name = "typer" },
     { name = "unstructured", marker = "python_full_version < '3.13'" },
     { name = "websockets" },
@@ -1756,6 +1759,9 @@ requires-dist = [
     { name = "tree-sitter-python", marker = "extra == 'all'", specifier = ">=0.23.6,<0.24" },
     { name = "tree-sitter-python", marker = "extra == 'dev-tools'", specifier = ">=0.23.6,<0.24" },
     { name = "tree-sitter-python", marker = "extra == 'owl'", specifier = ">=0.23.6,<0.24" },
+    { name = "twelvelabs", marker = "extra == 'all'", specifier = ">=1.2.8,<2" },
+    { name = "twelvelabs", marker = "extra == 'media-tools'", specifier = ">=1.2.8,<2" },
+    { name = "twelvelabs", marker = "extra == 'owl'", specifier = ">=1.2.8,<2" },
     { name = "typer", marker = "extra == 'all'", specifier = ">=0.15.2" },
     { name = "typer", marker = "extra == 'dev-tools'", specifier = ">=0.15.2" },
     { name = "typer", marker = "extra == 'owl'", specifier = ">=0.15.2" },
@@ -7699,7 +7705,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess", marker = "(python_full_version < '3.14' and sys_platform == 'emscripten') or (python_full_version < '3.14' and sys_platform == 'win32') or (sys_platform != 'emscripten' and sys_platform != 'win32')" },
+    { name = "ptyprocess", marker = "(python_full_version < '3.14' and sys_platform == 'emscripten') or (sys_platform != 'emscripten' and sys_platform != 'win32')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
@@ -8749,7 +8755,7 @@ name = "pyobjc-framework-cocoa"
 version = "12.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "(python_full_version == '3.13.*' and sys_platform == 'emscripten') or (python_full_version == '3.13.*' and sys_platform == 'win32') or (python_full_version >= '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32') or sys_platform == 'darwin'" },
+    { name = "pyobjc-core", marker = "(python_full_version == '3.13.*' and sys_platform == 'emscripten') or (python_full_version >= '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32') or sys_platform == 'darwin'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6d/cc/927169225e72bab9c9b44285656768fb75052a0bc85fdbca62740e1ca43c/pyobjc_framework_cocoa-12.2.tar.gz", hash = "sha256:20b392e2b7241caad0538dfde12143343e5dfe48f72e7df660a7548e635903dc", size = 3125555, upload-time = "2026-05-30T12:35:09.273Z" }
 wheels = [
@@ -8767,8 +8773,8 @@ name = "pyobjc-framework-quartz"
 version = "12.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "(python_full_version == '3.13.*' and sys_platform == 'emscripten') or (python_full_version == '3.13.*' and sys_platform == 'win32') or (python_full_version >= '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32') or sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "(python_full_version == '3.13.*' and sys_platform == 'emscripten') or (python_full_version == '3.13.*' and sys_platform == 'win32') or (python_full_version >= '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32') or sys_platform == 'darwin'" },
+    { name = "pyobjc-core", marker = "(python_full_version == '3.13.*' and sys_platform == 'emscripten') or (python_full_version >= '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32') or sys_platform == 'darwin'" },
+    { name = "pyobjc-framework-cocoa", marker = "(python_full_version == '3.13.*' and sys_platform == 'emscripten') or (python_full_version >= '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32') or sys_platform == 'darwin'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/91/a3/5ae4c90c13999b46315f549694f25c374c48a9f7ab18f98ace6e74f4a5c1/pyobjc_framework_quartz-12.2.tar.gz", hash = "sha256:b343395d4790323b0376fe20c83ac468510ba19f65429323ca211708c939d107", size = 3215525, upload-time = "2026-05-30T12:44:27.759Z" }
 wheels = [
@@ -11730,6 +11736,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d1/3c/8b4358e81f2f2cfe71b66a267f023a91db20a817b9425dd964873796980a/trio_websocket-0.12.2.tar.gz", hash = "sha256:22c72c436f3d1e264d0910a3951934798dcc5b00ae56fc4ee079d46c7cf20fae", size = 33549, upload-time = "2025-02-25T05:16:58.947Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c7/19/eb640a397bba49ba49ef9dbe2e7e5c04202ba045b6ce2ec36e9cadc51e04/trio_websocket-0.12.2-py3-none-any.whl", hash = "sha256:df605665f1db533f4a386c94525870851096a223adcb97f72a07e8b4beba45b6", size = 21221, upload-time = "2025-02-25T05:16:57.545Z" },
+]
+
+[[package]]
+name = "twelvelabs"
+version = "1.2.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pydantic-core" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5f/24/2604563f5a528bf5f12f9bbb7e3102e91c0e4f9bfd7aeb9963dced3a0b0f/twelvelabs-1.2.8.tar.gz", hash = "sha256:bb0846cc839845c800de8061bb7b99212a472e24bf20770d569f6f620b845e3c", size = 178449, upload-time = "2026-06-18T06:38:48.135Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4e/a6/6380129c65222bb2497cbef27334a496a1a31f4f38973fac46b62b9224fc/twelvelabs-1.2.8-py3-none-any.whl", hash = "sha256:c0487dd892b03728ac2afe3e4ebd4ea5e30ff404b61896667eb5a39264db282b", size = 372073, upload-time = "2026-06-18T06:38:46.747Z" },
 ]
 
 [[package]]
