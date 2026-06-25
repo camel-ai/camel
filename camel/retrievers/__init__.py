@@ -14,6 +14,7 @@
 # ruff: noqa: I001
 from .auto_retriever import AutoRetriever
 from .base import BaseRetriever
+from .base_rerank import BaseRerankRetriever
 from .bm25_retriever import BM25Retriever
 from .jina_rerank_retriever import JinaRerankRetriever
 from .cohere_rerank_retriever import CohereRerankRetriever
@@ -21,11 +22,12 @@ from .vector_retriever import VectorRetriever
 from .hybrid_retrival import HybridRetriever
 
 __all__ = [
-    'BaseRetriever',
-    'VectorRetriever',
     'AutoRetriever',
     'BM25Retriever',
-    'JinaRerankRetriever',
+    'BaseRerankRetriever',
+    'BaseRetriever',
     'CohereRerankRetriever',
     'HybridRetriever',
+    'JinaRerankRetriever',
+    'VectorRetriever',
 ]
