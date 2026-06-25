@@ -167,6 +167,14 @@ class SubprocessInterpreter(BaseInterpreter):
                     # Create a temporary file with the modified source
                     temp_file = self._create_temp_file(modified_source, "py")
                     python_bin = self.python_exec or "python"
+
+                    if not self._is_command_available(python_bin):
+                        raise InterpreterError(
+                            f"Command '{python_bin}' not found. "
+                            f"Please ensure it is installed and "
+                            f"available in your PATH."
+                        )
+
                     cmd = [python_bin, str(temp_file)]
             except (SyntaxError, TypeError, ValueError, ImportError) as e:
                 logger.warning(f"Failed to parse Python code with AST: {e}")

@@ -92,6 +92,9 @@ class PythonVerifier(BaseVerifier):
         self.required_packages = required_packages or []
         self.float_tolerance = float_tolerance
         self._interpreter: Optional[BaseInterpreter] = interpreter
+        # Track whether _interpreter was provided by the user (True) or
+        # auto-created by _get_interpreter (None / default).
+        self._user_interpreter: Optional[BaseInterpreter] = interpreter
 
         if os.name == 'nt':  # Windows
             self.bin_dir = 'Scripts'
@@ -103,6 +106,11 @@ class PythonVerifier(BaseVerifier):
         if self.venv_path and os.path.exists(self.venv_path):
             shutil.rmtree(self.venv_path)
             self.venv_path = None
+        # Clear the auto-created default interpreter since its
+        # python_exec now points to a deleted venv binary.
+        # User-provided interpreters are preserved.
+        if self._interpreter is not self._user_interpreter:
+            self._interpreter = None
 
     async def _setup(self, **kwargs) -> None:
         r"""Set up a virtual environment and install required packages."""
@@ -354,7 +362,9 @@ class PythonVerifier(BaseVerifier):
                         return VerificationResult(
                             status=VerificationOutcome.ERROR,
                             result="",
-                            error_message=f"Ground truth evaluation error:{e}",
+                            error_message=(
+                                f"Ground truth evaluation error: {e}"
+                            ),
                         )
                     if self.float_tolerance is not None:
                         equal = self._is_equal_with_tolerance(sol_val, gt_val)
@@ -435,12 +445,9 @@ class PythonVerifier(BaseVerifier):
     async def _run_code_block(
         self, code: str, venv_path: str
     ) -> Tuple[str, str, int]:
-        r"""Executes a block of Python code in the virtual environment.
-
-        The code is executed using the configured CAMEL interpreter
-        (defaulting to a :class:`SubprocessInterpreter` targeting the venv
-        Python). When no interpreter is available and no venv is set up,
-        falls back to manual subprocess execution.
+        r"""Executes a block of Python code via the configured CAMEL
+        interpreter (defaulting to a :class:`SubprocessInterpreter`
+        targeting the venv Python).
 
         Args:
             code (str): The Python code to execute.
@@ -464,32 +471,37 @@ class PythonVerifier(BaseVerifier):
         except asyncio.TimeoutError:
             raise
 
-        # Interpret the output: check for error markers from
-        # SubprocessInterpreter
-        if "(Execution failed with return code" in output:
-            # Extract stdout and stderr portions
-            stderr_marker = "(stderr: "
-            if stderr_marker in output:
-                stdout_part, rest = output.split(stderr_marker, 1)
-                stderr_part = rest.rstrip(")")
-                return (
-                    stdout_part.strip(),
-                    stderr_part.strip(),
-                    -1,
-                )
-            return ("", output.strip(), -1)
+        # Interpret the output.
+        # SubprocessInterpreter appends markers at the *end* of the output
+        # string: stderr as "(stderr: ...)" and errors as
+        # "(Execution failed with return code N)".  Start from the right to
+        # avoid conflating user stdout that happens to contain these strings.
+        FAILED_MARKER = "(Execution failed with return code"
+        STDERR_MARKER = "(stderr: "
 
-        # Clean output: SubprocessInterpreter may include stderr annotations
-        # even on success
-        stderr_marker = "(stderr: "
-        if stderr_marker in output:
-            stdout_part, rest = output.split(stderr_marker, 1)
-            stderr_part = rest.rstrip(")")
-            return (
-                stdout_part.strip(),
-                stderr_part.strip(),
-                0,
-            )
+        has_failed = FAILED_MARKER in output
+        return_code = -1 if has_failed else 0
+
+        # Find the rightmost stderr marker so user output containing
+        # "(stderr: " doesn't cause a false split.
+        stderr_pos = output.rfind(STDERR_MARKER)
+        if stderr_pos != -1:
+            # stderr portion runs from the marker to end-of-string (or until
+            # the failure marker, whichever comes first).
+            stderr_start = stderr_pos + len(STDERR_MARKER)
+            stderr_end = len(output)
+            if has_failed:
+                fail_pos = output.rfind(FAILED_MARKER)
+                if fail_pos > stderr_pos:
+                    stderr_end = fail_pos
+            stderr_part = output[stderr_start:stderr_end].rstrip(")\n ")
+            stdout_part = output[:stderr_pos].strip()
+            return (stdout_part, stderr_part, return_code)
+
+        # No stderr marker: the failure marker (if present) carries everything.
+        if has_failed:
+            fail_pos = output.rfind(FAILED_MARKER)
+            return ("", output[:fail_pos].strip(), -1)
 
         return (output.strip(), "", 0)
 
