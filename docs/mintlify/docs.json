@@ -429,6 +429,7 @@
             "pages": [
               "reference/camel.retrievers.auto_retriever",
               "reference/camel.retrievers.base",
+              "reference/camel.retrievers.base_rerank",
               "reference/camel.retrievers.bm25_retriever",
               "reference/camel.retrievers.cohere_rerank_retriever",
               "reference/camel.retrievers.hybrid_retrival",
