@@ -77,13 +77,15 @@ class TwelveLabsToolkit(BaseToolkit):
         self,
         prompt: str,
         video_url: Optional[str] = None,
-        video_id: Optional[str] = None,
+        asset_id: Optional[str] = None,
     ) -> str:
         r"""Run a Pegasus analysis on a video given either a public URL or an
-        indexed video id, and return the generated text.
+        indexed asset id, and return the generated text.
         """
-        if not video_url and not video_id:
-            return "Error: provide either video_url or video_id."
+        if not video_url and not asset_id:
+            return "Error: provide either video_url or asset_id."
+        if video_url and asset_id:
+            return "Error: provide only one of video_url or asset_id."
 
         try:
             kwargs: Dict[str, Any] = {
@@ -91,8 +93,10 @@ class TwelveLabsToolkit(BaseToolkit):
                 "prompt": prompt,
                 "max_tokens": self.max_tokens,
             }
-            if video_id:
-                kwargs["video_id"] = video_id
+            if asset_id:
+                from twelvelabs.types import VideoContext_AssetId
+
+                kwargs["video"] = VideoContext_AssetId(asset_id=asset_id)
             else:
                 from twelvelabs.types import VideoContext_Url
 
@@ -113,44 +117,44 @@ class TwelveLabsToolkit(BaseToolkit):
         self,
         question: str,
         video_url: Optional[str] = None,
-        video_id: Optional[str] = None,
+        asset_id: Optional[str] = None,
     ) -> str:
         r"""Ask a free-form question about a video using Pegasus.
 
         Provide exactly one of :obj:`video_url` (a publicly accessible video
-        URL, analysed server-side without downloading) or :obj:`video_id` (a
-        video already indexed in your TwelveLabs account).
+        URL, analysed server-side without downloading) or :obj:`asset_id` (an
+        asset already indexed in your TwelveLabs account).
 
         Args:
             question (str): The question to ask about the video.
             video_url (Optional[str]): A public URL of the video to analyse.
                 (default: :obj:`None`)
-            video_id (Optional[str]): The id of a video already indexed in
+            asset_id (Optional[str]): The id of an asset already indexed in
                 TwelveLabs. (default: :obj:`None`)
 
         Returns:
             str: Pegasus' answer to the question, or an error message.
         """
         return self._analyze(
-            prompt=question, video_url=video_url, video_id=video_id
+            prompt=question, video_url=video_url, asset_id=asset_id
         )
 
     def summarize_video(
         self,
         video_url: Optional[str] = None,
-        video_id: Optional[str] = None,
+        asset_id: Optional[str] = None,
         prompt: str = "Summarize this video in a few concise paragraphs.",
     ) -> str:
         r"""Generate a summary of a video using Pegasus.
 
         Provide exactly one of :obj:`video_url` (a publicly accessible video
-        URL, analysed server-side without downloading) or :obj:`video_id` (a
-        video already indexed in your TwelveLabs account).
+        URL, analysed server-side without downloading) or :obj:`asset_id` (an
+        asset already indexed in your TwelveLabs account).
 
         Args:
             video_url (Optional[str]): A public URL of the video to summarize.
                 (default: :obj:`None`)
-            video_id (Optional[str]): The id of a video already indexed in
+            asset_id (Optional[str]): The id of an asset already indexed in
                 TwelveLabs. (default: :obj:`None`)
             prompt (str): The instruction used to guide the summary.
                 (default: :obj:`"Summarize this video in a few concise
@@ -160,7 +164,7 @@ class TwelveLabsToolkit(BaseToolkit):
             str: The generated summary, or an error message.
         """
         return self._analyze(
-            prompt=prompt, video_url=video_url, video_id=video_id
+            prompt=prompt, video_url=video_url, asset_id=asset_id
         )
 
     def get_tools(self) -> List[FunctionTool]:

@@ -37,6 +37,15 @@ def test_requires_a_video_source(toolkit):
     assert result.startswith("Error")
 
 
+def test_rejects_conflicting_video_sources(toolkit):
+    result = toolkit.ask_question_about_video(
+        question="What happens?",
+        video_url="https://example.com/cat.mp4",
+        asset_id="asset_123",
+    )
+    assert result.startswith("Error")
+
+
 @patch("twelvelabs.TwelveLabs")
 def test_ask_question_about_video_url(mock_client_cls, toolkit):
     mock_client = MagicMock()
@@ -59,17 +68,22 @@ def test_ask_question_about_video_url(mock_client_cls, toolkit):
 
 
 @patch("twelvelabs.TwelveLabs")
-def test_summarize_video_by_id(mock_client_cls, toolkit):
+def test_summarize_video_by_asset_id(mock_client_cls, toolkit):
+    from twelvelabs.types import VideoContext_AssetId
+
     mock_client = MagicMock()
     mock_client.analyze.return_value = MagicMock(data="Summary text.")
     mock_client_cls.return_value = mock_client
 
-    result = toolkit.summarize_video(video_id="vid_123")
+    result = toolkit.summarize_video(asset_id="asset_123")
 
     assert result == "Summary text."
     kwargs = mock_client.analyze.call_args.kwargs
-    assert kwargs["video_id"] == "vid_123"
-    assert "video" not in kwargs
+    # Asset inputs are passed via a VideoContext_AssetId object (Pegasus 1.5
+    # does not support video_id), not a bare video_id kwarg.
+    assert "video_id" not in kwargs
+    assert isinstance(kwargs["video"], VideoContext_AssetId)
+    assert kwargs["video"].asset_id == "asset_123"
 
 
 @pytest.mark.skipif(
