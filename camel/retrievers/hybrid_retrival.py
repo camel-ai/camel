@@ -231,9 +231,7 @@ class HybridRetriever(BaseRetriever):
         # When a reranker is used, fuse a larger candidate pool first and let
         # the reranker decide the final top_k ordering.
         fusion_top_k = (
-            max(top_k, rerank_input_top_k)
-            if reranker is not None
-            else top_k
+            max(top_k, rerank_input_top_k) if reranker is not None else top_k
         )
 
         all_retrieved_info = self._sort_rrf_scores(
