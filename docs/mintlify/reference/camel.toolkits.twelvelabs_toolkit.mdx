@@ -1,0 +1,138 @@
+<a id="camel.toolkits.twelvelabs_toolkit"></a>
+
+<a id="camel.toolkits.twelvelabs_toolkit.TwelveLabsToolkit"></a>
+
+## TwelveLabsToolkit
+
+```python
+class TwelveLabsToolkit(BaseToolkit):
+```
+
+A toolkit for video understanding powered by TwelveLabs' Pegasus
+video-language model.
+
+Unlike frame-sampling approaches, Pegasus reasons natively over the video
+(visuals, motion, and audio), which lets an agent answer questions about,
+summarize, or extract information from a video given only its URL. This is
+useful in multi-agent tasks where one agent needs to ground its reasoning
+in video content.
+
+Get a free API key at https://twelvelabs.io (generous free tier).
+
+**Parameters:**
+
+- **api_key** (Optional[str], optional): The TwelveLabs API key. If not provided, it is read from the :obj:`TWELVELABS_API_KEY` environment variable. (default: :obj:`None`)
+- **model_name** (str, optional): The Pegasus model to use for analysis. (default: :obj:`"pegasus1.5"`)
+- **max_tokens** (int, optional): The maximum number of tokens to generate in a response. (default: :obj:`2048`)
+- **timeout** (Optional[float], optional): The timeout value for API requests in seconds. If :obj:`None`, no timeout is applied. (default: :obj:`None`)
+
+<a id="camel.toolkits.twelvelabs_toolkit.TwelveLabsToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    api_key: Optional[str] = None,
+    model_name: str = 'pegasus1.5',
+    max_tokens: int = 2048,
+    timeout: Optional[float] = None
+):
+```
+
+<a id="camel.toolkits.twelvelabs_toolkit.TwelveLabsToolkit.client"></a>
+
+### client
+
+```python
+def client(self):
+```
+
+Lazily initialise and cache the TwelveLabs client.
+
+<a id="camel.toolkits.twelvelabs_toolkit.TwelveLabsToolkit._analyze"></a>
+
+### _analyze
+
+```python
+def _analyze(
+    self,
+    prompt: str,
+    video_url: Optional[str] = None,
+    asset_id: Optional[str] = None
+):
+```
+
+Run a Pegasus analysis on a video given either a public URL or an
+indexed asset id, and return the generated text.
+
+<a id="camel.toolkits.twelvelabs_toolkit.TwelveLabsToolkit.ask_question_about_video"></a>
+
+### ask_question_about_video
+
+```python
+def ask_question_about_video(
+    self,
+    question: str,
+    video_url: Optional[str] = None,
+    asset_id: Optional[str] = None
+):
+```
+
+Ask a free-form question about a video using Pegasus.
+
+Provide exactly one of :obj:`video_url` (a publicly accessible video
+URL, analysed server-side without downloading) or :obj:`asset_id` (an
+asset already indexed in your TwelveLabs account).
+
+**Parameters:**
+
+- **question** (str): The question to ask about the video.
+- **video_url** (Optional[str]): A public URL of the video to analyse. (default: :obj:`None`)
+- **asset_id** (Optional[str]): The id of an asset already indexed in TwelveLabs. (default: :obj:`None`)
+
+**Returns:**
+
+  str: Pegasus' answer to the question, or an error message.
+
+<a id="camel.toolkits.twelvelabs_toolkit.TwelveLabsToolkit.summarize_video"></a>
+
+### summarize_video
+
+```python
+def summarize_video(
+    self,
+    video_url: Optional[str] = None,
+    asset_id: Optional[str] = None,
+    prompt: str = 'Summarize this video in a few concise paragraphs.'
+):
+```
+
+Generate a summary of a video using Pegasus.
+
+Provide exactly one of :obj:`video_url` (a publicly accessible video
+URL, analysed server-side without downloading) or :obj:`asset_id` (an
+asset already indexed in your TwelveLabs account).
+
+**Parameters:**
+
+- **video_url** (Optional[str]): A public URL of the video to summarize. (default: :obj:`None`)
+- **asset_id** (Optional[str]): The id of an asset already indexed in TwelveLabs. (default: :obj:`None`)
+- **prompt** (str): The instruction used to guide the summary. (default: :obj:`"Summarize this video in a few concise paragraphs."`)
+
+**Returns:**
+
+  str: The generated summary, or an error message.
+
+<a id="camel.toolkits.twelvelabs_toolkit.TwelveLabsToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects representing
+the functions in the toolkit.

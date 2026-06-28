@@ -578,6 +578,7 @@
               "reference/camel.toolkits.terminal_toolkit",
               "reference/camel.toolkits.thinking_toolkit",
               "reference/camel.toolkits.todo_toolkit",
+              "reference/camel.toolkits.twelvelabs_toolkit",
               "reference/camel.toolkits.twitter_toolkit",
               "reference/camel.toolkits.vertex_ai_veo_toolkit",
               "reference/camel.toolkits.video_analysis_toolkit",
