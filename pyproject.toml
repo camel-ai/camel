@@ -577,6 +577,7 @@ exclude = [
 
 [[tool.mypy.overrides]]
 module = [
+    "dakera.*",
     "transformers.*",
     "packaging.*",
     "tiktoken",
