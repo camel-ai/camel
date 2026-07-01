@@ -27,6 +27,7 @@ from .vectordb_storages.base import (
     VectorRecord,
 )
 from .vectordb_storages.chroma import ChromaStorage
+from .vectordb_storages.dakera import DakeraStorage
 from .vectordb_storages.faiss import FaissStorage
 from .vectordb_storages.milvus import MilvusStorage
 from .vectordb_storages.oceanbase import OceanBaseStorage
@@ -56,4 +57,5 @@ __all__ = [
     'WeaviateStorage',
     'PgVectorStorage',
     'ChromaStorage',
+    'DakeraStorage',
 ]
