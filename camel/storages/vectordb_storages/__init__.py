@@ -20,6 +20,7 @@ from .base import (
     VectorRecord,
 )
 from .chroma import ChromaStorage
+from .dakera import DakeraStorage
 from .faiss import FaissStorage
 from .milvus import MilvusStorage
 from .oceanbase import OceanBaseStorage
@@ -34,6 +35,7 @@ __all__ = [
     'VectorDBQuery',
     'VectorDBQueryResult',
     'ChromaStorage',
+    'DakeraStorage',
     'QdrantStorage',
     'MilvusStorage',
     "TiDBStorage",
