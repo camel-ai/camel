@@ -159,9 +159,7 @@ else:
 # Collect rate-limit error types from whichever provider SDKs are installed.
 # RateLimitError from openai is always present; anthropic's is optional.
 _RATE_LIMIT_ERRORS: tuple = tuple(
-    e
-    for e in [RateLimitError, AnthropicRateLimitError]
-    if e is not None
+    e for e in [RateLimitError, AnthropicRateLimitError] if e is not None
 )
 
 SIMPLE_FORMAT_PROMPT = TextPrompt(
