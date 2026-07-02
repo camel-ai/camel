@@ -43,8 +43,8 @@ class CodeExecutionToolkit(BaseToolkit):
         import_white_list (Optional[List[str]]): A list of allowed imports.
             (default: :obj:`None`)
         require_confirm (Optional[bool]): Whether to require confirmation
-            before executing code. If `None`, subprocess execution requires
-            confirmation by default. (default: :obj:`None`)
+            before executing code. If `None`, local host execution sandboxes
+            require confirmation by default. (default: :obj:`None`)
         timeout (Optional[float]): General timeout for toolkit operations.
             (default: :obj:`None`)
         microsandbox_config (Optional[dict]): Configuration for microsandbox
@@ -75,8 +75,9 @@ class CodeExecutionToolkit(BaseToolkit):
         self.verbose = verbose
         self.unsafe_mode = unsafe_mode
         self.import_white_list = import_white_list or list()
+        host_execution_sandboxes = {"internal_python", "subprocess"}
         resolved_require_confirm = (
-            sandbox == "subprocess"
+            sandbox in host_execution_sandboxes
             if require_confirm is None
             else require_confirm
         )
@@ -95,6 +96,7 @@ class CodeExecutionToolkit(BaseToolkit):
             self.interpreter = InternalPythonInterpreter(
                 unsafe_mode=self.unsafe_mode,
                 import_white_list=self.import_white_list,
+                require_confirm=resolved_require_confirm,
             )
         elif sandbox == "jupyter":
             self.interpreter = JupyterKernelInterpreter(
