@@ -2329,3 +2329,44 @@ async def test_chat_agent_async_stream_with_structured_output():
     assert len(responses) > 1, "Should receive multiple streaming chunks"
     assert responses[-1].msg.parsed.answer == 6
     assert responses[-1].msg.parsed.explanation
+
+
+def test_rate_limit_retry_on_openai_rate_limit_error():
+    r"""RateLimitError from openai triggers retries before raising."""
+    from openai import RateLimitError as OpenAIRateLimitError
+
+    from camel.agents.chat_agent import _RATE_LIMIT_ERRORS
+
+    assert OpenAIRateLimitError in _RATE_LIMIT_ERRORS
+
+    agent = ChatAgent(model=DummyModel(ModelType.GPT_4O_MINI))
+    agent.retry_attempts = 3
+    agent.retry_delay = 0.0
+
+    error = OpenAIRateLimitError(
+        message="rate limit",
+        response=MagicMock(status_code=429, headers={}),
+        body={},
+    )
+    agent.model_backend.run = MagicMock(side_effect=error)
+
+    with pytest.raises(Exception):
+        agent._get_model_response(openai_messages=[], current_iteration=0)
+
+    assert agent.model_backend.run.call_count == agent.retry_attempts
+
+
+def test_rate_limit_retry_respects_anthropic_error_when_installed():
+    r"""AnthropicRateLimitError, if the package is present, is in the tuple."""
+    from camel.agents.chat_agent import (
+        _RATE_LIMIT_ERRORS,
+        AnthropicRateLimitError,
+    )
+
+    if AnthropicRateLimitError is not None:
+        assert AnthropicRateLimitError in _RATE_LIMIT_ERRORS
+    else:
+        # anthropic not installed in this environment — tuple has only openai
+        from openai import RateLimitError as OpenAIRateLimitError
+
+        assert _RATE_LIMIT_ERRORS == (OpenAIRateLimitError,)
