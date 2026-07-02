@@ -147,6 +147,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | TerminalToolkit        | A toolkit for terminal operations such as searching for files by name or content, executing shell commands, and managing terminal sessions across multiple operating systems. |
 | TwitterToolkit         | A toolkit for Twitter operations including creating tweets, deleting tweets, and retrieving user profile information.                                                         |
 | VideoAnalysisToolkit   | A toolkit for analyzing video content with vision-language models, including frame extraction and question answering about video content.                                     |
+| TwelveLabsToolkit      | A toolkit for native video understanding powered by TwelveLabs' Pegasus model, enabling question answering and summarization over a video URL or an indexed video.             |
 | VideoDownloaderToolkit | A toolkit for downloading videos and optionally splitting them into chunks, with support for various video services.                                                          |
 | WeatherToolkit         | A toolkit for fetching weather data for cities using the OpenWeatherMap API.                                                                                                  |
 | WhatsAppToolkit        | A toolkit for interacting with the WhatsApp Business API, including sending messages, managing message templates, and accessing business profile information.                 |

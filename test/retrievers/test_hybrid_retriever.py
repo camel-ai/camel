@@ -60,3 +60,38 @@ def test_sort_rrf_scores_integration(mock_hybrid_retriever):
     assert len(results['Retrieved Context']) == 2
     assert results['Retrieved Context'][0]['text'] == 'Document 2'
     assert results['Retrieved Context'][1]['text'] == 'Document 1'
+
+
+def test_query_with_reranker(mock_hybrid_retriever):
+    # A mock reranker that reverses the fused order and returns top_k items.
+    def _rerank(query, retrieved_result, top_k):
+        reranked = list(reversed(retrieved_result))[:top_k]
+        for i, item in enumerate(reranked):
+            item['similarity score'] = 1.0 - i * 0.1
+        return reranked
+
+    reranker = MagicMock()
+    reranker.query = MagicMock(side_effect=_rerank)
+
+    results = mock_hybrid_retriever.query(
+        query="some query about document 1",
+        top_k=2,
+        return_detailed_info=True,
+        reranker=reranker,
+    )
+
+    # Reranker must have been invoked once with the fused candidates.
+    reranker.query.assert_called_once()
+    _, kwargs = reranker.query.call_args
+    assert kwargs['top_k'] == 2
+
+    # The reranker receives the full fused candidate pool (Document 2,
+    # Document 1, Document 3 by RRF), reverses it, and returns the top 2.
+    _, kwargs = reranker.query.call_args
+    assert len(kwargs['retrieved_result']) == 3
+
+    # Final order should reflect the reranker's reordering, not the raw RRF.
+    context = results['Retrieved Context']
+    assert len(context) == 2
+    assert context[0]['text'] == 'Document 3'
+    assert context[1]['text'] == 'Document 1'

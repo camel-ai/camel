@@ -1,0 +1,46 @@
+<a id="camel.retrievers.base_rerank"></a>
+
+<a id="camel.retrievers.base_rerank.BaseRerankRetriever"></a>
+
+## BaseRerankRetriever
+
+```python
+class BaseRerankRetriever(BaseRetriever):
+```
+
+Abstract base class for re-ranking retrievers.
+
+A re-ranking retriever takes a query together with a list of already
+retrieved results (for example, the output of a :class:`VectorRetriever`,
+a :class:`BM25Retriever`, or a :class:`HybridRetriever`) and re-orders
+those results by their semantic relevance to the query, typically using a
+cross-encoder or a dedicated re-ranking API.
+
+Unlike first-stage retrievers, re-rankers do not ingest content, so the
+:meth:`process` method is not required and is left unimplemented.
+
+<a id="camel.retrievers.base_rerank.BaseRerankRetriever.query"></a>
+
+### query
+
+```python
+def query(
+    self,
+    query: str,
+    retrieved_result: List[Dict[str, Any]],
+    top_k: int = DEFAULT_TOP_K_RESULTS
+):
+```
+
+Re-ranks the given retrieved results against the query.
+
+**Parameters:**
+
+- **query** (str): The query string used for re-ranking.
+- **retrieved_result** (List[Dict[str, Any]]): The content to be re-ranked, typically the output of a first-stage retriever. Each item should contain a `__INLINE_CODE_0__` entry.
+- **top_k** (int, optional): The number of top results to return after re-ranking. Must be a positive integer. (default: :obj:`DEFAULT_TOP_K_RESULTS`)
+
+**Returns:**
+
+  List[Dict[str, Any]]: The re-ranked results, each containing the
+original data plus an updated `__INLINE_CODE_0__`.
