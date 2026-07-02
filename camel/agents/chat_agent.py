@@ -56,6 +56,11 @@ from openai import (
 )
 from pydantic import BaseModel, ValidationError
 
+try:
+    from anthropic import RateLimitError as AnthropicRateLimitError
+except ImportError:
+    AnthropicRateLimitError = None  # type: ignore[assignment,misc]
+
 from camel.agents._types import ModelResponse, ToolCallRequest
 from camel.agents._utils import (
     build_default_summary_prompt,
@@ -151,6 +156,11 @@ elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
 else:
     from camel.utils import observe
 
+# Collect rate-limit error types from whichever provider SDKs are installed.
+# RateLimitError from openai is always present; anthropic's is optional.
+_RATE_LIMIT_ERRORS: tuple = tuple(
+    e for e in [RateLimitError, AnthropicRateLimitError] if e is not None
+)
 
 SIMPLE_FORMAT_PROMPT = TextPrompt(
     textwrap.dedent(
@@ -3595,7 +3605,7 @@ class ChatAgent(BaseAgent):
                 )
                 if response:
                     break
-            except RateLimitError as e:
+            except _RATE_LIMIT_ERRORS as e:  # type: ignore[misc]
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
@@ -3657,7 +3667,7 @@ class ChatAgent(BaseAgent):
                 )
                 if response:
                     break
-            except RateLimitError as e:
+            except _RATE_LIMIT_ERRORS as e:  # type: ignore[misc]
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
