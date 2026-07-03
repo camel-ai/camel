@@ -26,6 +26,10 @@ class ToolCallingRecord(BaseModel):
         tool_call_id (str): The ID of the tool call, if available.
         images (Optional[List[str]]): List of base64-encoded images returned
             by the tool, if any.
+        result_ref (Optional[str]): Reference to the complete result when the
+            memory copy was externalized.
+        result_externalized (bool): Whether the result stored in model memory
+            was replaced by an external reference preview.
     """
 
     tool_name: str
@@ -33,6 +37,8 @@ class ToolCallingRecord(BaseModel):
     result: Any
     tool_call_id: str
     images: Optional[List[str]] = None
+    result_ref: Optional[str] = None
+    result_externalized: bool = False
 
     def __str__(self) -> str:
         r"""Overridden version of the string function.

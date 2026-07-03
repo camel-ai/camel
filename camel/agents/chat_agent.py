@@ -66,6 +66,10 @@ from camel.agents._utils import (
     safe_model_dump,
 )
 from camel.agents.base import BaseAgent
+from camel.agents.tool_result_externalization import (
+    ToolResultExternalizationConfig,
+    ToolResultExternalizer,
+)
 from camel.logger import get_logger
 from camel.memories import (
     AgentMemory,
@@ -171,6 +175,13 @@ class _ToolOutputHistoryEntry:
     record_uuids: List[str]
     record_timestamps: List[float]
     cached: bool = False
+
+
+@dataclass(frozen=True)
+class _PreparedToolResult:
+    value: Any
+    ref: Optional[str] = None
+    externalized: bool = False
 
 
 class StreamContentAccumulator:
@@ -468,6 +479,11 @@ class ChatAgent(BaseAgent):
             context window that can be occupied by summary information. Used
             to limit how much of the model's context is reserved for
             summarization results. (default: :obj:`0.6`)
+        tool_result_externalization
+            (Optional[ToolResultExternalizationConfig], optional): Move large
+            tool outputs to pluggable storage and keep a preview/reference in
+            model memory. The configuration can automatically register tools
+            for range reads, search, and listing. (default: :obj:`None`)
     """
 
     def __init__(
@@ -516,6 +532,9 @@ class ChatAgent(BaseAgent):
         on_request_usage: Optional[Callable[[Dict[str, Any]], Any]] = None,
         stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
+        tool_result_externalization: Optional[
+            ToolResultExternalizationConfig
+        ] = None,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -530,6 +549,12 @@ class ChatAgent(BaseAgent):
 
         # Assign unique ID
         self.agent_id = agent_id if agent_id else str(uuid.uuid4())
+        self._tool_result_externalizer = (
+            ToolResultExternalizer(tool_result_externalization, self.agent_id)
+            if tool_result_externalization is not None
+            and tool_result_externalization.enabled
+            else None
+        )
 
         self._enable_snapshot_clean = enable_snapshot_clean
         self._tool_output_history: List[_ToolOutputHistoryEntry] = []
@@ -599,6 +624,19 @@ class ChatAgent(BaseAgent):
             ]
         }
 
+        if (
+            self._tool_result_externalizer is not None
+            and self._tool_result_externalizer.config.auto_register_tools
+        ):
+            for access_tool in self._tool_result_externalizer.get_tools():
+                tool_name = access_tool.get_function_name()
+                if tool_name in self._internal_tools:
+                    raise ValueError(
+                        f"Tool name '{tool_name}' is reserved by tool result "
+                        "externalization."
+                    )
+                self._internal_tools[tool_name] = access_tool
+
         # Register agent with toolkits that have RegisteredAgentToolkit mixin
         if toolkits_to_register_agent:
             for toolkit in toolkits_to_register_agent:
@@ -611,6 +649,20 @@ class ChatAgent(BaseAgent):
                 convert_to_schema(tool) for tool in (external_tools or [])
             ]
         }
+        if (
+            self._tool_result_externalizer is not None
+            and self._tool_result_externalizer.config.auto_register_tools
+        ):
+            conflicts = [
+                name
+                for name in self._external_tool_schemas
+                if self._tool_result_externalizer.is_access_tool(name)
+            ]
+            if conflicts:
+                raise ValueError(
+                    "External tool names conflict with CAMEL tool result "
+                    "access tools."
+                )
 
         # Set up other properties
         self.terminated = False
@@ -817,6 +869,11 @@ class ChatAgent(BaseAgent):
     def tool_dict(self) -> Dict[str, FunctionTool]:
         r"""Returns a dictionary of internal tools."""
         return self._internal_tools
+
+    @property
+    def tool_result_externalizer(self) -> Optional[ToolResultExternalizer]:
+        r"""Return the configured tool result externalizer, if enabled."""
+        return self._tool_result_externalizer
 
     @property
     def token_limit(self) -> int:
@@ -1229,6 +1286,35 @@ class ChatAgent(BaseAgent):
             return json.dumps(result, ensure_ascii=False)
         except (TypeError, ValueError):
             return str(result)
+
+    def _prepare_tool_result_for_memory(
+        self,
+        func_name: str,
+        result: Any,
+        tool_call_id: str,
+        mask_output: bool = False,
+    ) -> _PreparedToolResult:
+        r"""Externalize or truncate a tool result before writing memory."""
+        if self._tool_result_externalizer is not None and not mask_output:
+            serialized = self._serialize_tool_result(result)
+            externalized = self._tool_result_externalizer.externalize(
+                serialized,
+                tool_name=func_name,
+                tool_call_id=tool_call_id,
+            )
+            if externalized is not None:
+                return _PreparedToolResult(
+                    value=externalized.preview,
+                    ref=externalized.ref,
+                    externalized=True,
+                )
+
+        truncated_result, was_truncated = self._truncate_tool_result(
+            func_name, result
+        )
+        return _PreparedToolResult(
+            value=truncated_result if was_truncated else result
+        )
 
     def _truncate_tool_result(
         self, func_name: str, result: Any
@@ -4175,12 +4261,13 @@ class ChatAgent(BaseAgent):
             ToolCallingRecord: A struct containing information about
             this tool call.
         """
-        # Truncate tool result if it exceeds the maximum token limit
-        # This prevents single tool calls from exceeding context window
-        truncated_result, was_truncated = self._truncate_tool_result(
-            func_name, result
+        prepared_result = self._prepare_tool_result_for_memory(
+            func_name,
+            result,
+            tool_call_id,
+            mask_output=mask_output,
         )
-        result_for_memory = truncated_result if was_truncated else result
+        result_for_memory = prepared_result.value
 
         # Create the tool response message
         # Note: assistant message with tool_calls is already recorded by
@@ -4229,6 +4316,8 @@ class ChatAgent(BaseAgent):
             result=result,
             tool_call_id=tool_call_id,
             images=images,
+            result_ref=prepared_result.ref,
+            result_externalized=prepared_result.externalized,
         )
         self._update_last_tool_call_state(tool_record)
         return tool_record
@@ -5049,15 +5138,13 @@ class ChatAgent(BaseAgent):
                             " forward]"
                         )
 
-                    # Truncate tool result if it exceeds the maximum token
-                    # limit. This prevents single tool calls from exceeding
-                    # context window
-                    truncated_result, was_truncated = (
-                        self._truncate_tool_result(function_name, result)
+                    prepared_result = self._prepare_tool_result_for_memory(
+                        function_name,
+                        result,
+                        tool_call_id,
+                        mask_output=self.mask_tool_output,
                     )
-                    result_for_memory = (
-                        truncated_result if was_truncated else result
-                    )
+                    result_for_memory = prepared_result.value
 
                     # Create the tool response message
                     # Note: assistant message with tool_calls is already
@@ -5091,6 +5178,8 @@ class ChatAgent(BaseAgent):
                         result=result,
                         tool_call_id=tool_call_id,
                         images=images,
+                        result_ref=prepared_result.ref,
+                        result_externalized=prepared_result.externalized,
                     )
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
@@ -5216,15 +5305,13 @@ class ChatAgent(BaseAgent):
                             " forward]"
                         )
 
-                    # Truncate tool result if it exceeds the maximum token
-                    # limit. This prevents single tool calls from exceeding
-                    # context window
-                    truncated_result, was_truncated = (
-                        self._truncate_tool_result(function_name, result)
+                    prepared_result = self._prepare_tool_result_for_memory(
+                        function_name,
+                        result,
+                        tool_call_id,
+                        mask_output=self.mask_tool_output,
                     )
-                    result_for_memory = (
-                        truncated_result if was_truncated else result
-                    )
+                    result_for_memory = prepared_result.value
 
                     # Create the tool response message
                     # Note: assistant message with tool_calls is already
@@ -5256,6 +5343,8 @@ class ChatAgent(BaseAgent):
                         result=result,
                         tool_call_id=tool_call_id,
                         images=images,
+                        result_ref=prepared_result.ref,
+                        result_externalized=prepared_result.externalized,
                     )
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
@@ -6187,6 +6276,11 @@ class ChatAgent(BaseAgent):
             retry_delay=self.retry_delay,
             step_timeout=self.step_timeout,
             summary_window_ratio=self.summary_window_ratio,
+            tool_result_externalization=(
+                self._tool_result_externalizer.config_for_clone(with_memory)
+                if self._tool_result_externalizer is not None
+                else None
+            ),
         )
 
         # Copy memory if requested
@@ -6219,6 +6313,13 @@ class ChatAgent(BaseAgent):
         # Cache for cloned toolkits by original toolkit id
 
         for tool in self._internal_tools.values():
+            if (
+                self._tool_result_externalizer is not None
+                and self._tool_result_externalizer.is_access_tool(
+                    tool.get_function_name()
+                )
+            ):
+                continue
             # Check if this tool is a method bound to a toolkit instance
             if hasattr(tool.func, '__self__'):
                 toolkit_instance = tool.func.__self__
