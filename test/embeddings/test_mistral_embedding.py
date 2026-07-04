@@ -14,6 +14,8 @@
 import os
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from camel.embeddings import MistralEmbedding
 
 
@@ -41,6 +43,10 @@ def test_embed_list(mock_mistral):
     assert result == [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
 
 
+@pytest.mark.skipif(
+    not os.getenv("MISTRAL_API_KEY"),
+    reason="MISTRAL_API_KEY not set",
+)
 @patch('mistralai.client.MistralClient', autospec=True)
 def test_get_output_dim(mock_mistral_client):
     # Instantiate the MistralEmbedding with specified dimensions

@@ -25,6 +25,11 @@ sys.modules['aci'] = MagicMock()
 sys.modules['aci.types'] = MagicMock()
 sys.modules['aci.types.enums'] = MagicMock()
 
+pytestmark = pytest.mark.skipif(
+    not os.getenv("ACI_API_KEY"),
+    reason="ACI_API_KEY not set; skipping ACI tests",
+)
+
 
 @pytest.mark.skipif(
     os.getenv("ACI_API_KEY") is None, reason="ACI_API_KEY not set"

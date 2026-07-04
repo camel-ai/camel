@@ -49,6 +49,7 @@ def mock_hybrid_retriever(monkeypatch):
     return hybrid_retriever
 
 
+@pytest.mark.model_backend
 def test_sort_rrf_scores_integration(mock_hybrid_retriever):
     # Call the method that integrates _sort_rrf_scores
     # This is a hypothetical method that would use _sort_rrf_scores internally
@@ -62,6 +63,7 @@ def test_sort_rrf_scores_integration(mock_hybrid_retriever):
     assert results['Retrieved Context'][1]['text'] == 'Document 1'
 
 
+@pytest.mark.model_backend
 def test_query_with_reranker(mock_hybrid_retriever):
     # A mock reranker that reverses the fused order and returns top_k items.
     def _rerank(query, retrieved_result, top_k):

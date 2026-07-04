@@ -48,6 +48,7 @@ def test__initialize_vector_storage(auto_retriever):
     assert isinstance(storage_custom, QdrantStorage)
 
 
+@pytest.mark.model_backend
 def test_run_vector_retriever(auto_retriever):
     # Define mock data for testing
     query_unrealted = "unrelated query"
@@ -63,6 +64,7 @@ def test_run_vector_retriever(auto_retriever):
     assert "No suitable information retrieved from" in str(result_unrelated)
 
 
+@pytest.mark.model_backend
 def test_run_vector_retriever_with_element_input(auto_retriever):
     uio = UnstructuredIO()
     test_element = uio.create_element_from_text(

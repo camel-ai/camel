@@ -523,6 +523,7 @@ def assert_event_sequence(
         assert e in allowed_events, f"Unexpected event type at {i}: {e}"
 
 
+@pytest.mark.model_backend
 def test_workforce_emits_expected_event_sequence():
     # Use STUB model to avoid real API calls and ensure fast,
     # deterministic execution

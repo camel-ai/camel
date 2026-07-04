@@ -11,10 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 import unittest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from camel.toolkits import MeshyToolkit
+
+pytestmark = pytest.mark.skipif(
+    not os.getenv("MESHY_API_KEY"),
+    reason="MESHY_API_KEY not set; skipping Meshy tests",
+)
 
 
 class TestMeshyToolkit(unittest.TestCase):

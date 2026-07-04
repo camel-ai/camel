@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import pytest
 from pydantic import BaseModel
 
 from camel.schemas import OpenAISchemaConverter
@@ -27,6 +28,7 @@ def get_temperature(location: str, date: str, temperature: float):
     print(f"Temperature in {location} on {date} is {temperature} degrees.")
 
 
+@pytest.mark.model_backend
 def test_openai_converter_with_str_template():
     temperature_template = (
         '{"location": "Beijing", "date": "2023-09-01", "temperature": 30.0}'
@@ -46,6 +48,7 @@ def test_openai_converter_with_str_template():
     }
 
 
+@pytest.mark.model_backend
 def test_openai_converter_with_function():
     model = OpenAISchemaConverter()
 
@@ -61,6 +64,7 @@ def test_openai_converter_with_function():
     }
 
 
+@pytest.mark.model_backend
 def test_openai_converter_with_model():
     model = OpenAISchemaConverter()
 

@@ -11,9 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from unittest.mock import patch
 
+import pytest
+
 from camel.toolkits import FunctionTool, NotionToolkit
+
+pytestmark = pytest.mark.skipif(
+    not os.getenv("NOTION_TOKEN"),
+    reason="NOTION_TOKEN not set; skipping Notion tests",
+)
 
 
 def test_get_user():
