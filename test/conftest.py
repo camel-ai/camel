@@ -29,13 +29,20 @@ load_dotenv()
 # CI runs do not receive repository secrets), which aborts the whole test job
 # before any test runs.
 #
-# Provide a non-empty placeholder so collection succeeds everywhere. A real
-# key (from the environment or ``.env``) is always preserved: the placeholder
-# is only applied when the variable is unset or empty. Tests that make real
-# API calls are gated behind the ``model_backend`` marker and skipped in
-# fast-test mode, so this placeholder is never used for an actual request.
-if not os.environ.get("OPENAI_API_KEY"):
-    os.environ["OPENAI_API_KEY"] = "placeholder-key-for-collection"
+# Provide non-empty placeholders so collection succeeds everywhere. A real key
+# (from the environment or ``.env``) is always preserved: each placeholder is
+# only applied when its variable is unset or empty. Tests that make real API
+# calls are gated behind the ``model_backend`` marker and skipped in fast-test
+# mode, so these placeholders are never used for an actual request.
+#
+# ``OPENAI_API_KEY`` covers the agent/model test modules (e.g.
+# test/agents/test_chat_agent.py builds an OpenAI model as a parametrize
+# value); ``DEEPSEEK_API_KEY`` covers services/agent_mcp/agent_config.py, which
+# builds a DeepSeek model at import time and is imported by
+# test/services/test_agent_mcp_server.py.
+for _collection_env_var in ("OPENAI_API_KEY", "DEEPSEEK_API_KEY"):
+    if not os.environ.get(_collection_env_var):
+        os.environ[_collection_env_var] = "placeholder-key-for-collection"
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
