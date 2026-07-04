@@ -318,7 +318,9 @@ class BaseMessage:
             code_type = lines[idx].strip()[3:].strip()
             idx += 1
             start_idx = idx
-            while not lines[idx].lstrip().startswith("```"):
+            while idx < len(lines) and (
+                not lines[idx].lstrip().startswith("```")
+            ):
                 idx += 1
             code = "\n".join(lines[start_idx:idx]).strip()
             code_prompts.append(CodePrompt(code, code_type=code_type))
