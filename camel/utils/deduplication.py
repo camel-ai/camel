@@ -194,8 +194,13 @@ def deduplicate_internally(
         )
 
         # Create mask for lower triangle (avoid self-comparison and redundant
-        # checks)
-        tril_mask = np.tril(np.ones_like(batch_similarities), k=-1)
+        # checks). Local row ``r`` corresponds to global text index ``i + r``
+        # and the columns span global indices ``0..batch_end - 1``, so to keep
+        # only comparisons against strictly earlier texts we need columns
+        # ``c <= i + r - 1``, i.e. offset ``k = i - 1``. Using a fixed ``k=-1``
+        # is only correct for the first batch and would drop valid cross-batch
+        # comparisons (missing duplicates) when ``batch_size < len(texts)``.
+        tril_mask = np.tril(np.ones_like(batch_similarities), k=i - 1)
         batch_similarities = batch_similarities * tril_mask
 
         # Find duplicates in current batch
