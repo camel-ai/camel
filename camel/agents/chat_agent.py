@@ -171,8 +171,6 @@ def _is_rate_limit_error(error: BaseException) -> bool:
         return True
     status = getattr(error, "status_code", None)
     if status is None:
-        status = getattr(error, "code", None)
-    if status is None:
         status = getattr(getattr(error, "response", None), "status_code", None)
     return str(status) == "429"
 
