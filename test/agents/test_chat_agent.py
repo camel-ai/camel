@@ -1091,6 +1091,72 @@ def test_chat_agent_step_exceed_token_number(step_call_count=3):
 
 
 @pytest.mark.model_backend
+def test_chat_agent_step_over_limit_context_terminates_before_model():
+    system_msg = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    assistant = ChatAgent(
+        system_message=system_msg,
+        token_limit=1,
+        summarize_threshold=None,
+    )
+
+    original_get_context = assistant.memory.get_context
+
+    def mock_get_context():
+        messages, _ = original_get_context()
+        return messages, assistant.token_limit + 1
+
+    assistant.memory.get_context = mock_get_context
+    assistant.model_backend.run = MagicMock(
+        return_value=model_backend_rsp_base
+    )
+
+    response = assistant.step("Tell me a joke.")
+
+    assert len(response.msgs) == 0
+    assert response.terminated
+    assistant.model_backend.run.assert_not_called()
+
+
+@pytest.mark.model_backend
+def test_chat_agent_over_limit_context_triggers_full_compression():
+    system_msg = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    assistant = ChatAgent(
+        system_message=system_msg,
+        token_limit=10,
+        summarize_threshold=50,
+    )
+    openai_messages = [{"role": "system", "content": system_msg.content}]
+
+    assistant.memory.get_context = MagicMock(
+        side_effect=[
+            (openai_messages, assistant.token_limit + 1),
+            (openai_messages, assistant.token_limit),
+        ]
+    )
+    assistant.summarize = MagicMock(return_value={"summary": "short"})
+    assistant._update_memory_with_summary = MagicMock()
+
+    messages, num_tokens = assistant._get_context_with_summarization()
+
+    assert messages == openai_messages
+    assert num_tokens == assistant.token_limit
+    assistant.summarize.assert_called_once_with(include_summaries=True)
+    assistant._update_memory_with_summary.assert_called_once_with(
+        "short", include_summaries=True
+    )
+
+
+@pytest.mark.model_backend
 @pytest.mark.parametrize('n', [1, 2, 3])
 def test_chat_agent_multiple_return_messages(n, step_call_count=3):
     model_config = ChatGPTConfig(temperature=1.4, n=n)

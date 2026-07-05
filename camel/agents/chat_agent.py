@@ -1006,13 +1006,40 @@ class ChatAgent(BaseAgent):
     def _reset_summary_state(self) -> None:
         self._summary_token_count = 0  # Total tokens in summary messages
 
+    def _ensure_context_under_token_limit(
+        self,
+        openai_messages: List[OpenAIMessage],
+        num_tokens: int,
+    ) -> Tuple[List[OpenAIMessage], int]:
+        if num_tokens <= self.token_limit:
+            return openai_messages, num_tokens
+        raise RuntimeError("Context size exceeded", num_tokens)
+
     def _get_context_with_summarization(
         self,
     ) -> Tuple[List[OpenAIMessage], int]:
         r"""Get context and trigger summarization if needed."""
         openai_messages, num_tokens = self.memory.get_context()
 
-        if self.summarize_threshold is None or num_tokens > self.token_limit:
+        if num_tokens > self.token_limit:
+            if self.summarize_threshold is None:
+                return self._ensure_context_under_token_limit(
+                    openai_messages, num_tokens
+                )
+            logger.warning(
+                f"Token count ({num_tokens}) exceeds token limit "
+                f"({self.token_limit}). Triggering full compression."
+            )
+            summary = self.summarize(include_summaries=True)
+            self._update_memory_with_summary(
+                summary.get("summary", ""), include_summaries=True
+            )
+            openai_messages, num_tokens = self.memory.get_context()
+            return self._ensure_context_under_token_limit(
+                openai_messages, num_tokens
+            )
+
+        if self.summarize_threshold is None:
             return openai_messages, num_tokens
 
         summary_token_count = self._summary_token_count
@@ -1026,7 +1053,10 @@ class ChatAgent(BaseAgent):
             self._update_memory_with_summary(
                 summary.get("summary", ""), include_summaries=True
             )
-            return self.memory.get_context()
+            openai_messages, num_tokens = self.memory.get_context()
+            return self._ensure_context_under_token_limit(
+                openai_messages, num_tokens
+            )
 
         threshold = self._calculate_next_summary_threshold()
         if num_tokens > threshold:
@@ -1038,7 +1068,10 @@ class ChatAgent(BaseAgent):
             self._update_memory_with_summary(
                 summary.get("summary", ""), include_summaries=False
             )
-            return self.memory.get_context()
+            openai_messages, num_tokens = self.memory.get_context()
+            return self._ensure_context_under_token_limit(
+                openai_messages, num_tokens
+            )
 
         return openai_messages, num_tokens
 
@@ -1048,7 +1081,25 @@ class ChatAgent(BaseAgent):
         r"""Async version: get context and trigger summarization if needed."""
         openai_messages, num_tokens = self.memory.get_context()
 
-        if self.summarize_threshold is None or num_tokens > self.token_limit:
+        if num_tokens > self.token_limit:
+            if self.summarize_threshold is None:
+                return self._ensure_context_under_token_limit(
+                    openai_messages, num_tokens
+                )
+            logger.warning(
+                f"Token count ({num_tokens}) exceeds token limit "
+                f"({self.token_limit}). Triggering full compression."
+            )
+            summary = await self.asummarize(include_summaries=True)
+            self._update_memory_with_summary(
+                summary.get("summary", ""), include_summaries=True
+            )
+            openai_messages, num_tokens = self.memory.get_context()
+            return self._ensure_context_under_token_limit(
+                openai_messages, num_tokens
+            )
+
+        if self.summarize_threshold is None:
             return openai_messages, num_tokens
 
         summary_token_count = self._summary_token_count
@@ -1062,7 +1113,10 @@ class ChatAgent(BaseAgent):
             self._update_memory_with_summary(
                 summary.get("summary", ""), include_summaries=True
             )
-            return self.memory.get_context()
+            openai_messages, num_tokens = self.memory.get_context()
+            return self._ensure_context_under_token_limit(
+                openai_messages, num_tokens
+            )
 
         threshold = self._calculate_next_summary_threshold()
         if num_tokens > threshold:
@@ -1074,7 +1128,10 @@ class ChatAgent(BaseAgent):
             self._update_memory_with_summary(
                 summary.get("summary", ""), include_summaries=False
             )
-            return self.memory.get_context()
+            openai_messages, num_tokens = self.memory.get_context()
+            return self._ensure_context_under_token_limit(
+                openai_messages, num_tokens
+            )
 
         return openai_messages, num_tokens
 
