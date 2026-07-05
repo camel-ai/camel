@@ -1090,7 +1090,6 @@ def test_chat_agent_step_exceed_token_number(step_call_count=3):
         assert response.terminated, f"Error in calling round {i + 1}"
 
 
-@pytest.mark.model_backend
 def test_chat_agent_step_over_limit_context_terminates_before_model():
     system_msg = BaseMessage(
         role_name="assistant",
@@ -1122,7 +1121,6 @@ def test_chat_agent_step_over_limit_context_terminates_before_model():
     assistant.model_backend.run.assert_not_called()
 
 
-@pytest.mark.model_backend
 def test_chat_agent_over_limit_context_triggers_full_compression():
     system_msg = BaseMessage(
         role_name="assistant",
