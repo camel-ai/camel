@@ -27,7 +27,7 @@ class VectorRecord(BaseModel):
     Attributes:
         vector (List[float]): The numerical representation of the vector.
         id (str, optional): A unique identifier for the vector. If not
-            provided, an random uuid will be assigned.
+            provided, a random uuid will be assigned.
         payload (Optional[Dict[str, Any]], optional): Any additional metadata
             or information related to the vector. (default: :obj:`None`)
     """
@@ -48,14 +48,15 @@ class VectorDBQuery(BaseModel):
     """
 
     query_vector: List[float]
-    """The numerical representation of the query vector."""
+    r"""The numerical representation of the query vector."""
     top_k: int = 1
-    """The number of top similar vectors to retrieve from the database."""
+    r"""The number of top similar vectors to retrieve from the database."""
 
     def __init__(
         self, query_vector: List[float], top_k: int, **kwargs: Any
     ) -> None:
-        """Pass in query_vector and tok_k as positional arg.
+        r"""Pass in query_vector and top_k as positional arg.
+
         Args:
             query_vector (List[float]): The numerical representation of the
                 query vector.
@@ -85,7 +86,19 @@ class VectorDBQueryResult(BaseModel):
         id: str,
         payload: Optional[Dict[str, Any]] = None,
     ) -> "VectorDBQueryResult":
-        r"""A class method to construct a `VectorDBQueryResult` instance."""
+        r"""A class method to construct a `VectorDBQueryResult` instance.
+
+        Args:
+            similarity (float): The similarity score.
+            vector (List[float]): The numerical representation of the vector.
+            id (str): A unique identifier for the vector.
+            payload (Optional[Dict[str, Any]], optional): Any additional
+                metadata or information related to the vector.
+                (default: :obj:`None`)
+
+        Returns:
+            VectorDBQueryResult: The constructed query result instance.
+        """
         return cls(
             record=VectorRecord(
                 vector=vector,
@@ -207,7 +220,7 @@ class BaseVectorStorage(ABC):
             top_k (int): The number of top similar vectors.
 
         Returns:
-            List[List[Dict[str, Any]]]: A list of vector payloads retrieved
+            List[Dict[str, Any]]: A list of vector payloads retrieved
                 from the storage based on similarity to the query vector.
         """
         results = self.query(VectorDBQuery(query_vector=vector, top_k=top_k))
