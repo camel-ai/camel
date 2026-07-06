@@ -50,7 +50,7 @@ class Crawl4AILoader(BaseLoader):
 
         if loop.is_running():
             # If called inside an existing async loop environment
-            import nest_asyncio
+            import nest_asyncio  # type: ignore[import-untyped]
 
             nest_asyncio.apply()
 

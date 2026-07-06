@@ -14,16 +14,16 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
+import pytest  # type: ignore[import]
 
-from camel.loaders.mineru_loader import MinerU
+from camel.loaders.mineru_loader import MinerULoader
 from camel.toolkits import MinerUToolkit
 
 
 @pytest.fixture
 def mock_mineru():
     """Create a mock MinerU client with all required responses."""
-    mock = MagicMock(spec=MinerU)
+    mock = MagicMock(spec=MinerULoader)
 
     # Mock single URL extraction
     mock.extract_url.return_value = {'task_id': 'test_task'}

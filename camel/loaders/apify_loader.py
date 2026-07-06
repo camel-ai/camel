@@ -16,7 +16,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
-    from apify_client.clients import DatasetClient
+    from apify_client.clients import (  # type: ignore[import-not-found]
+        DatasetClient,
+    )  # type: ignore[import-not-found]
 
 from camel.loaders.base_loader import BaseLoader
 from camel.utils import api_keys_required
@@ -114,7 +116,7 @@ class ApifyLoader(BaseLoader):
                 timeout_secs=timeout_secs,
                 webhooks=webhooks,
                 wait_secs=wait_secs,
-            )
+            )  # type: ignore[call-arg, return-value]
         except Exception as e:
             raise RuntimeError(f"Failed to run actor {actor_id}: {e}") from e
 
@@ -235,7 +237,7 @@ class ApifyLoader(BaseLoader):
         """
         try:
             return (
-                self.client.datasets()
+                self.client.datasets()  # type: ignore[return-value]
                 .list(unnamed=unnamed, limit=limit, offset=offset, desc=desc)
                 .items
             )

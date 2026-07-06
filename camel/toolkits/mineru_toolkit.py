@@ -14,7 +14,7 @@
 
 from typing import Dict, List, Optional
 
-from camel.loaders.mineru_loader import MinerU
+from camel.loaders.mineru_loader import MinerULoader
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import api_keys_required
@@ -76,7 +76,7 @@ class MinerUToolkit(BaseToolkit):
             timeout (float): Maximum duration in seconds to wait for task
                 completion. (default: :obj:`300`)
         """
-        self.client = MinerU(
+        self.client = MinerULoader(
             api_key=api_key,
             api_url=api_url,
             is_ocr=is_ocr,

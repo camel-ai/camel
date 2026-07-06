@@ -94,7 +94,7 @@ class ChunkrLoader(BaseLoader):
                 asyncio.set_event_loop(loop)
 
             if loop.is_running():
-                import nest_asyncio
+                import nest_asyncio  # type: ignore[import-untyped]
 
                 nest_asyncio.apply()
 

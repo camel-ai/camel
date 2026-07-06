@@ -72,7 +72,7 @@ class MinerULoader(BaseLoader):
         # Extract and wait for execution results block seamlessly
         task_info = self.extract_url(url)
         task_id = task_info.get("task_id")
-        result = self.wait_for_completion(task_id, is_batch=False)
+        result = self.wait_for_completion(task_id, is_batch=False)  # type: ignore[arg-type]
         return {"content": result, "source": url}
 
     def extract_url(self, url: str) -> Dict:
