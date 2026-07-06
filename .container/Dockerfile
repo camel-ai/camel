@@ -5,13 +5,18 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 WORKDIR /app/camel
 COPY . .
-RUN chown -R appuser:appuser /app/camel
 
 RUN uv venv .venv --python=3.10 && \
     . .venv/bin/activate && \
     uv pip install -e ".[all, dev, docs]" && \
     pip install pre-commit mypy && \
     pre-commit install
+
+# Hand ownership to the unprivileged user only after the privileged setup
+# above. Running `pre-commit install` before this chown keeps the repo
+# root-owned during the build, so git does not reject it with
+# "detected dubious ownership" (git >= 2.35.2).
+RUN chown -R appuser:appuser /app/camel
 
 ENV VIRTUAL_ENV=/app/camel/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
