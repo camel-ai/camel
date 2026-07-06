@@ -18,13 +18,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from chunkr_ai.models import Status
 
-from camel.loaders import ChunkrReader, ChunkrReaderConfig
+from camel.loaders import ChunkrLoader, ChunkrReaderConfig
 
 
-class TestChunkrReader(unittest.IsolatedAsyncioTestCase):
+class TestChunkrLoader(unittest.IsolatedAsyncioTestCase):
     @patch('chunkr_ai.Chunkr')
     def setUp(self, mock_chunkr_class):
-        self.reader = ChunkrReader(api_key="fake_api_key")
+        self.reader = ChunkrLoader(api_key="fake_api_key")
         self.mock_chunkr = self.reader._chunkr
 
     @patch('chunkr_ai.Chunkr')

@@ -13,9 +13,12 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
+
+from camel.loaders.base_loader import BaseLoader
 
 
 def _to_dict(response: Any) -> Any:
@@ -30,35 +33,39 @@ def _to_dict(response: Any) -> Any:
     return response
 
 
-class Firecrawl:
-    r"""[Firecrawl](https://www.firecrawl.dev) allows you to turn entire
-    websites into LLM-ready markdown.
-
-    Args:
-        api_key (Optional[str]): API key for authenticating with the Firecrawl
-            API.
-        api_url (Optional[str]): Base URL for the Firecrawl API.
-
-    References:
-        https://docs.firecrawl.dev/introduction
-    """
+class FirecrawlLoader(BaseLoader):
+    r"""Firecrawl scraper adhering to the unified BaseLoader interface."""
 
     def __init__(
         self,
+        config: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
-        api_url: Optional[str] = None,
+        base_url: Optional[str] = None,
     ) -> None:
-        from firecrawl import Firecrawl as FirecrawlApp
+        if config:
+            api_key = config.get('api_key', api_key)
+            base_url = config.get('base_url', base_url)
+
+        super().__init__(config=config)
+
+        from firecrawl import FirecrawlApp
 
         self._api_key = api_key or os.environ.get("FIRECRAWL_API_KEY")
-        self._api_url = api_url or os.environ.get("FIRECRAWL_API_URL")
+        self._base_url = base_url or os.environ.get("FIRECRAWL_BASE_URL")
 
-        # The v2 client defaults ``api_url`` to the production endpoint, so
-        # only forward it when an explicit value is provided.
-        kwargs: Dict[str, Any] = {"api_key": self._api_key}
-        if self._api_url is not None:
-            kwargs["api_url"] = self._api_url
-        self.app = FirecrawlApp(**kwargs)
+        self.app = FirecrawlApp(api_key=self._api_key, base_url=self._base_url)
+
+    @property
+    def supported_formats(self) -> set[str]:
+        return {"url", "http", "https"}
+
+    def _load_single(
+        self, source: Union[str, Path], **kwargs: Any
+    ) -> Dict[str, Any]:
+        r"""Scrape web data using Firecrawl application instance."""
+        url = str(source)
+        response = self.scrape(url=url, **kwargs)
+        return {"content": response, "source": url}
 
     def crawl(
         self,

@@ -14,7 +14,7 @@
 
 from typing import Dict, List, Optional
 
-from camel.loaders.mineru_extractor import MinerU
+from camel.loaders.mineru_loader import MinerU
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import api_keys_required

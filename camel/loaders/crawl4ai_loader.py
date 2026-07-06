@@ -14,27 +14,48 @@
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Set
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Union
 
 from pydantic import BaseModel, ValidationError
+
+from camel.loaders.base_loader import BaseLoader
 
 logger = logging.getLogger(__name__)
 
 
-class Crawl4AI:
-    r"""Class for converting websites into LLM-ready data.
+class Crawl4AILoader(BaseLoader):
+    r"""Crawl4AI reader adhering to the unified BaseLoader interface."""
 
-    This class uses asynchronous crawling with CSS selectors or LLM-based
-    extraction to convert entire websites into structured data.
-
-    References:
-        https://docs.crawl4ai.com/
-    """
-
-    def __init__(self) -> None:
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        super().__init__(config=config)
         from crawl4ai import AsyncWebCrawler
 
         self.crawler_class = AsyncWebCrawler
+
+    @property
+    def supported_formats(self) -> set[str]:
+        return {"url", "http", "https"}
+
+    def _load_single(
+        self, source: Union[str, Path], **kwargs: Any
+    ) -> Dict[str, Any]:
+        r"""Synchronous execution wrapper for crawling a webpage."""
+        url = str(source)
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        if loop.is_running():
+            # If called inside an existing async loop environment
+            import nest_asyncio
+
+            nest_asyncio.apply()
+
+        result = loop.run_until_complete(self.crawl(url=url, **kwargs))
+        return {"content": result, "source": url}
 
     async def _run_crawler(self, url: str, **kwargs) -> Any:
         r"""Run the asynchronous web crawler on a given URL.

@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from pydantic import BaseModel
 
-from camel.loaders import Crawl4AI
+from camel.loaders import Crawl4AILoader
 
 
 # Dummy CrawlResult to simulate the results from AsyncWebCrawler.arun
@@ -35,12 +35,12 @@ URL = "https://example.com"
 
 
 # ------------------------
-# Test Cases for Crawl4AI
+# Test Cases for Crawl4AILoader
 # ------------------------
 
 
 def test_init():
-    crawler = Crawl4AI()
+    crawler = Crawl4AILoader()
     # Verify that the crawler attribute is set to AsyncWebCrawler
     assert crawler.crawl is not None
 
@@ -52,10 +52,10 @@ async def test_crawl_success():
     )
 
     with patch.object(
-        Crawl4AI, "_run_crawler", new_callable=AsyncMock
+        Crawl4AILoader, "_run_crawler", new_callable=AsyncMock
     ) as mock_run_crawler:
         mock_run_crawler.return_value = dummy_result
-        crawler = Crawl4AI()
+        crawler = Crawl4AILoader()
         results = await crawler.crawl(URL, max_depth=1)
         assert isinstance(results, list)
         page = results[0]
@@ -68,12 +68,12 @@ async def test_crawl_success():
 @pytest.mark.asyncio
 async def test_crawl_failure_in_run():
     with patch.object(
-        Crawl4AI, "_run_crawler", new_callable=AsyncMock
+        Crawl4AILoader, "_run_crawler", new_callable=AsyncMock
     ) as mock_run_crawler:
         mock_run_crawler.side_effect = Exception(
             f"Error crawling {URL}: Crawl error"
         )
-        crawler = Crawl4AI()
+        crawler = Crawl4AILoader()
         with pytest.raises(
             RuntimeError, match=f"Error crawling {URL}: Crawl error"
         ):
@@ -89,10 +89,10 @@ async def test_scrape_success():
     )
 
     with patch.object(
-        Crawl4AI, "_run_crawler", new_callable=AsyncMock
+        Crawl4AILoader, "_run_crawler", new_callable=AsyncMock
     ) as mock_run_crawler:
         mock_run_crawler.return_value = dummy_result
-        crawler = Crawl4AI()
+        crawler = Crawl4AILoader()
         result = await crawler.scrape(URL)
         assert result["url"] == URL
         assert result["markdown"] == "Scraped markdown"
@@ -112,10 +112,10 @@ async def test_structured_scrape_success():
         field: str
 
     with patch.object(
-        Crawl4AI, "_run_crawler", new_callable=AsyncMock
+        Crawl4AILoader, "_run_crawler", new_callable=AsyncMock
     ) as mock_run_crawler:
         mock_run_crawler.return_value = dummy_result
-        crawler = Crawl4AI()
+        crawler = Crawl4AILoader()
         result = await crawler.structured_scrape(
             URL, DummySchema, llm_provider="openai"
         )
@@ -128,10 +128,10 @@ async def test_structured_scrape_success():
 async def test_structured_scrape_failure():
     # Simulate a failure in the structured scrape method.
     with patch.object(
-        Crawl4AI, "_run_crawler", new_callable=AsyncMock
+        Crawl4AILoader, "_run_crawler", new_callable=AsyncMock
     ) as mock_run_crawler:
         mock_run_crawler.side_effect = RuntimeError("Structured scrape failed")
-        crawler = Crawl4AI()
+        crawler = Crawl4AILoader()
 
         class DummySchema(BaseModel):
             field: str
@@ -153,7 +153,7 @@ async def test_map_site_success():
     async def dummy_crawl(url: str, **kwargs):
         return [dummy_page]
 
-    crawler = Crawl4AI()
+    crawler = Crawl4AILoader()
     crawler.crawl = dummy_crawl  # Override crawl method for testing
 
     urls = await crawler.map_site(URL)
@@ -166,7 +166,7 @@ async def test_map_site_failure():
     async def dummy_crawl_fail(url: str, **kwargs):
         raise Exception("Mapping error")
 
-    crawler = Crawl4AI()
+    crawler = Crawl4AILoader()
     crawler.crawl = (
         dummy_crawl_fail  # Override crawl method to simulate failure
     )

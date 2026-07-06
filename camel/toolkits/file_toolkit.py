@@ -1196,7 +1196,7 @@ class FileToolkit(BaseToolkit):
                   content in Markdown format.
                 If conversion fails, returns an error message.
         """
-        from camel.loaders.markitdown import MarkItDownLoader
+        from camel.loaders.markitdown_loader import MarkItDownLoader
 
         try:
             # Handle single file path for backward compatibility

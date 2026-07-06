@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from camel.loaders.mineru_extractor import MinerU
+from camel.loaders.mineru_loader import MinerU
 from camel.toolkits import MinerUToolkit
 
 

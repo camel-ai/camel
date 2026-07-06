@@ -13,34 +13,16 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import ClassVar, Dict, List, Optional
+from pathlib import Path
+from typing import Any, ClassVar, Dict, List, Optional, Union
 
+from camel.loaders.base_loader import BaseLoader
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class MarkItDownLoader:
-    r"""MarkitDown convert various file types into Markdown format.
-
-    Supported Input Formats:
-        - PDF
-        - Microsoft Office documents:
-            - Word (.doc, .docx)
-            - Excel (.xls, .xlsx)
-            - PowerPoint (.ppt, .pptx)
-        - EPUB
-        - HTML
-        - Images (with EXIF metadata and OCR support)
-        - Audio files (with EXIF metadata and speech transcription)
-        - Text-based formats:
-            - CSV
-            - JSON
-            - XML
-        - ZIP archives (iterates over contents)
-        - YouTube URLs (via transcript extraction)
-    """
-
+class MarkItDownLoader(BaseLoader):
     SUPPORTED_FORMATS: ClassVar[List[str]] = [
         ".pdf",
         ".doc",
@@ -62,23 +44,21 @@ class MarkItDownLoader:
         ".xml",
         ".zip",
         ".txt",
-        # the file_paths may be markdown files when using FileToolkit.read_file
         ".md",
     ]
 
     def __init__(
         self,
+        config: Optional[Dict[str, Any]] = None,
         llm_client: Optional[object] = None,
         llm_model: Optional[str] = None,
     ):
-        r"""Initializes the Converter.
+        if config:
+            llm_client = config.get('llm_client', llm_client)
+            llm_model = config.get('llm_model', llm_model)
 
-        Args:
-            llm_client (Optional[object]): Optional client for LLM integration.
-                (default: :obj:`None`)
-            llm_model (Optional[str]): Optional model name for the LLM.
-                (default: :obj:`None`)
-        """
+        super().__init__(config=config)
+
         from markitdown import MarkItDown
 
         try:
@@ -90,32 +70,24 @@ class MarkItDownLoader:
             logger.error(f"Failed to initialize MarkItDown Converter: {e}")
             raise Exception(f"Failed to initialize MarkItDown Converter: {e}")
 
+    @property
+    def supported_formats(self) -> set[str]:
+        return set(self.SUPPORTED_FORMATS)
+
+    def _load_single(
+        self, source: Union[str, Path], **kwargs: Any
+    ) -> Dict[str, Any]:
+        file_path = str(source)
+        response = self.convert_file(file_path)
+        return {"content": response, "source": file_path}
+
     def _validate_format(self, file_path: str) -> bool:
-        r"""Validates if the file format is supported.
-
-        Args:
-            file_path (str): Path to the input file.
-
-        Returns:
-            bool: True if the format is supported, False otherwise.
-        """
+        r"""Validates if the file format is supported."""
         _, ext = os.path.splitext(file_path)
         return ext.lower() in self.SUPPORTED_FORMATS
 
     def convert_file(self, file_path: str) -> str:
-        r"""Converts the given file to Markdown format.
-
-        Args:
-            file_path (str): Path to the input file.
-
-        Returns:
-            str: Converted Markdown text.
-
-        Raises:
-            FileNotFoundError: If the specified file does not exist.
-            ValueError: If the file format is not supported.
-            Exception: For other errors during conversion.
-        """
+        r"""Converts the given file to Markdown format."""
         if not os.path.isfile(file_path):
             logger.error(f"File not found: {file_path}")
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -143,24 +115,7 @@ class MarkItDownLoader:
         parallel: bool = False,
         skip_failed: bool = False,
     ) -> Dict[str, str]:
-        r"""Converts multiple files to Markdown format.
-
-        Args:
-            file_paths (List[str]): List of file paths to convert.
-            parallel (bool): Whether to process files in parallel.
-                (default: :obj:`False`)
-            skip_failed (bool): Whether to skip failed files instead
-                of including error messages.
-                (default: :obj:`False`)
-
-        Returns:
-            Dict[str, str]: Dictionary mapping file paths to their
-                converted Markdown text.
-
-        Raises:
-            Exception: For errors during conversion of any file if
-                skip_failed is False.
-        """
+        r"""Converts multiple files to Markdown format."""
         from tqdm.auto import tqdm
 
         converted_files = {}

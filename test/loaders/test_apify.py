@@ -16,7 +16,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from camel.loaders.apify_reader import Apify
+from camel.loaders.apify_loader import Apify
 
 
 @pytest.fixture

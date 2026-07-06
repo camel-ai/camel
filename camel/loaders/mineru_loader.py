@@ -11,41 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-
 import os
 import time
-from typing import Dict, List, Optional, Union
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
+from camel.loaders.base_loader import BaseLoader
 from camel.utils import api_keys_required
 
 
-class MinerU:
-    r"""Document extraction service supporting OCR, formula recognition
-        and tables.
+class MinerULoader(BaseLoader):
+    # ... Keep docstrings ...
 
-    Args:
-        api_key (str, optional): Authentication key for MinerU API service.
-            If not provided, will use MINERU_API_KEY environment variable.
-            (default: :obj:`None`)
-        api_url (str, optional): Base URL endpoint for the MinerU API service.
-            (default: :obj:`"https://mineru.net/api/v4"`)
-
-    Note:
-        - Single file size limit: 200MB
-        - Page limit per file: 600 pages
-        - Daily high-priority parsing quota: 2000 pages
-        - Some URLs (GitHub, AWS) may timeout due to network restrictions
-    """
-
-    @api_keys_required(
-        [
-            ("api_key", "MINERU_API_KEY"),
-        ]
-    )
+    @api_keys_required([("api_key", "MINERU_API_KEY")])
     def __init__(
         self,
+        config: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         api_url: Optional[str] = "https://mineru.net/api/v4",
         is_ocr: bool = False,
@@ -54,25 +37,17 @@ class MinerU:
         layout_model: str = "doclayout_yolo",
         language: str = "en",
     ) -> None:
-        r"""Initialize MinerU extractor.
+        if config:
+            api_key = config.get('api_key', api_key)
+            api_url = config.get('api_url', api_url)
+            is_ocr = config.get('is_ocr', is_ocr)
+            enable_formula = config.get('enable_formula', enable_formula)
+            enable_table = config.get('enable_table', enable_table)
+            layout_model = config.get('layout_model', layout_model)
+            language = config.get('language', language)
 
-        Args:
-            api_key (str, optional): Authentication key for MinerU API service.
-                If not provided, will use MINERU_API_KEY environment variable.
-            api_url (str, optional): Base URL endpoint for MinerU API service.
-                (default: "https://mineru.net/api/v4")
-            is_ocr (bool, optional): Enable optical character recognition.
-                (default: :obj:`False`)
-            enable_formula (bool, optional): Enable formula recognition.
-                (default: :obj:`False`)
-            enable_table (bool, optional): Enable table detection, extraction.
-                (default: :obj:`True`)
-            layout_model (str, optional): Model for document layout detection.
-                Options are 'doclayout_yolo' or 'layoutlmv3'.
-                (default: :obj:`"doclayout_yolo"`)
-            language (str, optional): Primary language of the document.
-                (default: :obj:`"en"`)
-        """
+        super().__init__(config=config)
+
         self._api_key = api_key or os.environ.get("MINERU_API_KEY")
         self._api_url = api_url
         self._headers = {
@@ -85,6 +60,20 @@ class MinerU:
         self.enable_table = enable_table
         self.layout_model = layout_model
         self.language = language
+
+    @property
+    def supported_formats(self) -> set[str]:
+        return {"pdf", "url", "http", "https"}
+
+    def _load_single(
+        self, source: Union[str, Path], **kwargs: Any
+    ) -> Dict[str, Any]:
+        url = str(source)
+        # Extract and wait for execution results block seamlessly
+        task_info = self.extract_url(url)
+        task_id = task_info.get("task_id")
+        result = self.wait_for_completion(task_id, is_batch=False)
+        return {"content": result, "source": url}
 
     def extract_url(self, url: str) -> Dict:
         r"""Extract content from a URL document.

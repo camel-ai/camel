@@ -12,16 +12,16 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .apify_reader import Apify
+from .apify_loader import ApifyLoader
 from .base_io import File, create_file, create_file_from_raw_bytes
-from .chunkr_reader import ChunkrReader, ChunkrReaderConfig
-from .crawl4ai_reader import Crawl4AI
-from .firecrawl_reader import Firecrawl
-from .jina_url_reader import JinaURLReader
-from .markitdown import MarkItDownLoader
-from .mineru_extractor import MinerU
-from .mistral_reader import MistralReader
-from .scrapegraph_reader import ScrapeGraphAI
+from .chunkr_loader import ChunkrLoader, ChunkrLoaderConfig
+from .crawl4ai_loader import Crawl4AILoader
+from .firecrawl_loader import FirecrawlLoader
+from .jina_url_loader import JinaURLLoader
+from .markitdown_loader import MarkItDownLoader
+from .mineru_loader import MinerULoader
+from .mistral_loader import MistralLoader
+from .scrapegraph_loader import ScrapeGraphAILoader
 from .unstructured_io import UnstructuredIO
 
 __all__ = [
@@ -29,16 +29,16 @@ __all__ = [
     'create_file',
     'create_file_from_raw_bytes',
     'UnstructuredIO',
-    'JinaURLReader',
-    'Firecrawl',
-    'Apify',
-    'ChunkrReader',
-    'ChunkrReaderConfig',
-    'MinerU',
-    'Crawl4AI',
+    'JinaURLLoader',
+    'FirecrawlLoader',
+    'ApifyLoader',
+    'ChunkrLoader',
+    'ChunkrLoaderConfig',
+    'MinerULoader',
+    'Crawl4AILoader',
     'MarkItDownLoader',
-    'ScrapeGraphAI',
-    'MistralReader',
+    'ScrapeGraphAILoader',
+    'MistralLoader',
 ]
 
 

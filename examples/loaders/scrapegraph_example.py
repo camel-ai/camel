@@ -26,7 +26,7 @@ This example shows:
 import os
 from typing import Any, Dict
 
-from camel.loaders.scrapegraph_reader import ScrapeGraphAI
+from camel.loaders.scrapegraph_loader import ScrapeGraphAI
 
 
 def search_example(api_key: str) -> Dict[str, Any]:
