@@ -297,6 +297,10 @@ class BaseMessage:
             Tuple[List[TextPrompt], List[CodePrompt]]: A tuple containing a
                 list of text prompts and a list of code prompts extracted
                 from the content.
+
+        Raises:
+            ValueError: If the content contains a code fence that is opened
+                but never closed (for example, truncated model output).
         """
         text_prompts: List[TextPrompt] = []
         code_prompts: List[CodePrompt] = []
@@ -322,6 +326,8 @@ class BaseMessage:
                 not lines[idx].lstrip().startswith("```")
             ):
                 idx += 1
+            if idx >= len(lines):
+                raise ValueError("Unclosed code fence in message content")
             code = "\n".join(lines[start_idx:idx]).strip()
             code_prompts.append(CodePrompt(code, code_type=code_type))
 

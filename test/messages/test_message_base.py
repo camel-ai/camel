@@ -87,22 +87,19 @@ def test_extract_text_and_code_prompts():
 
 def test_extract_text_and_code_prompts_unclosed_fence():
     # A code block whose closing fence is missing (e.g. truncated model
-    # output) must not raise; the remainder is treated as the code body.
+    # output) must fail explicitly rather than silently treating the
+    # remainder as a valid code prompt, so callers can handle the malformed
+    # input intentionally.
     base_message = BaseMessage(
         role_name="test_role_name",
         role_type=RoleType.USER,
         meta_dict=dict(),
         content="This is a text prompt.\n\n```python\nprint('unclosed')",
     )
-    text_prompts, code_prompts = base_message.extract_text_and_code_prompts()
-
-    assert len(text_prompts) == 1
-    assert text_prompts[0] == "This is a text prompt."
-
-    assert len(code_prompts) == 1
-    assert isinstance(code_prompts[0], CodePrompt)
-    assert code_prompts[0] == "print('unclosed')"
-    assert code_prompts[0].code_type == "python"
+    with pytest.raises(
+        ValueError, match="Unclosed code fence in message content"
+    ):
+        base_message.extract_text_and_code_prompts()
 
 
 def test_base_message_to_dict(base_message: BaseMessage) -> None:
