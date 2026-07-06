@@ -1154,6 +1154,42 @@ def test_chat_agent_over_limit_context_triggers_full_compression():
     )
 
 
+@pytest.mark.asyncio
+async def test_chat_agent_async_over_limit_context_triggers_full_compression():
+    system_msg = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    assistant = ChatAgent(
+        system_message=system_msg,
+        token_limit=10,
+        summarize_threshold=50,
+    )
+    openai_messages = [{"role": "system", "content": system_msg.content}]
+
+    assistant.memory.get_context = MagicMock(
+        side_effect=[
+            (openai_messages, assistant.token_limit + 1),
+            (openai_messages, assistant.token_limit),
+        ]
+    )
+    assistant.asummarize = AsyncMock(return_value={"summary": "short"})
+    assistant._update_memory_with_summary = MagicMock()
+
+    messages, num_tokens = (
+        await assistant._get_context_with_summarization_async()
+    )
+
+    assert messages == openai_messages
+    assert num_tokens == assistant.token_limit
+    assistant.asummarize.assert_awaited_once_with(include_summaries=True)
+    assistant._update_memory_with_summary.assert_called_once_with(
+        "short", include_summaries=True
+    )
+
+
 @pytest.mark.model_backend
 @pytest.mark.parametrize('n', [1, 2, 3])
 def test_chat_agent_multiple_return_messages(n, step_call_count=3):
