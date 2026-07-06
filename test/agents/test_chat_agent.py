@@ -34,8 +34,8 @@ from camel.agents import ChatAgent
 from camel.agents.chat_agent import (
     StreamContentAccumulator,
     ToolCallingRecord,
-    _ToolOutputHistoryEntry,
     _is_rate_limit_error,
+    _ToolOutputHistoryEntry,
 )
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
@@ -176,9 +176,7 @@ def test_chat_agent_raises_non_rate_limit_provider_status_code():
         retry_attempts=2,
         retry_delay=0,
     )
-    assistant.model_backend.run = MagicMock(
-        side_effect=ProviderHTTPError(500)
-    )
+    assistant.model_backend.run = MagicMock(side_effect=ProviderHTTPError(500))
 
     with pytest.raises(ProviderHTTPError):
         assistant._get_model_response([])
@@ -225,20 +223,20 @@ def test_chat_agent(model, step_call_count=3):
         for i in range(step_call_count):
             for user_msg in [user_msg_bm, user_msg_str]:
                 response = assistant.step(user_msg)
-                assert isinstance(
-                    response.msgs, list
-                ), f"Error in round {i + 1}"
+                assert isinstance(response.msgs, list), (
+                    f"Error in round {i + 1}"
+                )
                 assert len(response.msgs) > 0, f"Error in round {i + 1}"
-                assert isinstance(
-                    response.terminated, bool
-                ), f"Error in round {i + 1}"
+                assert isinstance(response.terminated, bool), (
+                    f"Error in round {i + 1}"
+                )
                 assert response.terminated is False, f"Error in round {i + 1}"
-                assert isinstance(
-                    response.info, dict
-                ), f"Error in round {i + 1}"
-                assert (
-                    response.info['id'] is not None
-                ), f"Error in round {i + 1}"
+                assert isinstance(response.info, dict), (
+                    f"Error in round {i + 1}"
+                )
+                assert response.info['id'] is not None, (
+                    f"Error in round {i + 1}"
+                )
 
 
 def test_non_strict_tools_fall_back_to_prompt_formatting_by_default():
@@ -582,9 +580,9 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
         external_tool_call_requests = response.info[
             "external_tool_call_requests"
         ]
-        assert (
-            external_tool_call_requests[0].tool_name == "math_subtract"
-        ), f"Error in calling round {i + 1}"
+        assert external_tool_call_requests[0].tool_name == "math_subtract", (
+            f"Error in calling round {i + 1}"
+        )
 
 
 @pytest.mark.model_backend
@@ -726,9 +724,9 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
         external_tool_call_requests = response.info[
             "external_tool_call_requests"
         ]
-        assert (
-            external_tool_call_requests[0].tool_name == "math_subtract"
-        ), f"Error in calling round {i + 1}"
+        assert external_tool_call_requests[0].tool_name == "math_subtract", (
+            f"Error in calling round {i + 1}"
+        )
 
 
 def _mock_completion_with_usage(
@@ -1214,18 +1212,18 @@ def test_chat_agent_multiple_return_messages(n, step_call_count=3):
     )
 
     for i in range(step_call_count):
-        assert (
-            assistant_with_sys_msg_response.msgs is not None
-        ), f"Error in calling round {i + 1}"
-        assert (
-            len(assistant_with_sys_msg_response.msgs) == n
-        ), f"Error in calling round {i + 1}"
-        assert (
-            assistant_without_sys_msg_response.msgs is not None
-        ), f"Error in calling round {i + 1}"
-        assert (
-            len(assistant_without_sys_msg_response.msgs) == n
-        ), f"Error in calling round {i + 1}"
+        assert assistant_with_sys_msg_response.msgs is not None, (
+            f"Error in calling round {i + 1}"
+        )
+        assert len(assistant_with_sys_msg_response.msgs) == n, (
+            f"Error in calling round {i + 1}"
+        )
+        assert assistant_without_sys_msg_response.msgs is not None, (
+            f"Error in calling round {i + 1}"
+        )
+        assert len(assistant_without_sys_msg_response.msgs) == n, (
+            f"Error in calling round {i + 1}"
+        )
 
 
 @pytest.mark.model_backend
@@ -1310,12 +1308,12 @@ def test_chat_agent_stream_output(step_call_count=3):
             assert len(msg.content) > 0, f"Error in calling round {i + 1}"
 
         stream_usage = stream_assistant_response.info["usage"]
-        assert (
-            stream_usage["completion_tokens"] > 0
-        ), f"Error in calling round {i + 1}"
-        assert (
-            stream_usage["prompt_tokens"] > 0
-        ), f"Error in calling round {i + 1}"
+        assert stream_usage["completion_tokens"] > 0, (
+            f"Error in calling round {i + 1}"
+        )
+        assert stream_usage["prompt_tokens"] > 0, (
+            f"Error in calling round {i + 1}"
+        )
         assert (
             stream_usage["total_tokens"]
             == stream_usage["completion_tokens"]
@@ -1596,12 +1594,12 @@ def test_tool_calling_sync(step_call_count=3):
         ]
 
         assert len(tool_calls) > 0, f"Error in calling round {i + 1}"
-        assert str(tool_calls[0]).startswith(
-            "Tool Execution"
-        ), f"Error in calling round {i + 1}"
-        assert (
-            tool_calls[0].tool_name == "math_multiply"
-        ), f"Error in calling round {i + 1}"
+        assert str(tool_calls[0]).startswith("Tool Execution"), (
+            f"Error in calling round {i + 1}"
+        )
+        assert tool_calls[0].tool_name == "math_multiply", (
+            f"Error in calling round {i + 1}"
+        )
         assert tool_calls[0].args == {
             "a": 2,
             "b": 8,
@@ -1722,9 +1720,9 @@ async def test_tool_calling_math_async(step_call_count=3):
 
         tool_calls = agent_response.info['tool_calls']
 
-        assert (
-            tool_calls[0].tool_name == "math_multiply"
-        ), f"Error in calling round {i + 1}"
+        assert tool_calls[0].tool_name == "math_multiply", (
+            f"Error in calling round {i + 1}"
+        )
         assert tool_calls[0].args == {
             "a": 2,
             "b": 8,
@@ -1811,16 +1809,16 @@ async def test_tool_calling_async(step_call_count=3):
         tool_calls = agent_response.info['tool_calls']
 
         assert tool_calls, f"Error in calling round {i + 1}"
-        assert str(tool_calls[0]).startswith(
-            "Tool Execution"
-        ), f"Error in calling round {i + 1}"
+        assert str(tool_calls[0]).startswith("Tool Execution"), (
+            f"Error in calling round {i + 1}"
+        )
 
-        assert (
-            tool_calls[0].tool_name == "async_sleep"
-        ), f"Error in calling round {i + 1}"
-        assert tool_calls[0].args == {
-            'second': 1
-        }, f"Error in calling round {i + 1}"
+        assert tool_calls[0].tool_name == "async_sleep", (
+            f"Error in calling round {i + 1}"
+        )
+        assert tool_calls[0].args == {'second': 1}, (
+            f"Error in calling round {i + 1}"
+        )
         assert tool_calls[0].result == 1, f"Error in calling round {i + 1}"
 
 
@@ -1851,9 +1849,9 @@ def test_response_words_termination(step_call_count=3):
 
         assert agent.terminated, f"Error in calling round {i + 1}"
         assert agent_response.terminated, f"Error in calling round {i + 1}"
-        assert (
-            "goodbye" in agent_response.info['termination_reasons'][0]
-        ), f"Error in calling round {i + 1}"
+        assert "goodbye" in agent_response.info['termination_reasons'][0], (
+            f"Error in calling round {i + 1}"
+        )
 
 
 def test_chat_agent_vision(step_call_count=3):
@@ -1919,9 +1917,9 @@ def test_chat_agent_vision(step_call_count=3):
 
     for i in range(step_call_count):
         agent_response = agent.step(user_msg)
-        assert (
-            agent_response.msgs[0].content == "Yes."
-        ), f"Error in calling round {i + 1}"
+        assert agent_response.msgs[0].content == "Yes.", (
+            f"Error in calling round {i + 1}"
+        )
 
 
 @pytest.mark.model_backend
@@ -2091,9 +2089,9 @@ async def test_chat_agent_async_stream_with_async_generator():
     # Create an async generator that wraps the chunks
     # This simulates what GeminiModel does with _wrap_async_stream_with_
     # thought_preservation
-    async def mock_async_generator() -> (
-        AsyncGenerator[ChatCompletionChunk, None]
-    ):
+    async def mock_async_generator() -> AsyncGenerator[
+        ChatCompletionChunk, None
+    ]:
         for chunk in chunks:
             yield chunk
 
@@ -2120,12 +2118,12 @@ async def test_chat_agent_async_stream_with_async_generator():
 
     # Verify final response contains the accumulated content
     final_response = responses[-1]
-    assert (
-        final_response.msg is not None
-    ), "Final response should have a message"
-    assert (
-        "Hello" in final_response.msg.content
-    ), "Final content should contain 'Hello'"
+    assert final_response.msg is not None, (
+        "Final response should have a message"
+    )
+    assert "Hello" in final_response.msg.content, (
+        "Final content should contain 'Hello'"
+    )
 
 
 @pytest.mark.model_backend
@@ -2275,9 +2273,9 @@ async def test_chat_agent_async_stream_with_async_generator_tool_calls():
 
     call_count = 0
 
-    async def mock_async_generator() -> (
-        AsyncGenerator[ChatCompletionChunk, None]
-    ):
+    async def mock_async_generator() -> AsyncGenerator[
+        ChatCompletionChunk, None
+    ]:
         nonlocal call_count
         if call_count == 0:
             call_count += 1
