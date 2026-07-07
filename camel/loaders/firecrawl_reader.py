@@ -12,4 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Deprecated: Use FirecrawlReader from firecrawl_loader.py
-from camel.loaders.firecrawl_loader import FirecrawlReader  # noqa: F401
+from camel.loaders.firecrawl_loader import FirecrawlLoader
+
+FirecrawlReader = FirecrawlLoader

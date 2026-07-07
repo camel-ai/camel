@@ -12,4 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Deprecated: Use Crawl4AIReader from crawl4ai_loader.py
-from camel.loaders.crawl4ai_loader import Crawl4AIReader  # noqa: F401
+from camel.loaders.crawl4ai_loader import Crawl4AILoader
+
+Crawl4AIReader = Crawl4AILoader

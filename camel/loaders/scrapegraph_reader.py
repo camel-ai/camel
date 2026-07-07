@@ -12,4 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Deprecated: Use ScrapegraphReader from scrapegraph_loader.py
-from camel.loaders.scrapegraph_loader import ScrapegraphReader  # noqa: F401
+from camel.loaders.scrapegraph_loader import ScrapeGraphAILoader
+
+ScrapegraphReader = ScrapeGraphAILoader
