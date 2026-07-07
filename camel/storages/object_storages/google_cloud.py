@@ -17,6 +17,7 @@ from warnings import warn
 
 from camel.loaders import File, create_file_from_raw_bytes
 from camel.storages.object_storages.base import BaseObjectStorage
+from camel.utils import dependencies_required
 
 
 class GoogleCloudStorage(BaseObjectStorage):
@@ -40,6 +41,7 @@ class GoogleCloudStorage(BaseObjectStorage):
         https://cloud.google.com/docs/authentication/api-keys
     """
 
+    @dependencies_required('google.cloud.storage')
     def __init__(
         self,
         bucket_name: str,
