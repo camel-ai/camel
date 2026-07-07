@@ -78,7 +78,7 @@ class NebulaGraph(BaseGraphStorage):
         Raises:
             Exception: If the connection pool initialization fails.
         """
-        from nebula3.Config import (  # type: ignore[import-not-found]
+        from nebula3.Config import (  # type: ignore[import-untyped, import-not-found]
             Config,
         )
         from nebula3.gclient.net import (  # type: ignore[import-not-found]

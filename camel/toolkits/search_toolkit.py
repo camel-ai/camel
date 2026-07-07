@@ -769,7 +769,7 @@ class SearchToolkit(BaseToolkit):
                 - 'published_date' (str): Publication date for news topics
                   (if available).
         """
-        from tavily import TavilyClient  # type: ignore[import-not-found]
+        from tavily import TavilyClient  # type: ignore[import-untyped, import-not-found]
 
         Tavily_API_KEY = os.getenv("TAVILY_API_KEY")
         if not Tavily_API_KEY:
