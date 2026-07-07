@@ -108,7 +108,7 @@ class MistralLoader(BaseLoader):
                     ),
                 }
 
-            ocr_response = self.client.ocr.process(
+            ocr_response = self.client.ocr.process(  # type: ignore[arg-type]
                 model=self.model,
                 document=document_config,
                 pages=None if self.is_image else self.pages,
