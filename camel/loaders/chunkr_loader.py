@@ -16,7 +16,7 @@ import asyncio
 import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 if TYPE_CHECKING:
     from chunkr_ai.models import Configuration
@@ -75,8 +75,8 @@ class ChunkrLoader(BaseLoader):
     def supported_formats(self) -> set[str]:
         return {"pdf", "jpg", "jpeg", "png", "doc", "docx"}
 
-    def load(
-        self, source: Union[str, Path, List[Union[str, Path]]], **kwargs: Any
+    def _load_single(
+        self, source: Union[str, Path], **kwargs: Any
     ) -> Dict[str, Any]:
         r"""Synchronous wrapper that submits the task and waits for the output."""  # noqa: E501
         file_path = str(source)

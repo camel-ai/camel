@@ -14,7 +14,7 @@
 
 from unittest.mock import Mock, patch
 
-import pytest #type: ignore[import]
+import pytest  # type: ignore[import]
 
 from camel.loaders import MinerULoader
 

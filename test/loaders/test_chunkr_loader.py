@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from chunkr_ai.models import Status
 
-from camel.loaders import ChunkrLoader, ChunkrReaderConfig
+from camel.loaders import ChunkrLoader, ChunkrLoaderConfig
 
 
 class TestChunkrLoader(unittest.IsolatedAsyncioTestCase):
@@ -46,7 +46,7 @@ class TestChunkrLoader(unittest.IsolatedAsyncioTestCase):
         mock_task.task_id = "12345"
         mock_chunkr_instance.create_task = AsyncMock(return_value=mock_task)
 
-        config = ChunkrReaderConfig()
+        config = ChunkrLoaderConfig()
         config.chunk_processing = 1024
 
         task_id = await self.reader.submit_task("fake_path.pdf", config)
@@ -121,8 +121,8 @@ class TestChunkrLoader(unittest.IsolatedAsyncioTestCase):
         mock_task.poll.assert_called_once()
 
     def test_chunkr_reader_config_defaults(self):
-        """Test ChunkrReaderConfig with default values."""
-        config = ChunkrReaderConfig()
+        """Test ChunkrLoaderConfig with default values."""
+        config = ChunkrLoaderConfig()
 
         self.assertEqual(config.chunk_processing, 512)
         self.assertEqual(config.high_resolution, True)
@@ -130,8 +130,8 @@ class TestChunkrLoader(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(config.kwargs, {})
 
     def test_chunkr_reader_config_custom_values(self):
-        """Test ChunkrReaderConfig with custom values."""
-        config = ChunkrReaderConfig(
+        """Test ChunkrLoaderConfig with custom values."""
+        config = ChunkrLoaderConfig(
             chunk_processing=1024,
             high_resolution=False,
             ocr_strategy="All",
@@ -142,8 +142,8 @@ class TestChunkrLoader(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(config.ocr_strategy, "All")
 
     def test_chunkr_reader_config_with_kwargs(self):
-        """Test ChunkrReaderConfig with additional kwargs."""
-        config = ChunkrReaderConfig(
+        """Test ChunkrLoaderConfig with additional kwargs."""
+        config = ChunkrLoaderConfig(
             chunk_processing=2048,
             expires_in=3600,
             pipeline="custom_pipeline",
@@ -160,7 +160,7 @@ class TestChunkrLoader(unittest.IsolatedAsyncioTestCase):
         self, mock_ocr_strategy, mock_chunk_processing, mock_configuration
     ):
         """Test _to_chunkr_configuration with Auto OCR strategy."""
-        config = ChunkrReaderConfig(
+        config = ChunkrLoaderConfig(
             chunk_processing=512, high_resolution=True, ocr_strategy="Auto"
         )
 
@@ -184,7 +184,7 @@ class TestChunkrLoader(unittest.IsolatedAsyncioTestCase):
         self, mock_ocr_strategy, mock_chunk_processing, mock_configuration
     ):
         """Test _to_chunkr_configuration with additional kwargs."""
-        config = ChunkrReaderConfig(
+        config = ChunkrLoaderConfig(
             chunk_processing=512,
             high_resolution=True,
             ocr_strategy="Auto",
