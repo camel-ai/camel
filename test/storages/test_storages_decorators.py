@@ -54,6 +54,15 @@ def test_mem0_storage_missing_dependency():
             Mem0Storage(agent_id="test_agent", api_key=fake_api_key)
 
 
+def test_mem0_storage_missing_api_key():
+    from camel.storages.key_value_storages import Mem0Storage
+
+    with patch('camel.utils.commons.is_module_available', return_value=True):
+        with patch.dict('os.environ', {}, clear=True):
+            with pytest.raises(ValueError, match="MEM0_API_KEY"):
+                Mem0Storage(agent_id="test_agent")
+
+
 def test_amazon_s3_storage_missing_dependency():
     from camel.storages.object_storages import AmazonS3Storage
 
