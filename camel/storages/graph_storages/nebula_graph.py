@@ -27,10 +27,10 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from nebula3.data.ResultSet import (  # type: ignore[import-untyped]
+    from nebula3.data.ResultSet import (  # type: ignore[import-untyped, import-not-found]
         ResultSet,
     )
-    from nebula3.gclient.net import (  # type: ignore[import-untyped]
+    from nebula3.gclient.net import (  # type: ignore[import-untyped, import-not-found]
         ConnectionPool,
         Session,
     )
@@ -64,8 +64,8 @@ class NebulaGraph(BaseGraphStorage):
         self.space = space
         self.timeout = timeout
         self.port = port
-        self.schema: str = ""
-        self.structured_schema: Dict[str, Any] = {}
+        self.schema: str = ""  # type: ignore[annotation-unchecked]
+        self.structured_schema: Dict[str, Any] = {}  # type: ignore[annotation-unchecked]
         self.connection_pool = self._init_connection_pool()
         self.session = self._get_session()
 
@@ -78,8 +78,12 @@ class NebulaGraph(BaseGraphStorage):
         Raises:
             Exception: If the connection pool initialization fails.
         """
-        from nebula3.Config import Config  # type: ignore[import-untyped]
-        from nebula3.gclient.net import ConnectionPool
+        from nebula3.Config import (  # type: ignore[import-not-found]
+            Config,
+        )
+        from nebula3.gclient.net import (  # type: ignore[import-not-found]
+            ConnectionPool,
+        )
 
         config = Config()
         config.max_connection_pool_size = 10
