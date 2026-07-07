@@ -17,6 +17,7 @@ Test that the following decorators are correctly applied to camel.loaders:
 @dependencies_required - should raise ImportError if package/module is missing
 """
 
+from io import BytesIO
 from unittest.mock import patch
 
 import pytest
@@ -70,6 +71,27 @@ def test_scrapegraph_missing_dependency():
             ScrapeGraphAI(api_key=fake_api_key)
 
 
+def test_scrapegraph_missing_api_key():
+    from camel.loaders import ScrapeGraphAI
+
+    with patch('camel.utils.commons.is_module_available', return_value=True):
+        with patch.dict('os.environ', {}, clear=True):
+            with pytest.raises(ValueError, match="SCRAPEGRAPH_API_KEY"):
+                ScrapeGraphAI()
+
+
+def test_base_io_missing_dependencies():
+    from camel.loaders.base_io import HtmlFile, PdfFile
+
+    with _mock_missing('fitz'):
+        with pytest.raises(ImportError, match="fitz"):
+            PdfFile.from_bytes(BytesIO(b"pdf"), "test.pdf")
+
+    with _mock_missing('bs4'):
+        with pytest.raises(ImportError, match="bs4"):
+            HtmlFile.from_bytes(BytesIO(b"<html></html>"), "test.html")
+
+
 def test_unstructured_io_missing_dependency():
     from camel.loaders import UnstructuredIO
 
@@ -83,4 +105,29 @@ def test_unstructured_io_missing_dependency():
 
     with _mock_missing('unstructured'):
         with pytest.raises(ImportError, match="unstructured"):
+            UnstructuredIO.parse_bytes(file=BytesIO(b"test"))
+
+    with _mock_missing('unstructured'):
+        with pytest.raises(ImportError, match="unstructured"):
             UnstructuredIO.clean_text_data(text="test")
+
+    with _mock_missing('unstructured'):
+        with pytest.raises(ImportError, match="unstructured"):
+            UnstructuredIO.extract_data_from_text(
+                text="test@example.com",
+                extract_type="extract_email_address",
+            )
+
+    with _mock_missing('unstructured'):
+        with pytest.raises(ImportError, match="unstructured"):
+            UnstructuredIO.stage_elements(
+                elements=[],
+                stage_type="convert_to_dict",
+            )
+
+    with _mock_missing('unstructured'):
+        with pytest.raises(ImportError, match="unstructured"):
+            UnstructuredIO.chunk_elements(
+                elements=[],
+                chunk_type="chunk_by_title",
+            )
