@@ -21,7 +21,22 @@ if TYPE_CHECKING:
 
 
 class ActionExecutor:
-    r"""Executes high-level actions (click, type …) on a Playwright Page."""
+    r"""Executes high-level actions (click, type ...) on a Playwright Page.
+
+    Args:
+        page (Page): The Playwright page instance to execute actions on.
+        session (Any, optional): The :obj:`HybridBrowserSession` instance
+            for multi-tab support. (default: :obj:`None`)
+        default_timeout (int, optional): Default timeout in milliseconds
+            for actions. If :obj:`None`, uses the configured default.
+            (default: :obj:`None`)
+        short_timeout (int, optional): Short timeout in milliseconds for
+            quick operations. If :obj:`None`, uses the configured default.
+            (default: :obj:`None`)
+        max_scroll_amount (int, optional): Maximum scroll amount in pixels
+            per scroll action. If :obj:`None`, uses the configured default.
+            (default: :obj:`None`)
+    """
 
     def __init__(
         self,
@@ -45,7 +60,18 @@ class ActionExecutor:
     # Public helpers
     # ------------------------------------------------------------------
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Execute an action and return detailed result information."""
+        r"""Execute an action and return detailed result information.
+
+        Args:
+            action (Dict[str, Any]): A dictionary describing the action to
+                execute. Must contain a ``type`` key with one of: ``click``,
+                ``type``, ``select``, ``wait``, ``extract``, ``scroll``,
+                ``enter``, ``mouse_control``, ``mouse_drag``, ``press_key``.
+
+        Returns:
+            Dict[str, Any]: A result dictionary with keys ``success``
+                (bool), ``message`` (str), and ``details`` (dict).
+        """
         if not action:
             return {
                 "success": False,
@@ -103,7 +129,17 @@ class ActionExecutor:
     # ------------------------------------------------------------------
     async def _click(self, action: Dict[str, Any]) -> Dict[str, Any]:
         r"""Handle click actions with new tab support for any clickable
-        element."""
+        element.
+
+        Args:
+            action (Dict[str, Any]): A dictionary with optional keys:
+                ``ref`` (str) for aria reference, ``text`` (str) for text
+                matching, and ``selector`` (str) for CSS selector.
+
+        Returns:
+            Dict[str, Any]: A result dictionary with keys ``message`` (str)
+                and ``details`` (dict) describing the click outcome.
+        """
         ref = action.get("ref")
         text = action.get("text")
         selector = action.get("selector")
@@ -218,7 +254,17 @@ class ActionExecutor:
             }
 
     async def _type(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Handle typing text into input fields."""
+        r"""Handle typing text into input fields.
+
+        Args:
+            action (Dict[str, Any]): A dictionary with keys ``text`` (str)
+                for the text to type, and either ``ref`` (str) or
+                ``selector`` (str) to identify the target element.
+
+        Returns:
+            Dict[str, Any]: A result dictionary with keys ``message`` (str)
+                and ``details`` (dict) describing the type outcome.
+        """
         ref = action.get("ref")
         selector = action.get("selector")
         text = action.get("text", "")
@@ -248,7 +294,17 @@ class ActionExecutor:
             return {"message": f"Type failed: {exc}", "details": details}
 
     async def _select(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Handle selecting options from dropdowns."""
+        r"""Handle selecting options from dropdowns.
+
+        Args:
+            action (Dict[str, Any]): A dictionary with key ``value`` (str)
+                for the option to select, and either ``ref`` (str) or
+                ``selector`` (str) to identify the target element.
+
+        Returns:
+            Dict[str, Any]: A result dictionary with keys ``message`` (str)
+                and ``details`` (dict) describing the select outcome.
+        """
         ref = action.get("ref")
         selector = action.get("selector")
         value = action.get("value", "")
@@ -279,7 +335,17 @@ class ActionExecutor:
             return {"message": f"Select failed: {exc}", "details": details}
 
     async def _wait(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Handle wait actions."""
+        r"""Handle wait actions.
+
+        Args:
+            action (Dict[str, Any]): A dictionary with either ``timeout``
+                (int, milliseconds) to wait a fixed duration, or
+                ``selector`` (str) to wait for an element to appear.
+
+        Returns:
+            Dict[str, Any]: A result dictionary with keys ``message`` (str)
+                and ``details`` (dict) describing the wait outcome.
+        """
         details: Dict[str, Any] = {
             "wait_type": None,
             "timeout": None,
@@ -306,7 +372,17 @@ class ActionExecutor:
         }
 
     async def _extract(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Handle text extraction from elements."""
+        r"""Handle text extraction from elements.
+
+        Args:
+            action (Dict[str, Any]): A dictionary with key ``ref`` (str)
+                identifying the target element by aria reference.
+
+        Returns:
+            Dict[str, Any]: A result dictionary with keys ``message`` (str)
+                and ``details`` (dict) containing the extracted text and
+                its length.
+        """
         ref = action.get("ref")
         if not ref:
             return {
@@ -329,7 +405,18 @@ class ActionExecutor:
         }
 
     async def _scroll(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Handle page scrolling with safe parameter validation."""
+        r"""Handle page scrolling with safe parameter validation.
+
+        Args:
+            action (Dict[str, Any]): A dictionary with keys ``direction``
+                (str, ``"up"`` or ``"down"``) and ``amount`` (int, pixels
+                to scroll). (default direction: ``"down"``, default amount:
+                ``300``)
+
+        Returns:
+            Dict[str, Any]: A result dictionary with keys ``message`` (str)
+                and ``details`` (dict) describing the scroll outcome.
+        """
         direction = action.get("direction", "down")
         amount = action.get("amount", 300)
 
@@ -375,7 +462,16 @@ class ActionExecutor:
         }
 
     async def _enter(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Handle Enter key press on the currently focused element."""
+        r"""Handle Enter key press on the currently focused element.
+
+        Args:
+            action (Dict[str, Any]): A dictionary describing the action.
+                No additional keys are required for this action type.
+
+        Returns:
+            Dict[str, Any]: A result dictionary with keys ``message`` (str)
+                and ``details`` (dict) describing the key press outcome.
+        """
         details = {"action_type": "enter", "target": "focused_element"}
 
         # Press Enter on whatever element currently has focus
@@ -386,7 +482,18 @@ class ActionExecutor:
         }
 
     async def _mouse_control(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Handle mouse_control action based on the coordinates"""
+        r"""Handle mouse control actions based on viewport coordinates.
+
+        Args:
+            action (Dict[str, Any]): A dictionary with keys ``control``
+                (str, one of ``"click"``, ``"right_click"``, ``"dblclick"``),
+                ``x`` (float) and ``y`` (float) for viewport coordinates.
+                (default control: ``"click"``, default x/y: ``0``)
+
+        Returns:
+            Dict[str, Any]: A result dictionary with keys ``message`` (str)
+                and ``details`` (dict) describing the mouse action outcome.
+        """
         control = action.get("control", "click")
         x_coord = action.get("x", 0)
         y_coord = action.get("y", 0)
@@ -427,7 +534,17 @@ class ActionExecutor:
             return {"message": f"Action failed: {e}", "details": details}
 
     async def _mouse_drag(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Handle mouse_drag action using ref IDs"""
+        r"""Handle mouse drag actions using aria reference IDs.
+
+        Args:
+            action (Dict[str, Any]): A dictionary with keys ``from_ref``
+                (str) for the source element aria reference and ``to_ref``
+                (str) for the target element aria reference.
+
+        Returns:
+            Dict[str, Any]: A result dictionary with keys ``message`` (str)
+                and ``details`` (dict) describing the drag outcome.
+        """
         from_ref = action.get("from_ref")
         to_ref = action.get("to_ref")
 
@@ -511,7 +628,17 @@ class ActionExecutor:
             return {"message": f"Action failed: {e}", "details": details}
 
     async def _press_key(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Handle press_key action by combining the keys in a list."""
+        r"""Handle key press actions by combining a list of keys.
+
+        Args:
+            action (Dict[str, Any]): A dictionary with key ``keys``
+                (List[str]) containing the keys to press simultaneously
+                (e.g. :obj:`["Control", "c"]`).
+
+        Returns:
+            Dict[str, Any]: A result dictionary with keys ``message`` (str)
+                and ``details`` (dict) describing the key press outcome.
+        """
         keys = action.get("keys", [])
         if not keys:
             return {
@@ -531,7 +658,11 @@ class ActionExecutor:
 
     # utilities
     async def _wait_dom_stable(self) -> None:
-        r"""Wait for DOM to become stable before executing actions."""
+        r"""Wait for DOM to become stable before executing actions.
+
+        Waits for ``domcontentloaded`` and optionally for ``networkidle``.
+        Failures are silently ignored to avoid blocking action execution.
+        """
         try:
             # Wait for basic DOM content loading
             await self.page.wait_for_load_state(
@@ -550,7 +681,16 @@ class ActionExecutor:
             pass  # Don't fail if wait times out
 
     def _valid_coordinates(self, x_coord: float, y_coord: float) -> bool:
-        r"""Validate given coordinates against viewport bounds."""
+        r"""Validate given coordinates against viewport bounds.
+
+        Args:
+            x_coord (float): The x coordinate to validate.
+            y_coord (float): The y coordinate to validate.
+
+        Returns:
+            bool: :obj:`True` if both coordinates are within the current
+                viewport bounds, :obj:`False` otherwise.
+        """
         viewport = self.page.viewport_size
         if not viewport:
             raise ValueError("Viewport size not available from current page.")
@@ -563,7 +703,16 @@ class ActionExecutor:
     # static helpers
     @staticmethod
     def should_update_snapshot(action: Dict[str, Any]) -> bool:
-        r"""Determine if an action requires a snapshot update."""
+        r"""Determine if an action requires a snapshot update.
+
+        Args:
+            action (Dict[str, Any]): The action dictionary containing a
+                ``type`` key to check.
+
+        Returns:
+            bool: :obj:`True` if the action type modifies the page and
+                requires a snapshot update, :obj:`False` otherwise.
+        """
         change_types = {
             "click",
             "type",

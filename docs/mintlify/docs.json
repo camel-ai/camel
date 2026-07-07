@@ -429,6 +429,7 @@
             "pages": [
               "reference/camel.retrievers.auto_retriever",
               "reference/camel.retrievers.base",
+              "reference/camel.retrievers.base_rerank",
               "reference/camel.retrievers.bm25_retriever",
               "reference/camel.retrievers.cohere_rerank_retriever",
               "reference/camel.retrievers.hybrid_retrival",
@@ -577,6 +578,7 @@
               "reference/camel.toolkits.terminal_toolkit",
               "reference/camel.toolkits.thinking_toolkit",
               "reference/camel.toolkits.todo_toolkit",
+              "reference/camel.toolkits.twelvelabs_toolkit",
               "reference/camel.toolkits.twitter_toolkit",
               "reference/camel.toolkits.vertex_ai_veo_toolkit",
               "reference/camel.toolkits.video_analysis_toolkit",

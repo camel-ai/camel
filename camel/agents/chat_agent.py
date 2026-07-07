@@ -4214,62 +4214,11 @@ class ChatAgent(BaseAgent):
                 cast(List[MemoryRecord], func_records),
             )
 
+        # Extract and inject images if result is ToolResult
+        images = None
         if isinstance(result, ToolResult) and result.images:
-            try:
-                import base64
-                import io
-
-                try:
-                    from PIL import Image
-                except ImportError:
-                    logger.warning(
-                        f"Tool '{func_name}' returned images but PIL "
-                        "is not installed. Install with: pip install "
-                        "Pillow. Skipping visual context injection."
-                    )
-                    # Continue without injecting images
-                    result = (
-                        result.text if hasattr(result, 'text') else str(result)
-                    )
-                else:
-                    logger.info(
-                        f"Tool '{func_name}' returned ToolResult with "
-                        f"{len(result.images)} image(s), injecting into "
-                        "context"
-                    )
-
-                    # Convert base64 images to PIL Image objects
-                    pil_images: List[Union[Image.Image, str]] = []
-                    for img_data in result.images:
-                        if img_data.startswith('data:image/'):
-                            # Extract base64 data
-                            base64_str = img_data.split(',', 1)[1]
-                            img_bytes = base64.b64decode(base64_str)
-                            pil_img = Image.open(io.BytesIO(img_bytes))
-                            pil_images.append(pil_img)
-
-                    if pil_images:
-                        # Create a user message with the image(s)
-                        visual_msg = BaseMessage.make_user_message(
-                            role_name="Tool",
-                            content=f"[Visual output from {func_name}]",
-                            image_list=pil_images,
-                        )
-
-                        # Inject into conversation context
-                        self.update_memory(
-                            visual_msg,
-                            OpenAIBackendRole.USER,
-                            return_records=False,
-                        )
-                        logger.info(
-                            f"Successfully injected {len(pil_images)} "
-                            "image(s) into agent context"
-                        )
-            except Exception as e:
-                logger.error(
-                    f"Failed to inject visual content from {func_name}: {e}"
-                )
+            images = result.images
+            self._inject_tool_images_into_memory(func_name, result.images)
 
         # Record information about this tool call
         # Note: tool_record contains the original result for the caller,
@@ -4279,9 +4228,66 @@ class ChatAgent(BaseAgent):
             args=args,
             result=result,
             tool_call_id=tool_call_id,
+            images=images,
         )
         self._update_last_tool_call_state(tool_record)
         return tool_record
+
+    def _inject_tool_images_into_memory(
+        self, func_name: str, image_list: List[str]
+    ) -> None:
+        r"""Inject images from a tool result into agent memory.
+
+        Args:
+            func_name (str): The name of the tool that returned images.
+            image_list (List[str]): List of base64-encoded image strings.
+        """
+        try:
+            import base64
+            import io
+
+            try:
+                from PIL import Image
+            except ImportError:
+                logger.warning(
+                    f"Tool '{func_name}' returned images but PIL "
+                    "is not installed. Install with: pip install "
+                    "Pillow. Skipping visual context injection."
+                )
+                return
+
+            logger.info(
+                f"Tool '{func_name}' returned ToolResult with "
+                f"{len(image_list)} image(s), injecting into context"
+            )
+
+            pil_images: List[Union[Image.Image, str]] = []
+            for img_data in image_list:
+                if img_data.startswith('data:image/'):
+                    base64_str = img_data.split(',', 1)[1]
+                    img_bytes = base64.b64decode(base64_str)
+                    pil_img = Image.open(io.BytesIO(img_bytes))
+                    pil_images.append(pil_img)
+
+            if pil_images:
+                visual_msg = BaseMessage.make_user_message(
+                    role_name="Tool",
+                    content=f"[Visual output from {func_name}]",
+                    image_list=pil_images,
+                )
+                self.update_memory(
+                    visual_msg,
+                    OpenAIBackendRole.USER,
+                    return_records=False,
+                )
+                logger.info(
+                    f"Successfully injected {len(pil_images)} "
+                    "image(s) into agent context"
+                )
+        except Exception as e:
+            logger.error(
+                f"Failed to inject visual content from {func_name}: {e}"
+            )
 
     def _stream(
         self,
@@ -5071,11 +5077,20 @@ class ChatAgent(BaseAgent):
                     # Record only the tool result message
                     self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
+                    # Extract and inject images if result is ToolResult
+                    images = None
+                    if isinstance(result, ToolResult) and result.images:
+                        images = result.images
+                        self._inject_tool_images_into_memory(
+                            function_name, result.images
+                        )
+
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
                         args=args,
                         result=result,
                         tool_call_id=tool_call_id,
+                        images=images,
                     )
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
@@ -5227,11 +5242,20 @@ class ChatAgent(BaseAgent):
                     )
                     self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
+                    # Extract and inject images if result is ToolResult
+                    images = None
+                    if isinstance(result, ToolResult) and result.images:
+                        images = result.images
+                        self._inject_tool_images_into_memory(
+                            function_name, result.images
+                        )
+
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
                         args=args,
                         result=result,
                         tool_call_id=tool_call_id,
+                        images=images,
                     )
                     self._update_last_tool_call_state(tool_record)
                     return tool_record

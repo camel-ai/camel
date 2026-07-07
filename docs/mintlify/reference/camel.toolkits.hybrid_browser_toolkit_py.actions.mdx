@@ -8,7 +8,15 @@
 class ActionExecutor:
 ```
 
-Executes high-level actions (click, type …) on a Playwright Page.
+Executes high-level actions (click, type ...) on a Playwright Page.
+
+**Parameters:**
+
+- **page** (Page): The Playwright page instance to execute actions on.
+- **session** (Any, optional): The :obj:`HybridBrowserSession` instance for multi-tab support. (default: :obj:`None`)
+- **default_timeout** (int, optional): Default timeout in milliseconds for actions. If :obj:`None`, uses the configured default. (default: :obj:`None`)
+- **short_timeout** (int, optional): Short timeout in milliseconds for quick operations. If :obj:`None`, uses the configured default. (default: :obj:`None`)
+- **max_scroll_amount** (int, optional): Maximum scroll amount in pixels per scroll action. If :obj:`None`, uses the configured default. (default: :obj:`None`)
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.actions.ActionExecutor.__init__"></a>
 
@@ -35,6 +43,16 @@ def _valid_coordinates(self, x_coord: float, y_coord: float):
 
 Validate given coordinates against viewport bounds.
 
+**Parameters:**
+
+- **x_coord** (float): The x coordinate to validate.
+- **y_coord** (float): The y coordinate to validate.
+
+**Returns:**
+
+  bool: :obj:`True` if both coordinates are within the current
+viewport bounds, :obj:`False` otherwise.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.actions.ActionExecutor.should_update_snapshot"></a>
 
 ### should_update_snapshot
@@ -44,3 +62,12 @@ def should_update_snapshot(action: Dict[str, Any]):
 ```
 
 Determine if an action requires a snapshot update.
+
+**Parameters:**
+
+- **action** (Dict[str, Any]): The action dictionary containing a `__INLINE_CODE_0__` key to check.
+
+**Returns:**
+
+  bool: :obj:`True` if the action type modifies the page and
+requires a snapshot update, :obj:`False` otherwise.

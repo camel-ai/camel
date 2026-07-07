@@ -212,6 +212,69 @@ class TestMCPToolkitConnectionManagement:
         mock_client1.__aexit__.assert_called_once()
 
     @pytest.mark.asyncio
+    async def test_connect_with_zero_max_retries_attempts_once(self):
+        """max_retries=0 must still make the initial connection attempt."""
+        mock_client = MagicMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mock_client.is_connected.return_value = True
+
+        toolkit = MCPToolkit(
+            clients=[mock_client],
+            max_retries=0,
+            retry_delay=0,
+            skip_failed=False,
+        )
+
+        await toolkit.connect()
+
+        assert toolkit._is_connected
+        mock_client.__aenter__.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_connect_zero_max_retries_fails_after_one_attempt(self):
+        """max_retries=0 makes one attempt, then gives up without retrying."""
+        mock_client = MagicMock()
+        mock_client.__aenter__ = AsyncMock(side_effect=RuntimeError("boom"))
+        mock_client._cleanup_connection = AsyncMock()
+        mock_client.is_connected.return_value = False
+
+        toolkit = MCPToolkit(
+            clients=[mock_client],
+            max_retries=0,
+            retry_delay=0,
+            skip_failed=False,
+        )
+
+        with pytest.raises(MCPConnectionError):
+            await toolkit.connect()
+
+        # Exactly one attempt even though max_retries=0.
+        assert mock_client.__aenter__.await_count == 1
+        mock_client._cleanup_connection.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_max_retries_counts_retries_after_first_attempt(self):
+        """max_retries counts retries after the first attempt."""
+        mock_client = MagicMock()
+        mock_client.__aenter__ = AsyncMock(side_effect=RuntimeError("boom"))
+        mock_client._cleanup_connection = AsyncMock()
+        mock_client.is_connected.return_value = False
+
+        toolkit = MCPToolkit(
+            clients=[mock_client],
+            max_retries=2,
+            retry_delay=0,
+            skip_failed=False,
+        )
+
+        with pytest.raises(MCPConnectionError):
+            await toolkit.connect()
+
+        # 1 initial attempt + 2 retries.
+        assert mock_client.__aenter__.await_count == 3
+
+    @pytest.mark.asyncio
     async def test_connect_already_connected(self):
         """Test connecting when already connected."""
         mock_client = MagicMock()
