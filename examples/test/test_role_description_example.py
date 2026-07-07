@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from mock import patch
+from mock import patch  #type: ignore[import-not-found]
+import os
+import pytest   #type: ignore[import-not-found]
 
 import examples.role_description.role_generation
 import examples.role_description.role_playing_with_role_description
@@ -34,6 +36,10 @@ def test_role_generation_example():
         examples.role_description.role_generation.main(model_gpt)
 
 
+@pytest.mark.skipif(
+    os.environ.get("OPENAI_API_KEY") is None,
+    reason="OpenAI API key missing from environment variables"
+)
 def test_role_playing_with_role_description_example():
     with patch('time.sleep', return_value=None):
         examples.role_description.role_playing_with_role_description.main(
