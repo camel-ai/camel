@@ -14,7 +14,7 @@
 import json
 from typing import Dict, List
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.memories import ContextRecord
 from camel.messages import (
@@ -136,7 +136,7 @@ def test_roleplay_conversion_with_tools():
     [assistant, _] = role_playing.step(input_msg)
     role_playing.step(assistant.msg)
 
-    records: List[ContextRecord] = (
+    records: List[ContextRecord] = (  # type: ignore[annotation-unchecked]
         role_playing.assistant_agent.memory.retrieve()
     )
     original_messages = []

@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.memories import ContextRecord
 from camel.messages import BaseMessage
@@ -181,7 +181,7 @@ def test_roleplay_sharegpt_conversion():
     input_msg = role_playing.init_chat()
     role_playing.step(input_msg)
 
-    records: List[ContextRecord] = (
+    records: List[ContextRecord] = (  # type: ignore[annotation-unchecked]
         role_playing.assistant_agent.memory.retrieve()
     )
     original_messages = []
