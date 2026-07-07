@@ -37,8 +37,10 @@ class ScrapeGraphAILoader(BaseLoader):
 
         super().__init__(config=config)
 
-        from scrapegraph_py import Client   #type: ignore[attr-defined]
-        from scrapegraph_py.logger import sgai_logger   #type: ignore[attr-defined]
+        from scrapegraph_py import Client  # type: ignore[attr-defined]
+        from scrapegraph_py.logger import (  # type: ignore[attr-defined]
+            sgai_logger,  # type: ignore[attr-defined]
+        )
 
         self._api_key = api_key or os.environ.get("SCRAPEGRAPH_API_KEY")
         sgai_logger.set_logging(level="INFO")

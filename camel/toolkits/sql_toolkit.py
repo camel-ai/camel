@@ -32,7 +32,7 @@ from camel.utils import MCPServer
 if TYPE_CHECKING:
     import sqlite3
 
-    import duckdb
+    import duckdb  # type: ignore[import-not-found]
 
 logger = get_logger(__name__)
 
@@ -141,7 +141,7 @@ class SQLToolkit(BaseToolkit):
         """
         if self.database_type == "duckdb":
             try:
-                import duckdb
+                import duckdb  # type: ignore[import-not-found]
             except ImportError:
                 raise ImportError(
                     "duckdb package is required for DuckDB support. "

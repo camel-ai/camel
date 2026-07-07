@@ -15,7 +15,7 @@
 from typing import Optional
 from unittest.mock import AsyncMock, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from pydantic import BaseModel
 
 from camel.loaders import Crawl4AILoader
@@ -109,7 +109,7 @@ async def test_structured_scrape_success():
     )
 
     class DummySchema(BaseModel):
-        field: str
+        field: str  # type: ignore[annotation-unchecked]
 
     with patch.object(
         Crawl4AILoader, "_run_crawler", new_callable=AsyncMock
@@ -134,7 +134,7 @@ async def test_structured_scrape_failure():
         crawler = Crawl4AILoader()
 
         class DummySchema(BaseModel):
-            field: str
+            field: str  # type: ignore[annotation-unchecked]
 
         with pytest.raises(RuntimeError, match="Structured scrape failed"):
             await crawler.structured_scrape(URL, DummySchema)

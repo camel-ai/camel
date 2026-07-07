@@ -12,8 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
-import os
 import json
+import os
 from copy import deepcopy
 from io import BytesIO
 from typing import List, Literal
@@ -62,10 +62,11 @@ from camel.types import (
     UnifiedModelType,
 )
 from camel.utils.async_func import sync_funcs_to_async
+
 # Skip all tests in this file if the API key is missing
 pytestmark = pytest.mark.skipif(
     os.environ.get("OPENAI_API_KEY") is None,
-    reason="OpenAI API key missing from environment variables"
+    reason="OpenAI API key missing from environment variables",
 )
 
 model_backend_rsp_base = ChatCompletion(

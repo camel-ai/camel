@@ -12,9 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import pytest
-from fastapi import HTTPException
-from fastapi.testclient import TestClient
+import pytest  # type: ignore[import-not-found]
+from fastapi import HTTPException  # type: ignore[import-not-found]
+from fastapi.testclient import TestClient  # type: ignore[import-not-found]
 from httpx import ASGITransport, AsyncClient
 from pydantic import BaseModel
 
@@ -161,8 +161,8 @@ def test_resolve_response_format_for_step():
 
     # Create a dummy response format for testing
     class TestResponseFormat(BaseModel):
-        message: str
-        status: int
+        message: str  # type: ignore[annotation-unchecked]
+        status: int  # type: ignore[annotation-unchecked]
 
     # Server with registered response format
     server = ChatAgentOpenAPIServer(

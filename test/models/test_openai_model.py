@@ -14,7 +14,7 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from pydantic import BaseModel
 
 from camel.configs import ChatGPTConfig
@@ -476,11 +476,11 @@ def test_responses_mode_normalizes_function_tools_schema():
 
 def test_responses_mode_structured_output_enforces_additional_properties():
     class Destination(BaseModel):
-        city: str
+        city: str  # type: ignore[annotation-unchecked]
 
     class TravelAdvice(BaseModel):
-        destination: Destination
-        clothing: str
+        destination: Destination  # type: ignore[annotation-unchecked]
+        clothing: str  # type: ignore[annotation-unchecked]
 
     with patch("camel.models.openai_model.OpenAI") as mock_openai:
         mock_client = MagicMock()

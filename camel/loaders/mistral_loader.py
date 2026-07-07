@@ -109,11 +109,11 @@ class MistralLoader(BaseLoader):
                 }
 
             ocr_response = self.client.ocr.process(  # type: ignore[arg-type]
-                model=self.model,
-                document=document_config,
-                pages=None if self.is_image else self.pages,
-                include_image_base64=self.include_image_base64,
-            )
+                model=self.model,   # type: ignore[arg-type]
+                document=document_config,   # type: ignore[arg-type]
+                pages=None if self.is_image else self.pages,    # type: ignore[arg-type]
+                include_image_base64=self.include_image_base64, # type: ignore[arg-type]
+            )   # type: ignore[arg-type]
 
             logger.info(f"Processing completed successfully for: {file_path}")
             # BaseLoader expects a dict with content and source

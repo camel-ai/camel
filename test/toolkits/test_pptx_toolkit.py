@@ -15,7 +15,7 @@
 import os
 import tempfile
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.toolkits.pptx_toolkit import PPTXToolkit
 
@@ -73,7 +73,7 @@ def test_create_presentation_basic(pptx_toolkit):
 
     # Verify it's a valid PPTX file by checking we can open it
     try:
-        import pptx
+        import pptx  # type: ignore[import-not-found]
 
         presentation = pptx.Presentation(str(file_path))
         # Should have 3 slides (1 title + 2 content)
@@ -138,7 +138,7 @@ def test_create_presentation_title_only(pptx_toolkit):
 
     # Verify it's a valid PPTX file with 1 slide
     try:
-        import pptx
+        import pptx  # type: ignore[import-not-found]
 
         presentation = pptx.Presentation(str(file_path))
         assert len(presentation.slides) == 1
@@ -304,7 +304,7 @@ def test_create_presentation_empty_content(pptx_toolkit):
 
     # Verify it's a valid PPTX file with no slides
     try:
-        import pptx
+        import pptx  # type: ignore[import-not-found]
 
         presentation = pptx.Presentation(str(file_path))
         assert len(presentation.slides) == 0

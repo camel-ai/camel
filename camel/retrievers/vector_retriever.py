@@ -30,7 +30,9 @@ from camel.utils import Constants, dependencies_required
 from camel.utils.chunker import BaseChunker, UnstructuredIOChunker
 
 if TYPE_CHECKING:
-    from unstructured.documents.elements import Element
+    from unstructured.documents.elements import (  # type: ignore[import-not-found]
+        Element,
+    )
 
 
 class VectorRetriever(BaseRetriever):
@@ -110,14 +112,18 @@ class VectorRetriever(BaseRetriever):
                 max_characters=max_characters,
                 metadata_filename=metadata_filename,
             )
-        from unstructured.documents.elements import Element
+        from unstructured.documents.elements import (  # type: ignore[import-not-found]
+            Element,
+        )
 
         if isinstance(content, Element):
             elements = [content]
         elif isinstance(content, IOBase):
             elements = (
                 self.uio.parse_bytes(
-                    file=content, metadata_filename=metadata_filename, **kwargs
+                    file=content,  # type: ignore[arg-type]
+                    metadata_filename=metadata_filename,
+                    **kwargs,  # type: ignore[arg-type]
                 )
                 or []
             )
@@ -130,7 +136,7 @@ class VectorRetriever(BaseRetriever):
                     self.uio.parse_file_or_url(
                         input_path=content,
                         metadata_filename=metadata_filename,
-                        **kwargs,
+                        **kwargs,  # type: ignore[arg-type]
                     )
                     or []
                 )

@@ -517,7 +517,7 @@ class MCPToolkit(BaseToolkit):
         ]
 
         connected = 0
-        failed: list = []
+        failed: list = []  # type: ignore[annotation-unchecked]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         for i, result in enumerate(results):
             if isinstance(result, asyncio.CancelledError):

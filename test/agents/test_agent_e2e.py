@@ -19,7 +19,7 @@ E2E tests for ChatAgent with tools:
 4. Streaming with structured output and tools #TODO
 """
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
@@ -57,10 +57,10 @@ def test_normal_with_tools():
     assert "142" in content
 
     class Result(BaseModel):
-        sum_result: str = Field(description="Result of the addition")
-        product_result: str = Field(description="Result of the multiplication")
-        division_result: str = Field(description="Result of the division")
-        capital_result: str = Field(description="Result of the capital search")
+        sum_result: str = Field(description="Result of the addition")  # type: ignore[annotation-unchecked]
+        product_result: str = Field(description="Result of the multiplication")  # type: ignore[annotation-unchecked]
+        division_result: str = Field(description="Result of the division")  # type: ignore[annotation-unchecked]
+        capital_result: str = Field(description="Result of the capital search")  # type: ignore[annotation-unchecked]
 
     response = agent.step(
         "Calculate: 1) 123.45 + 678.90  2) 100 * 3.14159  3) 1000 / 7, "

@@ -15,9 +15,9 @@ import os
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, Optional
 
-import discord
+import discord  # type: ignore[import-not-found]
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI  # type: ignore[import-not-found]
 
 from camel.bots.discord.discord_installation import DiscordInstallation
 from camel.logger import get_logger

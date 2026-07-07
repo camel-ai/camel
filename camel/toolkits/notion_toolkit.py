@@ -95,7 +95,7 @@ class NotionToolkit(BaseToolkit):
                 used to interact with notion APIs.(default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
-        from notion_client import Client
+        from notion_client import Client  # type: ignore[import-not-found]
 
         self.notion_token = notion_token or os.environ.get("NOTION_TOKEN")
         self.notion_client = Client(auth=self.notion_token)
