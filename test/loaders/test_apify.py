@@ -21,7 +21,7 @@ from camel.loaders.apify_loader import ApifyLoader
 
 @pytest.fixture
 def apify_client_mock():
-    with patch('apify_client.ApifyLoaderClient', autospec=True) as mock:
+    with patch('apify_client.ApifyClient', autospec=True) as mock:
         yield mock
 
 

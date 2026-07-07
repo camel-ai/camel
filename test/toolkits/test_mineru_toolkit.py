@@ -68,7 +68,8 @@ def mineru_toolkit(mock_mineru):
     """Create a MinerUToolkit instance with mocked client."""
     with patch.dict('os.environ', {'MINERU_API_KEY': 'fake_api_key'}):
         with patch(
-            'camel.toolkits.mineru_toolkit.MinerU', return_value=mock_mineru
+            'camel.toolkits.mineru_toolkit.MinerULoader',
+            return_value=mock_mineru,
         ):
             toolkit = MinerUToolkit()
             toolkit.client = mock_mineru
