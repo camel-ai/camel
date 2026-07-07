@@ -1102,7 +1102,9 @@ class SearchToolkit(BaseToolkit):
                 - searchType (str): The search type that was selected
                 - costDollars (Dict): Breakdown of API costs
         """
-        from exa_py import Exa  # type: ignore[import-not-found]
+        from exa_py import (  # type: ignore[import-untyped, import-not-found]
+            Exa,
+        )
 
         EXA_API_KEY = os.getenv("EXA_API_KEY")
 

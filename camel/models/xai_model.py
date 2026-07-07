@@ -50,10 +50,12 @@ if TYPE_CHECKING:
         AsyncClient as XAIAsyncClient,  # type: ignore[import-untyped]
     )
     from xai_sdk import Client as XAIClient  # type: ignore[import-untyped]
-    from xai_sdk.chat import (  # type: ignore[import-not-found]
+    from xai_sdk.chat import (  # type: ignore[import-untyped, import-not-found]
         Response as XAIResponse,
     )
-    from xai_sdk.proto import chat_pb2  # type: ignore[import-not-found]
+    from xai_sdk.proto import (  # type: ignore[import-untyped, import-not-found]
+        chat_pb2,
+    )
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
