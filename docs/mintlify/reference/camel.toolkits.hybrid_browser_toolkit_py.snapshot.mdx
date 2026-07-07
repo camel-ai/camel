@@ -11,6 +11,10 @@ class PageSnapshot:
 Utility for capturing YAML-like page snapshots and diff-only
 variants.
 
+**Parameters:**
+
+- **page** (Page): The Playwright page instance to capture snapshots from.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.snapshot.PageSnapshot.__init__"></a>
 
 ### __init__
@@ -27,6 +31,16 @@ def __init__(self, page: 'Page'):
 def _format_snapshot(text: str):
 ```
 
+Format raw snapshot text into a fenced YAML block.
+
+**Parameters:**
+
+- **text** (str): The raw snapshot text to format.
+
+**Returns:**
+
+  str: The snapshot wrapped in a YAML code block.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.snapshot.PageSnapshot._compute_diff"></a>
 
 ### _compute_diff
@@ -34,6 +48,18 @@ def _format_snapshot(text: str):
 ```python
 def _compute_diff(old: str, new: str):
 ```
+
+Compute a unified diff between two snapshot strings.
+
+**Parameters:**
+
+- **old** (str): The previous snapshot text.
+- **new** (str): The current snapshot text.
+
+**Returns:**
+
+  str: A formatted diff string, or a message indicating no
+changes were detected.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.snapshot.PageSnapshot._detect_priorities"></a>
 
@@ -43,4 +69,17 @@ def _compute_diff(old: str, new: str):
 def _detect_priorities(self, snapshot_yaml: str):
 ```
 
-Return sorted list of priorities present (1,2,3).
+Return sorted list of priority levels present in the snapshot.
+
+Priority levels are assigned based on element types found in the
+snapshot: interactive elements (input, button, etc.) map to
+priority 1, labels to priority 2, and all others to priority 3.
+
+**Parameters:**
+
+- **snapshot_yaml** (str): The snapshot text to analyze.
+
+**Returns:**
+
+  List[int]: Sorted list of detected priority levels (e.g.
+:obj:`[1, 2, 3]`).

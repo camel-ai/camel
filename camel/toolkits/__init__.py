@@ -62,6 +62,7 @@ from .memory_toolkit import MemoryToolkit
 from .audio_analysis_toolkit import AudioAnalysisToolkit
 from .excel_toolkit import ExcelToolkit
 from .video_analysis_toolkit import VideoAnalysisToolkit
+from .twelvelabs_toolkit import TwelveLabsToolkit
 from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
 from .browser_toolkit import BrowserToolkit
@@ -157,6 +158,7 @@ __all__ = [
     'AudioAnalysisToolkit',
     'ExcelToolkit',
     'VideoAnalysisToolkit',
+    'TwelveLabsToolkit',
     'ImageAnalysisToolkit',
     'BrowserToolkit',
     'AsyncBrowserToolkit',

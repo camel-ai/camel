@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, List, Union
 
-from camel.retrievers import BaseRetriever
+from camel.retrievers.base_rerank import BaseRerankRetriever
 from camel.types.enums import JinaRerankerModelType
 from camel.utils import api_keys_required, dependencies_required
 
@@ -22,7 +22,7 @@ DEFAULT_TOP_K_RESULTS = 1
 JINA_RERANK_API_URL = "https://api.jina.ai/v1/rerank"
 
 
-class JinaRerankRetriever(BaseRetriever):
+class JinaRerankRetriever(BaseRerankRetriever):
     r"""An implementation of the `BaseRetriever` using the `Jina AI Reranker`
     model.
 

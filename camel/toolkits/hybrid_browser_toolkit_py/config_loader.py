@@ -25,8 +25,13 @@ from typing import Any, Dict, List, Optional
 
 
 class BrowserConfig:
-    r"""Configuration class for browser settings including stealth mode and
-    timeouts."""
+    r"""Configuration class for browser settings including stealth mode
+    and timeouts.
+
+    Provides static methods to retrieve timeout values, action limits,
+    stealth configuration, and HTTP headers. All values support
+    environment variable overrides.
+    """
 
     # Default timeout values (in milliseconds)
     DEFAULT_ACTION_TIMEOUT = 3000
@@ -48,7 +53,11 @@ class BrowserConfig:
         r"""Get timeout configuration with environment variable support.
 
         Returns:
-            Dict[str, int]: Timeout configuration in milliseconds.
+            Dict[str, int]: A dictionary of timeout values in milliseconds
+                with keys: ``default_timeout``, ``short_timeout``,
+                ``navigation_timeout``, ``network_idle_timeout``,
+                ``screenshot_timeout``, ``page_stability_timeout``, and
+                ``dom_content_loaded_timeout``.
         """
         return {
             'default_timeout': int(
@@ -100,7 +109,8 @@ class BrowserConfig:
         r"""Get action limits configuration with environment variable support.
 
         Returns:
-            Dict[str, int]: Action limits configuration.
+            Dict[str, int]: A dictionary of action limits with key
+                ``max_scroll_amount`` (in pixels).
         """
         return {
             'max_scroll_amount': int(
@@ -116,7 +126,8 @@ class BrowserConfig:
         r"""Get log limits configuration with environment variable support.
 
         Returns:
-            Dict[str, int]: Console Log limits configuration.
+            Dict[str, int]: A dictionary of log limits with key
+                ``max_log_limit``.
         """
         return {
             'max_log_limit': int(
@@ -132,7 +143,9 @@ class BrowserConfig:
         r"""Get action timeout with optional override.
 
         Args:
-            override: Optional timeout override value in milliseconds.
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
 
         Returns:
             int: Timeout value in milliseconds.
@@ -146,7 +159,9 @@ class BrowserConfig:
         r"""Get short timeout with optional override.
 
         Args:
-            override: Optional timeout override value in milliseconds.
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
 
         Returns:
             int: Timeout value in milliseconds.
@@ -160,7 +175,9 @@ class BrowserConfig:
         r"""Get navigation timeout with optional override.
 
         Args:
-            override: Optional timeout override value in milliseconds.
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
 
         Returns:
             int: Timeout value in milliseconds.
@@ -174,7 +191,9 @@ class BrowserConfig:
         r"""Get network idle timeout with optional override.
 
         Args:
-            override: Optional timeout override value in milliseconds.
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
 
         Returns:
             int: Timeout value in milliseconds.
@@ -188,7 +207,9 @@ class BrowserConfig:
         r"""Get maximum scroll amount with optional override.
 
         Args:
-            override: Optional scroll amount override value in pixels.
+            override (int, optional): Scroll amount override value in pixels.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
 
         Returns:
             int: Maximum scroll amount in pixels.
@@ -202,10 +223,12 @@ class BrowserConfig:
         r"""Get maximum log limit with optional override.
 
         Args:
-            override: Optional log limit override value.
+            override (int, optional): Log limit override value. If
+                :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
 
         Returns:
-            int: Maximum log limit.
+            int: Maximum number of log entries.
         """
         if override is not None:
             return override
@@ -216,7 +239,9 @@ class BrowserConfig:
         r"""Get screenshot timeout with optional override.
 
         Args:
-            override: Optional timeout override value in milliseconds.
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
 
         Returns:
             int: Timeout value in milliseconds.
@@ -230,7 +255,9 @@ class BrowserConfig:
         r"""Get page stability timeout with optional override.
 
         Args:
-            override: Optional timeout override value in milliseconds.
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
 
         Returns:
             int: Timeout value in milliseconds.
@@ -244,7 +271,9 @@ class BrowserConfig:
         r"""Get DOM content loaded timeout with optional override.
 
         Args:
-            override: Optional timeout override value in milliseconds.
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
 
         Returns:
             int: Timeout value in milliseconds.
@@ -360,69 +389,167 @@ class BrowserConfig:
 
 # Legacy ConfigLoader class for compatibility (now just wraps BrowserConfig)
 class ConfigLoader:
-    r"""Legacy wrapper for BrowserConfig - maintained for backward
-    compatibility."""
+    r"""Legacy wrapper for :obj:`BrowserConfig`, maintained for backward
+    compatibility.
+
+    All methods delegate directly to :obj:`BrowserConfig`. New code
+    should use :obj:`BrowserConfig` directly.
+    """
 
     @classmethod
     def get_browser_config(cls):
-        r"""Get the BrowserConfig class."""
+        r"""Get the :obj:`BrowserConfig` class.
+
+        Returns:
+            type: The :obj:`BrowserConfig` class.
+        """
         return BrowserConfig
 
     @classmethod
     def get_stealth_config(cls):
-        r"""Get the StealthConfig class (alias)."""
+        r"""Get the :obj:`BrowserConfig` class as a stealth config alias.
+
+        Returns:
+            type: The :obj:`BrowserConfig` class.
+        """
         return BrowserConfig  # StealthConfig is an alias for BrowserConfig
 
     @classmethod
     def get_timeout_config(cls) -> Dict[str, int]:
-        r"""Get timeout configuration."""
+        r"""Get timeout configuration.
+
+        Returns:
+            Dict[str, int]: A dictionary of timeout values in milliseconds.
+                See :obj:`BrowserConfig.get_timeout_config` for keys.
+        """
         return BrowserConfig.get_timeout_config()
 
     @classmethod
     def get_action_timeout(cls, override: Optional[int] = None) -> int:
-        r"""Get action timeout with optional override."""
+        r"""Get action timeout with optional override.
+
+        Args:
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
+
+        Returns:
+            int: Timeout value in milliseconds.
+        """
         return BrowserConfig.get_action_timeout(override)
 
     @classmethod
     def get_short_timeout(cls, override: Optional[int] = None) -> int:
-        r"""Get short timeout with optional override."""
+        r"""Get short timeout with optional override.
+
+        Args:
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
+
+        Returns:
+            int: Timeout value in milliseconds.
+        """
         return BrowserConfig.get_short_timeout(override)
 
     @classmethod
     def get_navigation_timeout(cls, override: Optional[int] = None) -> int:
-        r"""Get navigation timeout with optional override."""
+        r"""Get navigation timeout with optional override.
+
+        Args:
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
+
+        Returns:
+            int: Timeout value in milliseconds.
+        """
         return BrowserConfig.get_navigation_timeout(override)
 
     @classmethod
     def get_network_idle_timeout(cls, override: Optional[int] = None) -> int:
-        r"""Get network idle timeout with optional override."""
+        r"""Get network idle timeout with optional override.
+
+        Args:
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
+
+        Returns:
+            int: Timeout value in milliseconds.
+        """
         return BrowserConfig.get_network_idle_timeout(override)
 
     @classmethod
     def get_max_scroll_amount(cls, override: Optional[int] = None) -> int:
-        r"""Get maximum scroll amount with optional override."""
+        r"""Get maximum scroll amount with optional override.
+
+        Args:
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
+
+        Returns:
+            int: Timeout value in milliseconds.
+        """
         return BrowserConfig.get_max_scroll_amount(override)
 
     @classmethod
     def get_max_log_limit(cls, override: Optional[int] = None) -> int:
-        r"""Get maximum log limit with optional override."""
+        r"""Get maximum log limit with optional override.
+
+        Args:
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
+
+        Returns:
+            int: Timeout value in milliseconds.
+        """
         return BrowserConfig.get_max_log_limit(override)
 
     @classmethod
     def get_screenshot_timeout(cls, override: Optional[int] = None) -> int:
-        r"""Get screenshot timeout with optional override."""
+        r"""Get screenshot timeout with optional override.
+
+        Args:
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
+
+        Returns:
+            int: Timeout value in milliseconds.
+        """
         return BrowserConfig.get_screenshot_timeout(override)
 
     @classmethod
     def get_page_stability_timeout(cls, override: Optional[int] = None) -> int:
-        r"""Get page stability timeout with optional override."""
+        r"""Get page stability timeout with optional override.
+
+        Args:
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
+
+        Returns:
+            int: Timeout value in milliseconds.
+        """
         return BrowserConfig.get_page_stability_timeout(override)
 
     @classmethod
     def get_dom_content_loaded_timeout(
         cls, override: Optional[int] = None
     ) -> int:
-        r"""Get DOM content loaded timeout with optional override."""
+        r"""Get DOM content loaded timeout with optional override.
+
+        Args:
+            override (int, optional): Timeout override value in milliseconds.
+                If :obj:`None`, uses the environment-configured default.
+                (default: :obj:`None`)
+
+        Returns:
+            int: Timeout value in milliseconds.
+        """
         return BrowserConfig.get_dom_content_loaded_timeout(override)
 
 
@@ -431,60 +558,154 @@ StealthConfig = BrowserConfig
 
 
 def get_browser_config():
-    r"""Get BrowserConfig class."""
+    r"""Get the :obj:`BrowserConfig` class.
+
+    Returns:
+        type: The :obj:`BrowserConfig` class.
+    """
     return BrowserConfig
 
 
 def get_stealth_config():
-    r"""Get StealthConfig class."""
+    r"""Get the :obj:`BrowserConfig` class as a stealth config alias.
+
+    Returns:
+        type: The :obj:`BrowserConfig` class.
+    """
     return BrowserConfig
 
 
 def get_timeout_config() -> Dict[str, int]:
-    r"""Get timeout configuration."""
+    r"""Get timeout configuration.
+
+    Returns:
+        Dict[str, int]: A dictionary of timeout values in milliseconds.
+            See :obj:`BrowserConfig.get_timeout_config` for keys.
+    """
     return BrowserConfig.get_timeout_config()
 
 
 def get_action_timeout(override: Optional[int] = None) -> int:
-    r"""Get action timeout with optional override."""
+    r"""Get action timeout with optional override.
+
+    Args:
+        override (int, optional): Timeout override value in milliseconds.
+            If :obj:`None`, uses the environment-configured default.
+            (default: :obj:`None`)
+
+    Returns:
+        int: Timeout value in milliseconds.
+    """
     return BrowserConfig.get_action_timeout(override)
 
 
 def get_short_timeout(override: Optional[int] = None) -> int:
-    r"""Get short timeout with optional override."""
+    r"""Get short timeout with optional override.
+
+    Args:
+        override (int, optional): Timeout override value in milliseconds.
+            If :obj:`None`, uses the environment-configured default.
+            (default: :obj:`None`)
+
+    Returns:
+        int: Timeout value in milliseconds.
+    """
     return BrowserConfig.get_short_timeout(override)
 
 
 def get_navigation_timeout(override: Optional[int] = None) -> int:
-    r"""Get navigation timeout with optional override."""
+    r"""Get navigation timeout with optional override.
+
+    Args:
+        override (int, optional): Timeout override value in milliseconds.
+            If :obj:`None`, uses the environment-configured default.
+            (default: :obj:`None`)
+
+    Returns:
+        int: Timeout value in milliseconds.
+    """
     return BrowserConfig.get_navigation_timeout(override)
 
 
 def get_network_idle_timeout(override: Optional[int] = None) -> int:
-    r"""Get network idle timeout with optional override."""
+    r"""Get network idle timeout with optional override.
+
+    Args:
+        override (int, optional): Timeout override value in milliseconds.
+            If :obj:`None`, uses the environment-configured default.
+            (default: :obj:`None`)
+
+    Returns:
+        int: Timeout value in milliseconds.
+    """
     return BrowserConfig.get_network_idle_timeout(override)
 
 
 def get_max_scroll_amount(override: Optional[int] = None) -> int:
-    r"""Get maximum scroll amount with optional override."""
+    r"""Get maximum scroll amount with optional override.
+
+    Args:
+        override (int, optional): Timeout override value in milliseconds.
+            If :obj:`None`, uses the environment-configured default.
+            (default: :obj:`None`)
+
+    Returns:
+        int: Timeout value in milliseconds.
+    """
     return BrowserConfig.get_max_scroll_amount(override)
 
 
 def get_max_log_limit(override: Optional[int] = None) -> int:
-    r"""Get maximum log limit with optional override."""
+    r"""Get maximum log limit with optional override.
+
+    Args:
+        override (int, optional): Timeout override value in milliseconds.
+            If :obj:`None`, uses the environment-configured default.
+            (default: :obj:`None`)
+
+    Returns:
+        int: Timeout value in milliseconds.
+    """
     return BrowserConfig.get_max_log_limit(override)
 
 
 def get_screenshot_timeout(override: Optional[int] = None) -> int:
-    r"""Get screenshot timeout with optional override."""
+    r"""Get screenshot timeout with optional override.
+
+    Args:
+        override (int, optional): Timeout override value in milliseconds.
+            If :obj:`None`, uses the environment-configured default.
+            (default: :obj:`None`)
+
+    Returns:
+        int: Timeout value in milliseconds.
+    """
     return BrowserConfig.get_screenshot_timeout(override)
 
 
 def get_page_stability_timeout(override: Optional[int] = None) -> int:
-    r"""Get page stability timeout with optional override."""
+    r"""Get page stability timeout with optional override.
+
+    Args:
+        override (int, optional): Timeout override value in milliseconds.
+            If :obj:`None`, uses the environment-configured default.
+            (default: :obj:`None`)
+
+    Returns:
+        int: Timeout value in milliseconds.
+    """
     return BrowserConfig.get_page_stability_timeout(override)
 
 
 def get_dom_content_loaded_timeout(override: Optional[int] = None) -> int:
-    r"""Get DOM content loaded timeout with optional override."""
+    r"""Get DOM content loaded timeout with optional override.
+
+    Args:
+        override (int, optional): Timeout override value in milliseconds.
+            If :obj:`None`, uses the environment-configured default.
+            (default: :obj:`None`)
+
+    Returns:
+        int: Timeout value in milliseconds.
+    """
     return BrowserConfig.get_dom_content_loaded_timeout(override)

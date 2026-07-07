@@ -29,7 +29,27 @@ logger = get_logger(__name__)
 
 
 class PlaywrightLLMAgent:
-    r"""High-level orchestration: snapshot ↔ LLM ↔ action executor."""
+    r"""High-level orchestration layer connecting page snapshots, an LLM,
+    and an action executor for browser automation.
+
+    Args:
+        user_data_dir (str, optional): Path to the browser user data
+            directory for persistent sessions. (default: :obj:`None`)
+        headless (bool, optional): Whether to run the browser in headless
+            mode. (default: :obj:`False`)
+        stealth (bool, optional): Whether to enable stealth mode to avoid
+            bot detection. (default: :obj:`False`)
+        model_backend (BaseModelBackend, optional): The model backend to
+            use for LLM calls. If :obj:`None`, defaults to
+            :obj:`ModelFactory` with :obj:`ModelPlatformType.DEFAULT` and
+            :obj:`ModelType.DEFAULT`. (default: :obj:`None`)
+        default_timeout (int, optional): Default timeout in milliseconds
+            for browser actions. If :obj:`None`, uses the configured
+            default. (default: :obj:`None`)
+        short_timeout (int, optional): Short timeout in milliseconds for
+            quick browser operations. If :obj:`None`, uses the configured
+            default. (default: :obj:`None`)
+    """
 
     # System prompt as class constant to avoid recreation
     SYSTEM_PROMPT = """
@@ -106,7 +126,15 @@ what was accomplished
         self._chat_agent: Optional[ChatAgent] = None
 
     async def navigate(self, url: str) -> str:
-        r"""Navigate to a URL and return the snapshot."""
+        r"""Navigate to a URL and return the page snapshot.
+
+        Args:
+            url (str): The URL to navigate to.
+
+        Returns:
+            str: The page snapshot after navigation, or an error message
+                if navigation fails.
+        """
         try:
             # HybridBrowserSession handles waits internally
             logger.debug("Navigated to URL: %s", url)
@@ -118,7 +146,12 @@ what was accomplished
             return error_msg
 
     def _get_chat_agent(self) -> "ChatAgent":
-        r"""Get or create the ChatAgent instance."""
+        r"""Get or create the :obj:`ChatAgent` instance.
+
+        Returns:
+            ChatAgent: The existing or newly created :obj:`ChatAgent`
+                initialized with the system prompt and model backend.
+        """
         from camel.agents import ChatAgent
 
         if self._chat_agent is None:
@@ -128,8 +161,19 @@ what was accomplished
         return self._chat_agent
 
     def _safe_parse_json(self, content: str) -> Dict[str, Any]:
-        r"""Safely parse JSON from LLM response with multiple fallback
+        r"""Safely parse JSON from an LLM response with multiple fallback
         strategies.
+
+        Attempts direct parsing first, then regex-based extraction, then
+        line-by-line parsing. Falls back to a default structure if all
+        strategies fail.
+
+        Args:
+            content (str): The raw LLM response string to parse.
+
+        Returns:
+            Dict[str, Any]: The parsed JSON as a dictionary, or a fallback
+                response structure if parsing fails.
         """
         # First attempt: direct parsing
         try:
@@ -178,7 +222,16 @@ what was accomplished
         return self._get_fallback_response("Parsing error")
 
     def _get_fallback_response(self, error_msg: str) -> Dict[str, Any]:
-        r"""Generate a fallback response structure."""
+        r"""Generate a fallback response structure for parsing failures.
+
+        Args:
+            error_msg (str): A description of the error that caused the
+                fallback.
+
+        Returns:
+            Dict[str, Any]: A default response dictionary with a
+                ``finish`` action and the error message as summary.
+        """
         return {
             "plan": [f"Could not parse response: {error_msg}"],
             "action": {
@@ -195,7 +248,21 @@ what was accomplished
         is_initial: bool,
         history: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        r"""Call the LLM (via CAMEL ChatAgent) to get plan & next action."""
+        r"""Call the LLM via :obj:`ChatAgent` to get a plan and next action.
+
+        Args:
+            prompt (str): The user task description.
+            snapshot (str): The current page snapshot text.
+            is_initial (bool): Whether this is the first LLM call for the
+                task. If :obj:`True`, no action history is included.
+            history (List[Dict[str, Any]], optional): List of previous
+                actions and their results. Only used when ``is_initial``
+                is :obj:`False`. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: The parsed LLM response containing ``plan``
+                (List[str]) and ``action`` (Dict[str, Any]).
+        """
         # Build user message
         if is_initial:
             user_content = f"Snapshot:\n{snapshot}\n\nTask: {prompt}"
@@ -222,7 +289,19 @@ what was accomplished
         return self._safe_parse_json(content)
 
     async def process_command(self, prompt: str, max_steps: int = 15):
-        r"""Process a command using LLM-guided browser automation."""
+        r"""Process a natural language command using LLM-guided browser
+        automation.
+
+        Iteratively captures page snapshots, calls the LLM for the next
+        action, executes it, and repeats until the task is complete or
+        ``max_steps`` is reached.
+
+        Args:
+            prompt (str): The natural language task to execute in the
+                browser.
+            max_steps (int, optional): Maximum number of action steps
+                before stopping. (default: :obj:`15`)
+        """
         # initial full snapshot
         full_snapshot = await self._session.get_snapshot()
         assert self._session.snapshot is not None
@@ -301,11 +380,22 @@ what was accomplished
     async def _run_action(
         self, action: Dict[str, Any]
     ) -> Union[str, Dict[str, Any]]:
-        r"""Execute a single action and return the result."""
+        r"""Execute a single browser action and return the result.
+
+        Args:
+            action (Dict[str, Any]): The action dictionary to execute.
+                Navigate actions are handled directly; all others are
+                delegated to the session executor.
+
+        Returns:
+            Union[str, Dict[str, Any]]: The action result as a string
+                for navigate actions, or a dictionary for all other
+                action types.
+        """
         if action.get("type") == "navigate":
             return await self.navigate(action.get("url", ""))
         return await self._session.exec_action(action)
 
     async def close(self):
-        r"""Clean up browser session and resources."""
+        r"""Clean up the browser session and release all resources."""
         await self._session.close()

@@ -1480,6 +1480,21 @@ Record the tool result in the memory.
   ToolCallingRecord: A struct containing information about
 this tool call.
 
+<a id="camel.agents.chat_agent.ChatAgent._inject_tool_images_into_memory"></a>
+
+### _inject_tool_images_into_memory
+
+```python
+def _inject_tool_images_into_memory(self, func_name: str, image_list: List[str]):
+```
+
+Inject images from a tool result into agent memory.
+
+**Parameters:**
+
+- **func_name** (str): The name of the tool that returned images.
+- **image_list** (List[str]): List of base64-encoded image strings.
+
 <a id="camel.agents.chat_agent.ChatAgent._stream"></a>
 
 ### _stream

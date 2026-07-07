@@ -26,8 +26,13 @@ logger = get_logger(__name__)
 
 
 class PageSnapshot:
-    """Utility for capturing YAML-like page snapshots and diff-only
-    variants."""
+    r"""Utility for capturing YAML-like page snapshots and diff-only
+    variants.
+
+    Args:
+        page (Page): The Playwright page instance to capture snapshots
+            from.
+    """
 
     def __init__(self, page: "Page"):
         self.page = page
@@ -49,7 +54,21 @@ class PageSnapshot:
         diff_only: bool = False,
         viewport_limit: bool = False,
     ) -> str:
-        """Return current snapshot or just the diff to previous one."""
+        r"""Return the current page snapshot or a diff against the previous
+        one.
+
+        Args:
+            force_refresh (bool, optional): Whether to force a full snapshot
+                refresh regardless of URL changes. (default: :obj:`False`)
+            diff_only (bool, optional): If :obj:`True`, returns only the
+                structural diff against the previous snapshot instead of the
+                full snapshot. (default: :obj:`False`)
+            viewport_limit (bool, optional): Whether to limit the snapshot
+                to the current viewport. (default: :obj:`False`)
+
+        Returns:
+            str: The formatted page snapshot or diff string.
+        """
         try:
             current_url = self.page.url
 
@@ -125,6 +144,14 @@ class PageSnapshot:
         navigation happens between scheduling and evaluating the JS. In that
         case we retry a few times after waiting for the next DOMContentLoaded
         event; for all other exceptions we abort immediately.
+
+        Args:
+            viewport_limit (bool, optional): Whether to limit snapshot
+                extraction to the current viewport. (default: :obj:`False`)
+
+        Returns:
+            Optional[Union[str, Dict[str, Any]]]: The raw snapshot result
+                from the JS evaluator, or :obj:`None` if all retries fail.
         """
 
         # Load JS once and cache it at class level
@@ -181,10 +208,28 @@ class PageSnapshot:
 
     @staticmethod
     def _format_snapshot(text: str) -> str:
+        r"""Format raw snapshot text into a fenced YAML block.
+
+        Args:
+            text (str): The raw snapshot text to format.
+
+        Returns:
+            str: The snapshot wrapped in a YAML code block.
+        """
         return "\n".join(["- Page Snapshot", "```yaml", text, "```"])
 
     @staticmethod
     def _compute_diff(old: str, new: str) -> str:
+        r"""Compute a unified diff between two snapshot strings.
+
+        Args:
+            old (str): The previous snapshot text.
+            new (str): The current snapshot text.
+
+        Returns:
+            str: A formatted diff string, or a message indicating no
+                changes were detected.
+        """
         if not old or not new:
             return "- Page Snapshot (error: missing data for diff)"
 
@@ -205,7 +250,19 @@ class PageSnapshot:
 
     # ------------------------------------------------------------------
     def _detect_priorities(self, snapshot_yaml: str) -> List[int]:
-        """Return sorted list of priorities present (1,2,3)."""
+        r"""Return sorted list of priority levels present in the snapshot.
+
+        Priority levels are assigned based on element types found in the
+        snapshot: interactive elements (input, button, etc.) map to
+        priority 1, labels to priority 2, and all others to priority 3.
+
+        Args:
+            snapshot_yaml (str): The snapshot text to analyze.
+
+        Returns:
+            List[int]: Sorted list of detected priority levels (e.g.
+                :obj:`[1, 2, 3]`).
+        """
         priorities = set()
         for line in snapshot_yaml.splitlines():
             if '[ref=' not in line:
