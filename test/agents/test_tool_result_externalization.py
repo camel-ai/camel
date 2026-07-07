@@ -188,6 +188,43 @@ def test_file_store_persists_payload_and_metadata_separately(tmp_path):
         second_store.get("test-scope", externalized.record.result_id)
 
 
+@pytest.mark.parametrize(
+    ("scope_id", "result_id"),
+    [
+        (".", "safe-result"),
+        ("..", "safe-result"),
+        ("safe-scope", "."),
+        ("safe-scope", ".."),
+    ],
+)
+def test_file_store_rejects_reserved_path_components(
+    tmp_path, scope_id, result_id
+):
+    store = FileToolResultStore(tmp_path / "store")
+    record = ToolResultRecord(
+        result_id=result_id,
+        scope_id=scope_id,
+        ref=f"camel://tool-results/{scope_id}/{result_id}",
+        tool_name="tool",
+        tool_call_id="call-path",
+        content="payload",
+        created_at=time.time(),
+        expires_at=None,
+        original_chars=7,
+        sha256="unused-before-save",
+    )
+
+    with pytest.raises(ValueError, match="Invalid"):
+        store.save(record)
+    with pytest.raises(ValueError, match="Invalid"):
+        store.get(scope_id, result_id)
+    with pytest.raises(ValueError, match="Invalid"):
+        store.delete(scope_id, result_id)
+    if scope_id in {".", ".."}:
+        with pytest.raises(ValueError, match="Invalid"):
+            store.list(scope_id)
+
+
 def test_in_memory_store_lazily_removes_expired_results():
     store = InMemoryToolResultStore()
     record = ToolResultRecord(
@@ -331,6 +368,32 @@ def test_masked_stream_tool_result_is_not_externalized():
     assert store.list("test-scope") == []
 
 
+def test_stream_tool_externalization_raise_mode_propagates_storage_failure():
+    store = MagicMock()
+    store.save.side_effect = OSError("storage unavailable")
+    agent = ChatAgent(
+        model=_mock_model(),
+        tools=[FunctionTool(_streaming_large_tool)],
+        tool_result_externalization=ToolResultExternalizationConfig(
+            threshold_chars=100,
+            preview_chars=20,
+            failure_mode="raise",
+            scope_id="test-scope",
+            store=store,
+        ),
+    )
+    tool_call = {
+        "id": "call-stream-raise",
+        "function": {
+            "name": "_streaming_large_tool",
+            "arguments": "{}",
+        },
+    }
+
+    with pytest.raises(OSError, match="storage unavailable"):
+        agent._execute_tool_from_stream_data(tool_call)
+
+
 @pytest.mark.asyncio
 async def test_async_stream_tool_execution_externalizes_result():
     agent = ChatAgent(
@@ -351,3 +414,30 @@ async def test_async_stream_tool_execution_externalizes_result():
     assert record is not None
     assert record.result_externalized is True
     assert record.result_ref is not None
+
+
+@pytest.mark.asyncio
+async def test_async_stream_raise_mode_propagates_storage_failure():
+    store = MagicMock()
+    store.save.side_effect = OSError("storage unavailable")
+    agent = ChatAgent(
+        model=_mock_model(),
+        tools=[FunctionTool(_streaming_large_tool)],
+        tool_result_externalization=ToolResultExternalizationConfig(
+            threshold_chars=100,
+            preview_chars=20,
+            failure_mode="raise",
+            scope_id="test-scope",
+            store=store,
+        ),
+    )
+    tool_call = {
+        "id": "call-async-stream-raise",
+        "function": {
+            "name": "_streaming_large_tool",
+            "arguments": "{}",
+        },
+    }
+
+    with pytest.raises(OSError, match="storage unavailable"):
+        await agent._aexecute_tool_from_stream_data(tool_call)

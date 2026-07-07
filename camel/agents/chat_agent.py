@@ -5122,104 +5122,30 @@ class ChatAgent(BaseAgent):
             args = json.loads(tool_call_data['function']['arguments'])
             tool_call_id = tool_call_data['id']
             extra_content = tool_call_data.get('extra_content')
+        except Exception as e:
+            logger.error(f"Error processing tool call: {e}")
+            return None
 
-            if function_name in self._internal_tools:
-                tool = self._internal_tools[function_name]
-                try:
-                    result = tool(**args)
+        if function_name in self._internal_tools:
+            tool = self._internal_tools[function_name]
+            try:
+                result = tool(**args)
 
-                    # Handle mask_tool_output
-                    if self.mask_tool_output:
-                        with self._secure_result_store_lock:
-                            self._secure_result_store[tool_call_id] = result
-                        result = (
-                            "[The tool has been executed successfully, but the"
-                            " output from the tool is masked. You can move"
-                            " forward]"
-                        )
-
-                    prepared_result = self._prepare_tool_result_for_memory(
-                        function_name,
-                        result,
-                        tool_call_id,
-                        mask_output=self.mask_tool_output,
+                # Handle mask_tool_output
+                if self.mask_tool_output:
+                    with self._secure_result_store_lock:
+                        self._secure_result_store[tool_call_id] = result
+                    result = (
+                        "[The tool has been executed successfully, but the"
+                        " output from the tool is masked. You can move"
+                        " forward]"
                     )
-                    result_for_memory = prepared_result.value
-
-                    # Create the tool response message
-                    # Note: assistant message with tool_calls is already
-                    # recorded by _record_assistant_tool_calls_message
-                    func_msg = FunctionCallingMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict=None,
-                        content="",
-                        func_name=function_name,
-                        result=result_for_memory,
-                        tool_call_id=tool_call_id,
-                        mask_output=self.mask_tool_output,
-                        extra_content=extra_content,
-                    )
-
-                    # Record only the tool result message
-                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
-
-                    # Extract and inject images if result is ToolResult
-                    images = None
-                    if isinstance(result, ToolResult) and result.images:
-                        images = result.images
-                        self._inject_tool_images_into_memory(
-                            function_name, result.images
-                        )
-
-                    tool_record = ToolCallingRecord(
-                        tool_name=function_name,
-                        args=args,
-                        result=result,
-                        tool_call_id=tool_call_id,
-                        images=images,
-                        result_ref=prepared_result.ref,
-                        result_externalized=prepared_result.externalized,
-                    )
-                    self._update_last_tool_call_state(tool_record)
-                    return tool_record
-
-                except Exception as e:
-                    error_msg = (
-                        f"Error executing tool '{function_name}': {e!s}"
-                    )
-                    result = {"error": error_msg}
-                    logger.warning(f"{error_msg} with result: {result}")
-
-                    # Record error response
-                    func_msg = FunctionCallingMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict=None,
-                        content="",
-                        func_name=function_name,
-                        result=result,
-                        tool_call_id=tool_call_id,
-                        extra_content=extra_content,
-                    )
-
-                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
-
-                    tool_record = ToolCallingRecord(
-                        tool_name=function_name,
-                        args=args,
-                        result=result,
-                        tool_call_id=tool_call_id,
-                    )
-                    self._update_last_tool_call_state(tool_record)
-                    return tool_record
-            else:
-                error_msg = (
-                    f"Tool '{function_name}' not found in registered tools"
-                )
+            except Exception as e:
+                error_msg = f"Error executing tool '{function_name}': {e!s}"
                 result = {"error": error_msg}
-                logger.warning(error_msg)
+                logger.warning(f"{error_msg} with result: {result}")
 
+                # Record error response
                 func_msg = FunctionCallingMessage(
                     role_name=self.role_name,
                     role_type=self.role_type,
@@ -5241,9 +5167,76 @@ class ChatAgent(BaseAgent):
                 self._update_last_tool_call_state(tool_record)
                 return tool_record
 
-        except Exception as e:
-            logger.error(f"Error processing tool call: {e}")
-            return None
+            prepared_result = self._prepare_tool_result_for_memory(
+                function_name,
+                result,
+                tool_call_id,
+                mask_output=self.mask_tool_output,
+            )
+            result_for_memory = prepared_result.value
+
+            # Create the tool response message
+            # Note: assistant message with tool_calls is already
+            # recorded by _record_assistant_tool_calls_message
+            func_msg = FunctionCallingMessage(
+                role_name=self.role_name,
+                role_type=self.role_type,
+                meta_dict=None,
+                content="",
+                func_name=function_name,
+                result=result_for_memory,
+                tool_call_id=tool_call_id,
+                mask_output=self.mask_tool_output,
+                extra_content=extra_content,
+            )
+
+            # Record only the tool result message
+            self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+            # Extract and inject images if result is ToolResult
+            images = None
+            if isinstance(result, ToolResult) and result.images:
+                images = result.images
+                self._inject_tool_images_into_memory(
+                    function_name, result.images
+                )
+
+            tool_record = ToolCallingRecord(
+                tool_name=function_name,
+                args=args,
+                result=result,
+                tool_call_id=tool_call_id,
+                images=images,
+                result_ref=prepared_result.ref,
+                result_externalized=prepared_result.externalized,
+            )
+            self._update_last_tool_call_state(tool_record)
+            return tool_record
+
+        error_msg = f"Tool '{function_name}' not found in registered tools"
+        result = {"error": error_msg}
+        logger.warning(error_msg)
+
+        func_msg = FunctionCallingMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict=None,
+            content="",
+            func_name=function_name,
+            result=result,
+            tool_call_id=tool_call_id,
+            extra_content=extra_content,
+        )
+        self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+        tool_record = ToolCallingRecord(
+            tool_name=function_name,
+            args=args,
+            result=result,
+            tool_call_id=tool_call_id,
+        )
+        self._update_last_tool_call_state(tool_record)
+        return tool_record
 
     async def _aexecute_tool_from_stream_data(
         self, tool_call_data: Dict[str, Any]
@@ -5260,130 +5253,57 @@ class ChatAgent(BaseAgent):
             args = json.loads(tool_call_data['function']['arguments'])
             tool_call_id = tool_call_data['id']
             extra_content = tool_call_data.get('extra_content')
+        except Exception as e:
+            logger.error(f"Error processing async tool call: {e}")
+            return None
 
-            if function_name in self._internal_tools:
-                tool = self._internal_tools[function_name]
-                try:
-                    # Try different invocation paths in order of preference
-                    if hasattr(tool, 'func') and hasattr(
-                        tool.func, 'async_call'
-                    ):
-                        # Case: FunctionTool wrapping an MCP tool
-                        result = await tool.func.async_call(**args)
+        if function_name in self._internal_tools:
+            tool = self._internal_tools[function_name]
+            try:
+                # Try different invocation paths in order of preference
+                if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
+                    # Case: FunctionTool wrapping an MCP tool
+                    result = await tool.func.async_call(**args)
 
-                    elif hasattr(tool, 'async_call') and callable(
-                        tool.async_call
-                    ):
-                        # Case: tool itself has async_call
-                        result = await tool.async_call(**args)
+                elif hasattr(tool, 'async_call') and callable(tool.async_call):
+                    # Case: tool itself has async_call
+                    result = await tool.async_call(**args)
 
-                    elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
-                        tool.func
-                    ):
-                        # Case: tool wraps a direct async function
-                        result = await tool.func(**args)
+                elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
+                    tool.func
+                ):
+                    # Case: tool wraps a direct async function
+                    result = await tool.func(**args)
 
-                    elif asyncio.iscoroutinefunction(tool):
-                        # Case: tool is itself a coroutine function
-                        result = await tool(**args)
+                elif asyncio.iscoroutinefunction(tool):
+                    # Case: tool is itself a coroutine function
+                    result = await tool(**args)
 
-                    else:
-                        # Fallback: synchronous call
-                        # Use functools.partial to properly capture args
-                        loop = asyncio.get_running_loop()
-                        result = await loop.run_in_executor(
-                            None, functools.partial(tool, **args)
-                        )
-
-                    # Handle mask_tool_output
-                    if self.mask_tool_output:
-                        with self._secure_result_store_lock:
-                            self._secure_result_store[tool_call_id] = result
-                        result = (
-                            "[The tool has been executed successfully, but the"
-                            " output from the tool is masked. You can move"
-                            " forward]"
-                        )
-
-                    prepared_result = self._prepare_tool_result_for_memory(
-                        function_name,
-                        result,
-                        tool_call_id,
-                        mask_output=self.mask_tool_output,
+                else:
+                    # Fallback: synchronous call
+                    # Use functools.partial to properly capture args
+                    loop = asyncio.get_running_loop()
+                    result = await loop.run_in_executor(
+                        None, functools.partial(tool, **args)
                     )
-                    result_for_memory = prepared_result.value
 
-                    # Create the tool response message
-                    # Note: assistant message with tool_calls is already
-                    # recorded by _record_assistant_tool_calls_message
-                    func_msg = FunctionCallingMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict=None,
-                        content="",
-                        func_name=function_name,
-                        result=result_for_memory,
-                        tool_call_id=tool_call_id,
-                        mask_output=self.mask_tool_output,
-                        extra_content=extra_content,
+                # Handle mask_tool_output
+                if self.mask_tool_output:
+                    with self._secure_result_store_lock:
+                        self._secure_result_store[tool_call_id] = result
+                    result = (
+                        "[The tool has been executed successfully, but the"
+                        " output from the tool is masked. You can move"
+                        " forward]"
                     )
-                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
-
-                    # Extract and inject images if result is ToolResult
-                    images = None
-                    if isinstance(result, ToolResult) and result.images:
-                        images = result.images
-                        self._inject_tool_images_into_memory(
-                            function_name, result.images
-                        )
-
-                    tool_record = ToolCallingRecord(
-                        tool_name=function_name,
-                        args=args,
-                        result=result,
-                        tool_call_id=tool_call_id,
-                        images=images,
-                        result_ref=prepared_result.ref,
-                        result_externalized=prepared_result.externalized,
-                    )
-                    self._update_last_tool_call_state(tool_record)
-                    return tool_record
-
-                except Exception as e:
-                    error_msg = (
-                        f"Error executing async tool '{function_name}': {e!s}"
-                    )
-                    result = {"error": error_msg}
-                    logger.warning(f"{error_msg} with result: {result}")
-
-                    # Record error response
-                    func_msg = FunctionCallingMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict=None,
-                        content="",
-                        func_name=function_name,
-                        result=result,
-                        tool_call_id=tool_call_id,
-                        extra_content=extra_content,
-                    )
-                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
-
-                    tool_record = ToolCallingRecord(
-                        tool_name=function_name,
-                        args=args,
-                        result=result,
-                        tool_call_id=tool_call_id,
-                    )
-                    self._update_last_tool_call_state(tool_record)
-                    return tool_record
-            else:
+            except Exception as e:
                 error_msg = (
-                    f"Tool '{function_name}' not found in registered tools"
+                    f"Error executing async tool '{function_name}': {e!s}"
                 )
                 result = {"error": error_msg}
-                logger.warning(error_msg)
+                logger.warning(f"{error_msg} with result: {result}")
 
+                # Record error response
                 func_msg = FunctionCallingMessage(
                     role_name=self.role_name,
                     role_type=self.role_type,
@@ -5405,9 +5325,74 @@ class ChatAgent(BaseAgent):
                 self._update_last_tool_call_state(tool_record)
                 return tool_record
 
-        except Exception as e:
-            logger.error(f"Error processing async tool call: {e}")
-            return None
+            prepared_result = self._prepare_tool_result_for_memory(
+                function_name,
+                result,
+                tool_call_id,
+                mask_output=self.mask_tool_output,
+            )
+            result_for_memory = prepared_result.value
+
+            # Create the tool response message
+            # Note: assistant message with tool_calls is already
+            # recorded by _record_assistant_tool_calls_message
+            func_msg = FunctionCallingMessage(
+                role_name=self.role_name,
+                role_type=self.role_type,
+                meta_dict=None,
+                content="",
+                func_name=function_name,
+                result=result_for_memory,
+                tool_call_id=tool_call_id,
+                mask_output=self.mask_tool_output,
+                extra_content=extra_content,
+            )
+            self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+            # Extract and inject images if result is ToolResult
+            images = None
+            if isinstance(result, ToolResult) and result.images:
+                images = result.images
+                self._inject_tool_images_into_memory(
+                    function_name, result.images
+                )
+
+            tool_record = ToolCallingRecord(
+                tool_name=function_name,
+                args=args,
+                result=result,
+                tool_call_id=tool_call_id,
+                images=images,
+                result_ref=prepared_result.ref,
+                result_externalized=prepared_result.externalized,
+            )
+            self._update_last_tool_call_state(tool_record)
+            return tool_record
+
+        error_msg = f"Tool '{function_name}' not found in registered tools"
+        result = {"error": error_msg}
+        logger.warning(error_msg)
+
+        func_msg = FunctionCallingMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict=None,
+            content="",
+            func_name=function_name,
+            result=result,
+            tool_call_id=tool_call_id,
+            extra_content=extra_content,
+        )
+        self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+        tool_record = ToolCallingRecord(
+            tool_name=function_name,
+            args=args,
+            result=result,
+            tool_call_id=tool_call_id,
+        )
+        self._update_last_tool_call_state(tool_record)
+        return tool_record
 
     def _create_error_response(
         self, error_message: str, tool_call_records: List[ToolCallingRecord]

@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 _SAFE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")
+_RESERVED_PATH_PARTS = {".", ".."}
 
 
 @dataclass(frozen=True)
@@ -168,13 +169,23 @@ class FileToolResultStore(BaseToolResultStore):
 
     @staticmethod
     def _validate_id(value: str, label: str) -> None:
-        if _SAFE_ID_PATTERN.fullmatch(value) is None:
+        if (
+            value in _RESERVED_PATH_PARTS
+            or _SAFE_ID_PATTERN.fullmatch(value) is None
+        ):
             raise ValueError(f"Invalid {label}: {value!r}")
 
     def _result_dir(self, scope_id: str, result_id: str) -> Path:
         self._validate_id(scope_id, "scope_id")
         self._validate_id(result_id, "result_id")
-        return self.directory / scope_id / result_id
+        result_dir = (self.directory / scope_id / result_id).resolve()
+        try:
+            result_dir.relative_to(self.directory)
+        except ValueError as exc:
+            raise ValueError(
+                "Tool result path must stay within the storage directory"
+            ) from exc
+        return result_dir
 
     @staticmethod
     def _validate_record_identity(
@@ -244,7 +255,13 @@ class FileToolResultStore(BaseToolResultStore):
         limit: int = 50,
     ) -> List[Dict[str, Any]]:
         self._validate_id(scope_id, "scope_id")
-        scope_dir = self.directory / scope_id
+        scope_dir = (self.directory / scope_id).resolve()
+        try:
+            scope_dir.relative_to(self.directory)
+        except ValueError as exc:
+            raise ValueError(
+                "Tool result path must stay within the storage directory"
+            ) from exc
         if not scope_dir.exists():
             return []
 
