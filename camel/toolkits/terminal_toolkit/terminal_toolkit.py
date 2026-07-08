@@ -479,7 +479,6 @@ class TerminalToolkit(BaseToolkit):
         command: str,
         *,
         check_exit_code: bool = True,
-        workdir: str | None = None,
     ) -> tuple[int, bytes]:
         r"""Execute a command in the Docker container and return the result.
 
@@ -490,7 +489,6 @@ class TerminalToolkit(BaseToolkit):
         Args:
             command: The shell command to execute inside the container.
             check_exit_code: If True, raises RuntimeError on non-zero exit.
-            workdir: Optional working directory for the command.
 
         Returns:
             A tuple of (exit_code, output_bytes).
@@ -504,11 +502,8 @@ class TerminalToolkit(BaseToolkit):
                 "_docker_exec called but Docker backend is not enabled."
             )
         try:
-            exec_kwargs = {"cmd": command}
-            if workdir:
-                exec_kwargs["workdir"] = workdir
             exec_id = self.docker_api_client.exec_create(
-                self.container.id, **exec_kwargs
+                self.container.id, cmd=command
             )["Id"]
             output = self.docker_api_client.exec_start(exec_id)
             exec_info = self.docker_api_client.exec_inspect(exec_id)
@@ -519,9 +514,14 @@ class TerminalToolkit(BaseToolkit):
                     if isinstance(output, bytes)
                     else str(output)
                 )
+                logger.error(
+                    "Docker command failed with exit code %s. Output:\n%s",
+                    exit_code,
+                    error_text,
+                )
                 raise RuntimeError(
                     f"Docker command exited with code {exit_code}: "
-                    f"{error_text[:500]}"
+                    f"{error_text}"
                 )
             return exit_code, output
         except (APIError, NotFound) as e:
