@@ -24,7 +24,11 @@ from camel.toolkits.terminal_toolkit.utils import sanitize_command
 
 @pytest.fixture
 def terminal_toolkit(temp_dir, request):
-    toolkit = TerminalToolkit(working_directory=temp_dir, safe_mode=False)
+    toolkit = TerminalToolkit(
+        working_directory=temp_dir,
+        safe_mode=False,
+        require_approval=None,
+    )
     # Ensure cleanup happens after test completes
     request.addfinalizer(toolkit.cleanup)
     return toolkit
@@ -45,7 +49,7 @@ def test_file(temp_dir):
 
 
 def test_init():
-    toolkit = TerminalToolkit()
+    toolkit = TerminalToolkit(require_approval=None)
     try:
         assert toolkit.timeout == 20.0
         assert isinstance(toolkit.shell_sessions, dict)
@@ -67,7 +71,10 @@ def test_shell_exec(terminal_toolkit, temp_dir):
         "test_session",
         "nonexistent_command",
     )
-    assert "not found" in result.lower()
+    assert (
+        "not found" in result.lower()
+        or "not recognized" in result.lower()
+    )
 
     # Test session persistence - use non-blocking mode to create sessions
     session_id = "persistent_session"
@@ -102,7 +109,11 @@ def test_shell_exec_multiple_sessions(terminal_toolkit, temp_dir):
 
 def test_shell_write_content_to_file_basic(temp_dir, request):
     """Test basic file writing functionality."""
-    toolkit = TerminalToolkit(working_directory=str(temp_dir), safe_mode=False)
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=False,
+        require_approval=None,
+    )
     request.addfinalizer(toolkit.cleanup)
 
     test_content = "Hello, World!"
@@ -116,7 +127,11 @@ def test_shell_write_content_to_file_basic(temp_dir, request):
 
 def test_shell_write_content_to_file_with_subdirectory(temp_dir, request):
     """Test file writing with automatic parent directory creation."""
-    toolkit = TerminalToolkit(working_directory=str(temp_dir), safe_mode=False)
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=False,
+        require_approval=None,
+    )
     request.addfinalizer(toolkit.cleanup)
 
     test_content = "Nested content"
@@ -133,7 +148,11 @@ def test_shell_write_content_to_file_safe_mode_relative_path(
     temp_dir, request
 ):
     """Test safe mode with relative paths resolves correctly."""
-    toolkit = TerminalToolkit(working_directory=str(temp_dir), safe_mode=True)
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=True,
+        require_approval=None,
+    )
     request.addfinalizer(toolkit.cleanup)
 
     test_content = "Safe mode content"
@@ -150,7 +169,11 @@ def test_shell_write_content_to_file_safe_mode_blocks_path_traversal(
     temp_dir, request
 ):
     """Test that safe mode blocks path traversal attempts."""
-    toolkit = TerminalToolkit(working_directory=str(temp_dir), safe_mode=True)
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=True,
+        require_approval=None,
+    )
     request.addfinalizer(toolkit.cleanup)
 
     test_content = "Malicious content"
@@ -199,7 +222,11 @@ def test_sanitize_command_blocks_cd_expansion_outside_workdir(
 
 def test_shell_exec_cd_outside_returns_copy_guidance(temp_dir, request):
     """Shell exec should provide copy guidance for blocked cd traversal."""
-    toolkit = TerminalToolkit(working_directory=str(temp_dir), safe_mode=True)
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=True,
+        require_approval=None,
+    )
     request.addfinalizer(toolkit.cleanup)
 
     result = toolkit.shell_exec("test_session", "cd ../")
@@ -212,7 +239,11 @@ def test_shell_exec_cd_outside_returns_copy_guidance(temp_dir, request):
 
 def test_shell_exec_safe_mode_rejection_prefix(temp_dir, request):
     """Blocked command errors should clearly mention safe mode rejection."""
-    toolkit = TerminalToolkit(working_directory=str(temp_dir), safe_mode=True)
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=True,
+        require_approval=None,
+    )
     request.addfinalizer(toolkit.cleanup)
 
     result = toolkit.shell_exec("test_session", "rm -rf /")
@@ -365,3 +396,96 @@ def test_sanitize_command_respects_customized_dangerous_commands(
     )
     assert not is_safe
     assert "echo" in message.lower()
+
+
+def test_require_approval_blocks_when_callback_returns_false(
+    temp_dir, request
+):
+    """Approval callback returning False should block execution."""
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=False,
+        require_approval=lambda cmd: False,
+    )
+    request.addfinalizer(toolkit.cleanup)
+    result = toolkit.shell_exec("s1", "echo hello")
+    assert "rejected" in result.lower()
+
+
+def test_require_approval_allows_when_callback_returns_true(
+    temp_dir, request
+):
+    """Approval callback returning True should allow execution."""
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=False,
+        require_approval=lambda cmd: True,
+    )
+    request.addfinalizer(toolkit.cleanup)
+    result = toolkit.shell_exec("s1", "echo hello")
+    assert "hello" in result.lower()
+
+
+def test_require_approval_none_disables_gate(temp_dir, request):
+    """require_approval=None should allow unrestricted execution."""
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=False,
+        require_approval=None,
+    )
+    request.addfinalizer(toolkit.cleanup)
+    result = toolkit.shell_exec("s1", "echo hello")
+    assert "hello" in result.lower()
+
+
+def test_require_approval_callback_receives_command(
+    temp_dir, request
+):
+    """The approval callback should receive the command string."""
+    received = []
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=False,
+        require_approval=lambda cmd: (
+            received.append(cmd) or True
+        ),
+    )
+    request.addfinalizer(toolkit.cleanup)
+    toolkit.shell_exec("s1", "echo test_marker")
+    assert any("echo test_marker" in cmd for cmd in received)
+
+
+def test_require_approval_not_called_after_safe_mode_rejection(
+    temp_dir, request
+):
+    """Approval callback should NOT fire for commands already
+    rejected by safe_mode."""
+    called = []
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=True,
+        require_approval=lambda cmd: (
+            called.append(cmd) or True
+        ),
+    )
+    request.addfinalizer(toolkit.cleanup)
+    result = toolkit.shell_exec("s1", "rm -rf /")
+    assert "error" in result.lower()
+    assert len(called) == 0
+
+
+def test_require_approval_blocks_non_blocking_exec(
+    temp_dir, request
+):
+    """Approval gate should also fire for non-blocking
+    execution."""
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=False,
+        require_approval=lambda cmd: False,
+    )
+    request.addfinalizer(toolkit.cleanup)
+    result = toolkit.shell_exec(
+        "s1", "echo hello", block=False
+    )
+    assert "rejected" in result.lower()
