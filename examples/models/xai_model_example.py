@@ -23,11 +23,11 @@ python examples/models/xai_model_example.py
 from camel.agents import ChatAgent
 from camel.configs import XAIConfig
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType
+from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.XAI,
-    model_type="grok-4.20-reasoning",
+    model_type=ModelType.XAI_GROK_4_5,
     model_config_dict=XAIConfig(use_encrypted_content=True).as_dict(),
 )
 

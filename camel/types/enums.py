@@ -114,6 +114,9 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_LLAMA_3_1_8B = "llama-3.1-8b-instant"
     GROQ_LLAMA_3_3_70B = "llama-3.3-70b-versatile"
 
+    # xAI platform models
+    XAI_GROK_4_5 = "grok-4.5"
+
     # Cerebras platform models
     CEREBRAS_GPT_OSS_120B = "gpt-oss-120b"
     CEREBRAS_LLAMA_3_1_8B = "llama3.1-8b"
@@ -594,6 +597,7 @@ class ModelType(UnifiedModelType, Enum):
         return any(
             [
                 self.is_openai,
+                self.is_xai,
             ]
         )
 
@@ -626,6 +630,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_azure_openai,
                 self.is_novita,
                 self.is_avian,
+                self.is_xai,
             ]
         )
 
@@ -776,6 +781,13 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_3_70B,
+        }
+
+    @property
+    def is_xai(self) -> bool:
+        r"""Returns whether this type of models is served by xAI."""
+        return self in {
+            ModelType.XAI_GROK_4_5,
         }
 
     @property
@@ -1706,6 +1718,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT,
         }:
             return 512_000
+        elif self in {
+            ModelType.XAI_GROK_4_5,
+        }:
+            return 500_000
         elif self in {
             ModelType.GEMINI_3_1_PRO,
             ModelType.GEMINI_3_1_FLASH_LITE,
