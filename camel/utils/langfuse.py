@@ -28,11 +28,41 @@ _agent_session_id_var: ContextVar[Optional[str]] = ContextVar(
 _langfuse_configured = False
 
 try:
-    from langfuse.decorators import langfuse_context
+    import langfuse
 
     LANGFUSE_AVAILABLE = True
 except ImportError:
     LANGFUSE_AVAILABLE = False
+
+
+def _langfuse_major_version() -> int:
+    r"""Return the installed langfuse major version, or 0 if unknown."""
+    version = getattr(langfuse, "__version__", "0")
+    try:
+        return int(str(version).split(".")[0])
+    except (ValueError, TypeError):
+        return 0
+
+
+def _get_langfuse_client():
+    r"""Return the object used to update traces/observations.
+
+    Langfuse v3 removed ``langfuse.decorators.langfuse_context`` and exposes a
+    client via ``langfuse.get_client()``. v2 keeps ``langfuse_context``.
+    """
+    if _langfuse_major_version() >= 3:
+        try:
+            from langfuse import get_client
+
+            return get_client()
+        except Exception:
+            return None
+    try:
+        from langfuse.decorators import langfuse_context
+
+        return langfuse_context
+    except Exception:
+        return None
 
 
 @dependencies_required('langfuse')
@@ -100,14 +130,24 @@ def configure_langfuse(
         _langfuse_configured = False
 
     try:
-        # Configure langfuse_context with native method
-        langfuse_context.configure(
-            public_key=public_key,
-            secret_key=secret_key,
-            host=host,
-            debug=debug,
-            enabled=True,  # Always True here since we checked enabled above
-        )
+        if _langfuse_major_version() >= 3:
+            # Langfuse v3+ reads configuration from environment variables.
+            os.environ["LANGFUSE_PUBLIC_KEY"] = public_key or ""
+            os.environ["LANGFUSE_SECRET_KEY"] = secret_key or ""
+            os.environ["LANGFUSE_HOST"] = host or "https://cloud.langfuse.com"
+            os.environ["LANGFUSE_ENABLED"] = "true"
+            if debug is not None:
+                os.environ["LANGFUSE_DEBUG"] = str(debug).lower()
+        else:
+            # Langfuse v2 uses the native context object.
+            langfuse_context = _get_langfuse_client()
+            langfuse_context.configure(
+                public_key=public_key,
+                secret_key=secret_key,
+                host=host,
+                debug=debug,
+                enabled=True,  # enabled is True here (checked above)
+            )
 
         logger.info("Langfuse tracing enabled for CAMEL models")
 
@@ -182,7 +222,9 @@ def update_langfuse_trace(
         update_data["tags"] = tags
 
     if update_data:
-        langfuse_context.update_current_trace(**update_data)
+        client = _get_langfuse_client()
+        if client is not None:
+            client.update_current_trace(**update_data)
         return True
 
     return False
@@ -216,7 +258,11 @@ def update_current_observation(
     if not is_langfuse_available():
         return
 
-    langfuse_context.update_current_observation(
+    client = _get_langfuse_client()
+    if client is None:
+        return
+
+    client.update_current_observation(
         input=input,
         output=output,
         model=model,
