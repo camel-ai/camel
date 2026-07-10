@@ -198,10 +198,7 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
                 f"child_tool_policy must be 'none', 'filtered', or 'all', "
                 f"got '{child_tool_policy}'"
             )
-        if (
-            child_tool_policy == "filtered"
-            and allowed_tool_names is None
-        ):
+        if child_tool_policy == "filtered" and allowed_tool_names is None:
             logger.warning(
                 "child_tool_policy='filtered' but allowed_tool_names is "
                 "None; sub-agents will receive only non-function tools."
@@ -268,7 +265,7 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         .. note::
             Regardless of which tools are cloned, the recursive-call guard
-            in :meth:`~camel.agents.ChatAgent._is_called_from_registered_toolkit`
+            in :meth:`ChatAgent._is_called_from_registered_toolkit`
             prevents the sub-agent from actually *invoking* tools during
             ``step()``.  The filtering here controls which tools appear in
             the sub-agent's toolbelt for potential future use (e.g. if the
@@ -292,13 +289,14 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
             # Exclude blacklisted tools even in "all" mode
             if self._excluded_tool_names:
                 cloned_tools = [
-                    t for t in cloned_tools
+                    t
+                    for t in cloned_tools
                     if self._get_tool_name(t) not in self._excluded_tool_names
                 ]
             return list(cloned_tools), toolkits_to_register
 
         # filtered mode
-        filtered_tools = []
+        filtered_tools: List[Union[FunctionTool, Callable]] = []
         for tool in cloned_tools:
             name = self._get_tool_name(tool)
             if name is None:
@@ -308,7 +306,10 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
                     filtered_tools.append(tool)
                 continue
             # Apply whitelist
-            if self._allowed_tool_names is not None and name not in self._allowed_tool_names:
+            if (
+                self._allowed_tool_names is not None
+                and name not in self._allowed_tool_names
+            ):
                 continue
             # Apply blacklist
             if name in self._excluded_tool_names:
@@ -317,7 +318,9 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         return filtered_tools, toolkits_to_register
 
-    def _get_tool_name(self, tool: Union[FunctionTool, Callable]) -> Optional[str]:
+    def _get_tool_name(
+        self, tool: Union[FunctionTool, Callable]
+    ) -> Optional[str]:
         r"""Extract the function name from a tool.
 
         Args:

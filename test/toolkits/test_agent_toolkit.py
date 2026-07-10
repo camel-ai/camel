@@ -355,7 +355,7 @@ class TestAgentToolkitToolPolicy:
 
     @pytest.fixture
     def toolkit_with_policy(self, monkeypatch):
-        """Factory fixture for creating AgentToolkits with specific policies."""
+        """Factory for creating AgentToolkits with policies."""
         monkeypatch.setattr(
             "camel.agents.ChatAgent",
             FakeChatAgent,
@@ -396,7 +396,7 @@ class TestAgentToolkitToolPolicy:
     def test_filtered_policy_with_whitelist(
         self, toolkit_with_policy, parent_agent
     ):
-        """filtered mode with allowed_tool_names only clones whitelisted tools."""
+        """filtered: only whitelisted tools cloned."""
         toolkit = toolkit_with_policy(
             child_tool_policy="filtered",
             allowed_tool_names=["parent_search"],
@@ -428,7 +428,7 @@ class TestAgentToolkitToolPolicy:
     def test_filtered_whitelist_and_blacklist_combined(
         self, toolkit_with_policy, parent_agent
     ):
-        """Both whitelist and blacklist applied: whitelist first, then exclude."""
+        """Both whitelist+blacklist: whitelist first, then exclude."""
         toolkit = toolkit_with_policy(
             child_tool_policy="filtered",
             allowed_tool_names=["parent_search", "parent_calc"],
@@ -492,12 +492,11 @@ class TestAgentToolkitToolPolicy:
     def test_recursive_guard_remains_active(
         self, toolkit_with_policy, parent_agent
     ):
-        """The recursive-call guard in ChatAgent._is_called_from_registered_toolkit
-        still prevents tool use during step(), regardless of tool policy.
+        """Recursive-call guard still prevents tool use
+        during step(), regardless of tool policy.
 
-        This test verifies the guard behavior by checking that
-        AgentToolkit is indeed a RegisteredAgentToolkit (the type
-        _is_called_from_registered_toolkit checks for via stack inspection).
+        Verifies AgentToolkit is a RegisteredAgentToolkit
+        (the type _is_called_from_registered_toolkit checks).
         """
         from camel.toolkits.base import RegisteredAgentToolkit
 
