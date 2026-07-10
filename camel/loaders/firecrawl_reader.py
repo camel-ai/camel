@@ -17,6 +17,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
+from camel.utils import dependencies_required
+
 
 def _to_dict(response: Any) -> Any:
     r"""Normalize a Firecrawl SDK response into plain Python data.
@@ -43,6 +45,7 @@ class Firecrawl:
         https://docs.firecrawl.dev/introduction
     """
 
+    @dependencies_required('firecrawl')
     def __init__(
         self,
         api_key: Optional[str] = None,

@@ -15,6 +15,8 @@
 import os
 from typing import Any, Dict, Optional
 
+from camel.utils import api_keys_required, dependencies_required
+
 
 class ScrapeGraphAI:
     r"""ScrapeGraphAI allows you to perform AI-powered web scraping and
@@ -28,6 +30,12 @@ class ScrapeGraphAI:
         https://scrapegraph.ai/
     """
 
+    @dependencies_required('scrapegraph_py')
+    @api_keys_required(
+        [
+            ("api_key", "SCRAPEGRAPH_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         api_key: Optional[str] = None,
