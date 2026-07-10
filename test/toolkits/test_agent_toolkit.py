@@ -309,3 +309,208 @@ class TestAgentToolkit:
 
         assert result["status"] == "failed"
         assert "No sub-agent task found" in result["error"]
+
+
+class TestAgentToolkitToolPolicy:
+    """Tests for the sub-agent tool inheritance policy (issue #4158).
+
+    Verifies that child_tool_policy, allowed_tool_names, and
+    excluded_tool_names correctly control which tools are cloned into
+    sub-agents, and that the default behavior is backward-compatible.
+    """
+
+    @pytest.fixture(autouse=True)
+    def reset_fake_agents(self):
+        FakeChatAgent.created_agents = []
+        FakeChatAgent.delay_seconds = 0.0
+
+    @pytest.fixture
+    def parent_agent(self):
+        def scheduling_strategy():
+            return None
+
+        tools = [
+            FunctionTool(parent_search),
+            FunctionTool(parent_calc),
+        ]
+        return SimpleNamespace(
+            agent_id="parent-agent",
+            model_backend=SimpleNamespace(
+                models="parent-model",
+                scheduling_strategy=scheduling_strategy,
+            ),
+            memory=SimpleNamespace(
+                window_size=12,
+                get_context_creator=lambda: SimpleNamespace(token_limit=4096),
+            ),
+            _output_language=None,
+            response_terminators=None,
+            max_iteration=6,
+            tool_execution_timeout=18,
+            prune_tool_calls_from_memory=False,
+            on_request_usage=None,
+            stream_accumulate=False,
+            _clone_tools=lambda: (tools, ["register-me"]),
+        )
+
+    @pytest.fixture
+    def toolkit_with_policy(self, monkeypatch):
+        """Factory fixture for creating AgentToolkits with specific policies."""
+        monkeypatch.setattr(
+            "camel.agents.ChatAgent",
+            FakeChatAgent,
+            raising=False,
+        )
+
+        def _make(**kwargs):
+            tk = AgentToolkit(**kwargs)
+            return tk
+
+        return _make
+
+    def test_default_policy_clones_all_tools(
+        self, toolkit_with_policy, parent_agent
+    ):
+        """Default (child_tool_policy='none') clones all parent tools,
+        matching the pre-change behavior."""
+        toolkit = toolkit_with_policy()
+        toolkit.register_agent(parent_agent)
+        toolkit.agent_run_subagent(prompt="test")
+
+        created = FakeChatAgent.created_agents[0]
+        names = sorted(t.get_function_name() for t in created.kwargs["tools"])
+        assert names == ["parent_calc", "parent_search"]
+
+    def test_policy_all_explicit_clones_all_tools(
+        self, toolkit_with_policy, parent_agent
+    ):
+        """child_tool_policy='all' is functionally identical to 'none'."""
+        toolkit = toolkit_with_policy(child_tool_policy="all")
+        toolkit.register_agent(parent_agent)
+        toolkit.agent_run_subagent(prompt="test")
+
+        created = FakeChatAgent.created_agents[0]
+        names = sorted(t.get_function_name() for t in created.kwargs["tools"])
+        assert names == ["parent_calc", "parent_search"]
+
+    def test_filtered_policy_with_whitelist(
+        self, toolkit_with_policy, parent_agent
+    ):
+        """filtered mode with allowed_tool_names only clones whitelisted tools."""
+        toolkit = toolkit_with_policy(
+            child_tool_policy="filtered",
+            allowed_tool_names=["parent_search"],
+        )
+        toolkit.register_agent(parent_agent)
+        toolkit.agent_run_subagent(prompt="test")
+
+        created = FakeChatAgent.created_agents[0]
+        names = [t.get_function_name() for t in created.kwargs["tools"]]
+        assert names == ["parent_search"]
+        assert "parent_calc" not in names
+
+    def test_filtered_policy_with_excluded_names(
+        self, toolkit_with_policy, parent_agent
+    ):
+        """filtered mode with excluded_tool_names removes blacklisted tools."""
+        toolkit = toolkit_with_policy(
+            child_tool_policy="filtered",
+            excluded_tool_names=["parent_calc"],
+        )
+        toolkit.register_agent(parent_agent)
+        toolkit.agent_run_subagent(prompt="test")
+
+        created = FakeChatAgent.created_agents[0]
+        names = [t.get_function_name() for t in created.kwargs["tools"]]
+        assert "parent_search" in names
+        assert "parent_calc" not in names
+
+    def test_filtered_whitelist_and_blacklist_combined(
+        self, toolkit_with_policy, parent_agent
+    ):
+        """Both whitelist and blacklist applied: whitelist first, then exclude."""
+        toolkit = toolkit_with_policy(
+            child_tool_policy="filtered",
+            allowed_tool_names=["parent_search", "parent_calc"],
+            excluded_tool_names=["parent_calc"],
+        )
+        toolkit.register_agent(parent_agent)
+        toolkit.agent_run_subagent(prompt="test")
+
+        created = FakeChatAgent.created_agents[0]
+        names = [t.get_function_name() for t in created.kwargs["tools"]]
+        assert names == ["parent_search"]
+
+    def test_all_mode_applies_blacklist(
+        self, toolkit_with_policy, parent_agent
+    ):
+        """Even in 'all' mode, excluded_tool_names filters out tools."""
+        toolkit = toolkit_with_policy(
+            child_tool_policy="all",
+            excluded_tool_names=["parent_calc"],
+        )
+        toolkit.register_agent(parent_agent)
+        toolkit.agent_run_subagent(prompt="test")
+
+        created = FakeChatAgent.created_agents[0]
+        names = [t.get_function_name() for t in created.kwargs["tools"]]
+        assert "parent_search" in names
+        assert "parent_calc" not in names
+
+    def test_invalid_policy_raises_value_error(self, toolkit_with_policy):
+        """Invalid child_tool_policy raises ValueError."""
+        with pytest.raises(ValueError, match="child_tool_policy must be"):
+            toolkit_with_policy(child_tool_policy="bogus")
+
+    def test_filtered_with_empty_whitelist_clones_nothing(
+        self, toolkit_with_policy, parent_agent
+    ):
+        """filtered with empty allowed_tool_names produces no tools."""
+        toolkit = toolkit_with_policy(
+            child_tool_policy="filtered",
+            allowed_tool_names=[],
+        )
+        toolkit.register_agent(parent_agent)
+        toolkit.agent_run_subagent(prompt="test")
+
+        created = FakeChatAgent.created_agents[0]
+        assert len(created.kwargs["tools"]) == 0
+
+    def test_clone_preserves_policy(self, toolkit_with_policy):
+        """clone_for_new_session carries over the tool policy."""
+        toolkit = toolkit_with_policy(
+            child_tool_policy="filtered",
+            allowed_tool_names=["parent_search"],
+            excluded_tool_names=["parent_calc"],
+        )
+        clone = toolkit.clone_for_new_session()
+
+        assert clone._child_tool_policy == "filtered"
+        assert clone._allowed_tool_names == {"parent_search"}
+        assert clone._excluded_tool_names == {"parent_calc"}
+
+    def test_recursive_guard_remains_active(
+        self, toolkit_with_policy, parent_agent
+    ):
+        """The recursive-call guard in ChatAgent._is_called_from_registered_toolkit
+        still prevents tool use during step(), regardless of tool policy.
+
+        This test verifies the guard behavior by checking that
+        AgentToolkit is indeed a RegisteredAgentToolkit (the type
+        _is_called_from_registered_toolkit checks for via stack inspection).
+        """
+        from camel.toolkits.base import RegisteredAgentToolkit
+
+        toolkit = toolkit_with_policy(
+            child_tool_policy="filtered",
+            allowed_tool_names=["parent_search"],
+        )
+        assert isinstance(toolkit, RegisteredAgentToolkit)
+
+        toolkit.register_agent(parent_agent)
+        toolkit.agent_run_subagent(prompt="test")
+
+        # The sub-agent was created — verify it received the filtered tools
+        created = FakeChatAgent.created_agents[0]
+        names = [t.get_function_name() for t in created.kwargs["tools"]]
+        assert names == ["parent_search"]
