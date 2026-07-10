@@ -595,9 +595,8 @@ class TestBaseModelBackend:
         processed = model.preprocess_messages(messages)
         assert processed[0]['content'] == 'Start  middle  end'
 
-    def test_metaclass_preprocessing(self):
-        r"""Test that metaclass automatically preprocesses messages in run
-        method."""
+    def test_metaclass_preprocessing_disabled_by_default(self):
+        r"""Test metaclass leaves messages unchanged by default."""
         processed_messages = None
 
         class TestModel(BaseModelBackend):
@@ -621,7 +620,39 @@ class TestBaseModelBackend:
             {'role': 'user', 'content': 'Hello <think>hi</think> world'}
         ]
 
-        # Call run method and verify messages were preprocessed
+        # Call run method and verify messages remain unchanged by default.
+        model.run(messages)
+        assert processed_messages is not None
+        assert (
+            processed_messages[0]['content']
+            == 'Hello <think>hi</think> world'
+        )
+
+    def test_metaclass_preprocessing_enabled(self):
+        r"""Test metaclass preprocessing when context management is enabled."""
+        processed_messages = None
+
+        class TestModel(BaseModelBackend):
+            @property
+            def token_counter(self):
+                pass
+
+            def run(self, messages):
+                nonlocal processed_messages
+                processed_messages = messages
+                return None
+
+            def _run(self, messages, response_format=None, tools=None):
+                pass
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                pass
+
+        model = TestModel(ModelType.GPT_4O_MINI, context_management=True)
+        messages = [
+            {'role': 'user', 'content': 'Hello <think>hi</think> world'}
+        ]
+
         model.run(messages)
         assert processed_messages is not None
         assert processed_messages[0]['content'] == 'Hello  world'
@@ -1086,8 +1117,8 @@ class TestBaseModelBackend:
         result = model.postprocess_response(response)
         assert result.choices[0].message.content == 'content after'
 
-    def test_metaclass_postprocessing(self):
-        r"""Test that metaclass wraps run with postprocessing."""
+    def test_metaclass_postprocessing_disabled_by_default(self):
+        r"""Test metaclass leaves response unprocessed by default."""
 
         class TestModel(BaseModelBackend):
             @property
@@ -1124,6 +1155,49 @@ class TestBaseModelBackend:
         model = TestModel(ModelType.GPT_4O_MINI)
         result = model.run([{'role': 'user', 'content': 'test'}])
 
-        # Metaclass should have applied postprocess_response
+        assert (
+            result.choices[0].message.content
+            == '<think>thought</think>answer'
+        )
+        assert (
+            getattr(result.choices[0].message, 'reasoning_content', None)
+            is None
+        )
+
+    def test_metaclass_postprocessing_enabled(self):
+        r"""Test metaclass applies postprocessing when enabled."""
+
+        class TestModel(BaseModelBackend):
+            @property
+            def token_counter(self):
+                pass
+
+            def run(self, messages, response_format=None, tools=None):
+                return ChatCompletion(
+                    id='test',
+                    model='test',
+                    object='chat.completion',
+                    created=0,
+                    choices=[
+                        Choice(
+                            index=0,
+                            finish_reason='stop',
+                            message=ChatCompletionMessage(
+                                role='assistant',
+                                content='<think>thought</think>answer',
+                            ),
+                        )
+                    ],
+                )
+
+            def _run(self, messages, response_format=None, tools=None):
+                pass
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                pass
+
+        model = TestModel(ModelType.GPT_4O_MINI, context_management=True)
+        result = model.run([{'role': 'user', 'content': 'test'}])
+
         assert result.choices[0].message.content == 'answer'
         assert result.choices[0].message.reasoning_content == 'thought'

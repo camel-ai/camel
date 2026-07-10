@@ -164,6 +164,11 @@ class ModelManager:
         """
         return self.current_model.supports_tool_response_format
 
+    def set_context_management(self, enabled: bool) -> None:
+        r"""Set context management behavior across managed backends."""
+        for model in self.models:
+            model.context_management = enabled
+
     def add_strategy(self, name: str, strategy_fn: Callable):
         r"""Add a scheduling strategy method provided by user in case when none
             of existent strategies fits.
