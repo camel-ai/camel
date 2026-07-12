@@ -53,6 +53,7 @@ from camel.models.ppio_model import PPIOModel
 from camel.models.qianfan_model import QianfanModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
+from camel.models.requesty_model import RequestyModel
 from camel.models.samba_model import SambaModel
 from camel.models.sglang_model import SGLangModel
 from camel.models.siliconflow_model import SiliconFlowModel
@@ -104,6 +105,7 @@ class ModelFactory:
         ModelPlatformType.MINIMAX: MinimaxModel,
         ModelPlatformType.OPENROUTER: OpenRouterModel,
         ModelPlatformType.ORCAROUTER: OrcaRouterModel,
+        ModelPlatformType.REQUESTY: RequestyModel,
         ModelPlatformType.ATLASCLOUD: AtlasCloudModel,
         ModelPlatformType.ZHIPU: ZhipuAIModel,
         ModelPlatformType.GEMINI: GeminiModel,

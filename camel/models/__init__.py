@@ -55,6 +55,7 @@ from .ppio_model import PPIOModel
 from .qianfan_model import QianfanModel
 from .qwen_model import QwenModel
 from .reka_model import RekaModel
+from .requesty_model import RequestyModel
 from .samba_model import SambaModel
 from .sglang_model import SGLangModel
 from .siliconflow_model import SiliconFlowModel
@@ -113,6 +114,7 @@ __all__ = [
     'QianfanModel',
     'QwenModel',
     'RekaModel',
+    'RequestyModel',
     'SGLangModel',
     'SambaModel',
     'SiliconFlowModel',

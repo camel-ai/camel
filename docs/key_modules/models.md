@@ -68,6 +68,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **Nebius**       | [supported models](https://studio.nebius.com/) |
 | **OpenRouter**   | [supported models](https://openrouter.ai/models) |
 | **OrcaRouter**   | [supported models](https://www.orcarouter.ai/models) |
+| **Requesty**     | [supported models](https://app.requesty.ai/router/list) |
 | **PPIO**         | [supported models](https://ppio.com/model-api/console) |
 | **LiteLLM**      | [supported models](https://docs.litellm.ai/docs/providers) |
 | **OpenAI Compatible** | custom OpenAI-compatible endpoints via `OPENAI_COMPATIBLE_MODEL` |
@@ -428,6 +429,41 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
   ```
 
   **Available Models:** View the full list of models available through OpenRouter at [openrouter.ai/models](https://openrouter.ai/models).
+
+  </Tab>
+
+   <Tab title="Requesty">
+  Access a wide variety of models through [Requesty](https://requesty.ai/)'s unified, OpenAI-compatible API:
+
+  **Setup:** Set your Requesty API key as an environment variable:
+  ```bash
+  export REQUESTY_API_KEY="your-api-key-here"
+  ```
+
+  ```python
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType
+  from camel.configs import RequestyConfig
+  from camel.agents import ChatAgent
+
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.REQUESTY,
+      model_type="openai/gpt-4o-mini",
+      model_config_dict=RequestyConfig(temperature=0.2).as_dict(),
+  )
+
+  agent = ChatAgent(
+      system_message="You are a helpful assistant.",
+      model=model
+  )
+
+  response = agent.step("Say hi to CAMEL AI community.")
+  print(response.msgs[0].content)
+  ```
+
+  Requesty uses `provider/model` naming (e.g. `openai/gpt-4o-mini`, `anthropic/claude-sonnet-4-5`, `google/gemini-2.5-flash`), the same scheme as OpenRouter.
+
+  **Available Models:** View the full list of models available through Requesty at [app.requesty.ai/router/list](https://app.requesty.ai/router/list).
 
   </Tab>
 

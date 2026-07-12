@@ -49,6 +49,7 @@ from .ppio_config import PPIO_API_PARAMS, PPIOConfig
 from .qianfan_config import QIANFAN_API_PARAMS, QianfanConfig
 from .qwen_config import QWEN_API_PARAMS, QwenConfig
 from .reka_config import REKA_API_PARAMS, RekaConfig
+from .requesty_config import REQUESTY_API_PARAMS, RequestyConfig
 from .samba_config import (
     SAMBA_CLOUD_API_PARAMS,
     SAMBA_VERSE_API_PARAMS,
@@ -99,6 +100,7 @@ __all__ = [
     'QIANFAN_API_PARAMS',
     'QWEN_API_PARAMS',
     'REKA_API_PARAMS',
+    'REQUESTY_API_PARAMS',
     'SAMBA_CLOUD_API_PARAMS',
     'SAMBA_VERSE_API_PARAMS',
     'SGLANG_API_PARAMS',
@@ -146,6 +148,7 @@ __all__ = [
     'QianfanConfig',
     'QwenConfig',
     'RekaConfig',
+    'RequestyConfig',
     'SGLangConfig',
     'SambaCloudAPIConfig',
     'SambaVerseAPIConfig',
