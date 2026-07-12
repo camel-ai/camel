@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import copy
 import json
 import os
 import time
@@ -159,15 +160,18 @@ class WorkforceSnapshot:
         current_task_index: int = 0,
         description: str = "",
     ):
-        self.main_task = main_task
-        self.pending_tasks = pending_tasks.copy() if pending_tasks else deque()
+        memo: Dict[int, Any] = {}
+        self.main_task = copy.deepcopy(main_task, memo)
+        self.pending_tasks = (
+            copy.deepcopy(pending_tasks, memo) if pending_tasks else deque()
+        )
         self.completed_tasks = (
-            completed_tasks.copy() if completed_tasks else []
+            copy.deepcopy(completed_tasks, memo) if completed_tasks else []
         )
         self.task_dependencies = (
-            task_dependencies.copy() if task_dependencies else {}
+            copy.deepcopy(task_dependencies, memo) if task_dependencies else {}
         )
-        self.assignees = assignees.copy() if assignees else {}
+        self.assignees = copy.deepcopy(assignees, memo) if assignees else {}
         self.current_task_index = current_task_index
         self.description = description
         self.timestamp = time.time()
@@ -2562,11 +2566,14 @@ class Workforce(BaseNode):
             return False
 
         snapshot = self._snapshots[snapshot_index]
-        self._task = snapshot.main_task
-        self._pending_tasks = snapshot.pending_tasks.copy()
-        self._completed_tasks = snapshot.completed_tasks.copy()
-        self._task_dependencies = snapshot.task_dependencies.copy()
-        self._assignees = snapshot.assignees.copy()
+        memo: Dict[int, Any] = {}
+        self._task = copy.deepcopy(snapshot.main_task, memo)
+        self._pending_tasks = copy.deepcopy(snapshot.pending_tasks, memo)
+        self._completed_tasks = copy.deepcopy(snapshot.completed_tasks, memo)
+        self._task_dependencies = copy.deepcopy(
+            snapshot.task_dependencies, memo
+        )
+        self._assignees = copy.deepcopy(snapshot.assignees, memo)
 
         logger.info(f"Workforce state restored from snapshot {snapshot_index}")
         return True
