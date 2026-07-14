@@ -507,6 +507,7 @@ class ChatAgent(BaseAgent):
         stop_event: Optional[threading.Event] = None,
         tool_execution_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         mask_tool_output: bool = False,
+        tool_log_dir: Optional[Union[str, Path]] = None,
         pause_event: Optional[Union[threading.Event, asyncio.Event]] = None,
         prune_tool_calls_from_memory: bool = False,
         enable_snapshot_clean: bool = False,
@@ -619,6 +620,9 @@ class ChatAgent(BaseAgent):
         self.stop_event = stop_event
         self.tool_execution_timeout = tool_execution_timeout
         self.mask_tool_output = mask_tool_output
+        self._tool_log_dir = (
+            Path(tool_log_dir) if tool_log_dir else Path.cwd() / "camel_tool_logs"
+        )
         self._secure_result_store: Dict[str, Any] = {}
         self._secure_result_store_lock = threading.Lock()
         self.pause_event = pause_event
@@ -1230,6 +1234,32 @@ class ChatAgent(BaseAgent):
         except (TypeError, ValueError):
             return str(result)
 
+    def _save_tool_output_log(self, func_name: str, content: str) -> Optional[str]:
+        r"""Save full tool output to a .log file when truncation occurs.
+
+        Args:
+            func_name (str): The name of the tool function.
+            content (str): The full serialized tool output to persist.
+
+        Returns:
+            Optional[str]: Absolute path to the saved log file, or None
+                if saving failed.
+        """
+        try:
+            self._tool_log_dir.mkdir(parents=True, exist_ok=True)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            log_file = self._tool_log_dir / f"{func_name}_{timestamp}.log"
+            log_file.write_text(content, encoding="utf-8")
+            logger.info(
+                "Full tool output for '%s' saved to: %s", func_name, log_file
+            )
+            return str(log_file)
+        except Exception as e:
+            logger.warning(
+                "Failed to save tool output log for '%s': %s", func_name, e
+            )
+            return None
+
     def _truncate_tool_result(
         self, func_name: str, result: Any
     ) -> Tuple[Any, bool]:
@@ -1261,10 +1291,18 @@ class ChatAgent(BaseAgent):
         target_tokens = max(max_tokens - 100, 100)
         truncated = serialized[: target_tokens * 3]
 
+        # Save the full output to a log file for later retrieval
+        log_path = self._save_tool_output_log(func_name, serialized)
+        log_ref = (
+            f" Full output saved to: {log_path}"
+            if log_path
+            else " (log saving failed)"
+        )
+
         notice = (
             f"\n\n[TRUNCATED] Tool '{func_name}' output truncated "
             f"({result_tokens} > {max_tokens} tokens). "
-            f"Tool executed successfully."
+            f"Tool executed successfully.{log_ref}"
         )
 
         logger.warning(
@@ -6182,6 +6220,7 @@ class ChatAgent(BaseAgent):
             ),
             summarize_threshold=self.summarize_threshold,
             mask_tool_output=self.mask_tool_output,
+            tool_log_dir=self._tool_log_dir,
             enable_snapshot_clean=self._enable_snapshot_clean,
             retry_attempts=self.retry_attempts,
             retry_delay=self.retry_delay,
