@@ -335,6 +335,74 @@ Add [Mem0](https://mem0.ai/) for cloud-based memory with automatic sync.
 
 **Use when:** you need reliable, persistent chat history in the cloud (not advanced semantic search).
 </Card>
+
+<Card title="MemantoStorage Integration" icon="warehouse">
+Add [Memanto](https://docs.memanto.ai) for persistent semantic memory. CAMEL
+connects via `base_url` and `agent_id` - local vs cloud backend is configured
+when you run `memanto serve`, not in CAMEL code.
+
+**Initialization Params:**
+- `agent_id`: Memanto agent identifier (or `MEMANTO_AGENT_ID` env var)
+- `base_url`: Memanto server URL (default: `http://localhost:8000`)
+- `recall_limit`: Max recent memories to load via `recall/recent` (default: `100`)
+
+**Setup (one-time):**
+```bash
+pip install memanto
+memanto serve
+memanto agent create my-camel-agent --pattern tool
+```
+
+<Tabs>
+  <Tab title="Python Example">
+    ```python
+    from camel.memories import ChatHistoryMemory, ScoreBasedContextCreator
+    from camel.storages import MemantoStorage
+    from camel.types import ModelType
+    from camel.utils import OpenAITokenCounter
+
+    memory = ChatHistoryMemory(
+        context_creator=ScoreBasedContextCreator(
+            token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+            token_limit=1024,
+        ),
+        storage=MemantoStorage(
+            agent_id="my-camel-agent",
+            base_url="http://localhost:8000",
+        ),
+        agent_id="my-camel-agent",
+    )
+    # ...write and retrieve as usual...
+    ```
+  </Tab>
+  <Tab title="With MemantoToolkit">
+    ```python
+    from camel.agents import ChatAgent
+    from camel.toolkits import MemantoToolkit
+
+    agent = ChatAgent(system_message="You manage long-term memory.")
+    toolkit = MemantoToolkit(agent_id="my-camel-agent")
+
+    for tool in toolkit.get_tools():
+        agent.add_tool(tool)
+    ```
+  </Tab>
+</Tabs>
+
+**API mapping (`MemantoStorage`):**
+- `save()` → `remember` (stores chat records as `context` memories)
+- `load()` → `recall/recent` (chronological recent history)
+- `clear()` → deletes all memories for the agent
+
+**Why use this?**
+- Typed, semantic long-term memory (fact, preference, goal, etc.)
+- Self-hosted or cloud — same CAMEL API either way
+- Drop-in backend for existing `ChatHistoryMemory`
+- Optional `MemantoToolkit` for explicit remember / recall / answer tools
+
+**Use when:** you want Mem0-style persistence with Memanto's semantic memory model.
+See also: [Storages — Memanto Key-Value Storage](/key_modules/storages).
+</Card>
 </Card>
 
 <Card title="Advanced Topics" icon="star">
