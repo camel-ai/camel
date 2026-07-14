@@ -26,6 +26,7 @@ from .cerebras_model import CerebrasModel
 from .cohere_model import CohereModel
 from .cometapi_model import CometAPIModel
 from .crynux_model import CrynuxModel
+from .daoxe_model import DaoXEModel
 from .deepseek_model import DeepSeekModel
 from .fish_audio_model import FishAudioModel
 from .function_gemma_model import FunctionGemmaModel
@@ -83,6 +84,7 @@ __all__ = [
     'CohereModel',
     'CometAPIModel',
     'CrynuxModel',
+    'DaoXEModel',
     'DeepSeekModel',
     'FishAudioModel',
     'FunctionGemmaModel',

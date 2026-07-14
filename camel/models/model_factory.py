@@ -29,6 +29,7 @@ from camel.models.cerebras_model import CerebrasModel
 from camel.models.cohere_model import CohereModel
 from camel.models.cometapi_model import CometAPIModel
 from camel.models.crynux_model import CrynuxModel
+from camel.models.daoxe_model import DaoXEModel
 from camel.models.deepseek_model import DeepSeekModel
 from camel.models.function_gemma_model import FunctionGemmaModel
 from camel.models.gemini_model import GeminiModel
@@ -121,6 +122,7 @@ class ModelFactory:
         ModelPlatformType.WATSONX: WatsonXModel,
         ModelPlatformType.QIANFAN: QianfanModel,
         ModelPlatformType.CRYNUX: CrynuxModel,
+        ModelPlatformType.DAOXE: DaoXEModel,
         ModelPlatformType.AIHUBMIX: AihubMixModel,
         ModelPlatformType.AVIAN: AvianModel,
         ModelPlatformType.FUNCTION_GEMMA: FunctionGemmaModel,

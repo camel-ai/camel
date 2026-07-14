@@ -88,6 +88,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **Qianfan**      | [supported models](https://cloud.baidu.com/doc/qianfan/s/rmh4stp0j) |
 | **AIHubMix**     | [supported models](https://aihubmix.com/) |
 | **AtlasCloud**   | openai/gpt-oss-120b, zai-org/glm-4-7 |
+| **DaoXE**        | [account-scoped model ids via OpenAI-compatible API](https://daoxe.com) |
 
 ## How to Use Models via API Calls
 
@@ -278,6 +279,49 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
       )
       # Use the model...
   ```
+
+  </Tab>
+
+  <Tab title="DaoXE">
+
+  Use [DaoXE](https://daoxe.com)'s OpenAI-compatible multi-model gateway:
+
+  - **DaoXE Platform** ([DaoXE](https://daoxe.com)): multi-model access via an OpenAI-compatible API.
+  - **API Key Setup**: Obtain your DaoXE API key from your DaoXE account.
+  - **OpenAI Compatible**: Use familiar OpenAI API patterns (`https://daoxe.com/v1`).
+  - **Account-scoped models**: Pass any model id available on your DaoXE account as a string (no static model catalog is hardcoded).
+  - **Availability**: DaoXE is not available in mainland China.
+
+  ```python
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType
+  from camel.configs import DaoXEConfig
+  from camel.agents import ChatAgent
+
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.DAOXE,
+      model_type="gpt-4o-mini",  # any model id from your DaoXE account
+      model_config_dict=DaoXEConfig(temperature=0.2).as_dict(),
+  )
+
+  agent = ChatAgent(
+      system_message="You are a helpful assistant.",
+      model=model
+  )
+
+  response = agent.step("Say hi to CAMEL AI community.")
+  print(response.msgs[0].content)
+  ```
+
+  **Environment Variables:**
+  ```bash
+  export DAOXE_API_KEY="your_daoxe_api_key_here"
+  export DAOXE_API_BASE_URL="https://daoxe.com/v1"  # Optional
+  ```
+
+  **Model Support:**
+  - Pass free-form model id strings available on your DaoXE account
+  - No static model list is maintained in CAMEL; availability is account-scoped
 
   </Tab>
 

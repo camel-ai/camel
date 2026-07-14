@@ -2020,6 +2020,7 @@ class ModelPlatformType(Enum):
     AVIAN = "avian"
     ATLASCLOUD = "atlascloud"
     XAI = "xai"
+    DAOXE = "daoxe"
 
     @classmethod
     def from_name(cls, name):
@@ -2232,6 +2233,11 @@ class ModelPlatformType(Enum):
     def is_atlascloud(self) -> bool:
         r"""Returns whether this platform is AtlasCloud."""
         return self is ModelPlatformType.ATLASCLOUD
+
+    @property
+    def is_daoxe(self) -> bool:
+        r"""Returns whether this platform is DaoXE."""
+        return self is ModelPlatformType.DAOXE
 
 
 class AudioModelType(Enum):

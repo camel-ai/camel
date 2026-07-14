@@ -23,6 +23,7 @@ from .cerebras_config import CEREBRAS_API_PARAMS, CerebrasConfig
 from .cohere_config import COHERE_API_PARAMS, CohereConfig
 from .cometapi_config import COMETAPI_API_PARAMS, CometAPIConfig
 from .crynux_config import CRYNUX_API_PARAMS, CrynuxConfig
+from .daoxe_config import DAOXE_API_PARAMS, DaoXEConfig
 from .deepseek_config import DEEPSEEK_API_PARAMS, DeepSeekConfig
 from .function_gemma_config import (
     FUNCTION_GEMMA_API_PARAMS,
@@ -77,6 +78,7 @@ __all__ = [
     'COHERE_API_PARAMS',
     'COMETAPI_API_PARAMS',
     'CRYNUX_API_PARAMS',
+    'DAOXE_API_PARAMS',
     'DEEPSEEK_API_PARAMS',
     'FUNCTION_GEMMA_API_PARAMS',
     'GROQ_API_PARAMS',
@@ -123,6 +125,7 @@ __all__ = [
     'CohereConfig',
     'CometAPIConfig',
     'CrynuxConfig',
+    'DaoXEConfig',
     'DeepSeekConfig',
     'FunctionGemmaConfig',
     'GeminiConfig',

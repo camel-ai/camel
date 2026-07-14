@@ -343,6 +343,7 @@ def api_keys_required(
                     'ORCAROUTER_API_KEY': "https://www.orcarouter.ai/",
                     'QUERIT_API_KEY': "https://www.querit.ai/en/dashboard/home",
                     'PERPLEXITY_API_KEY': "https://www.perplexity.ai/account/api",
+                    'DAOXE_API_KEY': "https://daoxe.com",
                 }
                 key_way = env_key_urls.get(
                     missing_keys[0], "the official website"
