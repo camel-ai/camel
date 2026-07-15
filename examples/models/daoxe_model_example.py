@@ -80,9 +80,7 @@ def main() -> None:
         system_message="You are a concise technical assistant.",
         model=model_2,
     )
-    response_2 = agent_2.step(
-        "In one sentence, what is a multi-agent system?"
-    )
+    response_2 = agent_2.step("In one sentence, what is a multi-agent system?")
     print(response_2.msgs[0].content)
 
 
