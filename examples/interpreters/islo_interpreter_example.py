@@ -55,7 +55,7 @@ def main():
     print()
 
     print("=== Command Example ===")
-    print(interpreter.execute_command("pip list | head"))
+    print(interpreter.execute_command("python3 --version && node --version"))
     print()
 
     interpreter.cleanup()
