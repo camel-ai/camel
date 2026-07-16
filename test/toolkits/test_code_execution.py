@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import socket
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -342,3 +343,28 @@ def test_microsandbox_error_handling(microsandbox_code_execution_toolkit):
     assert result is not None
     assert len(result) > 0
     assert "Executed the code below:" in result
+
+
+@patch('camel.toolkits.code_execution.IsloInterpreter')
+def test_islo_sandbox_constructs_interpreter(mock_islo_interpreter):
+    """Test that sandbox='islo' constructs an IsloInterpreter."""
+    mock_islo_interpreter.return_value = MagicMock()
+
+    toolkit = CodeExecutionToolkit(
+        sandbox="islo",
+        islo_config={"sandbox_name": "test-sandbox", "exec_timeout": 42},
+    )
+
+    mock_islo_interpreter.assert_called_once_with(
+        require_confirm=False,
+        sandbox_name="test-sandbox",
+        image="ghcr.io/islo-labs/islo-runner:latest",
+        workdir=None,
+        user=None,
+        vcpus=None,
+        memory_mb=None,
+        disk_gb=None,
+        exec_timeout=42,
+        delete_on_exit=None,
+    )
+    assert toolkit.interpreter is mock_islo_interpreter.return_value

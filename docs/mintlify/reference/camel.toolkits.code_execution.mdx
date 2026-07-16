@@ -19,6 +19,7 @@ A toolkit for code execution.
 - **require_confirm** (Optional[bool]): Whether to require confirmation before executing code. If `None`, local host execution sandboxes require confirmation by default. (default: :obj:`None`)
 - **timeout** (Optional[float]): General timeout for toolkit operations. (default: :obj:`None`)
 - **microsandbox_config** (Optional[dict]): Configuration for microsandbox interpreter. Available keys: 'server_url', 'api_key', 'namespace', 'sandbox_name', 'timeout'. If None, uses default configuration. (default: :obj:`None`)
+- **islo_config** (Optional[dict]): Configuration for the Islo interpreter. Available keys: 'sandbox_name', 'image', 'workdir', 'user', 'exec_timeout', 'vcpus', 'memory_mb', 'disk_gb', 'delete_on_exit'. If None, uses default configuration. (default: :obj:`None`)
 
 <a id="camel.toolkits.code_execution.CodeExecutionToolkit.__init__"></a>
 
@@ -27,13 +28,14 @@ A toolkit for code execution.
 ```python
 def __init__(
     self,
-    sandbox: Literal['internal_python', 'jupyter', 'docker', 'subprocess', 'e2b', 'microsandbox'] = 'subprocess',
+    sandbox: Literal['internal_python', 'jupyter', 'docker', 'subprocess', 'e2b', 'microsandbox', 'islo'] = 'subprocess',
     verbose: bool = False,
     unsafe_mode: bool = False,
     import_white_list: Optional[List[str]] = None,
     require_confirm: Optional[bool] = None,
     timeout: Optional[float] = None,
-    microsandbox_config: Optional[dict] = None
+    microsandbox_config: Optional[dict] = None,
+    islo_config: Optional[dict] = None
 ):
 ```
 

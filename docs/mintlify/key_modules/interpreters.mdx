@@ -74,6 +74,20 @@ Interpreters allow CAMEL agents to **execute code snippets** in various secure a
   </a>
 </Card>
 
+{" "}
+<Card icon="cloud" title="Islo Interpreter">
+  <b>Isolated cloud sandboxes</b> from islo.dev, created on demand and
+  reusable across runs.
+  <br />
+  <small>
+    <b>Best for:</b> Untrusted code in managed cloud VMs, Python/Bash/Node.
+  </small>
+  <br />
+  <a href="https://docs.islo.dev" target="_blank" rel="noopener">
+    Islo Docs
+  </a>
+</Card>
+
 </div>
 
 ---
@@ -167,6 +181,25 @@ print(result)
 ```
 </Card>
 
+<Card icon="cloud" title="Islo Interpreter (Cloud Sandbox)" className="my-6">
+  Run code in an isolated islo.dev cloud sandbox. The sandbox is created
+  lazily on first execution (default image
+  <code>ghcr.io/islo-labs/islo-runner:latest</code>), can be reused via
+  <code>sandbox_name</code>, and is deleted on <code>cleanup()</code> when the
+  interpreter created it. Requires the <code>ISLO_API_KEY</code> environment
+  variable.<br/>
+  <a href="https://docs.islo.dev" target="_blank">Islo Documentation</a>
+  <br/><br/>
+  ```python
+  from camel.interpreters import IsloInterpreter
+
+interpreter = IsloInterpreter(require_confirm=False)
+print(interpreter.run("print('Hello from Islo!')", "python"))
+interpreter.cleanup()
+
+```
+</Card>
+
 <AccordionGroup>
 <Accordion title="Best Practices">
   <ul>
@@ -174,6 +207,7 @@ print(result)
     <li><b>Subprocess</b> and <b>Docker</b> interpreters are better for code isolation and dependency management.</li>
     <li>Prefer <b>Docker</b> for any untrusted code or when extra libraries are needed.</li>
     <li><b>E2B Interpreter</b> is ideal for scalable, managed, and safe cloud execution—no local risk.</li>
+    <li><b>Islo Interpreter</b> runs code in isolated islo.dev cloud sandboxes—reuse a named sandbox across runs for stateful workflows.</li>
     <li>For interactive, multi-step logic, leverage <b>JupyterKernelInterpreter</b> for persistent session state.</li>
     <li>Always validate and sanitize user inputs if agents dynamically construct code for execution.</li>
   </ul>
@@ -182,6 +216,7 @@ print(result)
   <ul>
     <li>If Docker isn’t working, verify your Docker daemon is running and you have the correct permissions.</li>
     <li>For E2B, check API key and account limits if code doesn’t execute.</li>
+    <li>For Islo, ensure the <code>ISLO_API_KEY</code> environment variable is set and the sandbox has finished starting (it is created lazily on first run).</li>
     <li>Long-running scripts are best managed in <b>Subprocess</b> or <b>Docker</b> interpreters with timeout controls.</li>
     <li>Use session resets (where supported) to avoid cross-task state bleed in Jupyter/IPython interpreters.</li>
   </ul>
