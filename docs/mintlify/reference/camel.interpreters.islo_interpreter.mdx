@@ -30,7 +30,7 @@ can optionally be deleted when the interpreter is cleaned up.
 - **poll_interval** (float, optional): Interval in seconds between polls while waiting for sandbox startup or execution results. (default: :obj:`1.0`)
 - **startup_timeout** (int, optional): Timeout in seconds to wait for the sandbox to reach the running state. (default: :obj:`120`)
 - **delete_on_exit** (Optional[bool], optional): Whether to delete the sandbox on cleanup. If :obj:`None`, defaults to :obj:`True` when the interpreter created the sandbox and :obj:`False` when attached to an existing one via `sandbox_name`. (default: :obj:`None`) Environment Variables:
-- **ISLO_API_KEY**: The API key for authenticating with the Islo service.
+- **ISLO_API_KEY**: The API key for authenticating with the Islo service. Create one with the Islo CLI: islo api-key create camel --expires 90 --show.
 
 <a id="camel.interpreters.islo_interpreter.IsloInterpreter.__init__"></a>
 

@@ -74,7 +74,8 @@ class IsloInterpreter(BaseInterpreter):
 
     Environment Variables:
         ISLO_API_KEY: The API key for authenticating with the Islo
-            service.
+            service. Create one with the Islo CLI: islo api-key create
+            camel --expires 90 --show.
     """
 
     _CODE_TYPE_MAPPING: ClassVar[Dict[str, List[str]]] = {

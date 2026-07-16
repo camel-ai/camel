@@ -22,8 +22,8 @@ def main():
     if not os.environ.get("ISLO_API_KEY"):
         print(
             "Skipping Islo interpreter example: set the ISLO_API_KEY "
-            "environment variable to run it. Get a key from "
-            "https://app.islo.dev/api-keys"
+            "environment variable to run it. Create a key with: "
+            "islo api-key create camel --expires 90 --show"
         )
         return
 

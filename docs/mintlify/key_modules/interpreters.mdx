@@ -187,7 +187,8 @@ print(result)
   <code>ghcr.io/islo-labs/islo-runner:latest</code>), can be reused via
   <code>sandbox_name</code>, and is deleted on <code>cleanup()</code> when the
   interpreter created it. Requires the <code>ISLO_API_KEY</code> environment
-  variable.<br/>
+  variable. Create the key with the Islo CLI:<br/>
+  <code>islo api-key create camel --expires 90 --show</code><br/>
   <a href="https://docs.islo.dev" target="_blank">Islo Documentation</a>
   <br/><br/>
   ```python
