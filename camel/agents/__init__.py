@@ -25,6 +25,10 @@ from .task_agent import (
     TaskPrioritizationAgent,
     TaskSpecifyAgent,
 )
+from .tool_result_externalization import (
+    ToolResultExternalizationConfig,
+    ToolResultExternalizer,
+)
 
 __all__ = [
     'BaseAgent',
@@ -39,4 +43,6 @@ __all__ = [
     'KnowledgeGraphAgent',
     'MCPAgent',
     'RepoAgent',
+    'ToolResultExternalizationConfig',
+    'ToolResultExternalizer',
 ]
