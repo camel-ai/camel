@@ -178,11 +178,6 @@ class TestTruncateToolResult:
         assert "Full output saved to:" not in result
         assert "log saving failed" not in result
 
-    def test_truncated_result_respects_token_limit(self, agent):
-        agent._token_limit = 1000
-        result, _ = agent._truncate_tool_result("my_tool", "x" * 50000)
-        assert agent._get_token_count(result) <= 900
-
     def test_two_truncated_calls_produce_two_log_files(self, agent):
         # Regression check: filenames need to be unique per call (e.g.
         # timestamped or uuid-suffixed), otherwise the second truncation

@@ -1312,6 +1312,10 @@ class ChatAgent(BaseAgent):
         if result_tokens <= max_tokens:
             return result, False
 
+        # Reserve ~100 tokens for notice, use char-based truncation directly
+        target_tokens = max(max_tokens - 100, 100)
+        truncated = serialized[: target_tokens * 3]
+
         log_ref = ""
         if self._tool_log_dir is not None:
             log_path = self._save_tool_output_log(func_name, serialized)
@@ -1326,18 +1330,6 @@ class ChatAgent(BaseAgent):
             f"({result_tokens} > {max_tokens} tokens). "
             f"Tool executed successfully.{log_ref}"
         )
-
-        target_tokens = max(max_tokens - self._get_token_count(notice), 0)
-        try:
-            token_counter = self.model_backend.token_counter
-            truncated = token_counter.decode(
-                token_counter.encode(serialized)[:target_tokens]
-            )
-        except Exception as e:
-            logger.debug(
-                f"Token-based truncation failed, using char fallback: {e}"
-            )
-            truncated = serialized[: target_tokens * 3]
 
         logger.warning(
             f"Tool '{func_name}' result truncated: "
