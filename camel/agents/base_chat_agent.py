@@ -135,6 +135,90 @@ class TerminationReason(StrEnum):
             yield current
             current = current.__cause__ or current.__context__
 
+    @staticmethod
+    def _error_payloads(error: BaseException) -> List[Dict[str, Any]]:
+        """Return OpenAI-style error payloads attached to an exception."""
+        payloads: List[Dict[str, Any]] = []
+        body = getattr(error, "body", None)
+        if isinstance(body, dict):
+            payloads.append(body)
+
+        response = getattr(error, "response", None)
+        json_fn = getattr(response, "json", None)
+        if callable(json_fn):
+            try:
+                body = json_fn()
+            except Exception:
+                body = None
+            if isinstance(body, dict):
+                payload = body.get("error", body)
+                if isinstance(payload, dict):
+                    payloads.append(payload)
+
+        return payloads
+
+    @staticmethod
+    def _error_status_code(error: BaseException) -> Optional[int]:
+        """Return an HTTP status code from SDK or raw HTTP exceptions."""
+        status_code = getattr(error, "status_code", None)
+        if status_code is None:
+            response = getattr(error, "response", None)
+            status_code = getattr(response, "status_code", None)
+        return int(status_code) if isinstance(status_code, int) else None
+
+    @classmethod
+    def _is_bad_request_error(
+        cls, error: BaseException, payloads: List[Dict[str, Any]]
+    ) -> bool:
+        """Return whether the exception represents a client request error."""
+        if cls._error_status_code(error) == 400:
+            return True
+        error_type = type(error).__name__.lower()
+        if error_type == "badrequesterror":
+            return True
+        return any(
+            str(payload.get("type", "")).lower()
+            in {"badrequesterror", "invalid_request_error"}
+            for payload in payloads
+        )
+
+    @staticmethod
+    def _error_message(
+        error: BaseException, payloads: List[Dict[str, Any]]
+    ) -> str:
+        """Return provider message text from structured fields."""
+        fragments = [str(error), str(getattr(error, "message", ""))]
+        fragments.extend(
+            str(payload.get("message", "")) for payload in payloads
+        )
+
+        response = getattr(error, "response", None)
+        text = getattr(response, "text", None)
+        if text is not None:
+            fragments.append(str(text))
+
+        return " ".join(fragment for fragment in fragments if fragment).lower()
+
+    @classmethod
+    def _is_context_overflow_error(cls, error: BaseException) -> bool:
+        """Detect prompt/context overflow from OpenAI-compatible errors.
+
+        OpenAI exposes a semantic ``context_length_exceeded`` code. vLLM and
+        SGLang expose HTTP 400/BadRequest errors whose message names the
+        model context length.
+        """
+        payloads = cls._error_payloads(error)
+        if any(
+            payload.get("code") == "context_length_exceeded"
+            for payload in payloads
+        ):
+            return True
+
+        message = cls._error_message(error, payloads)
+        return cls._is_bad_request_error(error, payloads) and (
+            "context length" in message or "context window" in message
+        )
+
     @classmethod
     def from_error(cls, error: Optional[BaseException]) -> "TerminationReason":
         """Classify an exception and its causes into a training termination."""
@@ -142,23 +226,32 @@ class TerminationReason(StrEnum):
             return cls.TASK_COMPLETE
 
         chain = list(cls._cause_chain(error))
-        names = " ".join(type(exc).__name__.lower() for exc in chain)
-        if "contextwindow" in names or "contextlength" in names:
+        if any(cls._is_context_overflow_error(exc) for exc in chain):
             return cls.CONTEXT_WINDOW_OVERFLOW
-        if "maxtoken" in names:
+        error_text = " ".join(
+            " ".join(
+                [
+                    type(exc).__name__.lower(),
+                    str(exc).lower(),
+                    str(getattr(exc, "message", "")).lower(),
+                ]
+            )
+            for exc in chain
+        )
+        if "maxtoken" in error_text or "max token" in error_text:
             return cls.MAX_TOKENS_REACHED
-        if "maxtooliteration" in names:
+        if "maxtooliteration" in error_text:
             return cls.MAX_TOOL_ITERATIONS_REACHED
-        if "maxtoolcall" in names:
+        if "maxtoolcall" in error_text:
             return cls.MAX_TOOL_CALLS_REACHED
-        if "maxmessage" in names:
+        if "maxmessage" in error_text:
             return cls.MAX_MESSAGES_REACHED
         if any(isinstance(exc, RecursionError) for exc in chain):
             return cls.RECURSION_DEPTH_EXCEEDED
-        if "timeout" in names:
+        if "timeout" in error_text:
             return cls.TIMEOUT
         if any(
-            marker in names
+            marker in error_text
             for marker in ("connection", "disconnected", "connecterror")
         ):
             return cls.CONNECTION_ERROR

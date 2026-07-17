@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import time
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, ClassVar, Dict, List, Optional, Type
 
 import pytest
 from openai.types.chat import ChatCompletionMessageFunctionToolCall
@@ -164,6 +164,71 @@ def test_error_reason_walks_wrapped_causes():
     assert (
         TerminationReason.from_error(ModelConnectionError())
         is TerminationReason.CONNECTION_ERROR
+    )
+
+
+def test_error_reason_detects_openai_context_overflow_payload():
+    class OpenAIStyleBadRequestError(Exception):
+        code = "context_length_exceeded"
+        type = "invalid_request_error"
+        body: ClassVar[Dict[str, str]] = {
+            "message": "This model's maximum context length is 32768 tokens.",
+            "code": "context_length_exceeded",
+        }
+
+    assert (
+        TerminationReason.from_error(OpenAIStyleBadRequestError())
+        is TerminationReason.CONTEXT_WINDOW_OVERFLOW
+    )
+
+
+def test_error_reason_detects_http_response_context_overflow():
+    class Response:
+        status_code = 400
+        text = "The input is longer than the model's context length."
+
+        def json(self):
+            return {
+                "error": {
+                    "message": (
+                        "Requested token count exceeds the model's maximum "
+                        "context length"
+                    )
+                }
+            }
+
+    class HTTPStatusError(Exception):
+        response = Response()
+
+    try:
+        raise RuntimeError("model request failed") from HTTPStatusError()
+    except RuntimeError as error:
+        assert (
+            TerminationReason.from_error(error)
+            is TerminationReason.CONTEXT_WINDOW_OVERFLOW
+        )
+
+
+def test_error_reason_does_not_treat_all_bad_requests_as_context_overflow():
+    class Response:
+        status_code = 400
+        text = "The input JSON is invalid."
+
+        def json(self):
+            return {
+                "error": {
+                    "message": "The input JSON is invalid.",
+                    "type": "BadRequestError",
+                    "code": 400,
+                }
+            }
+
+    class HTTPStatusError(Exception):
+        response = Response()
+
+    assert (
+        TerminationReason.from_error(HTTPStatusError())
+        is TerminationReason.UNCLASSIFIED_ERROR
     )
 
 
