@@ -158,3 +158,35 @@ def test_allowed_skills_filter_on_init(temp_skill_dir):
     assert skills[0]["name"] == "test-skill"
     assert "## Skill: test-skill" in toolkit.load_skill("test-skill")
     assert "Error:" in toolkit.load_skill("another-skill")
+
+
+def test_repository_skill_creator_bundle():
+    r"""Test the repository-scoped skill-creator bundle."""
+    repo_root = Path(__file__).resolve().parents[2]
+    skill_dir = repo_root / ".camel" / "skills" / "skill-creator"
+    toolkit = SkillToolkit(working_directory=str(repo_root))
+
+    skills = {skill["name"]: skill for skill in toolkit.list_skills()}
+    assert "skill-creator" in skills
+    skill = skills["skill-creator"]
+    assert skill["scope"] == "repo"
+    assert Path(skill["path"]) == skill_dir / "SKILL.md"
+    assert "measure skill performance" in skill["description"]
+
+    files_output = toolkit.list_skill_files("skill-creator")
+    listed_entries = {
+        line.removeprefix("  - ") for line in files_output.splitlines()[1:]
+    }
+    assert listed_entries == {
+        "LICENSE.txt",
+        "SKILL.md",
+        "agents/",
+        "assets/",
+        "eval-viewer/",
+        "references/",
+        "scripts/",
+    }
+
+    loaded_skill = toolkit.load_skill("skill-creator")
+    assert f"**Base directory**: {skill_dir}" in loaded_skill
+    assert "## Running and evaluating test cases" in loaded_skill
