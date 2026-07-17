@@ -22,7 +22,7 @@ import json
 import random
 import time
 import uuid
-from enum import StrEnum
+from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from openai import RateLimitError
@@ -105,7 +105,7 @@ class _AppendOnlyContextCreator(BaseContextCreator):
         return messages, num_tokens
 
 
-class TerminationReason(StrEnum):
+class TerminationReason(str, Enum):
     """Why a training step ended.
 
     Values and cause-chain behaviour mirror
