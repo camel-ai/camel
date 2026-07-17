@@ -468,6 +468,12 @@ class ChatAgent(BaseAgent):
             context window that can be occupied by summary information. Used
             to limit how much of the model's context is reserved for
             summarization results. (default: :obj:`0.6`)
+        tool_log_dir (Optional[Union[str, Path]]): Directory used to save full
+            tool outputs when they are truncated. If `None`, full outputs are
+            not saved. Saved files contain raw tool output and are not removed
+            automatically, so use an appropriately protected directory. Paths
+            refer to the host running the agent and may not be accessible
+            inside sandboxed tools. (default: :obj:`None`)
     """
 
     def __init__(
@@ -516,6 +522,7 @@ class ChatAgent(BaseAgent):
         on_request_usage: Optional[Callable[[Dict[str, Any]], Any]] = None,
         stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
+        tool_log_dir: Optional[Union[str, Path]] = None,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -619,6 +626,11 @@ class ChatAgent(BaseAgent):
         self.stop_event = stop_event
         self.tool_execution_timeout = tool_execution_timeout
         self.mask_tool_output = mask_tool_output
+        self._tool_log_dir = (
+            Path(tool_log_dir).expanduser().resolve()
+            if tool_log_dir is not None
+            else None
+        )
         self._secure_result_store: Dict[str, Any] = {}
         self._secure_result_store_lock = threading.Lock()
         self.pause_event = pause_event
@@ -1230,6 +1242,49 @@ class ChatAgent(BaseAgent):
         except (TypeError, ValueError):
             return str(result)
 
+    def _save_tool_output_log(
+        self, func_name: str, content: str
+    ) -> Optional[str]:
+        r"""Save full tool output to a .log file when truncation occurs.
+
+        Args:
+            func_name (str): The name of the tool function.
+            content (str): The full serialized tool output to persist.
+
+        Returns:
+            Optional[str]: Absolute path to the saved log file, or None when
+                logging is disabled or saving failed.
+        """
+        log_dir = self._tool_log_dir
+        if log_dir is None:
+            return None
+
+        try:
+            log_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+            safe_func_name = re.sub(r"[^A-Za-z0-9_-]+", "_", func_name).strip(
+                "_"
+            )
+            safe_func_name = safe_func_name[:64] or "tool"
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                prefix=f"{safe_func_name}_",
+                suffix=".log",
+                dir=log_dir,
+                delete=False,
+            ) as log_file:
+                log_file.write(content)
+                log_path = Path(log_file.name)
+            logger.info(
+                "Full tool output for '%s' saved to: %s", func_name, log_path
+            )
+            return str(log_path)
+        except Exception as e:
+            logger.warning(
+                "Failed to save tool output log for '%s': %s", func_name, e
+            )
+            return None
+
     def _truncate_tool_result(
         self, func_name: str, result: Any
     ) -> Tuple[Any, bool]:
@@ -1261,10 +1316,19 @@ class ChatAgent(BaseAgent):
         target_tokens = max(max_tokens - 100, 100)
         truncated = serialized[: target_tokens * 3]
 
+        log_ref = ""
+        if self._tool_log_dir is not None:
+            log_path = self._save_tool_output_log(func_name, serialized)
+            log_ref = (
+                f" Full output saved to: {log_path}"
+                if log_path
+                else " (log saving failed)"
+            )
+
         notice = (
             f"\n\n[TRUNCATED] Tool '{func_name}' output truncated "
             f"({result_tokens} > {max_tokens} tokens). "
-            f"Tool executed successfully."
+            f"Tool executed successfully.{log_ref}"
         )
 
         logger.warning(
@@ -6182,6 +6246,7 @@ class ChatAgent(BaseAgent):
             ),
             summarize_threshold=self.summarize_threshold,
             mask_tool_output=self.mask_tool_output,
+            tool_log_dir=self._tool_log_dir,
             enable_snapshot_clean=self._enable_snapshot_clean,
             retry_attempts=self.retry_attempts,
             retry_delay=self.retry_delay,
