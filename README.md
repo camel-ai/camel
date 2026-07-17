@@ -541,6 +541,7 @@ Real-world usecases demonstrating how CAMEL’s multi-agent framework enables re
 | Name | Description |
 |:---|:---|
 | **[Eigent](https://www.eigent.ai/)** | The World First Multi-agent Workforce |
+| **[Quorum](https://github.com/minghui31/quorum-ai)** | Decision deliberation engine: five agents with conflicting incentives argue a case and emit verifiable Decision Records |
 
 
 ## 🗓️ Events
