@@ -23,7 +23,17 @@ import random
 import time
 import uuid
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from openai import RateLimitError
 from pydantic import BaseModel
@@ -48,7 +58,12 @@ from camel.messages import BaseMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelManager, ModelProcessingError
 from camel.responses import ChatAgentResponse
 from camel.toolkits import FunctionTool, RegisteredAgentToolkit
-from camel.types import ChatCompletion, OpenAIBackendRole, RoleType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionMessageFunctionToolCall,
+    OpenAIBackendRole,
+    RoleType,
+)
 from camel.types.agents import ToolCallingRecord
 from camel.utils import BaseTokenCounter
 from camel.utils.agent_context import set_current_agent_id
@@ -93,7 +108,9 @@ class _AppendOnlyContextCreator(BaseContextCreator):
             meta = memory_record.message.meta_dict or {}
             raw_message = meta.get(_RAW_OPENAI_MESSAGE_KEY)
             if isinstance(raw_message, dict):
-                messages.append(copy.deepcopy(raw_message))
+                messages.append(
+                    cast(OpenAIMessage, copy.deepcopy(raw_message))
+                )
             else:
                 messages.append(memory_record.to_openai_message())
 
@@ -324,7 +341,7 @@ class BaseChatAgent(BaseAgent):
             ]
         }
         for toolkit in toolkits_to_register_agent or []:
-            toolkit.register_agent(self)
+            toolkit.register_agent(cast(Any, self))
 
         self._token_limit = (
             token_limit
@@ -411,12 +428,17 @@ class BaseChatAgent(BaseAgent):
             "user": RoleType.USER,
         }.get(role, RoleType.ASSISTANT)
         content = raw_message.get("content")
+        reasoning_content = raw_message.get("reasoning_content")
         stored_message = BaseMessage(
             role_name=role,
             role_type=role_type,
             meta_dict={_RAW_OPENAI_MESSAGE_KEY: raw_message},
             content=content if isinstance(content, str) else "",
-            reasoning_content=raw_message.get("reasoning_content"),
+            reasoning_content=(
+                reasoning_content
+                if isinstance(reasoning_content, str)
+                else None
+            ),
         )
         self.memory.write_record(
             MemoryRecord(
@@ -536,11 +558,12 @@ class BaseChatAgent(BaseAgent):
             )
             self.meta_info_record["iteration_count"] += 1
 
-            raw_assistant = response.response.choices[0].message.model_dump(
+            completion = cast(ChatCompletion, response.response)
+            raw_assistant = completion.choices[0].message.model_dump(
                 exclude_none=True
             )
             raw_assistant["role"] = "assistant"
-            self._write_openai_message(raw_assistant)
+            self._write_openai_message(cast(OpenAIMessage, raw_assistant))
             self._update_token_usage_tracker(usage, response.usage_dict)
             for key in usage:
                 self.meta_info_record[key] = usage[key]
@@ -668,12 +691,17 @@ class BaseChatAgent(BaseAgent):
 
         requests: List[ToolCallRequest] = []
         for tool_call in response.choices[0].message.tool_calls or []:
+            function_tool_call = cast(
+                ChatCompletionMessageFunctionToolCall, tool_call
+            )
             requests.append(
                 ToolCallRequest(
-                    tool_name=tool_call.function.name,
-                    args=json.loads(tool_call.function.arguments),
-                    tool_call_id=tool_call.id,
-                    extra_content=getattr(tool_call, "extra_content", None),
+                    tool_name=function_tool_call.function.name,
+                    args=json.loads(function_tool_call.function.arguments),
+                    tool_call_id=function_tool_call.id,
+                    extra_content=getattr(
+                        function_tool_call, "extra_content", None
+                    ),
                 )
             )
         usage = safe_model_dump(response.usage) if response.usage else {}

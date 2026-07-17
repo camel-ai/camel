@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import time
-from typing import Any, ClassVar, Dict, List, Optional, Type
+from typing import Any, ClassVar, Dict, List, Optional, Type, cast
 
 import pytest
 from openai.types.chat import ChatCompletionMessageFunctionToolCall
@@ -49,7 +49,9 @@ class SequencedModel(StubModel):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        self.received.append([dict(message) for message in messages])
+        self.received.append(
+            cast(List[OpenAIMessage], [dict(message) for message in messages])
+        )
         return self.responses.pop(0)
 
 
