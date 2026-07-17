@@ -468,6 +468,9 @@ class ChatAgent(BaseAgent):
             context window that can be occupied by summary information. Used
             to limit how much of the model's context is reserved for
             summarization results. (default: :obj:`0.6`)
+        context_management (bool, optional): Whether to enable model backend
+            context management preprocessing/postprocessing.
+            (default: :obj:`True`)
     """
 
     def __init__(
@@ -516,6 +519,7 @@ class ChatAgent(BaseAgent):
         on_request_usage: Optional[Callable[[Dict[str, Any]], Any]] = None,
         stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
+        context_management: bool = True,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -526,6 +530,7 @@ class ChatAgent(BaseAgent):
                 resolved_models,
                 scheduling_strategy=scheduling_strategy,
             )
+        self.model_backend.set_context_management(context_management)
         self.model_type = self.model_backend.model_type
 
         # Assign unique ID

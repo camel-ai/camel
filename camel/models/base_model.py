@@ -210,9 +210,11 @@ class ModelBackendMeta(abc.ABCMeta):
             def wrapped_run(
                 self, messages: List[OpenAIMessage], *args, **kwargs
             ):
-                messages = self.preprocess_messages(messages)
+                if self.context_management:
+                    messages = self.preprocess_messages(messages)
                 result = original_run(self, messages, *args, **kwargs)
-                result = self.postprocess_response(result)
+                if self.context_management:
+                    result = self.postprocess_response(result)
                 return result
 
             namespace['run'] = wrapped_run
@@ -223,9 +225,11 @@ class ModelBackendMeta(abc.ABCMeta):
             async def wrapped_arun(
                 self, messages: List[OpenAIMessage], *args, **kwargs
             ):
-                messages = self.preprocess_messages(messages)
+                if self.context_management:
+                    messages = self.preprocess_messages(messages)
                 result = await original_arun(self, messages, *args, **kwargs)
-                result = self.postprocess_response(result)
+                if self.context_management:
+                    result = self.postprocess_response(result)
                 return result
 
             namespace['arun'] = wrapped_arun
@@ -260,6 +264,9 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             content (and ``reasoning_content`` is not already set),
             the tags will be extracted into ``reasoning_content`` and
             removed from ``content``. (default: :obj:`True`)
+        context_management (bool, optional): Whether to preprocess input
+            messages and postprocess responses in metaclass-wrapped ``run``
+            and ``arun``. (default: :obj:`False`)
     """
 
     def __init__(
@@ -272,6 +279,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         max_retries: int = 3,
         extract_thinking_from_response: bool = True,
+        context_management: bool = False,
     ) -> None:
         self.model_type: UnifiedModelType = UnifiedModelType(model_type)
         if model_config_dict is None:
@@ -283,6 +291,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         self._timeout = timeout
         self._max_retries = max_retries
         self._extract_thinking_from_response = extract_thinking_from_response
+        self._context_management = context_management
         # Initialize logging configuration
         self._log_enabled = os.environ.get(
             "CAMEL_MODEL_LOG_ENABLED", "False"
@@ -316,6 +325,14 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 tokenization style.
         """
         pass
+
+    @property
+    def context_management(self) -> bool:
+        return self._context_management
+
+    @context_management.setter
+    def context_management(self, value: bool) -> None:
+        self._context_management = value
 
     @property
     def supports_tool_response_format(self) -> bool:
