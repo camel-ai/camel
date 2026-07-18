@@ -92,7 +92,40 @@ def test_make_call_success(plivo_toolkit):
         from_="+14150000002",
         to_="+14150000001",
         answer_url="https://example.com/answer",
+        answer_method="POST",
     )
+
+
+def test_make_call_get_method(plivo_toolkit):
+    plivo_toolkit.client.calls.create.return_value = SimpleNamespace(
+        message="call fired", request_uuid="req", api_id="api"
+    )
+
+    plivo_toolkit.make_call(
+        from_number="+14150000002",
+        to_number="+14150000001",
+        answer_url="https://s3.amazonaws.com/static.plivo.com/answer.xml",
+        answer_method="get",
+    )
+
+    plivo_toolkit.client.calls.create.assert_called_once_with(
+        from_="+14150000002",
+        to_="+14150000001",
+        answer_url="https://s3.amazonaws.com/static.plivo.com/answer.xml",
+        answer_method="GET",
+    )
+
+
+def test_make_call_rejects_bad_method(plivo_toolkit):
+    result = plivo_toolkit.make_call(
+        from_number="+14150000002",
+        to_number="+14150000001",
+        answer_url="https://example.com/answer",
+        answer_method="DELETE",
+    )
+
+    assert "GET or POST" in result
+    plivo_toolkit.client.calls.create.assert_not_called()
 
 
 def test_send_otp_success(plivo_toolkit):

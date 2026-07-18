@@ -115,7 +115,11 @@ class PlivoToolkit(BaseToolkit):
             return f"Failed to send SMS: {e!s}"
 
     def make_call(
-        self, from_number: str, to_number: str, answer_url: str
+        self,
+        from_number: str,
+        to_number: str,
+        answer_url: str,
+        answer_method: str = "POST",
     ) -> Union[Dict[str, Any], str]:
         r"""Places an outbound voice call.
 
@@ -125,17 +129,24 @@ class PlivoToolkit(BaseToolkit):
             to_number (str): The destination number in E.164 format.
             answer_url (str): A publicly reachable URL that Plivo fetches when
                 the call is answered; it must return Plivo call-flow XML.
+            answer_method (str): The HTTP method Plivo uses to fetch the answer
+                URL, either ``GET`` or ``POST``. Use ``GET`` for a static file
+                such as the Plivo demo answer XML. (default: :obj:`"POST"`)
 
         Returns:
             Union[Dict[str, Any], str]: A dictionary with the ``request_uuid``
                 and ``api_id`` if the call was fired, or an error message
                 string if failed.
         """
+        method = answer_method.upper()
+        if method not in ("GET", "POST"):
+            return "Failed to make call: answer_method must be GET or POST"
         try:
             response = self.client.calls.create(
                 from_=from_number,
                 to_=to_number,
                 answer_url=answer_url,
+                answer_method=method,
             )
             return {
                 "message": response.message,
