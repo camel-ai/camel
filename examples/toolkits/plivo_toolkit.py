@@ -57,9 +57,7 @@ def main():
     print("\n" + "=" * 50)
     print("Example 3: OTP Verify")
     print("=" * 50)
-    response = agent.step(
-        "Send a verification OTP to +14155550123."
-    )
+    response = agent.step("Send a verification OTP to +14155550123.")
     print(response.msg.content)
     response = agent.step(
         "Verify the code 123456 for that verification session."
