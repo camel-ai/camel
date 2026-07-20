@@ -17,6 +17,7 @@ import asyncio
 import atexit
 import base64
 import concurrent.futures
+import copy
 import functools
 import hashlib
 import inspect
@@ -6229,7 +6230,7 @@ class ChatAgent(BaseAgent):
             external_tools=[
                 schema for schema in self._external_tool_schemas.values()
             ],
-            response_terminators=self.response_terminators,
+            response_terminators=copy.deepcopy(self.response_terminators),
             scheduling_strategy=(
                 self.model_backend.scheduling_strategy.__name__
             ),
