@@ -61,3 +61,32 @@ def test_response_words_termination(mode):
     termination.reset()
     assert not termination._terminated
     assert termination._termination_reason is None
+
+
+def test_response_words_termination_is_terminated_after_reset():
+    # Regression test for https://github.com/camel-ai/camel/issues/4181
+    # reset() must restore `_word_count_dict` to the same type/shape as
+    # __init__ (a list), not a bare `defaultdict`, or the next
+    # `is_terminated()` call raises AttributeError on `.append()`.
+    words_dict = {"stop": 5}
+    termination = ResponseWordsTerminator(words_dict=words_dict)
+    message = BaseMessage(
+        role_name="user",
+        role_type=RoleType.USER,
+        meta_dict={},
+        content="hello world",
+    )
+
+    terminated, reason = termination.is_terminated([message])
+    assert not terminated
+    assert reason is None
+
+    termination.reset()
+
+    # Must not raise, and must behave identically to a fresh instance.
+    terminated, reason = termination.is_terminated([message])
+    fresh = ResponseWordsTerminator(words_dict=words_dict)
+    fresh_terminated, fresh_reason = fresh.is_terminated([message])
+    assert terminated == fresh_terminated
+    assert reason == fresh_reason
+    assert termination._word_count_dict == fresh._word_count_dict
