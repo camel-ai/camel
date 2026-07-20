@@ -36,8 +36,8 @@ jobs:
         python-version: "3.10"
     - name: Run pytest
       env:
-        OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
-        GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
+        OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY || 'dummy-key-for-test-collectioncases' }}"
+        GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY || 'dummy-key-for-test-collectioncases' }}"
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
         OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
         ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
@@ -132,8 +132,8 @@ jobs:
         python-version: "3.10"
     - name: Run pytest
       env:
-        OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
-        GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
+        OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY || 'dummy-key-for-test-collectioncases' }}"
+        GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY || 'dummy-key-for-test-collectioncases' }}"
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
         OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
         ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
@@ -228,8 +228,8 @@ jobs:
         python-version: "3.10"
     - name: Run pytest
       env:
-        OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
-        GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
+        OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY || 'dummy-key-for-test-collectioncases' }}"
+        GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY || 'dummy-key-for-test-collectioncases' }}"
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
         OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
         ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
