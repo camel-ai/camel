@@ -127,6 +127,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_edenai(self) -> bool:
+        r"""Returns whether the model is an Eden AI served model."""
+        return True
+
+    @property
     def is_avian(self) -> bool:
         r"""Returns whether the model is an Avian served model."""
         return True

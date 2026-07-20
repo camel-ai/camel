@@ -24,6 +24,7 @@ from .cohere_config import COHERE_API_PARAMS, CohereConfig
 from .cometapi_config import COMETAPI_API_PARAMS, CometAPIConfig
 from .crynux_config import CRYNUX_API_PARAMS, CrynuxConfig
 from .deepseek_config import DEEPSEEK_API_PARAMS, DeepSeekConfig
+from .edenai_config import EDENAI_API_PARAMS, EdenAIConfig
 from .function_gemma_config import (
     FUNCTION_GEMMA_API_PARAMS,
     FunctionGemmaConfig,
@@ -78,6 +79,7 @@ __all__ = [
     'COMETAPI_API_PARAMS',
     'CRYNUX_API_PARAMS',
     'DEEPSEEK_API_PARAMS',
+    'EDENAI_API_PARAMS',
     'FUNCTION_GEMMA_API_PARAMS',
     'GROQ_API_PARAMS',
     'INTERNLM_API_PARAMS',
@@ -124,6 +126,7 @@ __all__ = [
     'CometAPIConfig',
     'CrynuxConfig',
     'DeepSeekConfig',
+    'EdenAIConfig',
     'FunctionGemmaConfig',
     'GeminiConfig',
     'Gemini_API_PARAMS',

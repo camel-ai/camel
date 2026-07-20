@@ -27,6 +27,7 @@ from .cohere_model import CohereModel
 from .cometapi_model import CometAPIModel
 from .crynux_model import CrynuxModel
 from .deepseek_model import DeepSeekModel
+from .edenai_model import EdenAIModel
 from .fish_audio_model import FishAudioModel
 from .function_gemma_model import FunctionGemmaModel
 from .gemini_model import GeminiModel
@@ -84,6 +85,7 @@ __all__ = [
     'CometAPIModel',
     'CrynuxModel',
     'DeepSeekModel',
+    'EdenAIModel',
     'FishAudioModel',
     'FunctionGemmaModel',
     'GeminiModel',

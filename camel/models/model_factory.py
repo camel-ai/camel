@@ -30,6 +30,7 @@ from camel.models.cohere_model import CohereModel
 from camel.models.cometapi_model import CometAPIModel
 from camel.models.crynux_model import CrynuxModel
 from camel.models.deepseek_model import DeepSeekModel
+from camel.models.edenai_model import EdenAIModel
 from camel.models.function_gemma_model import FunctionGemmaModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
@@ -104,6 +105,7 @@ class ModelFactory:
         ModelPlatformType.MINIMAX: MinimaxModel,
         ModelPlatformType.OPENROUTER: OpenRouterModel,
         ModelPlatformType.ORCAROUTER: OrcaRouterModel,
+        ModelPlatformType.EDENAI: EdenAIModel,
         ModelPlatformType.ATLASCLOUD: AtlasCloudModel,
         ModelPlatformType.ZHIPU: ZhipuAIModel,
         ModelPlatformType.GEMINI: GeminiModel,

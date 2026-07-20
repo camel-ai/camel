@@ -321,6 +321,7 @@ def api_keys_required(
                     'COHERE_API_KEY': "https://cohere.com/",
                     'COMETAPI_KEY': "https://api.cometapi.com/console/token",
                     'DEEPSEEK_API_KEY': "https://www.deepseek.com/",
+                    'EDENAI_API_KEY': "https://www.edenai.co/docs",
                     'AZURE_OPENAI_API_KEY': "https://portal.azure.com/",
                     'OPENAI_API_KEY': "https://platform.openai.com/docs/overview",
                     'FISHAUDIO_API_KEY': "https://fish.audio/",

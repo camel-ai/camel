@@ -1982,6 +1982,7 @@ class ModelPlatformType(Enum):
     COMETAPI = "cometapi"
     OPENROUTER = "openrouter"
     ORCAROUTER = "orcarouter"
+    EDENAI = "edenai"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     LMSTUDIO = "lmstudio"
@@ -2066,6 +2067,11 @@ class ModelPlatformType(Enum):
     def is_orcarouter(self) -> bool:
         r"""Returns whether this platform is orcarouter."""
         return self is ModelPlatformType.ORCAROUTER
+
+    @property
+    def is_edenai(self) -> bool:
+        r"""Returns whether this platform is edenai."""
+        return self is ModelPlatformType.EDENAI
 
     @property
     def is_lmstudio(self) -> bool:
