@@ -30,15 +30,21 @@ def _mock_cohere_tool_call(call_id, name, arguments):
     )
 
 
-def _mock_cohere_response(*, tool_calls=None, text=None):
+_UNSET = object()
+
+
+def _mock_cohere_response(*, tool_calls=None, text=None, finish_reason=_UNSET):
     message = SimpleNamespace(
         tool_plan="calling tools" if tool_calls else None,
         content=None if tool_calls else [SimpleNamespace(text=text)],
         tool_calls=tool_calls,
     )
+    if finish_reason is _UNSET:
+        # Cohere's V2ChatResponse.finish_reason is upper case.
+        finish_reason = "TOOL_CALL" if tool_calls else "COMPLETE"
     return SimpleNamespace(
         id="gen-1",
-        finish_reason="tool_call" if tool_calls else "complete",
+        finish_reason=finish_reason,
         usage=SimpleNamespace(
             tokens=SimpleNamespace(input_tokens=11, output_tokens=7)
         ),
@@ -98,6 +104,51 @@ def test_to_openai_response_text_only():
     assert result.choices[0].index == 0
     assert result.choices[0].message.content == "hello there"
     assert result.choices[0].message.tool_calls is None
+
+
+@pytest.mark.parametrize(
+    "cohere_reason, expected",
+    [
+        ("COMPLETE", "stop"),
+        ("STOP_SEQUENCE", "stop"),
+        ("MAX_TOKENS", "length"),
+        ("TOOL_CALL", "tool_calls"),
+        ("ERROR", "stop"),
+        ("TIMEOUT", "stop"),
+    ],
+)
+def test_to_openai_response_maps_finish_reason(cohere_reason, expected):
+    r"""Every value Cohere can return must leave as an OpenAI finish_reason.
+
+    ``V2ChatResponse.finish_reason`` is one of COMPLETE, STOP_SEQUENCE,
+    MAX_TOKENS, TOOL_CALL, ERROR or TIMEOUT, and OpenAI's vocabulary is stop,
+    length, tool_calls, content_filter or function_call. The two sets are
+    disjoint, so passing the value through verbatim emits a finish_reason no
+    OpenAI-compatible caller can read.
+    """
+    model = CohereModel(ModelType.COHERE_COMMAND_R, api_key="dummy")
+    response = _mock_cohere_response(text="hi", finish_reason=cohere_reason)
+
+    result = model._to_openai_response(response)
+
+    assert result.choices[0].finish_reason == expected
+
+
+def test_to_openai_response_finish_reason_none_stays_none():
+    r"""A response with no finish_reason still maps to None, not to a
+    default, so an unfinished generation is not reported as completed."""
+    model = CohereModel(ModelType.COHERE_COMMAND_R, api_key="dummy")
+    response = _mock_cohere_response(text="hi", finish_reason=None)
+
+    result = model._to_openai_response(response)
+
+    assert result.choices[0].finish_reason is None
+
+
+def test_map_finish_reason_unknown_value_falls_back_to_stop():
+    r"""A finish reason added by a future Cohere release still yields a legal
+    OpenAI value rather than leaking through unmapped."""
+    assert CohereModel._map_finish_reason("SOME_NEW_REASON") == "stop"
 
 
 @pytest.mark.model_backend

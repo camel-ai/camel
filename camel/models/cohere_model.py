@@ -55,6 +55,19 @@ except (ImportError, AttributeError):
     LLMEvent = None
 
 
+# Map Cohere V2 finish reasons to the OpenAI finish_reason vocabulary. The two
+# sets are disjoint, so an unmapped value would reach callers verbatim.
+# ERROR and TIMEOUT have no OpenAI equivalent and fall back to "stop", the same
+# default used by XAIModel._map_finish_reason and
+# AWSBedrockConverseModel._map_stop_reason.
+_FINISH_REASON_MAP = {
+    "COMPLETE": "stop",
+    "STOP_SEQUENCE": "stop",
+    "MAX_TOKENS": "length",
+    "TOOL_CALL": "tool_calls",
+}
+
+
 class CohereModel(BaseModelBackend):
     r"""Cohere API in a unified BaseModelBackend interface.
 
@@ -119,6 +132,11 @@ class CohereModel(BaseModelBackend):
             **kwargs,
         )
 
+    @staticmethod
+    def _map_finish_reason(cohere_reason: str) -> str:
+        r"""Map a Cohere finish reason to its OpenAI-style equivalent."""
+        return _FINISH_REASON_MAP.get(cohere_reason, "stop")
+
     def _to_openai_response(self, response: 'ChatResponse') -> ChatCompletion:
         if response.usage and response.usage.tokens:
             input_tokens = response.usage.tokens.input_tokens or 0
@@ -162,7 +180,7 @@ class CohereModel(BaseModelBackend):
                 "content": content,
                 "tool_calls": openai_tool_calls,
             },
-            finish_reason=response.finish_reason
+            finish_reason=self._map_finish_reason(response.finish_reason)
             if response.finish_reason
             else None,
         )
