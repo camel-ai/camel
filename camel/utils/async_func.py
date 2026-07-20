@@ -29,14 +29,19 @@ def sync_funcs_to_async(funcs: list[FunctionTool]) -> list[FunctionTool]:
         list[FunctionTool]: List of Python asynchronous functions
             in the :obj:`FunctionTool` format.
     """
+
+    def _create_async_callable(sync_func):
+        async def async_callable(*args, **kwargs):
+            return await asyncio.to_thread(sync_func, *args, **kwargs)
+
+        return async_callable
+
     async_funcs = []
     for func in funcs:
-        sync_func = func.func
-
-        async def async_callable(*args, **kwargs):
-            return await asyncio.to_thread(sync_func, *args, **kwargs)  # noqa: B023
-
         async_funcs.append(
-            FunctionTool(async_callable, deepcopy(func.openai_tool_schema))
+            FunctionTool(
+                _create_async_callable(func.func),
+                deepcopy(func.openai_tool_schema),
+            )
         )
     return async_funcs
