@@ -74,6 +74,99 @@ def test_skill_creator_package_contains_expected_bundle(tmp_path):
         }
 
 
+def test_skill_creator_package_excludes_local_artifacts(tmp_path):
+    r"""Test packaging excludes local artifacts and retains skill content."""
+    skill_path = tmp_path / "valid-skill"
+    skill_path.mkdir()
+    (skill_path / "SKILL.md").write_text(
+        "---\nname: valid-skill\ndescription: A valid test skill.\n---\n"
+    )
+
+    included_paths = {
+        "references/guide.md": "Guide",
+        "nested/evals/keep.md": "Nested eval resource",
+    }
+    excluded_paths = {
+        ".DS_Store": "",
+        ".git/config": "config",
+        ".gitignore": "ignored",
+        ".gitattributes": "attributes",
+        ".env": "SECRET=value",
+        "__pycache__/module.pyc": "bytecode",
+        "module.pyo": "bytecode",
+        "module.pyd": "binary",
+        "module.so": "binary",
+        "package.egg-info/PKG-INFO": "metadata",
+        ".eggs/package/info": "metadata",
+        ".pytest_cache/state": "cache",
+        ".mypy_cache/state": "cache",
+        ".ruff_cache/state": "cache",
+        ".coverage": "coverage",
+        ".venv/bin/python": "environment",
+        "venv/bin/python": "environment",
+        ".idea/workspace.xml": "IDE settings",
+        ".vscode/settings.json": "IDE settings",
+        "node_modules/package/index.js": "dependency",
+        ".tox/py/test": "environment",
+        "dist/archive.txt": "build output",
+        "build/output.txt": "build output",
+        "debug.log": "log",
+        "evals/result.json": "root eval result",
+    }
+    for relative_path, content in (
+        included_paths.items() | excluded_paths.items()
+    ):
+        path = skill_path / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content)
+
+    archive_path = package_skill.package_skill(skill_path, tmp_path)
+
+    with zipfile.ZipFile(archive_path) as archive:
+        names = set(archive.namelist())
+
+    assert {
+        f"valid-skill/{relative_path}" for relative_path in included_paths
+    } <= names
+    assert (
+        not {
+            f"valid-skill/{relative_path}" for relative_path in excluded_paths
+        }
+        & names
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("name", "", "Name cannot be empty"),
+        ("name", "   ", "Name cannot be empty"),
+        ("description", "", "Description cannot be empty"),
+        ("description", "   ", "Description cannot be empty"),
+    ],
+)
+def test_skill_creator_validator_rejects_empty_required_fields(
+    tmp_path,
+    field,
+    value,
+    message,
+):
+    r"""Test required frontmatter fields cannot be empty or whitespace."""
+    values = {"name": "valid-skill", "description": "A valid test skill."}
+    values[field] = value
+    (tmp_path / "SKILL.md").write_text(
+        "---\n"
+        f"name: {values['name']!r}\n"
+        f"description: {values['description']!r}\n"
+        "---\n"
+    )
+
+    valid, result = quick_validate.validate_skill(tmp_path)
+
+    assert not valid
+    assert result == message
+
+
 def test_run_single_query_requires_claude_cli_before_writing_files(
     monkeypatch,
     tmp_path,

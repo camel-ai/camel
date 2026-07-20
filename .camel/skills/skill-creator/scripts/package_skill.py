@@ -14,12 +14,36 @@ import fnmatch
 import sys
 import zipfile
 from pathlib import Path
+
 from scripts.quick_validate import validate_skill
 
-# Patterns to exclude when packaging skills.
-EXCLUDE_DIRS = {"__pycache__", "node_modules"}
-EXCLUDE_GLOBS = {"*.pyc"}
-EXCLUDE_FILES = {".DS_Store"}
+# Patterns to exclude when packaging skills. These cover local VCS metadata,
+# environments, caches, build output, editor configuration, and binary files
+# that should not be distributed with a skill.
+EXCLUDE_DIRS = {
+    ".git",
+    "__pycache__",
+    ".eggs",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+    ".idea",
+    ".vscode",
+    "node_modules",
+    ".tox",
+    "dist",
+    "build",
+}
+EXCLUDE_GLOBS = {"*.pyc", "*.pyo", "*.pyd", "*.so", "*.egg-info", "*.log"}
+EXCLUDE_FILES = {
+    ".DS_Store",
+    ".gitignore",
+    ".gitattributes",
+    ".coverage",
+    ".env",
+}
 # Directories excluded only at the skill root (not when nested deeper).
 ROOT_EXCLUDE_DIRS = {"evals"}
 
@@ -33,10 +57,13 @@ def should_exclude(rel_path: Path) -> bool:
     # folder name and parts[1] (if present) is the first subdir.
     if len(parts) > 1 and parts[1] in ROOT_EXCLUDE_DIRS:
         return True
-    name = rel_path.name
-    if name in EXCLUDE_FILES:
+    if any(part in EXCLUDE_FILES for part in parts):
         return True
-    return any(fnmatch.fnmatch(name, pat) for pat in EXCLUDE_GLOBS)
+    return any(
+        fnmatch.fnmatch(part, pattern)
+        for part in parts
+        for pattern in EXCLUDE_GLOBS
+    )
 
 
 def package_skill(skill_path, output_dir=None):
