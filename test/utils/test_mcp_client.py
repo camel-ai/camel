@@ -831,3 +831,38 @@ class TestSSEFallback:
 
 if __name__ == "__main__":
     pytest.main([__file__])
+
+
+class TestMCPSecurity:
+    """Regression tests for MCP client security hardening (#4192)."""
+
+    def test_stdio_env_defaults_to_safe_subset(self, monkeypatch):
+        import os
+
+        from camel.utils.mcp_client import _stdio_env
+
+        monkeypatch.setenv("PATH", "/usr/bin")
+        monkeypatch.setenv("HOME", "/home/test")
+        monkeypatch.setenv("SECRET_API_KEY", "super-secret")
+        monkeypatch.setenv("MCP_DEBUG", "1")
+
+        env = _stdio_env(None)
+        assert env["PATH"] == "/usr/bin"
+        assert env["HOME"] == "/home/test"
+        assert env["MCP_DEBUG"] == "1"
+        assert "SECRET_API_KEY" not in env
+
+        custom = {"FOO": "bar"}
+        assert _stdio_env(custom) is custom
+
+    def test_http_client_disables_redirects(self):
+        from camel.utils.mcp_client import create_mcp_http_client
+
+        client = create_mcp_http_client()
+        try:
+            assert client.follow_redirects is False
+        finally:
+            # httpx AsyncClient may need aclose in real use; close sync if present
+            close = getattr(client, "close", None)
+            if callable(close):
+                close()

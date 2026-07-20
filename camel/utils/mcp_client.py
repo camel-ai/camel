@@ -39,33 +39,74 @@ import httpx
 import mcp.types as types
 from pydantic import BaseModel, model_validator
 
-try:
-    from mcp.shared._httpx_utils import create_mcp_http_client
-except ImportError:
+# Always build our own httpx client so we control redirect policy.
+# follow_redirects=True would let a malicious MCP URL bounce to internal
+# targets (SSRF). See #4192.
+def create_mcp_http_client(
+    headers: Optional[Dict[str, str]] = None,
+    timeout: Optional[httpx.Timeout] = None,
+    auth: Optional[httpx.Auth] = None,
+) -> httpx.AsyncClient:
+    """Create an MCP HTTP client without following redirects."""
+    kwargs: Dict[str, Any] = {"follow_redirects": False}
 
-    def create_mcp_http_client(
-        headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[httpx.Timeout] = None,
-        auth: Optional[httpx.Auth] = None,
-    ) -> httpx.AsyncClient:
-        """Fallback implementation if not available."""
-        kwargs: Dict[str, Any] = {"follow_redirects": True}
+    if timeout is None:
+        kwargs["timeout"] = httpx.Timeout(30.0)
+    else:
+        kwargs["timeout"] = timeout
 
-        if timeout is None:
-            kwargs["timeout"] = httpx.Timeout(30.0)
-        else:
-            kwargs["timeout"] = timeout
+    if headers is not None:
+        kwargs["headers"] = headers
 
-        if headers is not None:
-            kwargs["headers"] = headers
+    if auth is not None:
+        kwargs["auth"] = auth
 
-        if auth is not None:
-            kwargs["auth"] = auth
-
-        return httpx.AsyncClient(**kwargs)
+    return httpx.AsyncClient(**kwargs)
 
 
 from mcp import ClientSession
+
+# Keys that are generally required for child processes to start, without
+# dumping the parent process's full secret-bearing environment into an MCP
+# server. Callers can still pass an explicit ServerConfig.env to override.
+_STDIO_SAFE_ENV_KEYS = frozenset(
+    {
+        "PATH",
+        "HOME",
+        "USER",
+        "LOGNAME",
+        "SHELL",
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+        "TERM",
+        "TMPDIR",
+        "TEMP",
+        "TMP",
+        "SystemRoot",
+        "COMSPEC",
+        "PATHEXT",
+    }
+)
+
+
+def _stdio_env(config_env: Optional[Dict[str, str]]) -> Dict[str, str]:
+    """Resolve the environment for a STDIO MCP server process.
+
+    When ``config_env`` is provided, it is used as-is. When it is ``None``,
+    only a small allowlist of non-secret OS variables is inherited instead of
+    the entire parent environment (the previous default of ``env=None``).
+    """
+    if config_env is not None:
+        return config_env
+    import os
+
+    env: Dict[str, str] = {}
+    for key, value in os.environ.items():
+        if key in _STDIO_SAFE_ENV_KEYS or key.startswith("MCP_"):
+            env[key] = value
+    return env
+
 
 
 class TransportType(str, Enum):
@@ -536,7 +577,7 @@ class MCPClient:
             server_params = StdioServerParameters(
                 command=self.config.command,
                 args=self.config.args or [],
-                env=self.config.env,
+                env=_stdio_env(self.config.env),
                 cwd=self.config.cwd,
                 encoding=self.config.encoding,
             )
