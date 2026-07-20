@@ -132,50 +132,41 @@ class CohereModel(BaseModelBackend):
             usage = {}
 
         tool_calls = response.message.tool_calls
-        choices = []
         if tool_calls:
-            for tool_call in tool_calls:
-                openai_tool_calls = [
-                    dict(
-                        id=tool_call.id,
-                        function={
-                            "name": tool_call.function.name,
-                            "arguments": tool_call.function.arguments,
-                        }
-                        if tool_call.function
-                        else {},
-                        type=tool_call.type,
-                    )
-                ]
-
-                choice = dict(
-                    index=None,
-                    message={
-                        "role": "assistant",
-                        "content": response.message.tool_plan,
-                        "tool_calls": openai_tool_calls,
-                    },
-                    finish_reason=response.finish_reason
-                    if response.finish_reason
-                    else None,
+            # A single Cohere turn may carry several parallel tool calls.
+            # Collect all of them into one choice so none are dropped by
+            # downstream code that only reads choices[0] (mirrors
+            # MistralModel._to_openai_response).
+            openai_tool_calls = [
+                dict(
+                    id=tool_call.id,
+                    function={
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments,
+                    }
+                    if tool_call.function
+                    else {},
+                    type=tool_call.type,
                 )
-                choices.append(choice)
-
+                for tool_call in tool_calls
+            ]
+            content = response.message.tool_plan
         else:
             openai_tool_calls = None
+            content = response.message.content[0].text  # type: ignore[union-attr,index]
 
-            choice = dict(
-                index=None,
-                message={
-                    "role": "assistant",
-                    "content": response.message.content[0].text,  # type: ignore[union-attr,index]
-                    "tool_calls": openai_tool_calls,
-                },
-                finish_reason=response.finish_reason
-                if response.finish_reason
-                else None,
-            )
-            choices.append(choice)
+        choice = dict(
+            index=0,
+            message={
+                "role": "assistant",
+                "content": content,
+                "tool_calls": openai_tool_calls,
+            },
+            finish_reason=response.finish_reason
+            if response.finish_reason
+            else None,
+        )
+        choices = [choice]
 
         obj = ChatCompletion.construct(
             id=response.id,
