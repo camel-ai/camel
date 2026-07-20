@@ -188,20 +188,17 @@ class InternalPythonInterpreter(BaseInterpreter):
             import contextlib
             import io
 
-            # Try to execute first and capture stdout
             output_buffer = io.StringIO()
+            try:
+                compiled_code = compile(code, "<string>", "eval")
+            except SyntaxError:
+                with contextlib.redirect_stdout(output_buffer):
+                    exec(code, self.action_space)
+                return output_buffer.getvalue()
+
             with contextlib.redirect_stdout(output_buffer):
-                exec(code, self.action_space)
-            result = output_buffer.getvalue()
-
-            # If no output was captured, try to evaluate the code
-            if not result:
-                try:
-                    result = str(eval(code, self.action_space))
-                except (SyntaxError, NameError):
-                    result = ""  # If eval fails, return empty string
-
-            return result
+                result = eval(compiled_code, self.action_space)
+            return output_buffer.getvalue() or str(result)
         else:
             return str(self.execute(code))
 
