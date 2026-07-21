@@ -81,6 +81,10 @@ def test_step_interaction(client_with_tool):
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_get_history(client_with_tool):
     r"""Tests /v1/agents/history returns a list of message history."""
     client_with_tool.post(
