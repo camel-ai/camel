@@ -11,14 +11,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import pytest
 
-from camel.logger import disable_logging, enable_logging, set_log_level
+from camel.toolkits import FunctionTool
+from camel.utils.async_func import sync_funcs_to_async
 
-__version__ = '0.2.91a5'
 
-__all__ = [
-    '__version__',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+@pytest.mark.asyncio
+async def test_sync_funcs_to_async_binds_each_function():
+    def add(a: int, b: int) -> int:
+        r"""Add two integers."""
+        return a + b
+
+    def multiply(a: int, b: int) -> int:
+        r"""Multiply two integers."""
+        return a * b
+
+    add_tool, multiply_tool = sync_funcs_to_async(
+        [FunctionTool(add), FunctionTool(multiply)]
+    )
+
+    assert await add_tool.func(3, 4) == 7
+    assert await multiply_tool.func(3, 4) == 12
+    assert add_tool.get_function_name() == "add"
+    assert multiply_tool.get_function_name() == "multiply"

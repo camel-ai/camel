@@ -580,6 +580,25 @@ class TestHybridBrowserToolkit:
         assert "tabs" in result
         assert "result" in result["result"].lower()
 
+    def test_console_exec_tool_schema_documents_trust_boundary(self):
+        """Test console_exec tool schema documents its trust boundary."""
+        toolkit = HybridBrowserToolkit(
+            headless=True,
+            enabled_tools=["browser_console_exec"],
+        )
+        tool = toolkit.get_tools()[0]
+        schema = tool.get_openai_tool_schema()
+
+        description = schema["function"]["description"].lower()
+        code_description = schema["function"]["parameters"]["properties"][
+            "code"
+        ]["description"].lower()
+
+        assert "current page context" in description
+        assert "not a sandbox" in description
+        assert "trusted" in description
+        assert "javascript" in code_description
+
     def test_get_tools(self, sync_browser_toolkit):
         """Test getting available tools with default configuration."""
         toolkit = sync_browser_toolkit

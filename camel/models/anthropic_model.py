@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import copy
 import json
+import logging
 import os
 import time
 from typing import Any, Dict, List, Optional, Type, Union, cast
@@ -49,6 +50,15 @@ elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
         from camel.utils import observe
 else:
     from camel.utils import observe
+
+
+logger = logging.getLogger(__name__)
+
+# Anthropic structured-output schema complexity limits:
+# https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+_MAX_STRICT_TOOLS = 20
+_MAX_STRICT_OPTIONAL_PARAMETERS = 24
+_MAX_STRICT_UNION_PARAMETERS = 16
 
 
 def strip_trailing_whitespace_from_messages(
@@ -203,6 +213,7 @@ class AnthropicModel(BaseModelBackend):
                 "ttl": cache_control,
             }
         self._tool_call_thinking_blocks: Dict[str, List[Dict[str, Any]]] = {}
+        self._strict_tools_downgrade_warning_emitted = False
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -1015,7 +1026,90 @@ class AnthropicModel(BaseModelBackend):
                     anthropic_tool["strict"] = func.get("strict", True)
                 anthropic_tools.append(anthropic_tool)
 
+        strict_limit_reason = self._get_strict_tools_limit_reason(
+            anthropic_tools
+        )
+        if strict_limit_reason is not None:
+            for anthropic_tool in anthropic_tools:
+                if anthropic_tool.get("strict") is True:
+                    anthropic_tool["strict"] = False
+
+            if not self._strict_tools_downgrade_warning_emitted:
+                logger.warning(
+                    "Disabling strict tool use for this Anthropic model "
+                    "because the request exceeds Anthropic's structured "
+                    "output limits: %s. Tool calling remains enabled, but "
+                    "tool inputs are not grammar-constrained.",
+                    strict_limit_reason,
+                )
+                self._strict_tools_downgrade_warning_emitted = True
+
         return anthropic_tools
+
+    @staticmethod
+    def _get_strict_tools_limit_reason(
+        tools: List[Dict[str, Any]],
+    ) -> Optional[str]:
+        r"""Return why Anthropic strict tool limits are exceeded, if any.
+
+        Anthropic compiles all strict tool schemas in a request into a single
+        grammar. Its documented request-wide limits apply to the number of
+        strict tools, optional parameters, and parameters using union types.
+        """
+        strict_tools = [tool for tool in tools if tool.get("strict") is True]
+        if len(strict_tools) > _MAX_STRICT_TOOLS:
+            return (
+                f"{len(strict_tools)} strict tools "
+                f"(maximum {_MAX_STRICT_TOOLS})"
+            )
+
+        optional_parameters = 0
+        union_parameters = 0
+
+        def count_schema_complexity(schema: Any) -> None:
+            nonlocal optional_parameters, union_parameters
+
+            if isinstance(schema, list):
+                for item in schema:
+                    count_schema_complexity(item)
+                return
+            if not isinstance(schema, dict):
+                return
+
+            schema_type = schema.get("type")
+            if isinstance(schema_type, list) or isinstance(
+                schema.get("anyOf"), list
+            ):
+                union_parameters += 1
+
+            properties = schema.get("properties")
+            if isinstance(properties, dict):
+                required = schema.get("required")
+                required_names = (
+                    set(required) if isinstance(required, list) else set()
+                )
+                optional_parameters += len(
+                    set(properties).difference(required_names)
+                )
+
+            for value in schema.values():
+                count_schema_complexity(value)
+
+        for tool in strict_tools:
+            count_schema_complexity(tool.get("input_schema", {}))
+
+        if optional_parameters > _MAX_STRICT_OPTIONAL_PARAMETERS:
+            return (
+                f"{optional_parameters} optional parameters across strict "
+                f"schemas (maximum {_MAX_STRICT_OPTIONAL_PARAMETERS})"
+            )
+        if union_parameters > _MAX_STRICT_UNION_PARAMETERS:
+            return (
+                f"{union_parameters} union parameters across strict schemas "
+                f"(maximum {_MAX_STRICT_UNION_PARAMETERS})"
+            )
+
+        return None
 
     @observe()
     def _run(

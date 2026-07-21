@@ -1417,11 +1417,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             return {"console_messages": []}
 
     async def browser_console_exec(self, code: str) -> Dict[str, Any]:
-        r"""Execute javascript code in the console of the current page and get
+        r"""Execute JavaScript code in the current page context and return
         results.
 
+        This tool is not a sandbox: code runs with the active page's DOM,
+        storage, cookies, and network access. Only enable or call it for
+        trusted pages, trusted tasks, and trusted agent policies.
+
         Args:
-            code (str): JavaScript code to execute in the browser console.
+            code (str): JavaScript code to execute in the current page
+                context.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:

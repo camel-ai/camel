@@ -202,6 +202,62 @@ def test_convert_function_call_and_response_to_from_sharegpt_hermes(
     assert function_result_message == reconverted_function_result
 
 
+def test_hermes_sharegpt_roundtrip_preserves_non_string_args():
+    r"""Tool-call args with apostrophes, booleans, None and floats must
+    survive a ``to_sharegpt()`` -> ``from_sharegpt()`` round-trip.
+
+    They previously did not: the formatter serialized args with Python
+    ``repr`` and parsed them by swapping ``'`` for ``"``, which corrupts any
+    string containing an apostrophe and rejects ``True``/``False``/``None``.
+    The tool call then failed to parse and silently degraded to a plain
+    ``BaseMessage`` with the arguments lost.
+    """
+    args = {
+        "note": "it's sunny",
+        "active": True,
+        "missing": None,
+        "ratio": 0.5,
+        "city": "London",
+    }
+    message = FunctionCallingMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="",
+        func_name="note_tool",
+        args=args,
+        tool_call_id=None,
+    )
+
+    sharegpt = message.to_sharegpt()
+    reconverted = BaseMessage.from_sharegpt(
+        sharegpt, function_format=HermesFunctionFormatter()
+    )
+
+    assert isinstance(reconverted, FunctionCallingMessage)
+    assert reconverted.func_name == "note_tool"
+    assert reconverted.args == args
+
+
+def test_hermes_extract_tool_calls_parses_legacy_repr_payload():
+    r"""Legacy single-quoted Python-``repr`` ``<tool_call>`` payloads (as
+    emitted by earlier CAMEL versions) must still parse, so previously
+    serialized data keeps round-tripping."""
+    formatter = HermesFunctionFormatter()
+    legacy = (
+        "<tool_call>\n"
+        "{'name': 'note_tool', 'arguments': {'city': 'London', "
+        "'active': True}}\n"
+        "</tool_call>"
+    )
+
+    calls = formatter.extract_tool_calls(legacy)
+
+    assert len(calls) == 1
+    assert calls[0].name == "note_tool"
+    assert calls[0].arguments == {"city": "London", "active": True}
+
+
 def test_function_func_message_to_openai_assistant_message(
     function_result_message: FunctionCallingMessage,
 ):

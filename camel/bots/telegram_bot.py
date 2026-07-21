@@ -15,7 +15,7 @@ import os
 from typing import TYPE_CHECKING, Optional
 
 from camel.agents import ChatAgent
-from camel.utils import dependencies_required
+from camel.utils import api_keys_required, dependencies_required
 
 # Conditionally import telebot types only for type checking
 if TYPE_CHECKING:
@@ -33,6 +33,11 @@ class TelegramBot:
     """
 
     @dependencies_required('telebot')
+    @api_keys_required(
+        [
+            ("telegram_token", "TELEGRAM_TOKEN"),
+        ]
+    )
     def __init__(
         self,
         chat_agent: ChatAgent,
@@ -40,15 +45,8 @@ class TelegramBot:
     ) -> None:
         self.chat_agent = chat_agent
 
-        if not telegram_token:
-            self.token = os.getenv('TELEGRAM_TOKEN')
-            if not self.token:
-                raise ValueError(
-                    "`TELEGRAM_TOKEN` not found in environment variables. "
-                    "Get it from t.me/BotFather."
-                )
-        else:
-            self.token = telegram_token
+        self.token = telegram_token or os.getenv('TELEGRAM_TOKEN')
+        assert self.token is not None
 
         import telebot  # type: ignore[import-not-found]
 

@@ -19,6 +19,7 @@ from warnings import warn
 
 from camel.loaders import File, create_file_from_raw_bytes
 from camel.storages.object_storages.base import BaseObjectStorage
+from camel.utils import dependencies_required
 
 
 class AmazonS3Storage(BaseObjectStorage):
@@ -46,6 +47,7 @@ class AmazonS3Storage(BaseObjectStorage):
         https://aws.amazon.com/cli/
     """
 
+    @dependencies_required('botocore')
     def __init__(
         self,
         bucket_name: str,
