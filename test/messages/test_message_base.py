@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from typing import List
 
 import pytest  # type: ignore[import-not-found]
@@ -26,6 +27,11 @@ from camel.types import (
     OpenAIBackendRole,
     RoleType,
     TaskType,
+)
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
 )
 
 
@@ -160,6 +166,10 @@ def test_base_message():
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_roleplay_sharegpt_conversion():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,

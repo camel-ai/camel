@@ -12,6 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
+
 import pytest  # type: ignore[import-not-found]
 from fastapi import HTTPException  # type: ignore[import-not-found]
 from fastapi.testclient import TestClient  # type: ignore[import-not-found]
@@ -21,6 +23,11 @@ from pydantic import BaseModel
 from camel.messages import BaseMessage
 from camel.services.agent_openapi_server import ChatAgentOpenAPIServer
 from camel.toolkits import FunctionTool, SearchToolkit
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
+)
 
 
 @pytest.fixture
@@ -48,6 +55,10 @@ def test_init_agent(client_with_tool):
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_step_interaction(client_with_tool):
     r"""Tests /v1/agents/step returns a valid agent response with a tool."""
     client_with_tool.post(
@@ -99,6 +110,10 @@ def test_reset_agent(client_with_tool):
 
 @pytest.mark.asyncio
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 async def test_async_step_route_with_tool():
     r"""Tests the /v1/agents/astep endpoint with an async client.
 
