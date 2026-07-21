@@ -21,36 +21,27 @@ import examples.role_description.role_playing_with_role_description
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
-MISSING_OPENAI_KEY = (
-    "OPENAI_API_KEY" not in os.environ
-    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
-    or not os.environ.get("OPENAI_API_KEY")
+model_gpt = ModelFactory.create(
+    ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O,
 )
 
-pytestmark = pytest.mark.skipif(
-    MISSING_OPENAI_KEY,
-    reason="OpenAI API key is missing or dummy",
+model_stub = ModelFactory.create(
+    ModelPlatformType.OPENAI,
+    model_type=ModelType.STUB,
 )
 
 
 def test_role_generation_example():
-    model_gpt = ModelFactory.create(
-        ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O,
-    )
     with patch('time.sleep', return_value=None):
         examples.role_description.role_generation.main(model_gpt)
 
 
+@pytest.mark.skipif(
+    os.environ.get("OPENAI_API_KEY") is None,
+    reason="OpenAI API key missing from environment variables",
+)
 def test_role_playing_with_role_description_example():
-    model_gpt = ModelFactory.create(
-        ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O,
-    )
-    model_stub = ModelFactory.create(
-        ModelPlatformType.OPENAI,
-        model_type=ModelType.STUB,
-    )
     with patch('time.sleep', return_value=None):
         examples.role_description.role_playing_with_role_description.main(
             model_gpt, model_stub, chat_turn_limit=2
