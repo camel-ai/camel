@@ -479,7 +479,7 @@ class TerminalToolkit(BaseToolkit):
         command: str,
         *,
         check_exit_code: bool = True,
-    ) -> tuple[int, bytes]:
+    ) -> tuple[Optional[int], bytes]:
         r"""Execute a command in the Docker container and return the result.
 
         Consolidates the repeated ``exec_create → exec_start → exec_inspect``
@@ -491,7 +491,8 @@ class TerminalToolkit(BaseToolkit):
             check_exit_code: If True, raises RuntimeError on non-zero exit.
 
         Returns:
-            A tuple of (exit_code, output_bytes).
+            A tuple of (exit_code, output_bytes). The exit code is ``None``
+            when ``check_exit_code`` is False.
 
         Raises:
             RuntimeError: If the Docker API call fails or the command exits
@@ -506,8 +507,10 @@ class TerminalToolkit(BaseToolkit):
                 self.container.id, cmd=command
             )["Id"]
             output = self.docker_api_client.exec_start(exec_id)
-            exec_info = self.docker_api_client.exec_inspect(exec_id)
-            exit_code = exec_info["ExitCode"]
+            exit_code = None
+            if check_exit_code:
+                exec_info = self.docker_api_client.exec_inspect(exec_id)
+                exit_code = exec_info["ExitCode"]
             if check_exit_code and exit_code != 0:
                 error_text = (
                     output.decode("utf-8", errors="ignore")
@@ -525,9 +528,7 @@ class TerminalToolkit(BaseToolkit):
                 )
             return exit_code, output
         except (APIError, NotFound) as e:
-            raise RuntimeError(
-                f"Docker API error executing '{command[:80]}': {e}"
-            ) from e
+            raise RuntimeError(f"Docker API error: {e}") from e
 
     def _sanitize_command(self, command: str) -> tuple[bool, str]:
         r"""A comprehensive command sanitizer for both local and

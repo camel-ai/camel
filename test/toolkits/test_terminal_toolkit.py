@@ -14,11 +14,16 @@
 import platform
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
 from camel.toolkits import TerminalToolkit
 from camel.toolkits.terminal_toolkit import DANGEROUS_COMMANDS
+from camel.toolkits.terminal_toolkit import (
+    terminal_toolkit as terminal_toolkit_module,
+)
 from camel.toolkits.terminal_toolkit.utils import sanitize_command
 
 
@@ -42,6 +47,54 @@ def test_file(temp_dir):
     content = "Hello\nWorld\nTest\nContent"
     file_path.write_text(content)
     return file_path
+
+
+@pytest.fixture
+def docker_toolkit():
+    toolkit = object.__new__(TerminalToolkit)
+    toolkit.use_docker_backend = True
+    toolkit.container = SimpleNamespace(id="container-id")
+    toolkit.docker_api_client = Mock()
+    return toolkit
+
+
+def test_docker_exec_skips_inspect_when_exit_code_is_not_checked(
+    docker_toolkit,
+):
+    docker_toolkit.docker_api_client.exec_create.return_value = {
+        "Id": "exec-id"
+    }
+    docker_toolkit.docker_api_client.exec_start.return_value = b"output"
+
+    exit_code, output = docker_toolkit._docker_exec(
+        "mkdir -p /workspace", check_exit_code=False
+    )
+
+    assert exit_code is None
+    assert output == b"output"
+    docker_toolkit.docker_api_client.exec_inspect.assert_not_called()
+
+
+def test_docker_exec_api_error_does_not_expose_command(
+    docker_toolkit, monkeypatch
+):
+    class FakeAPIError(Exception):
+        pass
+
+    monkeypatch.setattr(terminal_toolkit_module, "APIError", FakeAPIError)
+    monkeypatch.setattr(terminal_toolkit_module, "NotFound", FakeAPIError)
+    docker_toolkit.docker_api_client.exec_create.side_effect = FakeAPIError(
+        "daemon unavailable"
+    )
+    secret = "ghp_SUPERSECRET"
+
+    with pytest.raises(RuntimeError) as exc_info:
+        docker_toolkit._docker_exec(
+            f"pip install https://user:{secret}@example.com/private.git"
+        )
+
+    assert secret not in str(exc_info.value)
+    assert "daemon unavailable" in str(exc_info.value)
 
 
 def test_init():
