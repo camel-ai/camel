@@ -23,7 +23,8 @@ from camel.types import ModelPlatformType, ModelType
 
 MISSING_OPENAI_KEY = (
     "OPENAI_API_KEY" not in os.environ
-    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
 )
 
 
