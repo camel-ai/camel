@@ -113,25 +113,33 @@ def test_to_openai_response_text_only():
         ("STOP_SEQUENCE", "stop"),
         ("MAX_TOKENS", "length"),
         ("TOOL_CALL", "tool_calls"),
-        ("ERROR", "stop"),
-        ("TIMEOUT", "stop"),
     ],
 )
 def test_to_openai_response_maps_finish_reason(cohere_reason, expected):
-    r"""Every value Cohere can return must leave as an OpenAI finish_reason.
-
-    ``V2ChatResponse.finish_reason`` is one of COMPLETE, STOP_SEQUENCE,
-    MAX_TOKENS, TOOL_CALL, ERROR or TIMEOUT, and OpenAI's vocabulary is stop,
-    length, tool_calls, content_filter or function_call. The two sets are
-    disjoint, so passing the value through verbatim emits a finish_reason no
-    OpenAI-compatible caller can read.
-    """
+    r"""Successful Cohere reasons map to OpenAI finish reasons."""
     model = CohereModel(ModelType.COHERE_COMMAND_R, api_key="dummy")
     response = _mock_cohere_response(text="hi", finish_reason=cohere_reason)
 
     result = model._to_openai_response(response)
 
     assert result.choices[0].finish_reason == expected
+
+
+@pytest.mark.parametrize(
+    "cohere_reason, content", [("ERROR", None), ("TIMEOUT", [])]
+)
+def test_to_openai_response_raises_for_failed_generation(
+    cohere_reason, content
+):
+    r"""Provider failures raise before optional content is read."""
+    model = CohereModel(ModelType.COHERE_COMMAND_R, api_key="dummy")
+    response = _mock_cohere_response(
+        text="partial", finish_reason=cohere_reason
+    )
+    response.message.content = content
+
+    with pytest.raises(RuntimeError, match=cohere_reason):
+        model._to_openai_response(response)
 
 
 def test_to_openai_response_finish_reason_none_stays_none():
@@ -145,10 +153,10 @@ def test_to_openai_response_finish_reason_none_stays_none():
     assert result.choices[0].finish_reason is None
 
 
-def test_map_finish_reason_unknown_value_falls_back_to_stop():
-    r"""A finish reason added by a future Cohere release still yields a legal
-    OpenAI value rather than leaking through unmapped."""
-    assert CohereModel._map_finish_reason("SOME_NEW_REASON") == "stop"
+def test_map_finish_reason_unknown_value_raises():
+    r"""Unknown provider reasons are not reported as successful stops."""
+    with pytest.raises(ValueError, match="SOME_NEW_REASON"):
+        CohereModel._map_finish_reason("SOME_NEW_REASON")
 
 
 @pytest.mark.model_backend
