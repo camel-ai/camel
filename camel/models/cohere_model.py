@@ -55,6 +55,16 @@ except (ImportError, AttributeError):
     LLMEvent = None
 
 
+# Map successful Cohere V2 finish reasons to the OpenAI vocabulary. ERROR and
+# TIMEOUT are raised because OpenAI has no equivalent finish reason.
+_FINISH_REASON_MAP = {
+    "COMPLETE": "stop",
+    "STOP_SEQUENCE": "stop",
+    "MAX_TOKENS": "length",
+    "TOOL_CALL": "tool_calls",
+}
+
+
 class CohereModel(BaseModelBackend):
     r"""Cohere API in a unified BaseModelBackend interface.
 
@@ -119,7 +129,28 @@ class CohereModel(BaseModelBackend):
             **kwargs,
         )
 
+    @staticmethod
+    def _map_finish_reason(cohere_reason: str) -> str:
+        r"""Map a successful Cohere reason to its OpenAI equivalent."""
+        if cohere_reason in {"ERROR", "TIMEOUT"}:
+            raise RuntimeError(
+                "Cohere generation failed with finish reason "
+                f"{cohere_reason!r}"
+            )
+        try:
+            return _FINISH_REASON_MAP[cohere_reason]
+        except KeyError as exc:
+            raise ValueError(
+                f"Unknown Cohere finish reason: {cohere_reason!r}"
+            ) from exc
+
     def _to_openai_response(self, response: 'ChatResponse') -> ChatCompletion:
+        finish_reason = (
+            self._map_finish_reason(response.finish_reason)
+            if response.finish_reason is not None
+            else None
+        )
+
         if response.usage and response.usage.tokens:
             input_tokens = response.usage.tokens.input_tokens or 0
             output_tokens = response.usage.tokens.output_tokens or 0
@@ -162,9 +193,7 @@ class CohereModel(BaseModelBackend):
                 "content": content,
                 "tool_calls": openai_tool_calls,
             },
-            finish_reason=response.finish_reason
-            if response.finish_reason
-            else None,
+            finish_reason=finish_reason,
         )
         choices = [choice]
 
