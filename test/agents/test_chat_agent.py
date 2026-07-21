@@ -63,6 +63,11 @@ from camel.types import (
 )
 from camel.utils.async_func import sync_funcs_to_async
 
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
+)
+
 # Skip all tests in this file if the API key is missing
 pytestmark = pytest.mark.skipif(
     os.environ.get("OPENAI_API_KEY") is None,
@@ -1676,6 +1681,10 @@ async def test_tool_calling_math_async(step_call_count=3):
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 @pytest.mark.asyncio
 async def test_tool_calling_async(step_call_count=3):
     system_message = BaseMessage(
@@ -2267,6 +2276,10 @@ async def test_chat_agent_async_stream_with_async_generator_tool_calls():
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_chat_agent_stream_with_structured_output():
     r"""Test streaming with structured output (response_format).
 
@@ -2301,6 +2314,10 @@ def test_chat_agent_stream_with_structured_output():
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 @pytest.mark.asyncio
 async def test_chat_agent_async_stream_with_structured_output():
     r"""Test async streaming with structured output (response_format).
