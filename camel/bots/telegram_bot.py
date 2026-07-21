@@ -46,6 +46,7 @@ class TelegramBot:
         self.chat_agent = chat_agent
 
         self.token = telegram_token or os.getenv('TELEGRAM_TOKEN')
+        assert self.token is not None
 
         import telebot  # type: ignore[import-untyped]
 
