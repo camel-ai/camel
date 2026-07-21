@@ -29,7 +29,8 @@ from apps.agents.agents import (
 
 MISSING_OPENAI_KEY = (
     "OPENAI_API_KEY" not in os.environ
-    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
+    or not os.environ.get("OPENAI_API_KEY")
 )
 
 
