@@ -12,9 +12,18 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
+
+import pytest  # type: ignore[import-not-found]
 from pydantic import BaseModel
 
 from camel.schemas import OpenAISchemaConverter
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
+)
 
 
 class Temperature(BaseModel):
@@ -27,6 +36,10 @@ def get_temperature(location: str, date: str, temperature: float):
     print(f"Temperature in {location} on {date} is {temperature} degrees.")
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_openai_converter_with_str_template():
     temperature_template = (
         '{"location": "Beijing", "date": "2023-09-01", "temperature": 30.0}'
@@ -46,6 +59,10 @@ def test_openai_converter_with_str_template():
     }
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_openai_converter_with_function():
     model = OpenAISchemaConverter()
 
@@ -61,6 +78,10 @@ def test_openai_converter_with_function():
     }
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_openai_converter_with_model():
     model = OpenAISchemaConverter()
 

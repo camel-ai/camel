@@ -12,13 +12,27 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
+
+import pytest  # type: ignore[import-not-found]
+
 from camel.agents.chat_agent import ChatAgent
 from camel.data_collectors import AlpacaDataCollector
 from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
 from camel.types.enums import ModelPlatformType, ModelType
 
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
+)
 
+
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_alpaca_converter():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
@@ -52,6 +66,10 @@ def test_alpaca_converter():
     assert resp['output'] != ''
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_alpaca_llm_converter():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,

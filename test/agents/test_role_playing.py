@@ -35,7 +35,8 @@ from camel.types import (
 
 MISSING_OPENAI_KEY = (
     "OPENAI_API_KEY" not in os.environ
-    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
 )
 
 model = ModelFactory.create(
@@ -328,6 +329,10 @@ async def test_role_playing_ainit_chat(init_msg_content):
         )
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_role_playing_role_sequence(
     model=None,
 ):

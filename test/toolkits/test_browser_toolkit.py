@@ -17,7 +17,7 @@ import os
 import shutil
 from unittest.mock import MagicMock, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from PIL import Image
 
 from camel.toolkits.browser_toolkit import (
@@ -27,6 +27,12 @@ from camel.toolkits.browser_toolkit import (
     visual_viewport_from_dict,
 )
 from camel.toolkits.browser_toolkit_commons import dom_rectangle_from_dict
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
+)
 
 TEST_URL = "https://example.com"
 
@@ -204,6 +210,10 @@ def test_browser_get_screenshot(base_browser_fixture):
     assert file_path is None
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_browser_toolkit_browse_url(browser_toolkit_fixture):
     toolkit = browser_toolkit_fixture
 

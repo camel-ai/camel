@@ -14,8 +14,8 @@
 
 from typing import TYPE_CHECKING, List, cast
 
-import pytest
-from mock import Mock
+import pytest  # type: ignore[import-not-found]
+from mock import Mock  # type: ignore[import-not-found]
 
 from camel.models import BaseModelBackend
 from camel.models.model_manager import ModelManager

@@ -14,7 +14,7 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from pydantic import ValidationError
 
 from camel.agents import ChatAgent

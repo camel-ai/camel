@@ -12,6 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
+
+import pytest  # type: ignore[import-not-found]
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
@@ -19,7 +23,17 @@ from camel.runtimes import LLMGuardRuntime
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType
 
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
+)
 
+
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_code_execution_with_llm_guard_runtime():
     runtime = LLMGuardRuntime(verbose=True).add(
         *CodeExecutionToolkit().get_tools()

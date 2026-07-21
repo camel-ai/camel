@@ -17,10 +17,10 @@ import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from datasets import Dataset as HFDataset
 from pydantic import ValidationError
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset  # type: ignore[import-not-found]
 
 from camel.datasets import (
     DataPoint,
@@ -606,7 +606,7 @@ def test_static_dataset_init_from_jsonl_file():
     import tempfile
     from pathlib import Path
 
-    import pytest
+    import pytest  # type: ignore[import-not-found]
 
     # **Test 1: Initialization with a valid JSONL file (only required fields)**
     with tempfile.NamedTemporaryFile(
