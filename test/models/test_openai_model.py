@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest  # type: ignore[import-not-found]
@@ -22,8 +23,17 @@ from camel.models import OpenAIModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
+)
+
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 @pytest.mark.parametrize(
     "model_type",
     [
