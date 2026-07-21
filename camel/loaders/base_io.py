@@ -190,6 +190,7 @@ class DocxFile(File):
 
 class PdfFile(File):
     @classmethod
+    @dependencies_required('fitz')
     def from_bytes(cls, file: BytesIO, filename: str) -> "PdfFile":
         r"""Creates a PdfFile object from a BytesIO object.
 
@@ -201,15 +202,8 @@ class PdfFile(File):
         Returns:
             PdfFile: A PdfFile object.
         """
-        # Use fitz to extract text from pdf files
-        try:
-            import fitz
-        except ImportError:
-            raise ImportError(
-                "Please install `PyMuPDF` first. "
-                "You can install it by running "
-                "`pip install PyMuPDF`."
-            )
+        import fitz
+
         pdf = fitz.open(stream=file.read(), filetype="pdf")
         docs = []
         for i, page in enumerate(pdf):
@@ -291,6 +285,7 @@ class JsonFile(File):
 
 class HtmlFile(File):
     @classmethod
+    @dependencies_required('bs4')
     def from_bytes(cls, file: BytesIO, filename: str) -> "HtmlFile":
         r"""Creates a HtmlFile object from a BytesIO object.
 
@@ -302,15 +297,8 @@ class HtmlFile(File):
         Returns:
             HtmlFile: A HtmlFile object.
         """
-        # Parse the HTML data from the file
-        try:
-            from bs4 import BeautifulSoup
-        except ImportError:
-            raise ImportError(
-                "Please install `beautifulsoup4` first. "
-                "You can install it by running "
-                "`pip install beautifulsoup4`."
-            )
+        from bs4 import BeautifulSoup
+
         soup = BeautifulSoup(file, "html.parser")
         text = soup.get_text()
         text = strip_consecutive_newlines(text)

@@ -78,6 +78,8 @@ class InternalPythonInterpreter(BaseInterpreter):
         unsafe_mode (bool, optional): If `True`, the interpreter runs the code
             by `eval()` or `exec()` without any security check.
             (default: :obj:`False`)
+        require_confirm (bool, optional): If True, prompt user before running
+            shell commands on the local computer. (default: :obj:`True`)
         raise_error (bool, optional): Raise error if the interpreter fails.
             (default: :obj:`False`)
         allow_builtins (bool, optional): If `True`, safe built-in functions
@@ -92,6 +94,7 @@ class InternalPythonInterpreter(BaseInterpreter):
         action_space: Optional[Dict[str, Any]] = None,
         import_white_list: Optional[List[str]] = None,
         unsafe_mode: bool = False,
+        require_confirm: bool = True,
         raise_error: bool = False,
         allow_builtins: bool = True,
     ) -> None:
@@ -101,6 +104,7 @@ class InternalPythonInterpreter(BaseInterpreter):
         self.import_white_list = import_white_list or list()
         self.raise_error = raise_error
         self.unsafe_mode = unsafe_mode
+        self.require_confirm = require_confirm
 
         # Add safe built-in functions if allowed
         if allow_builtins:
@@ -184,20 +188,17 @@ class InternalPythonInterpreter(BaseInterpreter):
             import contextlib
             import io
 
-            # Try to execute first and capture stdout
             output_buffer = io.StringIO()
+            try:
+                compiled_code = compile(code, "<string>", "eval")
+            except SyntaxError:
+                with contextlib.redirect_stdout(output_buffer):
+                    exec(code, self.action_space)
+                return output_buffer.getvalue()
+
             with contextlib.redirect_stdout(output_buffer):
-                exec(code, self.action_space)
-            result = output_buffer.getvalue()
-
-            # If no output was captured, try to evaluate the code
-            if not result:
-                try:
-                    result = str(eval(code, self.action_space))
-                except (SyntaxError, NameError):
-                    result = ""  # If eval fails, return empty string
-
-            return result
+                result = eval(compiled_code, self.action_space)
+            return output_buffer.getvalue() or str(result)
         else:
             return str(self.execute(code))
 
@@ -648,6 +649,9 @@ class InternalPythonInterpreter(BaseInterpreter):
         Returns:
             tuple: A tuple containing the stdout and stderr of the command.
         """
+        if self.require_confirm:
+            self._confirm_execution(command)
+
         try:
             proc = subprocess.Popen(
                 command,
@@ -662,3 +666,24 @@ class InternalPythonInterpreter(BaseInterpreter):
             return stdout, stderr
         except Exception as e:
             raise InterpreterError(f"Error executing command: {e}")
+
+    def _confirm_execution(self, command: str) -> None:
+        r"""Prompt the user before executing a local shell command."""
+        while True:
+            choice = (
+                input(
+                    "The following shell command will run on your "
+                    f"computer: {command}\nRunning command? [y/N]:"
+                )
+                .lower()
+                .strip()
+            )
+            if choice in ["y", "yes", "ye"]:
+                return
+            if choice in ["no", "n", ""]:
+                raise InterpreterError(
+                    "Execution halted: User opted not to run the "
+                    "command. This choice stops the current operation "
+                    "and any further command execution."
+                )
+            print("Please enter 'y' or 'n'.")

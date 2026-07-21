@@ -21,6 +21,7 @@ Includes:
 """
 
 import json
+import time
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -31,6 +32,7 @@ from camel.societies.workforce import FailureHandlingConfig
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
     LogEvent,
+    StreamChunkEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -81,12 +83,39 @@ class PrintCallback(WorkforceCallback):
 
     def __init__(self, stream_buffers: dict[tuple[str, str], list[str]]):
         self._stream_buffers = stream_buffers
+        self._stream_stats: dict[tuple[str, str], tuple[float, int, int]] = {}
 
     def log_message(self, event: LogEvent) -> None:
         print(
             f"[PrintCallback] {event.message} level={event.level}, "
             f"color={event.color}"
         )
+
+    def log_stream_chunk(self, event: StreamChunkEvent) -> None:
+        if not event.worker_id or not event.task_id:
+            return
+
+        key = (event.worker_id, event.task_id)
+        self._stream_buffers.setdefault(key, []).append(event.text)
+
+        now = time.monotonic()
+        last_ts, window_chars, total_chars = self._stream_stats.get(
+            key, (now, 0, 0)
+        )
+        chunk_chars = len(event.text)
+        window_chars += chunk_chars
+        total_chars += chunk_chars
+        elapsed = now - last_ts
+
+        if elapsed >= 1.0:
+            chars_per_second = window_chars / elapsed
+            print(
+                f"[StreamProgress][{key[0]}][{key[1]}] "
+                f"{chars_per_second:.1f} chars/s, total={total_chars}"
+            )
+            self._stream_stats[key] = (now, 0, total_chars)
+        else:
+            self._stream_stats[key] = (last_ts, window_chars, total_chars)
 
     def log_task_created(self, event: TaskCreatedEvent) -> None:
         print(
@@ -125,6 +154,7 @@ class PrintCallback(WorkforceCallback):
         )
         key = (event.worker_id, event.task_id)
         chunks = self._stream_buffers.pop(key, [])
+        self._stream_stats.pop(key, None)
         if chunks:
             merged_text = "".join(chunks).strip()
             if merged_text:
@@ -137,6 +167,10 @@ class PrintCallback(WorkforceCallback):
             f"[PrintCallback] task_failed: task={event.task_id}, "
             f"err={event.error_message}"
         )
+        if event.worker_id:
+            key = (event.worker_id, event.task_id)
+            self._stream_buffers.pop(key, None)
+            self._stream_stats.pop(key, None)
 
     def log_worker_created(self, event: WorkerCreatedEvent) -> None:
         print(
@@ -193,21 +227,12 @@ def main() -> None:
     # Buffer stream chunks per worker/task and print once when task completes.
     stream_buffers: dict[tuple[str, str], list[str]] = {}
 
-    def on_worker_stream(
-        worker_id: str, task_id: str, text: str, _mode: str
-    ) -> None:
-        if not text:
-            return
-        key = (worker_id, task_id)
-        stream_buffers.setdefault(key, []).append(text)
-
     workforce = Workforce(
         "Workforce Callbacks Demo",
         callbacks=[
             WorkforceLogger('demo-logger'),
             PrintCallback(stream_buffers),
         ],
-        stream_callback=on_worker_stream,
         use_structured_output_handler=True,
         failure_handling_config=FailureHandlingConfig(enabled_strategies=[]),
         default_model=model,

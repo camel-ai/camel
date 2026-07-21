@@ -26,6 +26,8 @@ from typing import (
     Union,
 )
 
+from camel.utils import dependencies_required
+
 if TYPE_CHECKING:
     from unstructured.documents.elements import Element
 
@@ -41,6 +43,7 @@ class UnstructuredIO:
     """
 
     @staticmethod
+    @dependencies_required('unstructured')
     def create_element_from_text(
         text: str,
         element_id: Optional[str] = None,
@@ -94,6 +97,7 @@ class UnstructuredIO:
         )
 
     @staticmethod
+    @dependencies_required('unstructured')
     def parse_file_or_url(
         input_path: str,
         **kwargs: Any,
@@ -158,6 +162,7 @@ class UnstructuredIO:
                 return []
 
     @staticmethod
+    @dependencies_required('unstructured')
     def parse_bytes(file: IO[bytes], **kwargs: Any) -> List["Element"]:
         r"""Parses a bytes stream and converts its contents into elements.
 
@@ -189,6 +194,7 @@ class UnstructuredIO:
             return []
 
     @staticmethod
+    @dependencies_required('unstructured')
     def clean_text_data(
         text: str,
         clean_options: Optional[List[Tuple[str, Dict[str, Any]]]] = None,
@@ -292,6 +298,7 @@ class UnstructuredIO:
         return cleaned_text
 
     @staticmethod
+    @dependencies_required('unstructured')
     def extract_data_from_text(
         text: str,
         extract_type: Literal[
@@ -358,6 +365,7 @@ class UnstructuredIO:
         return extraction_functions[extract_type](text, **kwargs)
 
     @staticmethod
+    @dependencies_required('unstructured')
     def stage_elements(
         elements: List[Any],
         stage_type: Literal[
@@ -442,6 +450,7 @@ class UnstructuredIO:
         return staging_functions[stage_type](elements, **kwargs)
 
     @staticmethod
+    @dependencies_required('unstructured')
     def chunk_elements(
         elements: List["Element"], chunk_type: str, **kwargs
     ) -> List["Element"]:

@@ -318,6 +318,20 @@ Convert OpenAI tools format to Anthropic tools format.
 
   Optional[List[Dict[str, Any]]]: Tools in Anthropic format.
 
+<a id="camel.models.anthropic_model.AnthropicModel._get_strict_tools_limit_reason"></a>
+
+### _get_strict_tools_limit_reason
+
+```python
+def _get_strict_tools_limit_reason(tools: List[Dict[str, Any]]):
+```
+
+Return why Anthropic strict tool limits are exceeded, if any.
+
+Anthropic compiles all strict tool schemas in a request into a single
+grammar. Its documented request-wide limits apply to the number of
+strict tools, optional parameters, and parameters using union types.
+
 <a id="camel.models.anthropic_model.AnthropicModel._run"></a>
 
 ### _run

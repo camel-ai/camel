@@ -92,7 +92,9 @@ def query(
     vector_retriever_top_k: int = 50,
     vector_retriever_similarity_threshold: float = 0.5,
     bm25_retriever_top_k: int = 50,
-    return_detailed_info: bool = False
+    return_detailed_info: bool = False,
+    reranker: Optional[BaseRerankRetriever] = None,
+    rerank_input_top_k: int = 50
 ):
 ```
 
@@ -110,6 +112,8 @@ retrievers.
 - **vector_retriever_similarity_threshold** (float): Similarity threshold for vector retriever.
 - **bm25_retriever_top_k** (int): Top results from BM25 retriever.
 - **return_detailed_info** (bool): Return detailed info if True.
+- **reranker** (Optional[BaseRerankRetriever]): An optional re-ranking retriever (e.g. :class:`CohereRerankRetriever` or :class:`JinaRerankRetriever`). When provided, the fused results are re-ordered by the reranker before being truncated to `__INLINE_CODE_2____INLINE_CODE_3__None`)
+- **rerank_input_top_k** (int): The number of top fused candidates fed into the reranker. Only used when `__INLINE_CODE_0____INLINE_CODE_1__50`)
 
 **Returns:**
 

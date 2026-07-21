@@ -17,6 +17,7 @@ import asyncio
 import atexit
 import base64
 import concurrent.futures
+import copy
 import functools
 import hashlib
 import inspect
@@ -468,6 +469,12 @@ class ChatAgent(BaseAgent):
             context window that can be occupied by summary information. Used
             to limit how much of the model's context is reserved for
             summarization results. (default: :obj:`0.6`)
+        tool_log_dir (Optional[Union[str, Path]]): Directory used to save full
+            tool outputs when they are truncated. If `None`, full outputs are
+            not saved. Saved files contain raw tool output and are not removed
+            automatically, so use an appropriately protected directory. Paths
+            refer to the host running the agent and may not be accessible
+            inside sandboxed tools. (default: :obj:`None`)
     """
 
     def __init__(
@@ -516,6 +523,7 @@ class ChatAgent(BaseAgent):
         on_request_usage: Optional[Callable[[Dict[str, Any]], Any]] = None,
         stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
+        tool_log_dir: Optional[Union[str, Path]] = None,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -619,6 +627,11 @@ class ChatAgent(BaseAgent):
         self.stop_event = stop_event
         self.tool_execution_timeout = tool_execution_timeout
         self.mask_tool_output = mask_tool_output
+        self._tool_log_dir = (
+            Path(tool_log_dir).expanduser().resolve()
+            if tool_log_dir is not None
+            else None
+        )
         self._secure_result_store: Dict[str, Any] = {}
         self._secure_result_store_lock = threading.Lock()
         self.pause_event = pause_event
@@ -1230,6 +1243,49 @@ class ChatAgent(BaseAgent):
         except (TypeError, ValueError):
             return str(result)
 
+    def _save_tool_output_log(
+        self, func_name: str, content: str
+    ) -> Optional[str]:
+        r"""Save full tool output to a .log file when truncation occurs.
+
+        Args:
+            func_name (str): The name of the tool function.
+            content (str): The full serialized tool output to persist.
+
+        Returns:
+            Optional[str]: Absolute path to the saved log file, or None when
+                logging is disabled or saving failed.
+        """
+        log_dir = self._tool_log_dir
+        if log_dir is None:
+            return None
+
+        try:
+            log_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+            safe_func_name = re.sub(r"[^A-Za-z0-9_-]+", "_", func_name).strip(
+                "_"
+            )
+            safe_func_name = safe_func_name[:64] or "tool"
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                prefix=f"{safe_func_name}_",
+                suffix=".log",
+                dir=log_dir,
+                delete=False,
+            ) as log_file:
+                log_file.write(content)
+                log_path = Path(log_file.name)
+            logger.info(
+                "Full tool output for '%s' saved to: %s", func_name, log_path
+            )
+            return str(log_path)
+        except Exception as e:
+            logger.warning(
+                "Failed to save tool output log for '%s': %s", func_name, e
+            )
+            return None
+
     def _truncate_tool_result(
         self, func_name: str, result: Any
     ) -> Tuple[Any, bool]:
@@ -1261,10 +1317,19 @@ class ChatAgent(BaseAgent):
         target_tokens = max(max_tokens - 100, 100)
         truncated = serialized[: target_tokens * 3]
 
+        log_ref = ""
+        if self._tool_log_dir is not None:
+            log_path = self._save_tool_output_log(func_name, serialized)
+            log_ref = (
+                f" Full output saved to: {log_path}"
+                if log_path
+                else " (log saving failed)"
+            )
+
         notice = (
             f"\n\n[TRUNCATED] Tool '{func_name}' output truncated "
             f"({result_tokens} > {max_tokens} tokens). "
-            f"Tool executed successfully."
+            f"Tool executed successfully.{log_ref}"
         )
 
         logger.warning(
@@ -4214,62 +4279,11 @@ class ChatAgent(BaseAgent):
                 cast(List[MemoryRecord], func_records),
             )
 
+        # Extract and inject images if result is ToolResult
+        images = None
         if isinstance(result, ToolResult) and result.images:
-            try:
-                import base64
-                import io
-
-                try:
-                    from PIL import Image
-                except ImportError:
-                    logger.warning(
-                        f"Tool '{func_name}' returned images but PIL "
-                        "is not installed. Install with: pip install "
-                        "Pillow. Skipping visual context injection."
-                    )
-                    # Continue without injecting images
-                    result = (
-                        result.text if hasattr(result, 'text') else str(result)
-                    )
-                else:
-                    logger.info(
-                        f"Tool '{func_name}' returned ToolResult with "
-                        f"{len(result.images)} image(s), injecting into "
-                        "context"
-                    )
-
-                    # Convert base64 images to PIL Image objects
-                    pil_images: List[Union[Image.Image, str]] = []
-                    for img_data in result.images:
-                        if img_data.startswith('data:image/'):
-                            # Extract base64 data
-                            base64_str = img_data.split(',', 1)[1]
-                            img_bytes = base64.b64decode(base64_str)
-                            pil_img = Image.open(io.BytesIO(img_bytes))
-                            pil_images.append(pil_img)
-
-                    if pil_images:
-                        # Create a user message with the image(s)
-                        visual_msg = BaseMessage.make_user_message(
-                            role_name="Tool",
-                            content=f"[Visual output from {func_name}]",
-                            image_list=pil_images,
-                        )
-
-                        # Inject into conversation context
-                        self.update_memory(
-                            visual_msg,
-                            OpenAIBackendRole.USER,
-                            return_records=False,
-                        )
-                        logger.info(
-                            f"Successfully injected {len(pil_images)} "
-                            "image(s) into agent context"
-                        )
-            except Exception as e:
-                logger.error(
-                    f"Failed to inject visual content from {func_name}: {e}"
-                )
+            images = result.images
+            self._inject_tool_images_into_memory(func_name, result.images)
 
         # Record information about this tool call
         # Note: tool_record contains the original result for the caller,
@@ -4279,9 +4293,66 @@ class ChatAgent(BaseAgent):
             args=args,
             result=result,
             tool_call_id=tool_call_id,
+            images=images,
         )
         self._update_last_tool_call_state(tool_record)
         return tool_record
+
+    def _inject_tool_images_into_memory(
+        self, func_name: str, image_list: List[str]
+    ) -> None:
+        r"""Inject images from a tool result into agent memory.
+
+        Args:
+            func_name (str): The name of the tool that returned images.
+            image_list (List[str]): List of base64-encoded image strings.
+        """
+        try:
+            import base64
+            import io
+
+            try:
+                from PIL import Image
+            except ImportError:
+                logger.warning(
+                    f"Tool '{func_name}' returned images but PIL "
+                    "is not installed. Install with: pip install "
+                    "Pillow. Skipping visual context injection."
+                )
+                return
+
+            logger.info(
+                f"Tool '{func_name}' returned ToolResult with "
+                f"{len(image_list)} image(s), injecting into context"
+            )
+
+            pil_images: List[Union[Image.Image, str]] = []
+            for img_data in image_list:
+                if img_data.startswith('data:image/'):
+                    base64_str = img_data.split(',', 1)[1]
+                    img_bytes = base64.b64decode(base64_str)
+                    pil_img = Image.open(io.BytesIO(img_bytes))
+                    pil_images.append(pil_img)
+
+            if pil_images:
+                visual_msg = BaseMessage.make_user_message(
+                    role_name="Tool",
+                    content=f"[Visual output from {func_name}]",
+                    image_list=pil_images,
+                )
+                self.update_memory(
+                    visual_msg,
+                    OpenAIBackendRole.USER,
+                    return_records=False,
+                )
+                logger.info(
+                    f"Successfully injected {len(pil_images)} "
+                    "image(s) into agent context"
+                )
+        except Exception as e:
+            logger.error(
+                f"Failed to inject visual content from {func_name}: {e}"
+            )
 
     def _stream(
         self,
@@ -5071,11 +5142,20 @@ class ChatAgent(BaseAgent):
                     # Record only the tool result message
                     self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
+                    # Extract and inject images if result is ToolResult
+                    images = None
+                    if isinstance(result, ToolResult) and result.images:
+                        images = result.images
+                        self._inject_tool_images_into_memory(
+                            function_name, result.images
+                        )
+
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
                         args=args,
                         result=result,
                         tool_call_id=tool_call_id,
+                        images=images,
                     )
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
@@ -5227,11 +5307,20 @@ class ChatAgent(BaseAgent):
                     )
                     self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
+                    # Extract and inject images if result is ToolResult
+                    images = None
+                    if isinstance(result, ToolResult) and result.images:
+                        images = result.images
+                        self._inject_tool_images_into_memory(
+                            function_name, result.images
+                        )
+
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
                         args=args,
                         result=result,
                         tool_call_id=tool_call_id,
+                        images=images,
                     )
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
@@ -6141,7 +6230,7 @@ class ChatAgent(BaseAgent):
             external_tools=[
                 schema for schema in self._external_tool_schemas.values()
             ],
-            response_terminators=self.response_terminators,
+            response_terminators=copy.deepcopy(self.response_terminators),
             scheduling_strategy=(
                 self.model_backend.scheduling_strategy.__name__
             ),
@@ -6158,6 +6247,7 @@ class ChatAgent(BaseAgent):
             ),
             summarize_threshold=self.summarize_threshold,
             mask_tool_output=self.mask_tool_output,
+            tool_log_dir=self._tool_log_dir,
             enable_snapshot_clean=self._enable_snapshot_clean,
             retry_attempts=self.retry_attempts,
             retry_delay=self.retry_delay,
