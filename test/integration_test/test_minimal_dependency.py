@@ -13,10 +13,16 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import importlib
+import os
 import subprocess
 from pathlib import Path
 
 import pytest  # type: ignore[import-not-found]
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
+)
 
 MODULES_TO_IMPORT = [
     "camel.agents",
@@ -55,6 +61,10 @@ EXAMPLES = [
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 @pytest.mark.parametrize("example_path", EXAMPLES)
 def test_example_runs_or_skips(example_path):
     r"""Test if an example script runs successfully or fails clearly.
