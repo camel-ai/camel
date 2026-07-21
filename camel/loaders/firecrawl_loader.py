@@ -48,12 +48,16 @@ class FirecrawlLoader(BaseLoader):
 
         super().__init__(config=config)
 
-        from firecrawl import FirecrawlApp
+        from firecrawl import FirecrawlApp  # type: ignore[import-not-found]
 
         self._api_key = api_key or os.environ.get("FIRECRAWL_API_KEY")
         self._base_url = base_url or os.environ.get("FIRECRAWL_BASE_URL")
 
-        self.app = FirecrawlApp(api_key=self._api_key, base_url=self._base_url)
+        kwargs = {"api_key": self._api_key}
+        if self._base_url:
+            kwargs["api_url"] = self._base_url
+
+        self.app = FirecrawlApp(**kwargs)
 
     @property
     def supported_formats(self) -> set[str]:

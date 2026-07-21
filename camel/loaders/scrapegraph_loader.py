@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ... (Keep standard header)
+
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
@@ -37,13 +37,37 @@ class ScrapeGraphAILoader(BaseLoader):
 
         super().__init__(config=config)
 
-        from scrapegraph_py import Client  # type: ignore[attr-defined]
-        from scrapegraph_py.logger import (  # type: ignore[attr-defined]
-            sgai_logger,  # type: ignore[attr-defined]
-        )
+        try:
+            from scrapegraph_py import Client  # type: ignore[attr-defined]
+        except ImportError:
+            try:
+                from scrapegraph_py import (  # type: ignore[attr-defined]
+                    client as Client,
+                )
+            except ImportError:
+                try:
+                    from scrapegraph_py.client import (  # type: ignore[attr-defined]
+                        Client,
+                    )
+                except ImportError:
+                    from scrapegraph_py.client import (  # type: ignore[attr-defined]
+                        client as Client,
+                    )
+
+        if hasattr(Client, "Client"):
+            Client = Client.Client
+        elif hasattr(Client, "client"):
+            Client = Client.client
+        elif hasattr(Client, "SmartScraperGraph"):
+            Client = Client.SmartScraperGraph
 
         self._api_key = api_key or os.environ.get("SCRAPEGRAPH_API_KEY")
-        sgai_logger.set_logging(level="INFO")
+        if not self._api_key:
+            raise ValueError(
+                "Please set SCRAPEGRAPH_API_KEY environment variable "
+                "or pass api_key."
+            )
+
         self.client = Client(api_key=self._api_key)
 
     @property
@@ -68,4 +92,5 @@ class ScrapeGraphAILoader(BaseLoader):
 
     def close(self) -> None:
         r"""Close the ScrapeGraphAI client connection."""
-        self.client.close()
+        if hasattr(self, 'client') and hasattr(self.client, 'close'):
+            self.client.close()

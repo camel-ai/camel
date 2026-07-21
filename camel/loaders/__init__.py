@@ -12,6 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from camel.loaders.scrapegraph_loader import ScrapeGraphAILoader
+
 from .apify_loader import ApifyLoader
 from .base_io import File, create_file, create_file_from_raw_bytes
 from .chunkr_loader import ChunkrLoader, ChunkrLoaderConfig
@@ -21,8 +23,9 @@ from .jina_url_loader import JinaURLLoader
 from .markitdown_loader import MarkItDownLoader
 from .mineru_loader import MinerULoader
 from .mistral_loader import MistralLoader
-from .scrapegraph_loader import ScrapeGraphAILoader
 from .unstructured_io import UnstructuredIO
+
+ScrapeGraphAI = ScrapeGraphAILoader
 
 __all__ = [
     'File',
@@ -38,6 +41,7 @@ __all__ = [
     'Crawl4AILoader',
     'MarkItDownLoader',
     'ScrapeGraphAILoader',
+    'ScrapeGraphAI',
     'MistralLoader',
 ]
 
