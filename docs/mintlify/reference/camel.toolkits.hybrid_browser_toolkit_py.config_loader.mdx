@@ -13,8 +13,12 @@ appear as a regular user browser and configure action timeouts.
 class BrowserConfig:
 ```
 
-Configuration class for browser settings including stealth mode and
-timeouts.
+Configuration class for browser settings including stealth mode
+and timeouts.
+
+Provides static methods to retrieve timeout values, action limits,
+stealth configuration, and HTTP headers. All values support
+environment variable overrides.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.BrowserConfig.get_timeout_config"></a>
 
@@ -26,7 +30,11 @@ def get_timeout_config():
 
 **Returns:**
 
-  Dict[str, int]: Timeout configuration in milliseconds.
+  Dict[str, int]: A dictionary of timeout values in milliseconds
+with keys: `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2__`,
+`__INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5__`,
+`__INLINE_CODE_6____INLINE_CODE_7____INLINE_CODE_8__`, and
+`__INLINE_CODE_9__`.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.BrowserConfig.get_action_limits"></a>
 
@@ -38,7 +46,8 @@ def get_action_limits():
 
 **Returns:**
 
-  Dict[str, int]: Action limits configuration.
+  Dict[str, int]: A dictionary of action limits with key
+`__INLINE_CODE_0__` (in pixels).
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.BrowserConfig.get_log_limits"></a>
 
@@ -50,7 +59,8 @@ def get_log_limits():
 
 **Returns:**
 
-  Dict[str, int]: Console Log limits configuration.
+  Dict[str, int]: A dictionary of log limits with key
+`__INLINE_CODE_0__`.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.BrowserConfig.get_action_timeout"></a>
 
@@ -64,7 +74,8 @@ Get action timeout with optional override.
 
 **Parameters:**
 
-- **override**: Optional timeout override value in milliseconds.
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
 
 **Returns:**
 
@@ -82,7 +93,8 @@ Get short timeout with optional override.
 
 **Parameters:**
 
-- **override**: Optional timeout override value in milliseconds.
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
 
 **Returns:**
 
@@ -100,7 +112,8 @@ Get navigation timeout with optional override.
 
 **Parameters:**
 
-- **override**: Optional timeout override value in milliseconds.
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
 
 **Returns:**
 
@@ -118,7 +131,8 @@ Get network idle timeout with optional override.
 
 **Parameters:**
 
-- **override**: Optional timeout override value in milliseconds.
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
 
 **Returns:**
 
@@ -136,7 +150,8 @@ Get maximum scroll amount with optional override.
 
 **Parameters:**
 
-- **override**: Optional scroll amount override value in pixels.
+- **override** (int, optional): Scroll amount override value in pixels.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
 
 **Returns:**
 
@@ -154,11 +169,11 @@ Get maximum log limit with optional override.
 
 **Parameters:**
 
-- **override**: Optional log limit override value.
+- **override** (int, optional): Log limit override value. If :obj:`None`, uses the environment-configured default. (default: :obj:`None`)
 
 **Returns:**
 
-  int: Maximum log limit.
+  int: Maximum number of log entries.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.BrowserConfig.get_screenshot_timeout"></a>
 
@@ -172,7 +187,8 @@ Get screenshot timeout with optional override.
 
 **Parameters:**
 
-- **override**: Optional timeout override value in milliseconds.
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
 
 **Returns:**
 
@@ -190,7 +206,8 @@ Get page stability timeout with optional override.
 
 **Parameters:**
 
-- **override**: Optional timeout override value in milliseconds.
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
 
 **Returns:**
 
@@ -208,7 +225,8 @@ Get DOM content loaded timeout with optional override.
 
 **Parameters:**
 
-- **override**: Optional timeout override value in milliseconds.
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
 
 **Returns:**
 
@@ -282,8 +300,11 @@ def get_all_config():
 class ConfigLoader:
 ```
 
-Legacy wrapper for BrowserConfig - maintained for backward
+Legacy wrapper for :obj:`BrowserConfig`, maintained for backward
 compatibility.
+
+All methods delegate directly to :obj:`BrowserConfig`. New code
+should use :obj:`BrowserConfig` directly.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_browser_config"></a>
 
@@ -293,7 +314,9 @@ compatibility.
 def get_browser_config(cls):
 ```
 
-Get the BrowserConfig class.
+**Returns:**
+
+  type: The :obj:`BrowserConfig` class.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_stealth_config"></a>
 
@@ -303,7 +326,9 @@ Get the BrowserConfig class.
 def get_stealth_config(cls):
 ```
 
-Get the StealthConfig class (alias).
+**Returns:**
+
+  type: The :obj:`BrowserConfig` class.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_timeout_config"></a>
 
@@ -313,7 +338,10 @@ Get the StealthConfig class (alias).
 def get_timeout_config(cls):
 ```
 
-Get timeout configuration.
+**Returns:**
+
+  Dict[str, int]: A dictionary of timeout values in milliseconds.
+See :obj:`BrowserConfig.get_timeout_config` for keys.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_action_timeout"></a>
 
@@ -325,6 +353,15 @@ def get_action_timeout(cls, override: Optional[int] = None):
 
 Get action timeout with optional override.
 
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_short_timeout"></a>
 
 ### get_short_timeout
@@ -334,6 +371,15 @@ def get_short_timeout(cls, override: Optional[int] = None):
 ```
 
 Get short timeout with optional override.
+
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_navigation_timeout"></a>
 
@@ -345,6 +391,15 @@ def get_navigation_timeout(cls, override: Optional[int] = None):
 
 Get navigation timeout with optional override.
 
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_network_idle_timeout"></a>
 
 ### get_network_idle_timeout
@@ -354,6 +409,15 @@ def get_network_idle_timeout(cls, override: Optional[int] = None):
 ```
 
 Get network idle timeout with optional override.
+
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_max_scroll_amount"></a>
 
@@ -365,6 +429,15 @@ def get_max_scroll_amount(cls, override: Optional[int] = None):
 
 Get maximum scroll amount with optional override.
 
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_max_log_limit"></a>
 
 ### get_max_log_limit
@@ -374,6 +447,15 @@ def get_max_log_limit(cls, override: Optional[int] = None):
 ```
 
 Get maximum log limit with optional override.
+
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_screenshot_timeout"></a>
 
@@ -385,6 +467,15 @@ def get_screenshot_timeout(cls, override: Optional[int] = None):
 
 Get screenshot timeout with optional override.
 
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_page_stability_timeout"></a>
 
 ### get_page_stability_timeout
@@ -394,6 +485,15 @@ def get_page_stability_timeout(cls, override: Optional[int] = None):
 ```
 
 Get page stability timeout with optional override.
+
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_dom_content_loaded_timeout"></a>
 
@@ -405,6 +505,15 @@ def get_dom_content_loaded_timeout(cls, override: Optional[int] = None):
 
 Get DOM content loaded timeout with optional override.
 
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_browser_config"></a>
 
 ## get_browser_config
@@ -413,7 +522,9 @@ Get DOM content loaded timeout with optional override.
 def get_browser_config():
 ```
 
-Get BrowserConfig class.
+**Returns:**
+
+  type: The :obj:`BrowserConfig` class.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_stealth_config"></a>
 
@@ -423,7 +534,9 @@ Get BrowserConfig class.
 def get_stealth_config():
 ```
 
-Get StealthConfig class.
+**Returns:**
+
+  type: The :obj:`BrowserConfig` class.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_timeout_config"></a>
 
@@ -433,7 +546,10 @@ Get StealthConfig class.
 def get_timeout_config():
 ```
 
-Get timeout configuration.
+**Returns:**
+
+  Dict[str, int]: A dictionary of timeout values in milliseconds.
+See :obj:`BrowserConfig.get_timeout_config` for keys.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_action_timeout"></a>
 
@@ -445,6 +561,15 @@ def get_action_timeout(override: Optional[int] = None):
 
 Get action timeout with optional override.
 
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_short_timeout"></a>
 
 ## get_short_timeout
@@ -454,6 +579,15 @@ def get_short_timeout(override: Optional[int] = None):
 ```
 
 Get short timeout with optional override.
+
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_navigation_timeout"></a>
 
@@ -465,6 +599,15 @@ def get_navigation_timeout(override: Optional[int] = None):
 
 Get navigation timeout with optional override.
 
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_network_idle_timeout"></a>
 
 ## get_network_idle_timeout
@@ -474,6 +617,15 @@ def get_network_idle_timeout(override: Optional[int] = None):
 ```
 
 Get network idle timeout with optional override.
+
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_max_scroll_amount"></a>
 
@@ -485,6 +637,15 @@ def get_max_scroll_amount(override: Optional[int] = None):
 
 Get maximum scroll amount with optional override.
 
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_max_log_limit"></a>
 
 ## get_max_log_limit
@@ -494,6 +655,15 @@ def get_max_log_limit(override: Optional[int] = None):
 ```
 
 Get maximum log limit with optional override.
+
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_screenshot_timeout"></a>
 
@@ -505,6 +675,15 @@ def get_screenshot_timeout(override: Optional[int] = None):
 
 Get screenshot timeout with optional override.
 
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_page_stability_timeout"></a>
 
 ## get_page_stability_timeout
@@ -515,6 +694,15 @@ def get_page_stability_timeout(override: Optional[int] = None):
 
 Get page stability timeout with optional override.
 
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_dom_content_loaded_timeout"></a>
 
 ## get_dom_content_loaded_timeout
@@ -524,3 +712,12 @@ def get_dom_content_loaded_timeout(override: Optional[int] = None):
 ```
 
 Get DOM content loaded timeout with optional override.
+
+**Parameters:**
+
+- **override** (int, optional): Timeout override value in milliseconds.
+- **If**: obj:`None`, uses the environment-configured default. (default: :obj:`None`)
+
+**Returns:**
+
+  int: Timeout value in milliseconds.

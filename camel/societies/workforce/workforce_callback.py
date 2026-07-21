@@ -21,6 +21,7 @@ from colorama import Fore
 from .events import (
     AllTasksCompletedEvent,
     LogEvent,
+    StreamChunkEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -61,6 +62,13 @@ class WorkforceCallback(ABC):
     def log_message(
         self,
         event: LogEvent,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def log_stream_chunk(
+        self,
+        event: StreamChunkEvent,
     ) -> None:
         pass
 

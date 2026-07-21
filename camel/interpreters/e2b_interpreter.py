@@ -17,7 +17,7 @@ from typing import Any, ClassVar, Dict, List, Optional
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
 from camel.logger import get_logger
-from camel.utils import api_keys_required
+from camel.utils import api_keys_required, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -48,6 +48,7 @@ class E2BInterpreter(BaseInterpreter):
         "r": "r",
     }
 
+    @dependencies_required('e2b_code_interpreter')
     @api_keys_required(
         [
             (None, "E2B_API_KEY"),

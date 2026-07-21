@@ -16,7 +16,11 @@ import socket
 
 import pytest
 
-from camel.interpreters import InterpreterError, SubprocessInterpreter
+from camel.interpreters import (
+    InternalPythonInterpreter,
+    InterpreterError,
+    SubprocessInterpreter,
+)
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.utils import is_docker_running
 
@@ -190,6 +194,13 @@ def test_subprocess_requires_confirmation_by_default():
     assert toolkit.interpreter.require_confirm is True
 
 
+def test_internal_python_requires_confirmation_by_default():
+    toolkit = CodeExecutionToolkit(sandbox="internal_python")
+
+    assert isinstance(toolkit.interpreter, InternalPythonInterpreter)
+    assert toolkit.interpreter.require_confirm is True
+
+
 def test_subprocess_default_confirmation_blocks_code(monkeypatch):
     toolkit = CodeExecutionToolkit()
     monkeypatch.setattr('builtins.input', lambda _: 'n')
@@ -202,6 +213,16 @@ def test_subprocess_default_confirmation_blocks_code(monkeypatch):
 
 def test_subprocess_default_confirmation_blocks_command(monkeypatch):
     toolkit = CodeExecutionToolkit()
+    monkeypatch.setattr('builtins.input', lambda _: 'n')
+
+    with pytest.raises(InterpreterError) as exc_info:
+        toolkit.execute_command("echo blocked")
+
+    assert "Execution halted" in str(exc_info.value)
+
+
+def test_internal_python_default_confirmation_blocks_command(monkeypatch):
+    toolkit = CodeExecutionToolkit(sandbox="internal_python")
     monkeypatch.setattr('builtins.input', lambda _: 'n')
 
     with pytest.raises(InterpreterError) as exc_info:
@@ -234,6 +255,15 @@ def test_subprocess_confirmation_can_be_disabled():
     toolkit = CodeExecutionToolkit(sandbox="subprocess", require_confirm=False)
 
     assert isinstance(toolkit.interpreter, SubprocessInterpreter)
+    assert toolkit.interpreter.require_confirm is False
+
+
+def test_internal_python_confirmation_can_be_disabled():
+    toolkit = CodeExecutionToolkit(
+        sandbox="internal_python", require_confirm=False
+    )
+
+    assert isinstance(toolkit.interpreter, InternalPythonInterpreter)
     assert toolkit.interpreter.require_confirm is False
 
 

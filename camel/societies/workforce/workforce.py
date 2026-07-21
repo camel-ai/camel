@@ -102,6 +102,7 @@ from camel.utils import (
 from .events import (
     AllTasksCompletedEvent,
     LogEvent,
+    StreamChunkEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -627,38 +628,34 @@ class Workforce(BaseNode):
     async def _on_worker_stream_chunk(
         self, chunk: "ChatAgentResponse", worker_id: str, task_id: str
     ) -> None:
-        r"""Normalize worker stream chunks and dispatch to user callback."""
-        if self._user_stream_callback is None:
-            return
+        r"""Normalize worker stream chunks, emit a `StreamChunkEvent`,
+        and dispatch to the user callback."""
+        stream_id = f"{worker_id}:{task_id}"
+        stream_payload = self._extract_stream_chunk(
+            chunk,
+            stream_id=stream_id,
+        )
 
-        if chunk.msg is None or chunk.msg.content is None:
-            return
+        try:
+            if stream_payload is None:
+                return
 
-        mode = "accumulate"
-        if chunk.info:
-            mode = chunk.info.get("stream_accumulate_mode", mode)
-            if "mode" in chunk.info:
-                mode = chunk.info["mode"]
+            text, stream_accumulate_mode = stream_payload
+            self._emit_stream_chunk_event(
+                text=text,
+                stream_accumulate_mode=stream_accumulate_mode,
+                task_id=task_id,
+                worker_id=worker_id,
+            )
 
-        content = chunk.msg.content
-        key = (worker_id, task_id)
-
-        if mode == "accumulate":
-            previous = self._stream_progress.get(key, "")
-            if content.startswith(previous):
-                text = content[len(previous) :]
-            else:
-                text = content
-            self._stream_progress[key] = content
-        else:
-            text = content
-
-        if not text:
-            return
-
-        maybe = self._user_stream_callback(worker_id, task_id, text, mode)
-        if asyncio.iscoroutine(maybe):
-            await maybe
+            if self._user_stream_callback is not None:
+                maybe = self._user_stream_callback(
+                    worker_id, task_id, text, stream_accumulate_mode
+                )
+                if asyncio.iscoroutine(maybe):
+                    await maybe
+        finally:
+            self._clear_stream_progress_if_final(chunk, stream_id)
 
     def _notify_worker_created(
         self,
@@ -1270,23 +1267,97 @@ class Workforce(BaseNode):
 
         return shared_memory
 
-    def _on_stream_callback(self, chunk: ChatAgentResponse) -> None:
-        # TODO (transitional): This is a local, best-effort stream speed
-        #  logger used only until streaming telemetry is moved into
-        #  WorkforceCallback. In a follow-up PR, replace this direct logging
-        #  with callback-driven events/metrics and remove this helper path.
-        now = time.monotonic()
-        if not hasattr(self, "_stream_start_ts"):
-            self._stream_start_ts = now
-            self._stream_chars = 0
-        content = chunk.msg.content or ""
-        self._stream_chars += len(content)
-        elapsed = now - self._stream_start_ts
-        if elapsed > 0:
-            speed = self._stream_chars / elapsed  # chars per second
-            logger.info(
-                f"Stream Speed: {speed:.1f} chars/s (elapsed {elapsed:.2f}s)"
+    def _extract_stream_chunk(
+        self,
+        chunk: ChatAgentResponse,
+        *,
+        stream_id: str,
+    ) -> Optional[Tuple[str, str]]:
+        r"""Extract normalized text and mode from a stream chunk."""
+        if chunk.msg is None or chunk.msg.content is None:
+            return None
+
+        stream_accumulate_mode: str = "accumulate"
+        if chunk.info:
+            # `mode` is a legacy/custom chunk fallback; current producers use
+            # `stream_accumulate_mode`.
+            raw_stream_accumulate_mode = chunk.info.get(
+                "stream_accumulate_mode",
+                chunk.info.get("mode", stream_accumulate_mode),
             )
+            if raw_stream_accumulate_mode in ("delta", "accumulate"):
+                stream_accumulate_mode = raw_stream_accumulate_mode
+
+        content = chunk.msg.content
+        progress_key = ("stream", stream_id)
+
+        if stream_accumulate_mode == "accumulate":
+            previous = self._stream_progress.get(progress_key, "")
+            if content.startswith(previous):
+                text = content[len(previous) :]
+            else:
+                text = content
+            self._stream_progress[progress_key] = content
+        else:
+            text = content
+
+        if not text:
+            return None
+
+        return text, stream_accumulate_mode
+
+    def _emit_stream_chunk_event(
+        self,
+        *,
+        text: str,
+        stream_accumulate_mode: str,
+        task_id: Optional[str] = None,
+        worker_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        r"""Emit a stream chunk event to all registered callbacks."""
+        event = StreamChunkEvent(
+            text=text,
+            stream_accumulate_mode=stream_accumulate_mode,
+            task_id=task_id,
+            worker_id=worker_id,
+            metadata=metadata,
+        )
+        for cb in self._callbacks:
+            cb.log_stream_chunk(event)
+
+    def _clear_stream_progress_if_final(
+        self,
+        chunk: ChatAgentResponse,
+        stream_id: str,
+    ) -> None:
+        r"""Clear accumulated stream progress when a stream is complete."""
+        chunk_info = getattr(chunk, "info", None)
+        if getattr(chunk, "terminated", False) or (
+            isinstance(chunk_info, dict) and chunk_info.get("partial") is False
+        ):
+            self._stream_progress.pop(("stream", stream_id), None)
+
+    def _on_stream_callback(
+        self,
+        chunk: ChatAgentResponse,
+    ) -> None:
+        stream_id = "internal"
+        stream_payload = self._extract_stream_chunk(
+            chunk,
+            stream_id=stream_id,
+        )
+        try:
+            if stream_payload is None:
+                return
+
+            text, stream_accumulate_mode = stream_payload
+            self._emit_stream_chunk_event(
+                text=text,
+                stream_accumulate_mode=stream_accumulate_mode,
+            )
+        finally:
+            self._clear_stream_progress_if_final(chunk, stream_id)
 
     def _share_memory_with_agents(
         self, shared_memory: Dict[str, List]
@@ -1467,7 +1538,11 @@ class Workforce(BaseNode):
             del self._assignees[task_id]
 
         # Clean streaming progress for completed/failed task chunks.
-        stale_keys = [k for k in self._stream_progress if k[1] == task_id]
+        stale_keys = [
+            key
+            for key in self._stream_progress
+            if key[1] == task_id or key[1].endswith(f":{task_id}")
+        ]
         for key in stale_keys:
             del self._stream_progress[key]
 

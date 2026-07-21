@@ -453,7 +453,10 @@ class MCPToolkit(BaseToolkit):
         Returns True on success, raises on final failure.
         """
         last_exc: Optional[BaseException] = None
-        for attempt in range(1, self._max_retries + 1):
+        # max_retries counts retries *after* the first attempt, so the
+        # client always gets at least one connection attempt.
+        total_attempts = self._max_retries + 1
+        for attempt in range(1, total_attempts + 1):
             try:
                 await asyncio.wait_for(
                     client.__aenter__(), timeout=self._per_client_timeout
@@ -471,7 +474,7 @@ class MCPToolkit(BaseToolkit):
                 logger.warning(
                     f"Client {i+1} timed out after "
                     f"{self._per_client_timeout}s "
-                    f"(attempt {attempt}/{self._max_retries})"
+                    f"(attempt {attempt}/{total_attempts})"
                 )
             except asyncio.CancelledError:
                 await client._cleanup_connection()
@@ -482,12 +485,12 @@ class MCPToolkit(BaseToolkit):
                 await client._cleanup_connection()
                 logger.warning(
                     f"Client {i+1} connection failed "
-                    f"(attempt {attempt}/{self._max_retries}): {e}"
+                    f"(attempt {attempt}/{total_attempts}): {e}"
                 )
-            if attempt < self._max_retries:
+            if attempt < total_attempts:
                 await asyncio.sleep(self._retry_delay)
         raise ConnectionError(
-            f"Client {i+1} failed after {self._max_retries} attempts"
+            f"Client {i+1} failed after {total_attempts} attempts"
         ) from last_exc
 
     async def _connect_all_clients(self):

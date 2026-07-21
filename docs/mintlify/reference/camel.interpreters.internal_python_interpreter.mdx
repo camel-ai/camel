@@ -49,6 +49,7 @@ Modifications copyright (C) 2023 CAMEL-AI.org
 - **action_space** (Dict[str, Any], optional): A dictionary that maps action names to their corresponding functions or objects. The interpreter can only execute functions that are either directly listed in this dictionary or are member functions of objects listed in this dictionary. The concept of :obj:`action_space` represents the actions that an agent is capable of performing. If `None`, set to empty dict. (default: :obj:`None`)
 - **import_white_list** (List[str], optional): A list that stores the Python modules or functions that can be imported in the code. All submodules and functions of the modules listed in this list are importable. Any other import statements will be rejected. The module and its submodule or function name are separated by a period (:obj:`.`). (default: :obj:`None`)
 - **unsafe_mode** (bool, optional): If `True`, the interpreter runs the code by `eval()` or `exec()` without any security check. (default: :obj:`False`)
+- **require_confirm** (bool, optional): If True, prompt user before running shell commands on the local computer. (default: :obj:`True`)
 - **raise_error** (bool, optional): Raise error if the interpreter fails. (default: :obj:`False`)
 - **allow_builtins** (bool, optional): If `True`, safe built-in functions like print, len, str, etc. are added to the action space. (default: :obj:`True`)
 
@@ -62,6 +63,7 @@ def __init__(
     action_space: Optional[Dict[str, Any]] = None,
     import_white_list: Optional[List[str]] = None,
     unsafe_mode: bool = False,
+    require_confirm: bool = True,
     raise_error: bool = False,
     allow_builtins: bool = True
 ):
@@ -311,3 +313,13 @@ Execute a command in the internal python interpreter.
 **Returns:**
 
   tuple: A tuple containing the stdout and stderr of the command.
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._confirm_execution"></a>
+
+### _confirm_execution
+
+```python
+def _confirm_execution(self, command: str):
+```
+
+Prompt the user before executing a local shell command.

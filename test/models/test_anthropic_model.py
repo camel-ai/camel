@@ -34,6 +34,27 @@ class TravelResponse(BaseModel):
     city: str
 
 
+def _make_strict_openai_tool(
+    name: str,
+    properties=None,
+    required=None,
+):
+    properties = properties or {}
+    return {
+        "type": "function",
+        "function": {
+            "name": name,
+            "description": "Test tool",
+            "parameters": {
+                "type": "object",
+                "properties": properties,
+                "required": required or [],
+            },
+            "strict": True,
+        },
+    }
+
+
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "model_type",
@@ -44,6 +65,7 @@ class TravelResponse(BaseModel):
         ModelType.CLAUDE_OPUS_4_6,
         ModelType.CLAUDE_OPUS_4_8,
         ModelType.CLAUDE_HAIKU_4_5,
+        ModelType.CLAUDE_FABLE_5,
         ModelType.CLAUDE_SONNET_4,
         ModelType.CLAUDE_OPUS_4,
         ModelType.CLAUDE_OPUS_4_1,
@@ -61,6 +83,12 @@ def test_anthropic_model(model_type: ModelType):
 def test_claude_opus_4_8_metadata():
     assert ModelType.CLAUDE_OPUS_4_8.is_anthropic
     assert ModelType.CLAUDE_OPUS_4_8.token_limit == 1_000_000
+
+
+def test_claude_fable_5_metadata():
+    assert ModelType.CLAUDE_FABLE_5.value == "claude-fable-5"
+    assert ModelType.CLAUDE_FABLE_5.is_anthropic
+    assert ModelType.CLAUDE_FABLE_5.token_limit == 1_000_000
 
 
 def test_anthropic_model_uses_provided_token_counter():
@@ -625,6 +653,80 @@ def test_convert_tools_preserves_strict_flag():
 
     result = model._convert_openai_tools_to_anthropic(openai_tools)
 
+    assert result[0]["strict"] is False
+
+
+def test_convert_tools_preserves_strict_within_anthropic_limits():
+    """Strict mode remains enabled when the request is within limits."""
+    model = AnthropicModel(
+        "claude-sonnet-5",
+        api_key="dummy_api_key",
+    )
+    openai_tools = [
+        _make_strict_openai_tool(f"tool_{index}") for index in range(20)
+    ]
+
+    result = model._convert_openai_tools_to_anthropic(openai_tools)
+
+    assert result is not None
+    assert all(tool["strict"] is True for tool in result)
+
+
+def test_convert_tools_disables_strict_above_anthropic_tool_limit(caplog):
+    """All tools remain available when strict tool count exceeds 20."""
+    model = AnthropicModel(
+        "claude-sonnet-5",
+        api_key="dummy_api_key",
+    )
+    openai_tools = [
+        _make_strict_openai_tool(f"tool_{index}") for index in range(21)
+    ]
+
+    result = model._convert_openai_tools_to_anthropic(openai_tools)
+
+    assert result is not None
+    assert len(result) == 21
+    assert all(tool["strict"] is False for tool in result)
+    assert all(tool["function"]["strict"] is True for tool in openai_tools)
+    assert "21 strict tools (maximum 20)" in caplog.text
+
+
+def test_convert_tools_disables_strict_above_anthropic_union_limit():
+    """Union-heavy schemas fall back to non-strict tool use."""
+    model = AnthropicModel(
+        ModelType.CLAUDE_FABLE_5,
+        api_key="dummy_api_key",
+    )
+    properties = {
+        f"value_{index}": {"anyOf": [{"type": "string"}, {"type": "null"}]}
+        for index in range(17)
+    }
+    openai_tools = [
+        _make_strict_openai_tool(
+            "union_heavy_tool", properties, list(properties)
+        )
+    ]
+
+    result = model._convert_openai_tools_to_anthropic(openai_tools)
+
+    assert result is not None
+    assert result[0]["strict"] is False
+
+
+def test_convert_tools_disables_strict_above_anthropic_optional_limit():
+    """Schemas with too many optional parameters use non-strict tools."""
+    model = AnthropicModel(
+        ModelType.CLAUDE_FABLE_5,
+        api_key="dummy_api_key",
+    )
+    properties = {f"value_{index}": {"type": "string"} for index in range(25)}
+    openai_tools = [
+        _make_strict_openai_tool("optional_heavy_tool", properties)
+    ]
+
+    result = model._convert_openai_tools_to_anthropic(openai_tools)
+
+    assert result is not None
     assert result[0]["strict"] is False
 
 
