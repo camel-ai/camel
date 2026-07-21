@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from unittest.mock import MagicMock
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.completion_usage import CompletionUsage
@@ -30,6 +31,11 @@ from camel.types import (
     ModelType,
     RoleType,
     TaskType,
+)
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
 )
 
 model = ModelFactory.create(
@@ -204,6 +210,10 @@ def test_role_playing_step(
         ),
         (TaskType.MISALIGNMENT, None, None),
     ],
+)
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
 )
 async def test_role_playing_astep(
     task_type,

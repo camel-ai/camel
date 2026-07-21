@@ -15,7 +15,7 @@
 import os
 from typing import Any, Dict, List, Optional
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
@@ -25,7 +25,10 @@ from camel.types import ModelPlatformType, ModelType
 
 pytestmark = pytest.mark.model_backend
 
-HAS_OPENAI_API_KEY = bool(os.getenv("OPENAI_API_KEY"))
+HAS_OPENAI_API_KEY = (
+    bool(os.getenv("OPENAI_API_KEY"))
+    and os.getenv("OPENAI_API_KEY") != "dummy-key-for-test-collectioncases"
+)
 
 
 def get_weather(city: str) -> str:

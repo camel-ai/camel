@@ -16,7 +16,7 @@ import importlib
 import subprocess
 from pathlib import Path
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 MODULES_TO_IMPORT = [
     "camel.agents",
