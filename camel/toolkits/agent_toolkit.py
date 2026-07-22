@@ -68,6 +68,32 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
 
     This toolkit exposes tools for either waiting on a delegated task directly
     or starting one and checking its result later.
+
+    **Sub-agent tool inheritance policy**
+
+    Sub-agents spawned by :meth:`agent_run_subagent` receive **cloned
+    tools** from the parent agent.  However, because ``AgentToolkit``
+    inherits from :class:`RegisteredAgentToolkit`, the sub-agent's
+    ``step()`` method detects that it is being called from inside a
+    registered toolkit (via stack inspection in
+    :meth:`~camel.agents.ChatAgent._is_called_from_registered_toolkit`)
+    and passes an **empty tool schema list** to the model.  This prevents
+    the sub-agent from invoking tools, which in turn prevents infinite
+    recursion (a sub-agent calling a sub-agent calling a sub-agent…).
+
+    The **effective default** is therefore:
+
+    * Sub-agents *have* tools in their internal toolbelt (cloned from
+      the parent).
+    * Sub-agents *cannot use* those tools during ``step()`` — the model
+      never sees the tool schemas.
+
+    This behavior is intentional and backward-compatible.  The
+    ``child_tool_policy``, ``allowed_tool_names``, and
+    ``excluded_tool_names`` constructor parameters make the policy
+    **explicit and configurable**: they control which tools are *cloned*
+    into the sub-agent's toolbelt (useful for memory/cost control and
+    for future use if the recursive guard is selectively relaxed).
     """
 
     _TYPE_INSTRUCTIONS = types.MappingProxyType(
@@ -98,12 +124,67 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
     def __init__(
         self,
         timeout: Optional[float] = None,
+        child_tool_policy: Optional[str] = "none",
+        allowed_tool_names: Optional[List[str]] = None,
+        excluded_tool_names: Optional[List[str]] = None,
     ) -> None:
         r"""Initialize the AgentToolkit.
+
+        Sub-agents created by this toolkit inherit cloned tools from the
+        parent agent via :meth:`_resolve_child_tools`.  However, when a
+        sub-agent's :meth:`~camel.agents.ChatAgent.step` is invoked from
+        inside a :class:`RegisteredAgentToolkit` (which ``AgentToolkit``
+        is), :meth:`~camel.agents.ChatAgent._is_called_from_registered_toolkit`
+        returns ``True`` and the model is given an **empty** tool list to
+        prevent recursive agent-tool calls.  Consequently, the **effective
+        default behaviour** is that sub-agents run **without usable tools**
+        even though cloned tools are present in their toolbelt.
+
+        This is intentional — it avoids infinite recursion where a
+        sub-agent could spawn further sub-agents — but it was previously
+        undocumented.  The parameters below make the policy explicit and
+        allow developers to opt-in to a safe, filtered subset of parent
+        tools for sub-agents.
 
         Args:
             timeout (Optional[float]): Maximum execution time for toolkit
                 calls. (default: :obj:`None`)
+            child_tool_policy (Optional[str]): Controls which parent tools
+                are **cloned into** sub-agents.  Does **not** override the
+                recursive-call guard in
+                :meth:`~camel.agents.ChatAgent._is_called_from_registered_toolkit`.
+
+                - ``"none"`` (default): All parent tools are cloned into
+                  the sub-agent's toolbelt.  They will appear in the
+                  toolbelt but, because the sub-agent's ``step()`` is
+                  called from within a ``RegisteredAgentToolkit``, the
+                  model receives an empty tool list and **cannot invoke
+                  any tools**.  This is the current, backward-compatible
+                  behaviour.
+                - ``"filtered"``: Only tools whose names appear in
+                  ``allowed_tool_names`` (and are not in
+                  ``excluded_tool_names``) are cloned into the sub-agent.
+                  This is useful when you want to limit which tools are
+                  *available* to the sub-agent's toolbelt, e.g. for
+                  memory or cost reasons, even though the recursive guard
+                  still prevents direct tool calls during ``step()``.
+                - ``"all"``: Explicitly document that all parent tools are
+                  cloned.  Functionally identical to ``"none"`` but makes
+                  the intent explicit in user code.
+
+                (default: :obj:`"none"`)
+            allowed_tool_names (Optional[List[str]]): Whitelist of tool
+                names to clone into sub-agents.  Only effective when
+                ``child_tool_policy="filtered"``.  If :obj:`None`, no
+                whitelist filtering is applied.  Tool names are matched
+                against the function name of each tool (i.e., the
+                ``openai_function`` name).
+                (default: :obj:`None`)
+            excluded_tool_names (Optional[List[str]]): Blacklist of tool
+                names to exclude from sub-agents.  Applied **after** the
+                whitelist.  Effective when
+                ``child_tool_policy="filtered"`` or ``"all"``.
+                (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
         RegisteredAgentToolkit.__init__(self)
@@ -111,6 +192,25 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._tasks: Dict[str, _AgentTask] = {}
         self._lock = threading.RLock()
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+
+        if child_tool_policy not in ("none", "filtered", "all"):
+            raise ValueError(
+                f"child_tool_policy must be 'none', 'filtered', or 'all', "
+                f"got '{child_tool_policy}'"
+            )
+        if child_tool_policy == "filtered" and allowed_tool_names is None:
+            logger.warning(
+                "child_tool_policy='filtered' but allowed_tool_names is "
+                "None; sub-agents will receive only non-function tools."
+            )
+
+        self._child_tool_policy = child_tool_policy
+        self._allowed_tool_names = (
+            set(allowed_tool_names) if allowed_tool_names is not None else None
+        )
+        self._excluded_tool_names = (
+            set(excluded_tool_names) if excluded_tool_names else set()
+        )
 
     def _build_system_message(
         self,
@@ -153,10 +253,87 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         Optional[List[Union[FunctionTool, Callable]]],
         Optional[List[RegisteredAgentToolkit]],
     ]:
+        r"""Resolve which tools to clone from the parent agent for sub-agents.
+
+        The set of tools returned depends on ``self._child_tool_policy``:
+
+        - ``"none"`` or ``"all"``: All parent tools are cloned
+          (backward-compatible default).
+        - ``"filtered"``: Only tools whose openai_function name is in
+          ``self._allowed_tool_names`` (if set) and not in
+          ``self._excluded_tool_names`` are included.
+
+        .. note::
+            Regardless of which tools are cloned, the recursive-call guard
+            in :meth:`ChatAgent._is_called_from_registered_toolkit`
+            prevents the sub-agent from actually *invoking* tools during
+            ``step()``.  The filtering here controls which tools appear in
+            the sub-agent's toolbelt for potential future use (e.g. if the
+            guard is relaxed) and for memory/cost control.
+
+        Args:
+            parent (Optional[ChatAgent]): The parent agent to clone tools
+                from.
+
+        Returns:
+            Tuple containing:
+            - List of tools/functions to pass to the sub-agent (or None).
+            - List of RegisteredAgentToolkit instances that need
+              registration (or None).
+        """
         if parent is None:
             return None, None
         cloned_tools, toolkits_to_register = parent._clone_tools()
-        return list(cloned_tools), toolkits_to_register
+
+        if self._child_tool_policy in ("none", "all"):
+            # Exclude blacklisted tools even in "all" mode
+            if self._excluded_tool_names:
+                cloned_tools = [
+                    t
+                    for t in cloned_tools
+                    if self._get_tool_name(t) not in self._excluded_tool_names
+                ]
+            return list(cloned_tools), toolkits_to_register
+
+        # filtered mode
+        filtered_tools: List[Union[FunctionTool, Callable]] = []
+        for tool in cloned_tools:
+            name = self._get_tool_name(tool)
+            if name is None:
+                # Non-function tools pass through in filtered mode
+                # if no whitelist is set
+                if self._allowed_tool_names is None:
+                    filtered_tools.append(tool)
+                continue
+            # Apply whitelist
+            if (
+                self._allowed_tool_names is not None
+                and name not in self._allowed_tool_names
+            ):
+                continue
+            # Apply blacklist
+            if name in self._excluded_tool_names:
+                continue
+            filtered_tools.append(tool)
+
+        return filtered_tools, toolkits_to_register
+
+    def _get_tool_name(
+        self, tool: Union[FunctionTool, Callable]
+    ) -> Optional[str]:
+        r"""Extract the function name from a tool.
+
+        Args:
+            tool: A FunctionTool or callable.
+
+        Returns:
+            The function name, or None if it cannot be determined.
+        """
+        if isinstance(tool, FunctionTool):
+            return tool.func.__name__
+        if callable(tool):
+            return getattr(tool, '__name__', None)
+        return None
 
     def _create_subagent(
         self,
@@ -611,6 +788,17 @@ class AgentToolkit(BaseToolkit, RegisteredAgentToolkit):
         del new_session_id
         return AgentToolkit(
             timeout=self.timeout,
+            child_tool_policy=self._child_tool_policy,
+            allowed_tool_names=(
+                list(self._allowed_tool_names)
+                if self._allowed_tool_names
+                else None
+            ),
+            excluded_tool_names=(
+                list(self._excluded_tool_names)
+                if self._excluded_tool_names
+                else None
+            ),
         )
 
     def _purge_completed_tasks(self) -> None:
