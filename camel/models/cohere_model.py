@@ -55,6 +55,16 @@ except (ImportError, AttributeError):
     LLMEvent = None
 
 
+# Map successful Cohere V2 finish reasons to the OpenAI vocabulary. ERROR and
+# TIMEOUT are raised because OpenAI has no equivalent finish reason.
+_FINISH_REASON_MAP = {
+    "COMPLETE": "stop",
+    "STOP_SEQUENCE": "stop",
+    "MAX_TOKENS": "length",
+    "TOOL_CALL": "tool_calls",
+}
+
+
 class CohereModel(BaseModelBackend):
     r"""Cohere API in a unified BaseModelBackend interface.
 
@@ -119,7 +129,28 @@ class CohereModel(BaseModelBackend):
             **kwargs,
         )
 
+    @staticmethod
+    def _map_finish_reason(cohere_reason: str) -> str:
+        r"""Map a successful Cohere reason to its OpenAI equivalent."""
+        if cohere_reason in {"ERROR", "TIMEOUT"}:
+            raise RuntimeError(
+                "Cohere generation failed with finish reason "
+                f"{cohere_reason!r}"
+            )
+        try:
+            return _FINISH_REASON_MAP[cohere_reason]
+        except KeyError as exc:
+            raise ValueError(
+                f"Unknown Cohere finish reason: {cohere_reason!r}"
+            ) from exc
+
     def _to_openai_response(self, response: 'ChatResponse') -> ChatCompletion:
+        finish_reason = (
+            self._map_finish_reason(response.finish_reason)
+            if response.finish_reason is not None
+            else None
+        )
+
         if response.usage and response.usage.tokens:
             input_tokens = response.usage.tokens.input_tokens or 0
             output_tokens = response.usage.tokens.output_tokens or 0
@@ -132,50 +163,39 @@ class CohereModel(BaseModelBackend):
             usage = {}
 
         tool_calls = response.message.tool_calls
-        choices = []
         if tool_calls:
-            for tool_call in tool_calls:
-                openai_tool_calls = [
-                    dict(
-                        id=tool_call.id,
-                        function={
-                            "name": tool_call.function.name,
-                            "arguments": tool_call.function.arguments,
-                        }
-                        if tool_call.function
-                        else {},
-                        type=tool_call.type,
-                    )
-                ]
-
-                choice = dict(
-                    index=None,
-                    message={
-                        "role": "assistant",
-                        "content": response.message.tool_plan,
-                        "tool_calls": openai_tool_calls,
-                    },
-                    finish_reason=response.finish_reason
-                    if response.finish_reason
-                    else None,
+            # A single Cohere turn may carry several parallel tool calls.
+            # Collect all of them into one choice so none are dropped by
+            # downstream code that only reads choices[0] (mirrors
+            # MistralModel._to_openai_response).
+            openai_tool_calls = [
+                dict(
+                    id=tool_call.id,
+                    function={
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments,
+                    }
+                    if tool_call.function
+                    else {},
+                    type=tool_call.type,
                 )
-                choices.append(choice)
-
+                for tool_call in tool_calls
+            ]
+            content = response.message.tool_plan
         else:
             openai_tool_calls = None
+            content = response.message.content[0].text  # type: ignore[union-attr,index]
 
-            choice = dict(
-                index=None,
-                message={
-                    "role": "assistant",
-                    "content": response.message.content[0].text,  # type: ignore[union-attr,index]
-                    "tool_calls": openai_tool_calls,
-                },
-                finish_reason=response.finish_reason
-                if response.finish_reason
-                else None,
-            )
-            choices.append(choice)
+        choice = dict(
+            index=0,
+            message={
+                "role": "assistant",
+                "content": content,
+                "tool_calls": openai_tool_calls,
+            },
+            finish_reason=finish_reason,
+        )
+        choices = [choice]
 
         obj = ChatCompletion.construct(
             id=response.id,

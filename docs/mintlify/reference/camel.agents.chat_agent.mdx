@@ -276,6 +276,7 @@ Class for managing conversations of CAMEL Chat Agents.
 - **step_timeout** (Optional[float], optional): Timeout in seconds for the entire step operation. If None, no timeout is applied. (default: :obj:`None`) on_request_usage (Optional[Callable[[Dict[str, Any]], Any]], optional): Callback triggered after each LLM request completes. Useful for real-time token metering within a single step loop. The callback receives a payload with per-request usage and cumulative step usage. (default: :obj:`None`)
 - **stream_accumulate** (Optional[bool], optional): When True, partial streaming updates return accumulated content. When False, partial updates return only the incremental delta (recommended). If None, defaults to False with a deprecation warning for users who previously relied on the old default (True). (default: :obj:`None`, which behaves as :obj:`False`)
 - **summary_window_ratio** (float, optional): Maximum fraction of the total context window that can be occupied by summary information. Used to limit how much of the model's context is reserved for summarization results. (default: :obj:`0.6`)
+- **tool_log_dir** (Optional[Union[str, Path]]): Directory used to save full tool outputs when they are truncated. If `None`, full outputs are not saved. Saved files contain raw tool output and are not removed automatically, so use an appropriately protected directory. Paths refer to the host running the agent and may not be accessible inside sandboxed tools. (default: :obj:`None`)
 
 <a id="camel.agents.chat_agent.ChatAgent.__init__"></a>
 
@@ -309,7 +310,8 @@ def __init__(
     step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     on_request_usage: Optional[Callable[[Dict[str, Any]], Any]] = None,
     stream_accumulate: Optional[bool] = None,
-    summary_window_ratio: float = 0.6
+    summary_window_ratio: float = 0.6,
+    tool_log_dir: Optional[Union[str, Path]] = None
 ):
 ```
 
@@ -613,6 +615,26 @@ Add a list of tools to the agent.
 ```python
 def _serialize_tool_result(self, result: Any):
 ```
+
+<a id="camel.agents.chat_agent.ChatAgent._save_tool_output_log"></a>
+
+### _save_tool_output_log
+
+```python
+def _save_tool_output_log(self, func_name: str, content: str):
+```
+
+Save full tool output to a .log file when truncation occurs.
+
+**Parameters:**
+
+- **func_name** (str): The name of the tool function.
+- **content** (str): The full serialized tool output to persist.
+
+**Returns:**
+
+  Optional[str]: Absolute path to the saved log file, or None when
+logging is disabled or saving failed.
 
 <a id="camel.agents.chat_agent.ChatAgent._truncate_tool_result"></a>
 
