@@ -209,6 +209,64 @@ def test_deduplicate_internally_chain_scenario():
     ], "Expected 'A' to have embedding [1.0, 0.0]."
 
 
+def test_deduplicate_internally_batch_size_detects_cross_batch_duplicate():
+    r"""A duplicate whose match lives in an earlier batch must still be
+    detected when ``batch_size < len(texts)``.
+
+    Regression test: the lower-triangular mask previously used a fixed
+    ``k=-1`` offset, which is only correct for the first batch. For later
+    batches it masked out valid comparisons against earlier texts, so
+    cross-batch duplicates were silently missed and the result depended on
+    ``batch_size``.
+    """
+    texts = ["x0", "x1", "x2", "x3"]
+    # x3 is identical to x2, which sits in the first batch.
+    embeddings = [
+        [1.0, 0.0],
+        [0.0, 1.0],
+        [0.7, 0.7],
+        [0.7, 0.7],
+    ]
+
+    full = deduplicate_internally(
+        texts=texts, threshold=0.95, embeddings=embeddings
+    )
+    batched = deduplicate_internally(
+        texts=texts, threshold=0.95, embeddings=embeddings, batch_size=2
+    )
+
+    # The result must not depend on the batch size.
+    assert batched.duplicate_to_target_map == full.duplicate_to_target_map
+    assert batched.duplicate_to_target_map == {3: 2}
+    assert batched.unique_ids == [0, 1, 2]
+
+
+def test_deduplicate_internally_batch_size_matches_single_batch():
+    r"""For a chain of duplicates, batched and single-batch runs must agree."""
+    texts = ["A", "B", "C", "D"]
+    embeddings = [
+        [1.0, 0.0],
+        [0.87, 0.5],
+        [0.50, 0.87],
+        [0.0, 1.0],
+    ]
+
+    full = deduplicate_internally(
+        texts=texts, threshold=0.8, embeddings=embeddings
+    )
+    for batch_size in (1, 2, 3):
+        batched = deduplicate_internally(
+            texts=texts,
+            threshold=0.8,
+            embeddings=embeddings,
+            batch_size=batch_size,
+        )
+        assert (
+            batched.duplicate_to_target_map == full.duplicate_to_target_map
+        ), f"Mismatch at batch_size={batch_size}"
+        assert batched.unique_ids == full.unique_ids
+
+
 def test_deduplicate_internally_with_llm_supervision():
     with pytest.raises(NotImplementedError):
         deduplicate_internally(
