@@ -49,11 +49,7 @@ from typing import (
     cast,
 )
 
-from openai import (
-    AsyncStream,
-    RateLimitError,
-    Stream,
-)
+from openai import AsyncStream, Stream
 from pydantic import BaseModel, ValidationError
 
 from camel.agents._types import ModelResponse, ToolCallRequest
@@ -111,6 +107,25 @@ if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
 
 logger = get_logger(__name__)
+
+
+def _is_rate_limit_error(e: Exception) -> bool:
+    """Check if *e* or its cause chain matches known HTTP-429 rate-limit
+    signals from any provider SDK.
+
+    This catches rate-limit errors from OpenAI (``openai.RateLimitError``),
+    Anthropic (``anthropic.RateLimitError``), Google (``google.genai.errors.
+    ClientError`` with code 429), and any other ``APIStatusError``-style
+    exception that carries a 429 status code.
+    """
+    if hasattr(e, "status_code") and e.status_code == 429:  # type: ignore[union-attr]
+        return True
+    if hasattr(e, "code") and e.code == 429:  # type: ignore[union-attr]
+        return True
+    if "rate limit" in str(e).lower() or "rate_limit" in str(e).lower():
+        return True
+    return False
+
 
 # Cleanup temp files on exit
 _temp_files: Set[str] = set()
@@ -3595,26 +3610,28 @@ class ChatAgent(BaseAgent):
                 )
                 if response:
                     break
-            except RateLimitError as e:
-                last_error = e
-                if attempt < self.retry_attempts - 1:
-                    delay = min(self.retry_delay * (2**attempt), 60.0)
-                    delay = random.uniform(0, delay)  # Add jitter
-                    logger.warning(
-                        f"Rate limit hit (attempt {attempt + 1}"
-                        f"/{self.retry_attempts}). Retrying in {delay:.1f}s"
-                    )
-                    time.sleep(delay)
+            except Exception as e:
+                if _is_rate_limit_error(e):
+                    last_error = e
+                    if attempt < self.retry_attempts - 1:
+                        delay = min(self.retry_delay * (2**attempt), 60.0)
+                        delay = random.uniform(0, delay)  # Add jitter
+                        logger.warning(
+                            f"Rate limit hit (attempt {attempt + 1}"
+                            f"/{self.retry_attempts}). "
+                            f"Retrying in {delay:.1f}s"
+                        )
+                        time.sleep(delay)
+                    else:
+                        logger.error(
+                            f"Rate limit exhausted after "
+                            f"{self.retry_attempts} attempts"
+                        )
                 else:
                     logger.error(
-                        f"Rate limit exhausted after "
-                        f"{self.retry_attempts} attempts"
+                        f"Model error: {self.model_backend.model_type}",
                     )
-            except Exception:
-                logger.error(
-                    f"Model error: {self.model_backend.model_type}",
-                )
-                raise
+                    raise
         else:
             # Loop completed without success
             raise ModelProcessingError(
@@ -3657,28 +3674,29 @@ class ChatAgent(BaseAgent):
                 )
                 if response:
                     break
-            except RateLimitError as e:
-                last_error = e
-                if attempt < self.retry_attempts - 1:
-                    delay = min(self.retry_delay * (2**attempt), 60.0)
-                    delay = random.uniform(0, delay)  # Add jitter
-                    logger.warning(
-                        f"Rate limit hit (attempt {attempt + 1}"
-                        f"/{self.retry_attempts}). "
-                        f"Retrying in {delay:.1f}s"
-                    )
-                    await asyncio.sleep(delay)
+            except Exception as e:
+                if _is_rate_limit_error(e):
+                    last_error = e
+                    if attempt < self.retry_attempts - 1:
+                        delay = min(self.retry_delay * (2**attempt), 60.0)
+                        delay = random.uniform(0, delay)  # Add jitter
+                        logger.warning(
+                            f"Rate limit hit (attempt {attempt + 1}"
+                            f"/{self.retry_attempts}). "
+                            f"Retrying in {delay:.1f}s"
+                        )
+                        await asyncio.sleep(delay)
+                    else:
+                        logger.error(
+                            f"Rate limit exhausted after "
+                            f"{self.retry_attempts} attempts"
+                        )
                 else:
                     logger.error(
-                        f"Rate limit exhausted after "
-                        f"{self.retry_attempts} attempts"
+                        f"Model error: {self.model_backend.model_type}",
+                        exc_info=True,
                     )
-            except Exception:
-                logger.error(
-                    f"Model error: {self.model_backend.model_type}",
-                    exc_info=True,
-                )
-                raise
+                    raise
         else:
             # Loop completed without success
             raise ModelProcessingError(
