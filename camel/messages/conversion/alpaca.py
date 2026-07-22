@@ -79,15 +79,19 @@ class AlpacaItem(BaseModel):
         # Strip and standardize newlines
         text = text.strip().replace('\r\n', '\n')
 
-        # Try to extract sections using regex
+        # Try to extract sections using regex.
+        # Only consume trailing spaces/tabs on the header line (not the
+        # following newlines) so an empty section body does not greedily
+        # swallow the delimiter and the next section. Use ``.*?`` so an empty
+        # body (e.g. the documented "no input" case) is captured as "".
         instruction_match = re.search(
-            r'###\s*Instruction:\s*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
+            r'###\s*Instruction:[ \t]*\n(.*?)(?=\n###|\Z)', text, re.DOTALL
         )
         input_match = re.search(
-            r'###\s*Input:\s*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
+            r'###\s*Input:[ \t]*\n(.*?)(?=\n###|\Z)', text, re.DOTALL
         )
         response_match = re.search(
-            r'###\s*Response:\s*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
+            r'###\s*Response:[ \t]*\n(.*?)(?=\n###|\Z)', text, re.DOTALL
         )
 
         if not instruction_match or not response_match:
