@@ -33,6 +33,7 @@ from camel.agents import ChatAgent
 from camel.agents.chat_agent import (
     StreamContentAccumulator,
     ToolCallingRecord,
+    _is_rate_limit_error,
     _ToolOutputHistoryEntry,
 )
 from camel.configs import ChatGPTConfig
@@ -97,6 +98,84 @@ parametrize = pytest.mark.parametrize(
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
 )
+
+
+@pytest.mark.parametrize(
+    ("exc", "expected"),
+    [
+        (type("AnthropicRL", (Exception,), {"status_code": 429})(), True),
+        (type("GoogleErr", (Exception,), {"code": 429})(), True),
+        (type("OpenAIRL", (Exception,), {"status_code": 429})(), True),
+        (type("ServerErr", (Exception,), {"status_code": 500})(), False),
+        (Exception("some generic failure"), False),
+        (ValueError("rate limit exceeded"), True),
+    ],
+)
+def test_is_rate_limit_error(exc: Exception, expected: bool) -> None:
+    assert _is_rate_limit_error(exc) is expected
+
+
+class RateLimitErrorException(Exception):
+    """Generic rate-limit exception used by non-OpenAI providers in tests."""
+
+    def __init__(self, status_code: int | None = None, message: str = "") -> None:
+        self.status_code = status_code  # type: ignore[assignment]
+        super().__init__(message)
+
+
+@pytest.mark.model_backend
+def test_get_model_response_retries_non_openai_rate_limit():
+    """Non-OpenAI rate-limit errors (e.g. ``anthropic.RateLimitError``) should be
+    retried through ``_get_model_response``'s backoff loop.
+
+    Regression: prior code caught only ``openai.RateLimitError``, so calls made
+    against Anthropic, Google, or any custom backend would bypass the retry
+    entirely on 429.
+    """
+    import time
+
+    model = DummyModel(ModelType.GPT_4O_MINI)
+    assistant = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        retry_attempts=3,
+        retry_delay=0.01,
+    )
+
+    call_count = 0
+
+    def side_effect(messages, response_format=None, tools=None):
+        nonlocal call_count
+        call_count += 1
+        if call_count < 3:
+            raise RateLimitErrorException(status_code=429, message="Rate limit")
+        return ChatCompletion(
+            id="mock",
+            choices=[
+                Choice(
+                    finish_reason="stop",
+                    index=0,
+                    logprobs=None,
+                    message=ChatCompletionMessage(content="done", role="assistant"),
+                ),
+            ],
+            created=0,
+            model="dummy",
+            object="chat.completion",
+            usage=CompletionUsage(prompt_tokens=1, completion_tokens=1, total_tokens=2),
+        )
+
+    model.run = MagicMock(side_effect=side_effect)
+
+    start = time.monotonic()
+    result = assistant._get_model_response([])
+    elapsed = time.monotonic() - start
+
+    assert result is not None
+    assert call_count == 3
+    # The actual sleep happens with asyncio.sleep inside the loop; the elapsed
+    # check confirms we did wait rather than returning immediately.
+    assert elapsed > 0.01
 
 
 class DummyModel(BaseModelBackend):
