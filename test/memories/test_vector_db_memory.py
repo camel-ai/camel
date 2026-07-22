@@ -86,6 +86,7 @@ def memory_and_message(request):
     yield memory, messages, request.param["questions"]
 
 
+@pytest.mark.model_backend
 @pytest.mark.parametrize(
     "memory_and_message",
     [

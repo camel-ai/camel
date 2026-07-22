@@ -126,6 +126,7 @@ parameterize_token_counter = pytest.mark.parametrize(
 )
 
 
+@pytest.mark.model_backend
 @parametrize
 def test_model_factory(model_platform, model_type):
     model_config_dict = ChatGPTConfig().as_dict()

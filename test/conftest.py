@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from typing import List
 
 import pytest
@@ -19,6 +20,29 @@ from _pytest.nodes import Item
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Some test modules construct a model backend at import/collection time (for
+# example as a ``pytest.mark.parametrize`` value). Backend construction only
+# checks that the relevant API key is present and non-empty -- it does not
+# validate the key -- so without a placeholder those modules fail to collect
+# on environments that have no credentials (notably fork pull requests, whose
+# CI runs do not receive repository secrets), which aborts the whole test job
+# before any test runs.
+#
+# Provide non-empty placeholders so collection succeeds everywhere. A real key
+# (from the environment or ``.env``) is always preserved: each placeholder is
+# only applied when its variable is unset or empty. Tests that make real API
+# calls are gated behind the ``model_backend`` marker and skipped in fast-test
+# mode, so these placeholders are never used for an actual request.
+#
+# ``OPENAI_API_KEY`` covers the agent/model test modules (e.g.
+# test/agents/test_chat_agent.py builds an OpenAI model as a parametrize
+# value); ``DEEPSEEK_API_KEY`` covers services/agent_mcp/agent_config.py, which
+# builds a DeepSeek model at import time and is imported by
+# test/services/test_agent_mcp_server.py.
+for _collection_env_var in ("OPENAI_API_KEY", "DEEPSEEK_API_KEY"):
+    if not os.environ.get(_collection_env_var):
+        os.environ[_collection_env_var] = "placeholder-key-for-collection"
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

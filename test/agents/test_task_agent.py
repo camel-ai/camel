@@ -60,6 +60,7 @@ def test_task_specify_code_agent(model):
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
 
 
+@pytest.mark.model_backend
 @parametrize
 def test_task_planner_agent(model):
     original_task_prompt = "Modeling molecular dynamics"

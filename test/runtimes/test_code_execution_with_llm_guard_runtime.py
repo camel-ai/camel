@@ -12,6 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import pytest
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
@@ -20,6 +22,7 @@ from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
+@pytest.mark.model_backend
 def test_code_execution_with_llm_guard_runtime():
     runtime = LLMGuardRuntime(verbose=True).add(
         *CodeExecutionToolkit().get_tools()

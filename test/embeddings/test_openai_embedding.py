@@ -11,9 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import pytest
+
 from camel.embeddings import OpenAIEmbedding
 
 
+@pytest.mark.model_backend
 def test_openai_embedding():
     embedding_model = OpenAIEmbedding()
     text = "test 1."

@@ -166,6 +166,7 @@ def test_persona_to_persona(persona_generator: PersonaHub):
     assert any(p.name == "Data Engineer" for p in related_personas.values())
 
 
+@pytest.mark.model_backend
 def test_deduplicate(persona_generator: PersonaHub):
     persona1 = Persona(
         name="Test Persona 1",
@@ -189,6 +190,7 @@ def test_deduplicate(persona_generator: PersonaHub):
     )  # Only one persona left as the persona descriptions are very similar
 
 
+@pytest.mark.model_backend
 def test_is_similar(persona_generator: PersonaHub):
     persona1 = Persona(
         name="Test Persona 1",

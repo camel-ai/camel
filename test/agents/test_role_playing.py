@@ -318,6 +318,7 @@ async def test_role_playing_ainit_chat(init_msg_content):
         )
 
 
+@pytest.mark.model_backend
 def test_role_playing_role_sequence(
     model=None,
 ):

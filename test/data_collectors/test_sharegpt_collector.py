@@ -12,6 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import pytest
+
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.data_collectors import ShareGPTDataCollector
@@ -21,6 +23,7 @@ from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
+@pytest.mark.model_backend
 def test_sharegpt_converter():
     tool_list = MathToolkit().get_tools()
 
@@ -57,6 +60,7 @@ def test_sharegpt_converter():
     assert len(resp["conversations"]) in {3, 4}
 
 
+@pytest.mark.model_backend
 def test_sharegpt_llm_converter():
     tool_list = MathToolkit().get_tools()
 

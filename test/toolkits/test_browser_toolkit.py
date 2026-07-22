@@ -204,6 +204,7 @@ def test_browser_get_screenshot(base_browser_fixture):
     assert file_path is None
 
 
+@pytest.mark.model_backend
 def test_browser_toolkit_browse_url(browser_toolkit_fixture):
     toolkit = browser_toolkit_fixture
 

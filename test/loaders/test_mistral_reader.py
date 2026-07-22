@@ -23,7 +23,7 @@ from camel.loaders.mistral_reader import MistralReader
 
 
 @pytest.mark.skipif(
-    os.environ.get("MISTRAL_API_KEY") is None,
+    not os.getenv("MISTRAL_API_KEY"),
     reason="MISTRAL_API_KEY not available",
 )
 def test_init_with_env_variable():

@@ -12,6 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import pytest
+
 from camel.agents.chat_agent import ChatAgent
 from camel.data_collectors import AlpacaDataCollector
 from camel.messages.base import BaseMessage
@@ -19,6 +21,7 @@ from camel.models.model_factory import ModelFactory
 from camel.types.enums import ModelPlatformType, ModelType
 
 
+@pytest.mark.model_backend
 def test_alpaca_converter():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
@@ -52,6 +55,7 @@ def test_alpaca_converter():
     assert resp['output'] != ''
 
 
+@pytest.mark.model_backend
 def test_alpaca_llm_converter():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,

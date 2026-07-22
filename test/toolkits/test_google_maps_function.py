@@ -11,11 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from camel.toolkits import GoogleMapsToolkit
+
+pytestmark = pytest.mark.skipif(
+    not os.getenv("GOOGLE_API_KEY"),
+    reason="GOOGLE_API_KEY not set; skipping Google Maps tests",
+)
 
 
 @pytest.fixture

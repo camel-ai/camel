@@ -77,6 +77,7 @@ def test_tool_schema_generation():
     assert "description" in params["properties"]["a"]
 
 
+@pytest.mark.model_backend
 def test_tool_with_synthesis():
     r"""Test the tool decorator with output synthesis enabled."""
     assert format_result.synthesize_output is True
