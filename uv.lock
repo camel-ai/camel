@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -1001,6 +1001,7 @@ all = [
     { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pgvector" },
     { name = "playwright" },
+    { name = "plivo" },
     { name = "prance" },
     { name = "praw" },
     { name = "pre-commit" },
@@ -1081,6 +1082,7 @@ communication-tools = [
     { name = "msal" },
     { name = "msgraph-sdk" },
     { name = "notion-client" },
+    { name = "plivo" },
     { name = "praw" },
     { name = "pygithub" },
     { name = "pytelegrambotapi" },
@@ -1613,6 +1615,8 @@ requires-dist = [
     { name = "playwright", marker = "extra == 'all'", specifier = ">=1.50.0" },
     { name = "playwright", marker = "extra == 'owl'", specifier = ">=1.50.0" },
     { name = "playwright", marker = "extra == 'web-tools'", specifier = ">=1.50.0" },
+    { name = "plivo", marker = "extra == 'all'", specifier = ">=4.61.0,<5" },
+    { name = "plivo", marker = "extra == 'communication-tools'", specifier = ">=4.61.0,<5" },
     { name = "prance", marker = "extra == 'all'", specifier = ">=23.6.21.0,<24" },
     { name = "prance", marker = "extra == 'document-tools'", specifier = ">=23.6.21.0,<24" },
     { name = "prance", marker = "extra == 'owl'", specifier = ">=23.6.21.0,<24" },
@@ -7755,7 +7759,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess", marker = "python_full_version < '3.13' or sys_platform != 'win32'" },
+    { name = "ptyprocess", marker = "sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
@@ -7859,6 +7863,22 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/c2/a6/5be4e52b40a9c0c8a073e7c5b0785c05cf5a9ea8f8a7b5b260e32d970342/playwright-1.61.0-py3-none-win32.whl", hash = "sha256:372d55a6f1248fa1dd47599686980cb8fb5bbe6fcda59eab793eb657c11d8a9b", size = 37844841, upload-time = "2026-06-29T10:33:07.361Z" },
     { url = "https://files.pythonhosted.org/packages/6c/fd/2b78036e5fbe9d5f5645bbe08a1eac7160c51243c0093963edbcf67c35d9/playwright-1.61.0-py3-none-win_amd64.whl", hash = "sha256:35c6cc4589a5d00964a59d7b3e59641e0aac0c02f15479a7af77d20f6bc79597", size = 37844846, upload-time = "2026-06-29T10:33:10.637Z" },
     { url = "https://files.pythonhosted.org/packages/27/0d/1b0f3c4ee4eb0514bc805b5c2f9a223e5b6de4f11a926f5235d51d0fc81b/playwright-1.61.0-py3-none-win_arm64.whl", hash = "sha256:e9fcbffcf557a8620fdedd92491eb59a32d18e23d6f3b4f6214b952be324fe51", size = 33955127, upload-time = "2026-06-29T10:33:14.008Z" },
+]
+
+[[package]]
+name = "plivo"
+version = "4.61.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "decorator" },
+    { name = "lxml" },
+    { name = "pyjwt" },
+    { name = "requests" },
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ec/1a/19ff2110f5bd4ea35f2340f34ec0f66f0697c66376b58aa1739e39cf1cd9/plivo-4.61.0.tar.gz", hash = "sha256:4fcbc0fdef855c53029f6240424a6c92c78df588f618b168ccbd796a5cf70853", size = 58223, upload-time = "2026-06-12T10:31:48.585Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c0/0e/9f90f178d5f8f3bb0bafa5ec148bc89882210b92760b2383b895273bad52/plivo-4.61.0-py2.py3-none-any.whl", hash = "sha256:5ec6e3de3b8e594b608398d1f366851a9ff636c12be7366749333bd864588e32", size = 90567, upload-time = "2026-06-12T10:31:47.3Z" },
 ]
 
 [[package]]
