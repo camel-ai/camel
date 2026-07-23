@@ -194,9 +194,9 @@ class TestIsPydanticSerializable:
             is_serializable, error_msg = _is_pydantic_serializable(
                 non_serializable_type
             )
-            assert not is_serializable, (
-                f"{non_serializable_type} should not be serializable"
-            )
+            assert (
+                not is_serializable
+            ), f"{non_serializable_type} should not be serializable"
             assert error_msg != ""
             assert "not Pydantic serializable" in error_msg
 

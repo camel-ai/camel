@@ -145,28 +145,28 @@ def test_static_dataset_init_from_hf_dataset():
 
     # Verify the dataset initialized correctly
     assert len(dataset) == 2, "Dataset should contain 2 items."
-    assert isinstance(dataset[0], DataPoint), (
-        "Items should be DataPoint instances."
-    )
-    assert dataset[0].question == "What is 2 + 2?", (
-        "Question should match input."
-    )
-    assert dataset[0].rationale == "Addition of 2 and 2.", (
-        "Rationale should match input."
-    )
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Items should be DataPoint instances."
+    assert (
+        dataset[0].question == "What is 2 + 2?"
+    ), "Question should match input."
+    assert (
+        dataset[0].rationale == "Addition of 2 and 2."
+    ), "Rationale should match input."
     assert dataset[0].final_answer == "4", "Final answer should match input."
-    assert dataset[1].question == "Is the sky blue?", (
-        "Second question should match input."
-    )
-    assert dataset[1].rationale == "Observation of clear weather.", (
-        "Second rationale should match input."
-    )
-    assert dataset[1].final_answer == "yes", (
-        "Second final answer should match input."
-    )
-    assert dataset[0].metadata is None, (
-        "Metadata should be None when not provided."
-    )
+    assert (
+        dataset[1].question == "Is the sky blue?"
+    ), "Second question should match input."
+    assert (
+        dataset[1].rationale == "Observation of clear weather."
+    ), "Second rationale should match input."
+    assert (
+        dataset[1].final_answer == "yes"
+    ), "Second final answer should match input."
+    assert (
+        dataset[0].metadata is None
+    ), "Metadata should be None when not provided."
 
     # **Test 2: Initialization with invalid data**
     # Sub-test 2a: Missing required field with strict=True
@@ -183,9 +183,9 @@ def test_static_dataset_init_from_hf_dataset():
     dataset_non_strict = StaticDataset(
         data=hf_invalid_missing, min_samples=0, strict=False
     )
-    assert len(dataset_non_strict) == 0, (
-        "Invalid items should be filtered out in non-strict mode."
-    )
+    assert (
+        len(dataset_non_strict) == 0
+    ), "Invalid items should be filtered out in non-strict mode."
 
     # Sub-test 2c: Empty dataset with min_samples=1
     hf_empty = HFDataset.from_list([])
@@ -197,9 +197,9 @@ def test_static_dataset_init_from_hf_dataset():
 
     # Sub-test 2d: Empty dataset with min_samples=0
     dataset_empty = StaticDataset(data=hf_empty, min_samples=0, strict=True)
-    assert len(dataset_empty) == 0, (
-        "Empty dataset should have zero length when min_samples=0."
-    )
+    assert (
+        len(dataset_empty) == 0
+    ), "Empty dataset should have zero length when min_samples=0."
 
     # **Test 3: Initialization with optional fields and additional fields**
     data_with_optional = [
@@ -218,25 +218,25 @@ def test_static_dataset_init_from_hf_dataset():
 
     # Verify the dataset initialized correctly
     assert len(dataset_optional) == 1, "Dataset should contain 1 item."
-    assert isinstance(dataset_optional[0], DataPoint), (
-        "Item should be a DataPoint instance."
-    )
-    assert dataset_optional[0].question == "What is the capital of France?", (
-        "Question should match."
-    )
-    assert dataset_optional[0].rationale == "France is a country in Europe.", (
-        "Rationale should match."
-    )
-    assert dataset_optional[0].final_answer == "Paris", (
-        "Final answer should match."
-    )
+    assert isinstance(
+        dataset_optional[0], DataPoint
+    ), "Item should be a DataPoint instance."
+    assert (
+        dataset_optional[0].question == "What is the capital of France?"
+    ), "Question should match."
+    assert (
+        dataset_optional[0].rationale == "France is a country in Europe."
+    ), "Rationale should match."
+    assert (
+        dataset_optional[0].final_answer == "Paris"
+    ), "Final answer should match."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
     }, "Metadata should match."
-    assert "extra_field" not in dataset_optional[0].__dict__, (
-        "Extra field should not be present in DataPoint."
-    )
+    assert (
+        "extra_field" not in dataset_optional[0].__dict__
+    ), "Extra field should not be present in DataPoint."
 
 
 def test_static_dataset_init_from_pytorch_dataset():
@@ -272,28 +272,28 @@ def test_static_dataset_init_from_pytorch_dataset():
     dataset = StaticDataset(data=pytorch_valid, min_samples=1, strict=True)
 
     assert len(dataset) == 2, "Dataset should contain 2 items."
-    assert isinstance(dataset[0], DataPoint), (
-        "Items should be DataPoint instances."
-    )
-    assert dataset[0].question == "What is 2 + 2?", (
-        "Question should match input."
-    )
-    assert dataset[0].rationale == "Addition of 2 and 2.", (
-        "Rationale should match input."
-    )
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Items should be DataPoint instances."
+    assert (
+        dataset[0].question == "What is 2 + 2?"
+    ), "Question should match input."
+    assert (
+        dataset[0].rationale == "Addition of 2 and 2."
+    ), "Rationale should match input."
     assert dataset[0].final_answer == "4", "Final answer should match input."
-    assert dataset[1].question == "Is the sky blue?", (
-        "Second question should match input."
-    )
-    assert dataset[1].rationale == "Observation of clear weather.", (
-        "Second rationale should match input."
-    )
-    assert dataset[1].final_answer == "yes", (
-        "Second final answer should match input."
-    )
-    assert dataset[0].metadata is None, (
-        "Metadata should be None when not provided."
-    )
+    assert (
+        dataset[1].question == "Is the sky blue?"
+    ), "Second question should match input."
+    assert (
+        dataset[1].rationale == "Observation of clear weather."
+    ), "Second rationale should match input."
+    assert (
+        dataset[1].final_answer == "yes"
+    ), "Second final answer should match input."
+    assert (
+        dataset[0].metadata is None
+    ), "Metadata should be None when not provided."
 
     # **Test 2: Initialization with invalid data**
     # Sub-test 2a: Missing required field with strict=True
@@ -314,9 +314,9 @@ def test_static_dataset_init_from_pytorch_dataset():
     dataset_non_strict = StaticDataset(
         data=pytorch_invalid_missing, min_samples=0, strict=False
     )
-    assert len(dataset_non_strict) == 0, (
-        "Invalid items should be filtered out in non-strict mode."
-    )
+    assert (
+        len(dataset_non_strict) == 0
+    ), "Invalid items should be filtered out in non-strict mode."
 
     # Sub-test 2c: Empty dataset with min_samples=1
     pytorch_empty = MockPyTorchDataset([])
@@ -330,9 +330,9 @@ def test_static_dataset_init_from_pytorch_dataset():
     dataset_empty = StaticDataset(
         data=pytorch_empty, min_samples=0, strict=True
     )
-    assert len(dataset_empty) == 0, (
-        "Empty dataset should have zero length when min_samples=0."
-    )
+    assert (
+        len(dataset_empty) == 0
+    ), "Empty dataset should have zero length when min_samples=0."
 
     # **Test 3: Initialization with optional fields and additional fields**
     data_with_optional = [
@@ -351,25 +351,25 @@ def test_static_dataset_init_from_pytorch_dataset():
 
     # Verify the dataset initialized correctly
     assert len(dataset_optional) == 1, "Dataset should contain 1 item."
-    assert isinstance(dataset_optional[0], DataPoint), (
-        "Item should be a DataPoint instance."
-    )
-    assert dataset_optional[0].question == "What is the capital of France?", (
-        "Question should match."
-    )
-    assert dataset_optional[0].rationale == "France is a country in Europe.", (
-        "Rationale should match."
-    )
-    assert dataset_optional[0].final_answer == "Paris", (
-        "Final answer should match."
-    )
+    assert isinstance(
+        dataset_optional[0], DataPoint
+    ), "Item should be a DataPoint instance."
+    assert (
+        dataset_optional[0].question == "What is the capital of France?"
+    ), "Question should match."
+    assert (
+        dataset_optional[0].rationale == "France is a country in Europe."
+    ), "Rationale should match."
+    assert (
+        dataset_optional[0].final_answer == "Paris"
+    ), "Final answer should match."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
     }, "Metadata should match."
-    assert "extra_field" not in dataset_optional[0].__dict__, (
-        "Extra field should not be present in DataPoint."
-    )
+    assert (
+        "extra_field" not in dataset_optional[0].__dict__
+    ), "Extra field should not be present in DataPoint."
 
     # **Test 4: PyTorch-specific edge cases**
     # Sub-test 4a: Dataset without __len__
@@ -425,28 +425,28 @@ def test_static_dataset_init_from_json_file():
 
     dataset = StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
     assert len(dataset) == 2, "Dataset should contain 2 items."
-    assert isinstance(dataset[0], DataPoint), (
-        "Items should be DataPoint instances."
-    )
-    assert dataset[0].question == "What is 2 + 2?", (
-        "Question should match input."
-    )
-    assert dataset[0].rationale == "Addition of 2 and 2.", (
-        "Rationale should match input."
-    )
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Items should be DataPoint instances."
+    assert (
+        dataset[0].question == "What is 2 + 2?"
+    ), "Question should match input."
+    assert (
+        dataset[0].rationale == "Addition of 2 and 2."
+    ), "Rationale should match input."
     assert dataset[0].final_answer == "4", "Final answer should match input."
-    assert dataset[1].question == "Is the sky blue?", (
-        "Second question should match input."
-    )
-    assert dataset[1].rationale == "Observation of clear weather.", (
-        "Second rationale should match input."
-    )
-    assert dataset[1].final_answer == "yes", (
-        "Second final answer should match input."
-    )
-    assert dataset[0].metadata is None, (
-        "Metadata should be None when not provided."
-    )
+    assert (
+        dataset[1].question == "Is the sky blue?"
+    ), "Second question should match input."
+    assert (
+        dataset[1].rationale == "Observation of clear weather."
+    ), "Second rationale should match input."
+    assert (
+        dataset[1].final_answer == "yes"
+    ), "Second final answer should match input."
+    assert (
+        dataset[0].metadata is None
+    ), "Metadata should be None when not provided."
 
     # **Test 2: Initialization with invalid JSON file (malformed JSON)**
     with tempfile.NamedTemporaryFile(
@@ -514,9 +514,9 @@ def test_static_dataset_init_from_json_file():
     dataset_empty = StaticDataset(
         data=tmp_file_path, min_samples=0, strict=True
     )
-    assert len(dataset_empty) == 0, (
-        "Empty dataset should have zero length when min_samples=0."
-    )
+    assert (
+        len(dataset_empty) == 0
+    ), "Empty dataset should have zero length when min_samples=0."
 
     # **Test 7: Initialization with optional fields and additional fields**
     with tempfile.NamedTemporaryFile(
@@ -538,25 +538,25 @@ def test_static_dataset_init_from_json_file():
         data=tmp_file_path, min_samples=1, strict=True
     )
     assert len(dataset_optional) == 1, "Dataset should contain 1 item."
-    assert isinstance(dataset_optional[0], DataPoint), (
-        "Item should be a DataPoint instance."
-    )
-    assert dataset_optional[0].question == "What is the capital of France?", (
-        "Question should match."
-    )
-    assert dataset_optional[0].rationale == "France is a country in Europe.", (
-        "Rationale should match."
-    )
-    assert dataset_optional[0].final_answer == "Paris", (
-        "Final answer should match."
-    )
+    assert isinstance(
+        dataset_optional[0], DataPoint
+    ), "Item should be a DataPoint instance."
+    assert (
+        dataset_optional[0].question == "What is the capital of France?"
+    ), "Question should match."
+    assert (
+        dataset_optional[0].rationale == "France is a country in Europe."
+    ), "Rationale should match."
+    assert (
+        dataset_optional[0].final_answer == "Paris"
+    ), "Final answer should match."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
     }, "Metadata should match."
-    assert "extra_field" not in dataset_optional[0].__dict__, (
-        "Extra field should not be present in DataPoint."
-    )
+    assert (
+        "extra_field" not in dataset_optional[0].__dict__
+    ), "Extra field should not be present in DataPoint."
 
     # **Test 8: JSON-specific edge cases**
     # Sub-test 8a: Invalid data with strict=True
@@ -593,9 +593,9 @@ def test_static_dataset_init_from_json_file():
     dataset_non_strict = StaticDataset(
         data=tmp_file_path, min_samples=0, strict=False
     )
-    assert len(dataset_non_strict) == 0, (
-        "Invalid items should be filtered out in non-strict mode."
-    )
+    assert (
+        len(dataset_non_strict) == 0
+    ), "Invalid items should be filtered out in non-strict mode."
 
 
 def test_static_dataset_init_from_jsonl_file():
@@ -631,28 +631,28 @@ def test_static_dataset_init_from_jsonl_file():
 
     dataset = StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
     assert len(dataset) == 2, "Dataset should contain 2 items."
-    assert isinstance(dataset[0], DataPoint), (
-        "Items should be DataPoint instances."
-    )
-    assert dataset[0].question == "What is 2 + 2?", (
-        "Question should match input."
-    )
-    assert dataset[0].rationale == "Addition of 2 and 2.", (
-        "Rationale should match input."
-    )
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Items should be DataPoint instances."
+    assert (
+        dataset[0].question == "What is 2 + 2?"
+    ), "Question should match input."
+    assert (
+        dataset[0].rationale == "Addition of 2 and 2."
+    ), "Rationale should match input."
     assert dataset[0].final_answer == "4", "Final answer should match input."
-    assert dataset[1].question == "Is the sky blue?", (
-        "Second question should match input."
-    )
-    assert dataset[1].rationale == "Observation of clear weather.", (
-        "Second rationale should match input."
-    )
-    assert dataset[1].final_answer == "yes", (
-        "Second final answer should match input."
-    )
-    assert dataset[0].metadata is None, (
-        "Metadata should be None when not provided."
-    )
+    assert (
+        dataset[1].question == "Is the sky blue?"
+    ), "Second question should match input."
+    assert (
+        dataset[1].rationale == "Observation of clear weather."
+    ), "Second rationale should match input."
+    assert (
+        dataset[1].final_answer == "yes"
+    ), "Second final answer should match input."
+    assert (
+        dataset[0].metadata is None
+    ), "Metadata should be None when not provided."
 
     # **Test 2: Initialization with invalid JSONL file (malformed JSON)**
     with tempfile.NamedTemporaryFile(
@@ -709,9 +709,9 @@ def test_static_dataset_init_from_jsonl_file():
     dataset_empty = StaticDataset(
         data=tmp_file_path, min_samples=0, strict=True
     )
-    assert len(dataset_empty) == 0, (
-        "Empty dataset should have zero length when min_samples=0."
-    )
+    assert (
+        len(dataset_empty) == 0
+    ), "Empty dataset should have zero length when min_samples=0."
 
     # **Test 6: Initialization with optional fields and additional fields**
     with tempfile.NamedTemporaryFile(
@@ -734,25 +734,25 @@ def test_static_dataset_init_from_jsonl_file():
         data=tmp_file_path, min_samples=1, strict=True
     )
     assert len(dataset_optional) == 1, "Dataset should contain 1 item."
-    assert isinstance(dataset_optional[0], DataPoint), (
-        "Item should be a DataPoint instance."
-    )
-    assert dataset_optional[0].question == "What is the capital of France?", (
-        "Question should match."
-    )
-    assert dataset_optional[0].rationale == "France is a country in Europe.", (
-        "Rationale should match."
-    )
-    assert dataset_optional[0].final_answer == "Paris", (
-        "Final answer should match."
-    )
+    assert isinstance(
+        dataset_optional[0], DataPoint
+    ), "Item should be a DataPoint instance."
+    assert (
+        dataset_optional[0].question == "What is the capital of France?"
+    ), "Question should match."
+    assert (
+        dataset_optional[0].rationale == "France is a country in Europe."
+    ), "Rationale should match."
+    assert (
+        dataset_optional[0].final_answer == "Paris"
+    ), "Final answer should match."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
     }, "Metadata should match."
-    assert "extra_field" not in dataset_optional[0].__dict__, (
-        "Extra field should not be present in DataPoint."
-    )
+    assert (
+        "extra_field" not in dataset_optional[0].__dict__
+    ), "Extra field should not be present in DataPoint."
 
     # **Test 7: JSONL-specific edge cases:
     # Missing required field in strict mode**
@@ -794,9 +794,9 @@ def test_static_dataset_init_from_jsonl_file():
     dataset_non_strict = StaticDataset(
         data=tmp_file_path, min_samples=0, strict=False
     )
-    assert len(dataset_non_strict) == 0, (
-        "Invalid items should be filtered out in non-strict mode."
-    )
+    assert (
+        len(dataset_non_strict) == 0
+    ), "Invalid items should be filtered out in non-strict mode."
 
 
 def test_static_dataset_init_from_list():
@@ -820,28 +820,28 @@ def test_static_dataset_init_from_list():
     ]
     dataset = StaticDataset(data=valid_data, min_samples=1, strict=True)
     assert len(dataset) == 2, "Dataset should contain 2 items."
-    assert isinstance(dataset[0], DataPoint), (
-        "Items should be DataPoint instances."
-    )
-    assert dataset[0].question == "What is 2 + 2?", (
-        "Question should match input."
-    )
-    assert dataset[0].rationale == "Addition of 2 and 2.", (
-        "Rationale should match input."
-    )
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Items should be DataPoint instances."
+    assert (
+        dataset[0].question == "What is 2 + 2?"
+    ), "Question should match input."
+    assert (
+        dataset[0].rationale == "Addition of 2 and 2."
+    ), "Rationale should match input."
     assert dataset[0].final_answer == "4", "Final answer should match input."
-    assert dataset[1].question == "Is the sky blue?", (
-        "Second question should match input."
-    )
-    assert dataset[1].rationale == "Observation of clear weather.", (
-        "Second rationale should match input."
-    )
-    assert dataset[1].final_answer == "yes", (
-        "Second final answer should match input."
-    )
-    assert dataset[0].metadata is None, (
-        "Metadata should be None when not provided."
-    )
+    assert (
+        dataset[1].question == "Is the sky blue?"
+    ), "Second question should match input."
+    assert (
+        dataset[1].rationale == "Observation of clear weather."
+    ), "Second rationale should match input."
+    assert (
+        dataset[1].final_answer == "yes"
+    ), "Second final answer should match input."
+    assert (
+        dataset[0].metadata is None
+    ), "Metadata should be None when not provided."
 
     # **Test 2: Initialization with a list containing non-dictionary items**
     invalid_list_data = [
@@ -863,9 +863,9 @@ def test_static_dataset_init_from_list():
         StaticDataset(data=empty_data, min_samples=1, strict=True)
     # Sub-test 3b: Empty list with min_samples=0
     dataset_empty = StaticDataset(data=empty_data, min_samples=0, strict=True)
-    assert len(dataset_empty) == 0, (
-        "Empty dataset should have zero length when min_samples=0."
-    )
+    assert (
+        len(dataset_empty) == 0
+    ), "Empty dataset should have zero length when min_samples=0."
 
     # **Test 4: Initialization with dictionaries missing required fields**
     # Sub-test 4a: Missing required field with strict=True
@@ -884,9 +884,9 @@ def test_static_dataset_init_from_list():
     dataset_non_strict = StaticDataset(
         data=invalid_data_missing, min_samples=0, strict=False
     )
-    assert len(dataset_non_strict) == 0, (
-        "Invalid items should be filtered out in non-strict mode."
-    )
+    assert (
+        len(dataset_non_strict) == 0
+    ), "Invalid items should be filtered out in non-strict mode."
 
     # **Test 5: Initialization with optional fields and additional fields**
     data_with_optional = [
@@ -902,25 +902,25 @@ def test_static_dataset_init_from_list():
         data=data_with_optional, min_samples=1, strict=True
     )
     assert len(dataset_optional) == 1, "Dataset should contain 1 item."
-    assert isinstance(dataset_optional[0], DataPoint), (
-        "Item should be a DataPoint instance."
-    )
-    assert dataset_optional[0].question == "What is the capital of France?", (
-        "Question should match."
-    )
-    assert dataset_optional[0].rationale == "France is a country in Europe.", (
-        "Rationale should match."
-    )
-    assert dataset_optional[0].final_answer == "Paris", (
-        "Final answer should match."
-    )
+    assert isinstance(
+        dataset_optional[0], DataPoint
+    ), "Item should be a DataPoint instance."
+    assert (
+        dataset_optional[0].question == "What is the capital of France?"
+    ), "Question should match."
+    assert (
+        dataset_optional[0].rationale == "France is a country in Europe."
+    ), "Rationale should match."
+    assert (
+        dataset_optional[0].final_answer == "Paris"
+    ), "Final answer should match."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
     }, "Metadata should match."
-    assert "extra_field" not in dataset_optional[0].__dict__, (
-        "Extra field should not be present in DataPoint."
-    )
+    assert (
+        "extra_field" not in dataset_optional[0].__dict__
+    ), "Extra field should not be present in DataPoint."
 
     # **Test 6: Mixed valid and invalid items with strict=False**
     mixed_data = [
@@ -934,12 +934,12 @@ def test_static_dataset_init_from_list():
         },  # Missing final_answer
     ]
     dataset_mixed = StaticDataset(data=mixed_data, min_samples=1, strict=False)
-    assert len(dataset_mixed) == 1, (
-        "Only valid items should be included in non-strict mode."
-    )
-    assert dataset_mixed[0].question == "Valid question", (
-        "Only the valid item should be present."
-    )
+    assert (
+        len(dataset_mixed) == 1
+    ), "Only valid items should be included in non-strict mode."
+    assert (
+        dataset_mixed[0].question == "Valid question"
+    ), "Only the valid item should be present."
 
 
 def test_static_dataset_methods():
@@ -972,27 +972,27 @@ def test_static_dataset_methods():
     dataset = StaticDataset(data=mock_data, min_samples=1, strict=True)
 
     assert len(dataset) == 4, "Dataset should have 4 items."
-    assert dataset[0].question == "What is 1+1?", (
-        "First item question should match."
-    )
-    assert dataset[0].rationale == "Basic addition.", (
-        "First item rationale should match."
-    )
-    assert dataset[0].final_answer == "2", (
-        "First item final_answer should match."
-    )
-    assert dataset[3].question == "How many sides does a triangle have?", (
-        "Last item question should match."
-    )
-    assert dataset[3].rationale == "Definition of a triangle.", (
-        "Last item rationale should match."
-    )
-    assert dataset[3].final_answer == "3", (
-        "Last item final_answer should match."
-    )
-    assert isinstance(dataset[0], DataPoint), (
-        "Item should be a DataPoint instance."
-    )
+    assert (
+        dataset[0].question == "What is 1+1?"
+    ), "First item question should match."
+    assert (
+        dataset[0].rationale == "Basic addition."
+    ), "First item rationale should match."
+    assert (
+        dataset[0].final_answer == "2"
+    ), "First item final_answer should match."
+    assert (
+        dataset[3].question == "How many sides does a triangle have?"
+    ), "Last item question should match."
+    assert (
+        dataset[3].rationale == "Definition of a triangle."
+    ), "Last item rationale should match."
+    assert (
+        dataset[3].final_answer == "3"
+    ), "Last item final_answer should match."
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Item should be a DataPoint instance."
 
     # Test __getitem__ with out-of-bounds indices
     with pytest.raises(
@@ -1006,9 +1006,9 @@ def test_static_dataset_methods():
 
     # Test sample from non-empty dataset
     sampled_item = dataset.sample()
-    assert sampled_item in dataset.data, (
-        "Sampled item should be in the dataset."
-    )
+    assert (
+        sampled_item in dataset.data
+    ), "Sampled item should be in the dataset."
 
     # Test __len__ and sample with empty dataset
     empty_dataset = StaticDataset(data=[], min_samples=0, strict=True)
@@ -1045,104 +1045,104 @@ def test_static_dataset_getitem_slice():
     sliced = dataset[1:4:2]
     assert isinstance(sliced, list), "Slicing should return a list."
     assert len(sliced) == 2, "Slice [1:4:2] should return 2 items."
-    assert all(isinstance(item, DataPoint) for item in sliced), (
-        "All items should be DataPoint instances."
-    )
-    assert sliced[0].question == "Is the Earth round?", (
-        "Index 1 question should match."
-    )
-    assert sliced[1].question == "How many sides does a triangle have?", (
-        "Index 3 question should match."
-    )
-    assert sliced[0] is dataset[1], (
-        "Slicing should return references to the same objects."
-    )
+    assert all(
+        isinstance(item, DataPoint) for item in sliced
+    ), "All items should be DataPoint instances."
+    assert (
+        sliced[0].question == "Is the Earth round?"
+    ), "Index 1 question should match."
+    assert (
+        sliced[1].question == "How many sides does a triangle have?"
+    ), "Index 3 question should match."
+    assert (
+        sliced[0] is dataset[1]
+    ), "Slicing should return references to the same objects."
 
     # Test slice with only start and stop
     sliced = dataset[1:3]
     assert len(sliced) == 2, "Slice [1:3] should return 2 items."
-    assert sliced[0].question == "Is the Earth round?", (
-        "Index 1 question should match."
-    )
-    assert sliced[1].question == "What is the capital of Japan?", (
-        "Index 2 question should match."
-    )
+    assert (
+        sliced[0].question == "Is the Earth round?"
+    ), "Index 1 question should match."
+    assert (
+        sliced[1].question == "What is the capital of Japan?"
+    ), "Index 2 question should match."
 
     # Test slice with negative indices
     sliced = dataset[-2:]
     assert len(sliced) == 2, "Slice [-2:] should return 2 items."
-    assert sliced[0].question == "What is the capital of Japan?", (
-        "Index -2 question should match."
-    )
-    assert sliced[1].question == "How many sides does a triangle have?", (
-        "Index -1 question should match."
-    )
+    assert (
+        sliced[0].question == "What is the capital of Japan?"
+    ), "Index -2 question should match."
+    assert (
+        sliced[1].question == "How many sides does a triangle have?"
+    ), "Index -1 question should match."
 
     sliced = dataset[:-1]
     assert len(sliced) == 3, "Slice [:-1] should return 3 items."
-    assert sliced[0].question == "What is 1+1?", (
-        "Index 0 question should match."
-    )
-    assert sliced[2].question == "What is the capital of Japan?", (
-        "Index 2 question should match."
-    )
+    assert (
+        sliced[0].question == "What is 1+1?"
+    ), "Index 0 question should match."
+    assert (
+        sliced[2].question == "What is the capital of Japan?"
+    ), "Index 2 question should match."
 
     # Test slice with step
     sliced = dataset[::2]
     assert len(sliced) == 2, "Slice [::2] should return 2 items."
-    assert sliced[0].question == "What is 1+1?", (
-        "Index 0 question should match."
-    )
-    assert sliced[1].question == "What is the capital of Japan?", (
-        "Index 2 question should match."
-    )
+    assert (
+        sliced[0].question == "What is 1+1?"
+    ), "Index 0 question should match."
+    assert (
+        sliced[1].question == "What is the capital of Japan?"
+    ), "Index 2 question should match."
 
     # Test slice with negative step
     sliced = dataset[3:0:-1]
     assert len(sliced) == 3, "Slice [3:0:-1] should return 3 items."
-    assert sliced[0].question == "How many sides does a triangle have?", (
-        "Index 3 question should match."
-    )
-    assert sliced[2].question == "Is the Earth round?", (
-        "Index 1 question should match."
-    )
+    assert (
+        sliced[0].question == "How many sides does a triangle have?"
+    ), "Index 3 question should match."
+    assert (
+        sliced[2].question == "Is the Earth round?"
+    ), "Index 1 question should match."
 
     sliced = dataset[::-1]
-    assert len(sliced) == 4, (
-        "Slice [::-1] should return all 4 items in reverse."
-    )
-    assert sliced[0].question == "How many sides does a triangle have?", (
-        "Index 3 question should match."
-    )
-    assert sliced[3].question == "What is 1+1?", (
-        "Index 0 question should match."
-    )
+    assert (
+        len(sliced) == 4
+    ), "Slice [::-1] should return all 4 items in reverse."
+    assert (
+        sliced[0].question == "How many sides does a triangle have?"
+    ), "Index 3 question should match."
+    assert (
+        sliced[3].question == "What is 1+1?"
+    ), "Index 0 question should match."
 
     # Test slicing with out-of-bound indices
     sliced = dataset[10:20]
-    assert sliced == [], (
-        "Slice [10:20] should return an empty list when out of bounds."
-    )
+    assert (
+        sliced == []
+    ), "Slice [10:20] should return an empty list when out of bounds."
 
     sliced = dataset[-10:10]
     assert len(sliced) == 4, "Slice [-10:10] should return all items."
-    assert sliced[0].question == "What is 1+1?", (
-        "Index 0 question should match."
-    )
-    assert sliced[3].question == "How many sides does a triangle have?", (
-        "Index 3 question should match."
-    )
+    assert (
+        sliced[0].question == "What is 1+1?"
+    ), "Index 0 question should match."
+    assert (
+        sliced[3].question == "How many sides does a triangle have?"
+    ), "Index 3 question should match."
 
     sliced = dataset[2:100]
-    assert len(sliced) == 2, (
-        "Slice [2:100] should return items from index 2 to end."
-    )
-    assert sliced[0].question == "What is the capital of Japan?", (
-        "Index 2 question should match."
-    )
-    assert sliced[1].question == "How many sides does a triangle have?", (
-        "Index 3 question should match."
-    )
+    assert (
+        len(sliced) == 2
+    ), "Slice [2:100] should return items from index 2 to end."
+    assert (
+        sliced[0].question == "What is the capital of Japan?"
+    ), "Index 2 question should match."
+    assert (
+        sliced[1].question == "How many sides does a triangle have?"
+    ), "Index 3 question should match."
 
     # Test non-integer, non-slice inputs
     with pytest.raises(
@@ -1197,15 +1197,15 @@ def test_static_dataset_getitem_slice():
     # Test slicing an empty dataset
     empty_dataset = StaticDataset(data=[], min_samples=0, strict=True)
     assert len(empty_dataset) == 0, "Empty dataset should have length 0."
-    assert empty_dataset[:] == [], (
-        "Full slice of empty dataset should return empty list."
-    )
-    assert empty_dataset[0:0] == [], (
-        "Zero-length slice should return empty list."
-    )
-    assert empty_dataset[1:2] == [], (
-        "Out-of-bound slice should return empty list."
-    )
+    assert (
+        empty_dataset[:] == []
+    ), "Full slice of empty dataset should return empty list."
+    assert (
+        empty_dataset[0:0] == []
+    ), "Zero-length slice should return empty list."
+    assert (
+        empty_dataset[1:2] == []
+    ), "Out-of-bound slice should return empty list."
 
 
 @pytest.mark.asyncio
@@ -1344,9 +1344,9 @@ async def test_generate_new():
         await dataset.generate_new(2)
 
         # Verify the data was added
-        assert len(dataset._data) == 2, (
-            "Should generate exactly 2 valid datapoints"
-        )
+        assert (
+            len(dataset._data) == 2
+        ), "Should generate exactly 2 valid datapoints"
 
         # Check the datapoints
         assert dataset._data[0].question == "What is 5 + 6?"
@@ -1536,15 +1536,15 @@ async def test_few_shot_generator_save_to_jsonl(tmp_path):
     # Parse and verify all lines
     for i, (line, expected_dp) in enumerate(zip(lines, dataset._data)):
         parsed_line = json.loads(line)
-        assert parsed_line["question"] == expected_dp.question, (
-            f"Question mismatch at line {i + 1}"
-        )
-        assert parsed_line["rationale"] == expected_dp.rationale, (
-            f"Rationale mismatch at line {i + 1}"
-        )
-        assert parsed_line["final_answer"] == expected_dp.final_answer, (
-            f"Final answer mismatch at line {i + 1}"
-        )
+        assert (
+            parsed_line["question"] == expected_dp.question
+        ), f"Question mismatch at line {i + 1}"
+        assert (
+            parsed_line["rationale"] == expected_dp.rationale
+        ), f"Rationale mismatch at line {i + 1}"
+        assert (
+            parsed_line["final_answer"] == expected_dp.final_answer
+        ), f"Final answer mismatch at line {i + 1}"
         assert "metadata" in parsed_line, f"Metadata missing at line {i + 1}"
         assert (
             parsed_line["metadata"]["created"]
@@ -1697,15 +1697,15 @@ async def test_few_shot_generator_flush(tmp_path):
             },
         ]
         expected_dp = original_data[i]
-        assert parsed_line["question"] == expected_dp["question"], (
-            f"Question mismatch at line {i + 1}"
-        )
-        assert parsed_line["rationale"] == expected_dp["rationale"], (
-            f"Rationale mismatch at line {i + 1}"
-        )
-        assert parsed_line["final_answer"] == expected_dp["final_answer"], (
-            f"Final answer mismatch at line {i + 1}"
-        )
+        assert (
+            parsed_line["question"] == expected_dp["question"]
+        ), f"Question mismatch at line {i + 1}"
+        assert (
+            parsed_line["rationale"] == expected_dp["rationale"]
+        ), f"Rationale mismatch at line {i + 1}"
+        assert (
+            parsed_line["final_answer"] == expected_dp["final_answer"]
+        ), f"Final answer mismatch at line {i + 1}"
         assert "metadata" in parsed_line, f"Metadata missing at line {i + 1}"
         assert (
             parsed_line["metadata"]["created"]
@@ -1806,25 +1806,25 @@ async def test_few_shot_generator_async(
         model=mock_model,
         data_path=mock_jsonl_file,
     )
-    assert len(generator._data) == 4, (
-        "Expected 4 datapoints to be loaded from JSONL"
-    )
-    assert all(isinstance(dp, DataPoint) for dp in generator._data), (
-        "All loaded items should be DataPoint instances"
-    )
+    assert (
+        len(generator._data) == 4
+    ), "Expected 4 datapoints to be loaded from JSONL"
+    assert all(
+        isinstance(dp, DataPoint) for dp in generator._data
+    ), "All loaded items should be DataPoint instances"
     original_data = generator._data.copy()
 
     # --- Test 2: Async sampling one datapoint ---
     sampled_dp = await generator.async_sample()
-    assert isinstance(sampled_dp, DataPoint), (
-        "Sampled item should be a DataPoint"
-    )
-    assert sampled_dp in original_data, (
-        "Sampled item should be one of the loaded datapoints"
-    )
-    assert len(generator._data) == 3, (
-        "Async sampling should reduce the number of datapoints by 1"
-    )
+    assert isinstance(
+        sampled_dp, DataPoint
+    ), "Sampled item should be a DataPoint"
+    assert (
+        sampled_dp in original_data
+    ), "Sampled item should be one of the loaded datapoints"
+    assert (
+        len(generator._data) == 3
+    ), "Async sampling should reduce the number of datapoints by 1"
 
     # --- Test 3: Asynchronous iteration (__aiter__) ---
     collected_data = []
@@ -1832,12 +1832,12 @@ async def test_few_shot_generator_async(
         collected_data.append(dp)
         if len(collected_data) == 3:
             break
-    assert len(collected_data) == 3, (
-        "Asynchronous iteration should yield the remaining 3 datapoints"
-    )
-    assert all(isinstance(dp, DataPoint) for dp in collected_data), (
-        "All iterated items should be DataPoint instances"
-    )
+    assert (
+        len(collected_data) == 3
+    ), "Asynchronous iteration should yield the remaining 3 datapoints"
+    assert all(
+        isinstance(dp, DataPoint) for dp in collected_data
+    ), "All iterated items should be DataPoint instances"
     assert sorted([dp.question for dp in collected_data]) == sorted(
         [dp.question for dp in original_data[1:]]
     ), (
@@ -1873,25 +1873,25 @@ def test_few_shot_generator_sync(
         model=mock_model,
         data_path=mock_jsonl_file,
     )
-    assert len(generator._data) == 4, (
-        "Expected 4 datapoints to be loaded from JSONL"
-    )
-    assert all(isinstance(dp, DataPoint) for dp in generator._data), (
-        "All loaded items should be DataPoint instances"
-    )
+    assert (
+        len(generator._data) == 4
+    ), "Expected 4 datapoints to be loaded from JSONL"
+    assert all(
+        isinstance(dp, DataPoint) for dp in generator._data
+    ), "All loaded items should be DataPoint instances"
     original_data = generator._data.copy()
 
     # --- Test 2: Sampling one datapoint ---
     sampled_dp = generator.sample()
-    assert isinstance(sampled_dp, DataPoint), (
-        "Sampled item should be a DataPoint"
-    )
-    assert sampled_dp in original_data, (
-        "Sampled item should be one of the loaded datapoints"
-    )
-    assert len(generator._data) == 3, (
-        "Sampling should reduce the number of datapoints by 1"
-    )
+    assert isinstance(
+        sampled_dp, DataPoint
+    ), "Sampled item should be a DataPoint"
+    assert (
+        sampled_dp in original_data
+    ), "Sampled item should be one of the loaded datapoints"
+    assert (
+        len(generator._data) == 3
+    ), "Sampling should reduce the number of datapoints by 1"
 
     # --- Test 3: Synchronous iteration (__iter__) ---
     collected_data = []
@@ -1899,12 +1899,12 @@ def test_few_shot_generator_sync(
         collected_data.append(dp)
         if len(collected_data) == 3:
             break
-    assert len(collected_data) == 3, (
-        "Synchronous iteration should yield the remaining 3 datapoints"
-    )
-    assert all(isinstance(dp, DataPoint) for dp in collected_data), (
-        "All iterated items should be DataPoint instances"
-    )
+    assert (
+        len(collected_data) == 3
+    ), "Synchronous iteration should yield the remaining 3 datapoints"
+    assert all(
+        isinstance(dp, DataPoint) for dp in collected_data
+    ), "All iterated items should be DataPoint instances"
     assert sorted([dp.question for dp in collected_data]) == sorted(
         [dp.question for dp in original_data[1:]]
     ), (

@@ -511,9 +511,9 @@ def assert_event_sequence(
         f"Expected exactly 1 {AllTasksCompletedEvent.__name__}, got "
         f"{all_tasks_completed_count}"
     )
-    assert events[-1] == AllTasksCompletedEvent, (
-        f"Last event should be {AllTasksCompletedEvent.__name__}"
-    )
+    assert (
+        events[-1] == AllTasksCompletedEvent
+    ), f"Last event should be {AllTasksCompletedEvent.__name__}"
 
     # 7. All events should be of expected types
     allowed_events = {

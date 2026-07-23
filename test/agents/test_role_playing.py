@@ -178,25 +178,25 @@ def test_role_playing_step(
         )
 
         for response in (assistant_response, user_response):
-            assert isinstance(response.msgs, list), (
-                f"Error in round {i + 1}: response.msgs is not a list"
-            )
-            assert len(response.msgs) == 1, (
-                f"Error in round {i + 1}: len(response.msgs) is not 1"
-            )
+            assert isinstance(
+                response.msgs, list
+            ), f"Error in round {i + 1}: response.msgs is not a list"
+            assert (
+                len(response.msgs) == 1
+            ), f"Error in round {i + 1}: len(response.msgs) is not 1"
             assert isinstance(response.msgs[0], BaseMessage), (
                 f"Error in round {i + 1}: "
                 f"response.msgs[0] is not a BaseMessage"
             )
-            assert isinstance(response.terminated, bool), (
-                f"Error in round {i + 1}: response.terminated is not a bool"
-            )
-            assert response.terminated is False, (
-                f"Error in round {i + 1}: response.terminated is not False"
-            )
-            assert isinstance(response.info, dict), (
-                f"Error in round {i + 1}: response.info is not a dict"
-            )
+            assert isinstance(
+                response.terminated, bool
+            ), f"Error in round {i + 1}: response.terminated is not a bool"
+            assert (
+                response.terminated is False
+            ), f"Error in round {i + 1}: response.terminated is not False"
+            assert isinstance(
+                response.info, dict
+            ), f"Error in round {i + 1}: response.info is not a dict"
 
 
 @pytest.mark.model_backend
@@ -249,25 +249,25 @@ async def test_role_playing_astep(
         )
 
         for response in (assistant_response, user_response):
-            assert isinstance(response.msgs, list), (
-                f"Error in round {i + 1}: response.msgs is not a list"
-            )
-            assert len(response.msgs) == 1, (
-                f"Error in round {i + 1}: len(response.msgs) is not 1"
-            )
+            assert isinstance(
+                response.msgs, list
+            ), f"Error in round {i + 1}: response.msgs is not a list"
+            assert (
+                len(response.msgs) == 1
+            ), f"Error in round {i + 1}: len(response.msgs) is not 1"
             assert isinstance(response.msgs[0], BaseMessage), (
                 f"Error in round {i + 1}: "
                 f"response.msgs[0] is not a BaseMessage"
             )
-            assert isinstance(response.terminated, bool), (
-                f"Error in round {i + 1}: response.terminated is not a bool"
-            )
-            assert response.terminated is False, (
-                f"Error in round {i + 1}: response.terminated is not False"
-            )
-            assert isinstance(response.info, dict), (
-                f"Error in round {i + 1}: response.info is not a dict"
-            )
+            assert isinstance(
+                response.terminated, bool
+            ), f"Error in round {i + 1}: response.terminated is not a bool"
+            assert (
+                response.terminated is False
+            ), f"Error in round {i + 1}: response.terminated is not False"
+            assert isinstance(
+                response.info, dict
+            ), f"Error in round {i + 1}: response.info is not a dict"
 
 
 @pytest.mark.model_backend

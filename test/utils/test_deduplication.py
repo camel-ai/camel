@@ -81,9 +81,9 @@ def test_deduplicate_internally_with_mock_embedding():
     # likewise with the third text. So we expect only 1 unique ID
     # if threshold is 0.9.
     assert result.original_texts[0] == "Hello world!"
-    assert len(result.unique_ids) == 1, (
-        f"Expected 1 unique id, got {len(result.unique_ids)}"
-    )
+    assert (
+        len(result.unique_ids) == 1
+    ), f"Expected 1 unique id, got {len(result.unique_ids)}"
 
     # Check the mapping. Indices 1 and 2 should map to 0,
     # as duplicates. 3 is a special case here: the embedding is also identical,
@@ -126,22 +126,22 @@ def test_deduplicate_internally_with_precomputed_embeddings():
     # We expect "Text B" (index=1) and "Text B (similar)" (index=2) to be
     # duplicates, since their embeddings have high cosine similarity (> 0.95).
     # The others are distinct enough.
-    assert len(result.unique_ids) == 3, (
-        f"Expected 3 unique ids, got {len(result.unique_ids)}"
-    )
+    assert (
+        len(result.unique_ids) == 3
+    ), f"Expected 3 unique ids, got {len(result.unique_ids)}"
     # The duplicates map should reflect that index 2 is mapped to 1
-    assert result.duplicate_to_target_map == {2: 1}, (
-        f"Expected {{2: 1}}, got {result.duplicate_to_target_map}"
-    )
+    assert result.duplicate_to_target_map == {
+        2: 1
+    }, f"Expected {{2: 1}}, got {result.duplicate_to_target_map}"
 
     # Check correctness of embeddings dictionary
     # We have 3 unique IDs: e.g. [0, 1, 3]
     # (the actual order might vary if threshold leads to a different mapping,
     # but we expect to see them in the unique_embeddings_dict).
     for uid in result.unique_ids:
-        assert uid in result.unique_embeddings_dict, (
-            f"Missing embedding for unique id {uid}"
-        )
+        assert (
+            uid in result.unique_embeddings_dict
+        ), f"Missing embedding for unique id {uid}"
 
 
 def test_deduplicate_internally_chain_scenario():
@@ -181,12 +181,12 @@ def test_deduplicate_internally_chain_scenario():
     # which in the final data structure looks like:
     # duplicate_to_target_map = {1: 0, 2: 1, 3: 2}
 
-    assert len(result.unique_ids) == 1, (
-        f"Expected exactly 1 unique id, got {len(result.unique_ids)}"
-    )
-    assert result.unique_ids[0] == 0, (
-        "Expected the only unique id to be index 0"
-    )
+    assert (
+        len(result.unique_ids) == 1
+    ), f"Expected exactly 1 unique id, got {len(result.unique_ids)}"
+    assert (
+        result.unique_ids[0] == 0
+    ), "Expected the only unique id to be index 0"
 
     expected_map = {1: 0, 2: 1, 3: 2}
     assert result.duplicate_to_target_map == expected_map, (
@@ -199,9 +199,9 @@ def test_deduplicate_internally_chain_scenario():
         "Expected 1 unique embedding, got "
         f"{len(result.unique_embeddings_dict)}"
     )
-    assert 0 in result.unique_embeddings_dict, (
-        "Missing embedding for the unique text A."
-    )
+    assert (
+        0 in result.unique_embeddings_dict
+    ), "Missing embedding for the unique text A."
     # Optionally verify the embedding
     assert result.unique_embeddings_dict[0] == [
         1.0,
