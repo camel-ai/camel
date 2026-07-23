@@ -169,7 +169,7 @@ class FileToolkit(BaseToolkit):
         for index in range(start, end):
             marker = ">" if index == match_index else " "
             rendered.append(
-                f"{file_path}:{index + 1}:{marker} " f"{lines[index].rstrip()}"
+                f"{file_path}:{index + 1}:{marker} {lines[index].rstrip()}"
             )
         return "\n".join(rendered)
 
@@ -187,8 +187,7 @@ class FileToolkit(BaseToolkit):
         for number in range(start, end + 1):
             marker = ">" if start_line <= number <= end_line else " "
             rendered.append(
-                f"{file_path}:{number}:{marker} "
-                f"{lines[number - 1].rstrip()}"
+                f"{file_path}:{number}:{marker} {lines[number - 1].rstrip()}"
             )
         return "\n".join(rendered)
 
@@ -517,8 +516,7 @@ class FileToolkit(BaseToolkit):
                         logger.error(f"Failed to create table: {e}")
                         # Fallback: render as text
                         table_error_msg = (
-                            f"Table data (error): "
-                            f"{tables[current_table_idx]}"
+                            f"Table data (error): {tables[current_table_idx]}"
                         )
                         story.append(
                             Paragraph(
@@ -1196,7 +1194,7 @@ class FileToolkit(BaseToolkit):
                   content in Markdown format.
                 If conversion fails, returns an error message.
         """
-        from camel.loaders.markitdown import MarkItDownLoader
+        from camel.loaders.markitdown_loader import MarkItDownLoader
 
         try:
             # Handle single file path for backward compatibility
@@ -1554,8 +1552,7 @@ class FileToolkit(BaseToolkit):
                     target_cell.pop("outputs", None)
                     target_cell.pop("execution_count", None)
             result = (
-                f"Updated cell '{target_cell.get('id')}' in notebook "
-                f"'{path}'."
+                f"Updated cell '{target_cell.get('id')}' in notebook '{path}'."
             )
         elif edit_mode == "insert":
             if not new_source:
@@ -1582,8 +1579,7 @@ class FileToolkit(BaseToolkit):
                 )
             removed = cells.pop(target_index)
             result = (
-                f"Deleted cell '{removed.get('id')}' from notebook "
-                f"'{path}'."
+                f"Deleted cell '{removed.get('id')}' from notebook '{path}'."
             )
 
         try:

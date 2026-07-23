@@ -123,7 +123,7 @@ class SearchToolkit(BaseToolkit):
             str: The search result. If the page corresponding to the entity
                 exists, return the summary of this entity in a string.
         """
-        import wikipedia
+        import wikipedia  # type: ignore[import-not-found]
 
         result: str
 
@@ -182,7 +182,7 @@ class SearchToolkit(BaseToolkit):
                 returns an error message.
         """
         try:
-            from linkup import LinkupClient
+            from linkup import LinkupClient  # type: ignore[import-not-found]
 
             # Initialize the Linkup client with the API key
             LINKUP_API_KEY = os.getenv("LINKUP_API_KEY")
@@ -247,7 +247,7 @@ class SearchToolkit(BaseToolkit):
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
                 represents a search result.
         """
-        from ddgs import DDGS
+        from ddgs import DDGS  # type: ignore[import-not-found]
 
         ddgs = DDGS()
         responses: List[Dict[str, Any]] = []
@@ -769,7 +769,9 @@ class SearchToolkit(BaseToolkit):
                 - 'published_date' (str): Publication date for news topics
                   (if available).
         """
-        from tavily import TavilyClient  # type: ignore[import-untyped]
+        from tavily import (  # type: ignore[import-untyped, import-not-found]
+            TavilyClient,
+        )
 
         Tavily_API_KEY = os.getenv("TAVILY_API_KEY")
         if not Tavily_API_KEY:
@@ -1102,7 +1104,9 @@ class SearchToolkit(BaseToolkit):
                 - searchType (str): The search type that was selected
                 - costDollars (Dict): Breakdown of API costs
         """
-        from exa_py import Exa
+        from exa_py import (  # type: ignore[import-untyped, import-not-found]
+            Exa,
+        )
 
         EXA_API_KEY = os.getenv("EXA_API_KEY")
 

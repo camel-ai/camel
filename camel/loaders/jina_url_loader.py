@@ -13,47 +13,36 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Optional
+from pathlib import Path
+from typing import Any, Dict, Optional, Union
 from warnings import warn
 
+from camel.loaders.base_loader import BaseLoader
 from camel.types.enums import JinaReturnFormat
 
 JINA_ENDPOINT = "https://r.jina.ai/"
 
 
-class JinaURLReader:
-    r"""URL Reader provided by Jina AI. The output is cleaner and more
-    LLM-friendly than the URL Reader of UnstructuredIO. Can be configured to
-    replace the UnstructuredIO URL Reader in the pipeline.
-
-    Args:
-        api_key (Optional[str], optional): The API key for Jina AI. If not
-            provided, the reader will have a lower rate limit. Defaults to
-            None.
-        return_format (ReturnFormat, optional): The level of detail
-            of the returned content, which is optimized for LLMs. For
-            now screenshots are not supported. Defaults to
-            ReturnFormat.DEFAULT.
-        json_response (bool, optional): Whether to return the response
-            in JSON format. Defaults to False.
-        timeout (int, optional): The maximum time in seconds to wait for
-            the page to be rendered. Defaults to 30.
-        **kwargs (Any): Additional keyword arguments, including proxies,
-            cookies, etc. It should align with the HTTP Header field and
-            value pairs listed in the reference.
-
-    References:
-        https://jina.ai/reader
-    """
+class JinaURLLoader(BaseLoader):
+    r"""URL Reader provided by Jina AI adhering to the unified BaseLoader interface."""  # noqa: E501
 
     def __init__(
         self,
+        config: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         return_format: JinaReturnFormat = JinaReturnFormat.DEFAULT,
         json_response: bool = False,
         timeout: int = 30,
         **kwargs: Any,
     ) -> None:
+        if config:
+            api_key = config.get('api_key', api_key)
+            return_format = config.get('return_format', return_format)
+            json_response = config.get('json_response', json_response)
+            timeout = config.get('timeout', timeout)
+
+        super().__init__(config=config)
+
         api_key = api_key or os.getenv('JINA_API_KEY')
         if not api_key:
             warn(
@@ -75,6 +64,17 @@ class JinaURLReader:
 
         # eliminate None values
         self._headers = {k: v for k, v in raw_headers.items() if v}
+
+    @property
+    def supported_formats(self) -> set[str]:
+        return {"url", "http", "https"}
+
+    def _load_single(
+        self, source: Union[str, Path], **kwargs: Any
+    ) -> Dict[str, Any]:
+        url = str(source)
+        response = self.read_content(url)
+        return {"content": response, "source": url}
 
     def read_content(self, url: str) -> str:
         r"""Reads the content of a URL and returns it as a string with

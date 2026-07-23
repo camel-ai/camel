@@ -23,12 +23,12 @@ from .filter_registry import FILTER_REGISTRY
 from .instruction_filter import InstructionFilter
 
 __all__ = [
+    "FILTER_REGISTRY",
+    "FilterFunction",
+    "InstructionFilter",
+    "KeywordFilter",
     "LengthFilter",
     "NonEnglishFilter",
     "PunctuationFilter",
     "RougeSimilarityFilter",
-    "FilterFunction",
-    "KeywordFilter",
-    "InstructionFilter",
-    "FILTER_REGISTRY",
 ]

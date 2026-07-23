@@ -61,7 +61,7 @@ def generate_data(
     max_num_messages = 40
 
     # Remove number from task prompt
-    original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
+    original_task_prompt = task_prompt.replace(f"{task_idx + 1}. ", "")
 
     task_specify_agent = TaskSpecifyAgent(
         task_type=TaskType.CODE,
@@ -109,7 +109,7 @@ def generate_data(
     message_dict["role_1"] = f"{language_name}_{assistant_agent.role_type!s}"
     message_dict["role_2"] = f"{domain_name}_{user_agent.role_type!s}"
     message_dict["id"] = (
-        f"{(language_idx+1):03}_{(domain_idx+1):03}_{(task_idx+1):03}"
+        f"{(language_idx + 1):03}_{(domain_idx + 1):03}_{(task_idx + 1):03}"
     )
     message_dict["original_task"] = original_task_prompt
     message_dict["specified_task"] = specified_task_prompt
@@ -291,8 +291,8 @@ def main() -> None:
 
             for task_idx, task_prompt in enumerate(tasks):
                 id = (
-                    f"{(language_idx+1):03}_"
-                    f"{(domain_idx+1):03}_{(task_idx+1):03}"
+                    f"{(language_idx + 1):03}_"
+                    f"{(domain_idx + 1):03}_{(task_idx + 1):03}"
                 )
                 if not os.path.exists(f"./camel_data/code/{id}.json"):
                     pool.apply_async(

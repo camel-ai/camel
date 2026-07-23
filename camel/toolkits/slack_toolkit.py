@@ -20,7 +20,7 @@ from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer
 
 if TYPE_CHECKING:
-    from slack_sdk import WebClient
+    from slack_sdk import WebClient  # type: ignore[import-not-found]
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
@@ -72,7 +72,7 @@ class SlackToolkit(BaseToolkit):
                 environment variables are not set.
         """
         try:
-            from slack_sdk import WebClient
+            from slack_sdk import WebClient  # type: ignore[import-not-found]
         except ImportError as e:
             raise ImportError(
                 "Cannot import slack_sdk. Please install the package with \
@@ -110,7 +110,9 @@ class SlackToolkit(BaseToolkit):
             SlackApiError: If there is an error during get slack channel
                 information.
         """
-        from slack_sdk.errors import SlackApiError
+        from slack_sdk.errors import (  # type: ignore[import-not-found]
+            SlackApiError,
+        )
 
         try:
             slack_client = self._login_slack()
@@ -134,7 +136,9 @@ class SlackToolkit(BaseToolkit):
         Returns:
             str: A string containing the API response from Slack.
         """
-        from slack_sdk.errors import SlackApiError
+        from slack_sdk.errors import (  # type: ignore[import-not-found]
+            SlackApiError,
+        )
 
         try:
             slack_client = self._login_slack()
@@ -154,7 +158,9 @@ class SlackToolkit(BaseToolkit):
         Returns:
             str: A string containing the API response from Slack.
         """
-        from slack_sdk.errors import SlackApiError
+        from slack_sdk.errors import (  # type: ignore[import-not-found]
+            SlackApiError,
+        )
 
         try:
             slack_client = self._login_slack()
@@ -174,7 +180,9 @@ class SlackToolkit(BaseToolkit):
                 object in the list contains 'id', 'name', 'created', and
                 'num_members'. Returns an error message string on failure.
         """
-        from slack_sdk.errors import SlackApiError
+        from slack_sdk.errors import (  # type: ignore[import-not-found]
+            SlackApiError,
+        )
 
         try:
             slack_client = self._login_slack()
@@ -209,7 +217,9 @@ class SlackToolkit(BaseToolkit):
             str: A JSON string representing a list of messages. Each message
                 object contains 'user', 'text', and 'ts' (timestamp).
         """
-        from slack_sdk.errors import SlackApiError
+        from slack_sdk.errors import (  # type: ignore[import-not-found]
+            SlackApiError,
+        )
 
         try:
             slack_client = self._login_slack()
@@ -248,7 +258,9 @@ class SlackToolkit(BaseToolkit):
             str: A confirmation message indicating success or an error
                 message.
         """
-        from slack_sdk.errors import SlackApiError
+        from slack_sdk.errors import (  # type: ignore[import-not-found]
+            SlackApiError,
+        )
 
         try:
             slack_client = self._login_slack()
@@ -292,7 +304,9 @@ class SlackToolkit(BaseToolkit):
         Returns:
             str: A string containing the API response from Slack.
         """
-        from slack_sdk.errors import SlackApiError
+        from slack_sdk.errors import (  # type: ignore[import-not-found]
+            SlackApiError,
+        )
 
         try:
             slack_client = self._login_slack()
@@ -310,7 +324,9 @@ class SlackToolkit(BaseToolkit):
             str: A JSON string representing a list of users. Each user
                 object contains 'id', 'name'.
         """
-        from slack_sdk.errors import SlackApiError
+        from slack_sdk.errors import (  # type: ignore[import-not-found]
+            SlackApiError,
+        )
 
         try:
             slack_client = self._login_slack()
@@ -340,7 +356,9 @@ class SlackToolkit(BaseToolkit):
         Returns:
             str: A JSON string representing the user's information.
         """
-        from slack_sdk.errors import SlackApiError
+        from slack_sdk.errors import (  # type: ignore[import-not-found]
+            SlackApiError,
+        )
 
         try:
             slack_client = self._login_slack()

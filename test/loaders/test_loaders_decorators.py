@@ -17,42 +17,63 @@ Test that the following decorators are correctly applied to camel.loaders:
 @dependencies_required - should raise ImportError if package/module is missing
 """
 
+import contextlib
+import sys
 from io import BytesIO
 from unittest.mock import patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 fake_api_key = "fake_api_key"
 
 
+@contextlib.contextmanager
 def _mock_missing(module_name: str):
-    """Patch is_module_available to return False for a specific module."""
-    original = __import__(
-        'camel.utils.commons', fromlist=['is_module_available']
-    ).is_module_available
+    """Patch sys.modules and builtins.__import__ to mock missing module."""
+    import builtins
 
-    def fake(m):
-        if m == module_name:
-            return False
-        return original(m)
+    orig_import = builtins.__import__
 
-    return patch('camel.utils.commons.is_module_available', side_effect=fake)
+    # 1. Save and temporarily remove cached modules
+    saved_modules = {
+        k: v
+        for k, v in sys.modules.items()
+        if k == module_name or k.startswith(module_name + ".")
+    }
+    for k in saved_modules:
+        del sys.modules[k]
+
+    # 2. Intercept new import attempts
+    def fake_import(name, *args, **kwargs):
+        if name == module_name or name.startswith(module_name + "."):
+            raise ImportError(f"No module named '{module_name}'")
+        return orig_import(name, *args, **kwargs)
+
+    with (
+        patch('camel.utils.commons.is_module_available', return_value=False),
+        patch('builtins.__import__', side_effect=fake_import),
+    ):
+        try:
+            yield
+        finally:
+            # 3. Restore original modules afterward
+            sys.modules.update(saved_modules)
 
 
 def test_crawl4ai_missing_dependency():
-    from camel.loaders import Crawl4AI
+    from camel.loaders import Crawl4AILoader
 
     with _mock_missing('crawl4ai'):
         with pytest.raises(ImportError, match="crawl4ai"):
-            Crawl4AI()
+            Crawl4AILoader()
 
 
 def test_firecrawl_missing_dependency():
-    from camel.loaders import Firecrawl
+    from camel.loaders import FirecrawlLoader
 
     with _mock_missing('firecrawl'):
         with pytest.raises(ImportError, match="firecrawl"):
-            Firecrawl(api_key=fake_api_key)
+            FirecrawlLoader(api_key=fake_api_key)
 
 
 def test_markitdown_missing_dependency():
@@ -64,20 +85,20 @@ def test_markitdown_missing_dependency():
 
 
 def test_scrapegraph_missing_dependency():
-    from camel.loaders import ScrapeGraphAI
+    from camel.loaders import ScrapeGraphAILoader
 
     with _mock_missing('scrapegraph_py'):
         with pytest.raises(ImportError, match="scrapegraph_py"):
-            ScrapeGraphAI(api_key=fake_api_key)
+            ScrapeGraphAILoader(api_key=fake_api_key)
 
 
 def test_scrapegraph_missing_api_key():
-    from camel.loaders import ScrapeGraphAI
+    from camel.loaders import ScrapeGraphAILoader
 
     with patch('camel.utils.commons.is_module_available', return_value=True):
         with patch.dict('os.environ', {}, clear=True):
             with pytest.raises(ValueError, match="SCRAPEGRAPH_API_KEY"):
-                ScrapeGraphAI()
+                ScrapeGraphAILoader()
 
 
 def test_base_io_missing_dependencies():

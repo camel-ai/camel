@@ -426,13 +426,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         if self.log_to_console:
             log_msg = f"[BROWSER ACTION] {action_name}"
             if self.enable_timing_logging:
-                log_msg += (
-                    f" | Execution: " f"{log_entry['execution_time_ms']}ms"
-                )
+                log_msg += f" | Execution: {log_entry['execution_time_ms']}ms"
             if page_load_time is not None and self.enable_page_loading_logging:
-                log_msg += (
-                    f" | Page Load: " f"{log_entry['page_load_time_ms']}ms"
-                )
+                log_msg += f" | Page Load: {log_entry['page_load_time_ms']}ms"
             if error:
                 log_msg += f" | ERROR: {error}"
 
@@ -444,8 +440,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     if isinstance(outputs, dict):
                         for key, value in outputs.items():
                             logger.info(
-                                f"  - {key}: "
-                                f"{self._truncate_if_needed(value)}"
+                                f"  - {key}: {self._truncate_if_needed(value)}"
                             )
                     else:
                         logger.info(
@@ -605,8 +600,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 # Success - return result
                 if attempt > 0:
                     logger.debug(
-                        f"Unified analysis succeeded on attempt "
-                        f"{attempt + 1}"
+                        f"Unified analysis succeeded on attempt {attempt + 1}"
                     )
                 return result
 
@@ -811,8 +805,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             }
         except Exception as e:
             logger.warning(
-                f"Failed to get tab info from session: {type(e).__name__}: "
-                f"{e}"
+                f"Failed to get tab info from session: {type(e).__name__}: {e}"
             )
 
             # Try to get actual tab count from session pages directly
@@ -912,8 +905,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
             before_snapshot_time = time.time() - snapshot_start_before
             logger.info(
-                f"Pre-action snapshot captured in "
-                f"{before_snapshot_time:.2f}s"
+                f"Pre-action snapshot captured in {before_snapshot_time:.2f}s"
             )
 
             # Execute action
@@ -938,15 +930,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             stability_time: float = 0.0
             if action_type in ["click", "type", "select", "enter"]:
                 logger.info(
-                    f"Waiting for page stability " f"after {action_type}..."
+                    f"Waiting for page stability after {action_type}..."
                 )
                 stability_start = time.time()
                 await self._wait_for_page_stability()
                 stability_time = time.time() - stability_start
                 logger.info(
-                    f"Page stability wait "
-                    f"completed in "
-                    f"{stability_time:.2f}s"
+                    f"Page stability wait completed in {stability_time:.2f}s"
                 )
                 page_load_time = stability_time
 
@@ -965,8 +955,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
             after_snapshot_time = time.time() - snapshot_start_after
             logger.info(
-                f"Post-action snapshot "
-                f"captured in {after_snapshot_time:.2f}s"
+                f"Post-action snapshot captured in {after_snapshot_time:.2f}s"
             )
 
             # Check for snapshot quality and log warnings
@@ -1394,8 +1383,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
             snapshot_time = time.time() - snapshot_start
             logger.info(
-                f"Forward navigation snapshot captured in "
-                f"{snapshot_time:.2f}s"
+                f"Forward navigation snapshot captured in {snapshot_time:.2f}s"
             )
 
             # Get tab information
@@ -1442,7 +1430,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         analysis_data = await self._get_unified_analysis()
         analysis_time = time.time() - analysis_start
         logger.info(
-            f"Page snapshot analysis " f"completed in {analysis_time:.2f}s"
+            f"Page snapshot analysis completed in {analysis_time:.2f}s"
         )
 
         snapshot_text = analysis_data.get("snapshotText", "")
@@ -1913,17 +1901,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 logger.info(f"User input received after {wait_time:.2f}s")
                 result_msg = "User resumed."
             else:
-                logger.info("Waiting for user " "input (no timeout)")
+                logger.info("Waiting for user input (no timeout)")
                 start_time = time.time()
                 await _await_enter()
                 wait_time = time.time() - start_time
-                logger.info(f"User input received " f"after {wait_time:.2f}s")
+                logger.info(f"User input received after {wait_time:.2f}s")
                 result_msg = "User resumed."
         except asyncio.TimeoutError:
             wait_time = timeout_sec or 0.0
             logger.info(
-                f"User input timeout reached "
-                f"after {wait_time}s, auto-resuming"
+                f"User input timeout reached after {wait_time}s, auto-resuming"
             )
             result_msg = f"Timeout {timeout_sec}s reached, auto-resumed."
 
@@ -2100,7 +2087,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
             snapshot_time = time.time() - snapshot_start
             logger.info(
-                f"Code execution snapshot captured in " f"{snapshot_time:.2f}s"
+                f"Code execution snapshot captured in {snapshot_time:.2f}s"
             )
 
             # Get tab information
@@ -2204,8 +2191,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             user_data_dir=self._user_data_dir,
             stealth=self._stealth,
             web_agent_model=self._web_agent_model,
-            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_"
-            f"{new_session_id}/",
+            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_{new_session_id}/",
             enabled_tools=self.enabled_tools.copy(),
             browser_log_to_file=self._browser_log_to_file,
             session_id=new_session_id,
@@ -2307,8 +2293,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         else:
             tab_info = await self._get_tab_info_for_output()
             result = {
-                "result": f"Failed to close tab {tab_id}. Tab may not "
-                f"exist.",
+                "result": f"Failed to close tab {tab_id}. Tab may not exist.",
                 "snapshot": "",
                 **tab_info,
             }

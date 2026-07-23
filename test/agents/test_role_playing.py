@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from unittest.mock import MagicMock
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.completion_usage import CompletionUsage
@@ -30,6 +31,12 @@ from camel.types import (
     ModelType,
     RoleType,
     TaskType,
+)
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
 )
 
 model = ModelFactory.create(
@@ -173,22 +180,23 @@ def test_role_playing_step(
         for response in (assistant_response, user_response):
             assert isinstance(
                 response.msgs, list
-            ), f"Error in round {i+1}: response.msgs is not a list"
+            ), f"Error in round {i + 1}: response.msgs is not a list"
             assert (
                 len(response.msgs) == 1
-            ), f"Error in round {i+1}: len(response.msgs) is not 1"
-            assert isinstance(
-                response.msgs[0], BaseMessage
-            ), f"Error in round {i+1}: response.msgs[0] is not a BaseMessage"
+            ), f"Error in round {i + 1}: len(response.msgs) is not 1"
+            assert isinstance(response.msgs[0], BaseMessage), (
+                f"Error in round {i + 1}: "
+                f"response.msgs[0] is not a BaseMessage"
+            )
             assert isinstance(
                 response.terminated, bool
-            ), f"Error in round {i+1}: response.terminated is not a bool"
+            ), f"Error in round {i + 1}: response.terminated is not a bool"
             assert (
                 response.terminated is False
-            ), f"Error in round {i+1}: response.terminated is not False"
+            ), f"Error in round {i + 1}: response.terminated is not False"
             assert isinstance(
                 response.info, dict
-            ), f"Error in round {i+1}: response.info is not a dict"
+            ), f"Error in round {i + 1}: response.info is not a dict"
 
 
 @pytest.mark.model_backend
@@ -204,6 +212,10 @@ def test_role_playing_step(
         ),
         (TaskType.MISALIGNMENT, None, None),
     ],
+)
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
 )
 async def test_role_playing_astep(
     task_type,
@@ -239,22 +251,23 @@ async def test_role_playing_astep(
         for response in (assistant_response, user_response):
             assert isinstance(
                 response.msgs, list
-            ), f"Error in round {i+1}: response.msgs is not a list"
+            ), f"Error in round {i + 1}: response.msgs is not a list"
             assert (
                 len(response.msgs) == 1
-            ), f"Error in round {i+1}: len(response.msgs) is not 1"
-            assert isinstance(
-                response.msgs[0], BaseMessage
-            ), f"Error in round {i+1}: response.msgs[0] is not a BaseMessage"
+            ), f"Error in round {i + 1}: len(response.msgs) is not 1"
+            assert isinstance(response.msgs[0], BaseMessage), (
+                f"Error in round {i + 1}: "
+                f"response.msgs[0] is not a BaseMessage"
+            )
             assert isinstance(
                 response.terminated, bool
-            ), f"Error in round {i+1}: response.terminated is not a bool"
+            ), f"Error in round {i + 1}: response.terminated is not a bool"
             assert (
                 response.terminated is False
-            ), f"Error in round {i+1}: response.terminated is not False"
+            ), f"Error in round {i + 1}: response.terminated is not False"
             assert isinstance(
                 response.info, dict
-            ), f"Error in round {i+1}: response.info is not a dict"
+            ), f"Error in round {i + 1}: response.info is not a dict"
 
 
 @pytest.mark.model_backend
@@ -318,6 +331,10 @@ async def test_role_playing_ainit_chat(init_msg_content):
         )
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_role_playing_role_sequence(
     model=None,
 ):

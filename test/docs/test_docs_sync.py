@@ -48,11 +48,7 @@ def test_impacted_docs_detect_matching_source_changes(tmp_path):
 
     doc_path = docs_root / "runtimes.mdx"
     doc_path.write_text(
-        "---\n"
-        'doc_code_map:\n'
-        '  - "camel/runtimes/**/*.py"\n'
-        "---\n"
-        "body\n",
+        "---\ndoc_code_map:\n  - \"camel/runtimes/**/*.py\"\n---\nbody\n",
         encoding="utf-8",
     )
     (source_root / "remote.py").write_text(

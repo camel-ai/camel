@@ -42,7 +42,7 @@ agent = ChatAgent(
         role_name="cloudflare assistant",
         role_type="assistant",
         meta_dict={},
-        content="You are a helpful assistant that can access Cloudflare's services via MCP"
+        content="You are a helpful assistant that can access Cloudflare's services via MCP",
     ),
     model=model,
     tools=mcp_toolkit.get_tools(),
@@ -50,9 +50,7 @@ agent = ChatAgent(
 
 # Set page config
 st.set_page_config(
-    page_title="Cloudflare MCP Interface",
-    page_icon="☁️",
-    layout="wide"
+    page_title="Cloudflare MCP Interface", page_icon="☁️", layout="wide"
 )
 
 # Title and description
@@ -93,12 +91,19 @@ with tab2:
 
     radar_options = st.selectbox(
         "Select Radar Query Type:",
-        ["Traffic Trends", "URL Analysis", "DNS Analytics", "HTTP Protocol Analysis"]
+        [
+            "Traffic Trends",
+            "URL Analysis",
+            "DNS Analytics",
+            "HTTP Protocol Analysis",
+        ],
     )
 
     if radar_options == "Traffic Trends":
         st.markdown("Get insights about global internet traffic trends.")
-        trend_query = st.text_input("Enter your trend query (e.g., 'Show me traffic trends for the last week'):")
+        trend_query = st.text_input(
+            "Enter your trend query (e.g., 'Show me traffic trends for the last week'):"
+        )
     elif radar_options == "URL Analysis":
         st.markdown("Analyze a specific URL's traffic and performance.")
         url = st.text_input("Enter URL to analyze:")
@@ -130,7 +135,7 @@ with tab3:
 
     browser_options = st.selectbox(
         "Select Browser Action:",
-        ["Fetch Page", "Take Screenshot", "Convert to Markdown"]
+        ["Fetch Page", "Take Screenshot", "Convert to Markdown"],
     )
 
     url = st.text_input("Enter URL:")

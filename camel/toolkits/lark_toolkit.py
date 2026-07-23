@@ -338,7 +338,7 @@ class LarkToolkit(BaseToolkit):
                 )
                 return {
                     "error": (
-                        "Failed to get chat messages: " f"{result.get('msg')}"
+                        f"Failed to get chat messages: {result.get('msg')}"
                     ),
                     "code": result.get("code"),
                 }

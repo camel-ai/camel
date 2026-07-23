@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from cohere.types import (  # type: ignore[attr-defined]
+    from cohere.types import (  # type: ignore[import-not-found]
         ChatMessageV2,
         ChatResponse,
     )
@@ -40,7 +40,9 @@ from camel.utils import (
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse.decorators import (  # type: ignore[import-not-found]
+            observe,  # type: ignore[import-not-found]
+        )
     except ImportError:
         from camel.utils import observe
 else:
@@ -48,7 +50,7 @@ else:
 
 try:
     if os.getenv("AGENTOPS_API_KEY") is not None:
-        from agentops import LLMEvent, record
+        from agentops import LLMEvent, record  # type: ignore[import-not-found]
     else:
         raise ImportError
 except (ImportError, AttributeError):
@@ -106,7 +108,7 @@ class CohereModel(BaseModelBackend):
         timeout: Optional[float] = None,
         **kwargs: Any,
     ):
-        import cohere
+        import cohere  # type: ignore[import-not-found]
 
         if model_config_dict is None:
             model_config_dict = CohereConfig().as_dict()
@@ -210,8 +212,10 @@ class CohereModel(BaseModelBackend):
     def _to_cohere_chatmessage(
         self, messages: List[OpenAIMessage]
     ) -> List["ChatMessageV2"]:
-        from cohere.types import ToolCallV2Function
-        from cohere.types.chat_message_v2 import (
+        from cohere.types import (  # type: ignore[import-not-found]
+            ToolCallV2Function,  # type: ignore[import-not-found]
+        )
+        from cohere.types.chat_message_v2 import (  # type: ignore[import-not-found]
             AssistantChatMessageV2,
             SystemChatMessageV2,
             ToolCallV2,
@@ -335,7 +339,9 @@ class CohereModel(BaseModelBackend):
         )
         self._log_and_trace()
 
-        from cohere.core.api_error import ApiError
+        from cohere.core.api_error import (  # type: ignore[import-not-found]
+            ApiError,
+        )
 
         request_config = self._prepare_request(
             messages, response_format, tools
@@ -405,7 +411,9 @@ class CohereModel(BaseModelBackend):
         )
         self._log_and_trace()
 
-        from cohere.core.api_error import ApiError
+        from cohere.core.api_error import (  # type: ignore[import-not-found]
+            ApiError,  # type: ignore[import-not-found]
+        )
 
         request_config = self._prepare_request(
             messages, response_format, tools

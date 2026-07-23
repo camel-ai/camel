@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-import pytest
+import os
+
+import pytest  # type: ignore[import-not-found]
 
 from camel.agents import (
     TaskCreationAgent,
@@ -21,6 +23,11 @@ from camel.agents import (
 )
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType, TaskType
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
+)
 
 parametrize = pytest.mark.parametrize(
     'model',
@@ -34,6 +41,10 @@ parametrize = pytest.mark.parametrize(
 )
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 @parametrize
 def test_task_specify_ai_society_agent(model):
     original_task_prompt = "Improving stage presence and performance skills"
@@ -47,6 +58,10 @@ def test_task_specify_ai_society_agent(model):
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 @parametrize
 def test_task_specify_code_agent(model):
     original_task_prompt = "Modeling molecular dynamics"
@@ -60,6 +75,10 @@ def test_task_specify_code_agent(model):
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 @parametrize
 def test_task_planner_agent(model):
     original_task_prompt = "Modeling molecular dynamics"
@@ -78,6 +97,10 @@ def test_task_planner_agent(model):
     print(f"Planned task prompt:\n{planned_task_prompt}\n")
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 @parametrize
 def test_task_creation_agent(model):
     original_task_prompt = "Modeling molecular dynamics"
@@ -94,10 +117,14 @@ def test_task_creation_agent(model):
     assert isinstance(planned_task, list)
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 @parametrize
 def test_task_prioritization_agent(model):
     original_task_prompt = (
-        "A high school student wants to " "prove the Riemann hypothesis"
+        "A high school student wants to prove the Riemann hypothesis"
     )
 
     task_list = [

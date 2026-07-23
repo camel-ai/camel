@@ -319,7 +319,7 @@ class MCPClient:
         ):
             transports_to_try.append(TransportType.SSE)
 
-        last_error: Optional[Exception] = None
+        last_error: Optional[Exception] = None  # type: ignore[annotation-unchecked]
         for attempt_transport in transports_to_try:
             connect_task = asyncio.create_task(
                 self._try_connect(attempt_transport)

@@ -12,9 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
+import os
 from typing import Dict, List
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.memories import ContextRecord
 from camel.messages import (
@@ -26,6 +27,11 @@ from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
+)
 
 
 @pytest.fixture
@@ -113,6 +119,10 @@ def test_assistant_func_message_to_openai_tool_message(
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_roleplay_conversion_with_tools():
     tools = MathToolkit().get_tools()
     model = ModelFactory.create(
@@ -136,7 +146,7 @@ def test_roleplay_conversion_with_tools():
     [assistant, _] = role_playing.step(input_msg)
     role_playing.step(assistant.msg)
 
-    records: List[ContextRecord] = (
+    records: List[ContextRecord] = (  # type: ignore[annotation-unchecked]
         role_playing.assistant_agent.memory.retrieve()
     )
     original_messages = []

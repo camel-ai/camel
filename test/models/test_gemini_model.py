@@ -12,8 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import pytest
-from google.genai.errors import ClientError
+import pytest  # type: ignore[import-not-found]
+from google.genai.errors import ClientError  # type: ignore[import-not-found]
 from pydantic import BaseModel
 
 from camel.configs import GeminiConfig
@@ -392,7 +392,7 @@ def test_gemini_parse_path_applies_cached_content_and_retry():
     )
 
     class DummySchema(BaseModel):
-        value: str
+        value: str  # type: ignore[annotation-unchecked]
 
     class RetryParseCompletions:
         def __init__(self):

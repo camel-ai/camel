@@ -15,7 +15,7 @@ import re
 from typing import Any, Dict, Tuple
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.environments import (
     Action,

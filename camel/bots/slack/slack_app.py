@@ -15,7 +15,7 @@ import logging
 import os
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from slack_sdk.oauth.installation_store.async_installation_store import (
+from slack_sdk.oauth.installation_store.async_installation_store import (  # type: ignore[import-not-found]
     AsyncInstallationStore,
 )
 from starlette import requests, responses
@@ -29,9 +29,15 @@ from camel.bots.slack.models import (
 from camel.utils import api_keys_required, dependencies_required
 
 if TYPE_CHECKING:
-    from slack_bolt.context.async_context import AsyncBoltContext
-    from slack_bolt.context.say.async_say import AsyncSay
-    from slack_sdk.web.async_client import AsyncWebClient
+    from slack_bolt.context.async_context import (  # type: ignore[import-not-found]
+        AsyncBoltContext,
+    )
+    from slack_bolt.context.say.async_say import (  # type: ignore[import-not-found]
+        AsyncSay,
+    )
+    from slack_sdk.web.async_client import (  # type: ignore[import-not-found]
+        AsyncWebClient,
+    )
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -90,11 +96,15 @@ class SlackApp:
             installation_store (Optional[AsyncInstallationStore]): An optional
                 installation store for OAuth installations.
         """
-        from slack_bolt.adapter.starlette.async_handler import (
+        from slack_bolt.adapter.starlette.async_handler import (  # type: ignore[import-not-found]
             AsyncSlackRequestHandler,
         )
-        from slack_bolt.app.async_app import AsyncApp
-        from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
+        from slack_bolt.app.async_app import (  # type: ignore[import-not-found]
+            AsyncApp,
+        )
+        from slack_bolt.oauth.async_oauth_settings import (  # type: ignore[import-not-found]
+            AsyncOAuthSettings,
+        )
 
         self.token: Optional[str] = token or os.getenv("SLACK_TOKEN")
         self.scopes: Optional[str] = scopes or os.getenv("SLACK_SCOPES")

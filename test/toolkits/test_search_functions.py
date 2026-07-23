@@ -15,9 +15,9 @@ import os
 from unittest import mock
 from unittest.mock import MagicMock, call, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 import requests
-import wikipedia
+import wikipedia  # type: ignore[import-not-found]
 
 from camel.toolkits import SearchToolkit
 

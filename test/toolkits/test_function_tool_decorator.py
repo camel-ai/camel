@@ -11,9 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-import pytest
+import os
+
+import pytest  # type: ignore[import-not-found]
 
 from camel.toolkits import FunctionTool, tool
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
+)
 
 
 @tool()
@@ -77,6 +85,10 @@ def test_tool_schema_generation():
     assert "description" in params["properties"]["a"]
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_tool_with_synthesis():
     r"""Test the tool decorator with output synthesis enabled."""
     assert format_result.synthesize_output is True

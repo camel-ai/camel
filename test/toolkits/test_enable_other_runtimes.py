@@ -18,11 +18,9 @@ from camel.toolkits.terminal_toolkit.runtime_utils import Runtime
 
 
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_java_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_java_available"
 )
-@patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_go_available"
-)
+@patch("camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_go_available")
 @patch(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
     ".check_nodejs_availability"
@@ -31,9 +29,7 @@ from camel.toolkits.terminal_toolkit.runtime_utils import Runtime
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
     ".setup_initial_env_with_uv"
 )
-@patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_uv_available"
-)
+@patch("camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_uv_available")
 def test_default_skips_go_java(
     mock_uv,
     mock_setup,
@@ -57,11 +53,9 @@ def test_default_skips_go_java(
 
 
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_java_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_java_available"
 )
-@patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_go_available"
-)
+@patch("camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_go_available")
 @patch(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
     ".check_nodejs_availability"
@@ -70,9 +64,7 @@ def test_default_skips_go_java(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
     ".setup_initial_env_with_uv"
 )
-@patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_uv_available"
-)
+@patch("camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_uv_available")
 def test_go_enabled_calls_go_only(
     mock_uv,
     mock_setup,
@@ -98,11 +90,9 @@ def test_go_enabled_calls_go_only(
 
 
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_java_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_java_available"
 )
-@patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_go_available"
-)
+@patch("camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_go_available")
 @patch(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
     ".check_nodejs_availability"
@@ -111,9 +101,7 @@ def test_go_enabled_calls_go_only(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
     ".setup_initial_env_with_uv"
 )
-@patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_uv_available"
-)
+@patch("camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_uv_available")
 def test_both_enabled_calls_both(
     mock_uv,
     mock_setup,
@@ -140,11 +128,9 @@ def test_both_enabled_calls_both(
 
 
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_java_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_java_available"
 )
-@patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_go_available"
-)
+@patch("camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_go_available")
 @patch(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
     ".clone_current_environment"
@@ -172,11 +158,9 @@ def test_cloned_env_also_sets_up_runtimes(
 
 
 @patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_java_available"
+    "camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_java_available"
 )
-@patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_go_available"
-)
+@patch("camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_go_available")
 @patch(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
     ".check_nodejs_availability"
@@ -185,9 +169,7 @@ def test_cloned_env_also_sets_up_runtimes(
     "camel.toolkits.terminal_toolkit.terminal_toolkit"
     ".setup_initial_env_with_uv"
 )
-@patch(
-    "camel.toolkits.terminal_toolkit.terminal_toolkit" ".ensure_uv_available"
-)
+@patch("camel.toolkits.terminal_toolkit.terminal_toolkit.ensure_uv_available")
 def test_runtime_env_vars_not_in_os_environ(
     mock_uv,
     mock_setup,

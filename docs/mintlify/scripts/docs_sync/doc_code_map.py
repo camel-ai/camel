@@ -22,7 +22,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-
 DEFAULT_DOC_ROOTS = (
     Path("docs/mintlify/key_modules"),
     Path("docs/mintlify/mcp"),
@@ -208,8 +207,10 @@ def main() -> int:
 
     repo_root = Path(".").resolve()
 
-    roots = [Path(p) for p in args.docs_root] if args.docs_root else list(
-        DEFAULT_DOC_ROOTS
+    roots = (
+        [Path(p) for p in args.docs_root]
+        if args.docs_root
+        else list(DEFAULT_DOC_ROOTS)
     )
     doc_maps = _collect_doc_maps(roots)
 
@@ -223,7 +224,12 @@ def main() -> int:
         changed_files.extend(_read_path_list(Path(args.changed_files_file)))
     if not changed_files and args.base_ref:
         changed_files.extend(_run_git_diff(args.base_ref, args.head_ref))
-    if not changed_files and not args.changed_file and not args.changed_files_file and not args.base_ref:
+    if (
+        not changed_files
+        and not args.changed_file
+        and not args.changed_files_file
+        and not args.base_ref
+    ):
         parser.error(
             "impacted requires --changed-file, --changed-files-file, or "
             "--base-ref/--head-ref."

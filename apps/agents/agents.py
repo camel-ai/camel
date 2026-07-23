@@ -21,7 +21,7 @@ import os
 import re
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import gradio as gr
+import gradio as gr  # type: ignore[import-not-found]
 import openai
 from pydantic import BaseModel, ConfigDict
 

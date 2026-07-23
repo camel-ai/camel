@@ -239,7 +239,7 @@ def _verify_checksum(
 
         if actual_hash not in checksum_data:
             raise RuntimeDownloadError(
-                "Checksum verification failed! " "Download may be corrupted."
+                "Checksum verification failed! Download may be corrupted."
             )
 
         if update_callback:
@@ -249,6 +249,4 @@ def _verify_checksum(
     except Exception as e:
         logger.warning(f"Checksum verification skipped: {e}")
         if update_callback:
-            update_callback(
-                f"Warning: Checksum verification skipped: " f"{e}\n"
-            )
+            update_callback(f"Warning: Checksum verification skipped: {e}\n")

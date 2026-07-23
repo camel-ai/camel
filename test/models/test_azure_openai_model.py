@@ -22,7 +22,7 @@ export AZURE_OPENAI_API_KEY=""
 
 from unittest.mock import MagicMock
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from pydantic import BaseModel
 
 from camel.configs import ChatGPTConfig
@@ -224,7 +224,7 @@ def test_prepare_responses_request_config_structured_output():
     r"""Test that a JSON schema is attached when response_format is given."""
 
     class MySchema(BaseModel):
-        answer: str
+        answer: str  # type: ignore[annotation-unchecked]
 
     model = AzureOpenAIModel(
         ModelType.GPT_4O, **AZURE_INIT_KWARGS, api_mode="responses"

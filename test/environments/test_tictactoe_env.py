@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.environments.models import Action
 from camel.environments.tic_tac_toe import Opponent, TicTacToeEnv

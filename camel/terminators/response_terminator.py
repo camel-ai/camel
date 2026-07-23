@@ -116,9 +116,7 @@ class ResponseWordsTerminator(ResponseTerminator):
                     self._terminated = True
                     self._termination_reason = "\n".join(all_reasons[i])
             else:
-                raise ValueError(
-                    f"Unsupported termination mode " f"`{self.mode}`"
-                )
+                raise ValueError(f"Unsupported termination mode `{self.mode}`")
         return self._terminated, self._termination_reason
 
     def reset(self):

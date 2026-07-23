@@ -124,7 +124,7 @@ def run_automated_demo():
     # Run each task in sequence
     for i, task in enumerate(tasks):
         print("\n" + "=" * 60)
-        print(f"EXECUTING TASK {i+1} OF {len(tasks)}")
+        print(f"EXECUTING TASK {i + 1} OF {len(tasks)}")
         print("=" * 60 + "\n")
         print(f"Instruction: {task}")
         print("")

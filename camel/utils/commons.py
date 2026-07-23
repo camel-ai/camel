@@ -518,7 +518,7 @@ def text_extract_from_web(url: str) -> str:
     """
     try:
         import requests
-        from newspaper import Article
+        from newspaper import Article  # type: ignore[import-not-found]
 
         # Request the target page
         article = Article(url)
@@ -587,7 +587,7 @@ def is_docker_running() -> bool:
 
 try:
     if os.getenv("AGENTOPS_API_KEY") is not None:
-        from agentops import (
+        from agentops import (  # type: ignore[import-not-found]
             ToolEvent,
             record,
         )

@@ -17,7 +17,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.toolkits import TerminalToolkit
 from camel.toolkits.terminal_toolkit import DANGEROUS_COMMANDS

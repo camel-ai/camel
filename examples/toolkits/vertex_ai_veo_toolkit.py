@@ -150,7 +150,7 @@ async def async_video_generation_example():
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     for i, result in enumerate(results):
-        print(f"Video {i+1} result: {result}")
+        print(f"Video {i + 1} result: {result}")
 
     return results
 

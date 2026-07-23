@@ -46,18 +46,22 @@ from camel.utils import (
 )
 
 if TYPE_CHECKING:
-    from xai_sdk import (
+    from xai_sdk import (  # type: ignore[import-not-found]
         AsyncClient as XAIAsyncClient,  # type: ignore[import-untyped]
     )
     from xai_sdk import Client as XAIClient  # type: ignore[import-untyped]
-    from xai_sdk.chat import (  # type: ignore[import-untyped]
+    from xai_sdk.chat import (  # type: ignore[import-untyped, import-not-found]
         Response as XAIResponse,
     )
-    from xai_sdk.proto import chat_pb2  # type: ignore[import-untyped]
+    from xai_sdk.proto import (  # type: ignore[import-untyped, import-not-found]
+        chat_pb2,
+    )
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse.decorators import (  # type: ignore[import-not-found]
+            observe,
+        )
     except ImportError:
         from camel.utils import observe
 elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
@@ -160,7 +164,7 @@ class XAIModel(BaseModelBackend):
     def client(self) -> "XAIClient":
         r"""Lazy-initialize the synchronous xAI SDK client."""
         if self._client is None:
-            from xai_sdk import Client
+            from xai_sdk import Client  # type: ignore[import-not-found]
 
             self._client = Client(
                 api_key=self._api_key,
@@ -172,7 +176,7 @@ class XAIModel(BaseModelBackend):
     def async_client(self) -> "XAIAsyncClient":
         r"""Lazy-initialize the asynchronous xAI SDK client."""
         if self._async_client is None:
-            from xai_sdk import AsyncClient
+            from xai_sdk import AsyncClient  # type: ignore[import-not-found]
 
             self._async_client = AsyncClient(
                 api_key=self._api_key,
@@ -217,7 +221,7 @@ class XAIModel(BaseModelBackend):
         Returns:
             chat_pb2.Tool: The xAI SDK tool proto.
         """
-        from xai_sdk.proto import chat_pb2
+        from xai_sdk.proto import chat_pb2  # type: ignore[import-not-found]
 
         func = tool.get("function", {})
         parameters = func.get("parameters", {})
@@ -249,22 +253,22 @@ class XAIModel(BaseModelBackend):
         Returns:
             List of ``chat_pb2.Message`` objects ready for ``chat.append()``.
         """
-        from xai_sdk.chat import (
+        from xai_sdk.chat import (  # type: ignore[import-not-found]
             assistant as xai_assistant,
         )
-        from xai_sdk.chat import (
+        from xai_sdk.chat import (  # type: ignore[import-not-found]
             system as xai_system,
         )
-        from xai_sdk.chat import (
+        from xai_sdk.chat import (  # type: ignore[import-not-found]
             text as xai_text,
         )
-        from xai_sdk.chat import (
+        from xai_sdk.chat import (  # type: ignore[import-not-found]
             tool_result as xai_tool_result,
         )
-        from xai_sdk.chat import (
+        from xai_sdk.chat import (  # type: ignore[import-not-found]
             user as xai_user,
         )
-        from xai_sdk.proto import chat_pb2
+        from xai_sdk.proto import chat_pb2  # type: ignore[import-not-found]
 
         converted: List[chat_pb2.Message] = []
         for msg in messages:

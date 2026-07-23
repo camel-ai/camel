@@ -12,20 +12,20 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import TYPE_CHECKING, List, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
-    from apify_client.clients import DatasetClient
+    from apify_client.clients import (  # type: ignore[import-not-found]
+        DatasetClient,
+    )  # type: ignore[import-not-found]
 
+from camel.loaders.base_loader import BaseLoader
 from camel.utils import api_keys_required
 
 
-class Apify:
-    r"""Apify is a platform that allows you to automate any web workflow.
-
-    Args:
-        api_key (Optional[str]): API key for authenticating with the Apify API.
-    """
+class ApifyLoader(BaseLoader):
+    r"""Apify Loader adhering to the unified BaseLoader interface."""
 
     @api_keys_required(
         [
@@ -34,12 +34,30 @@ class Apify:
     )
     def __init__(
         self,
+        config: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
     ) -> None:
+        if config:
+            api_key = config.get('api_key', api_key)
+
+        super().__init__(config=config)
+
         from apify_client import ApifyClient
 
         self._api_key = api_key or os.environ.get("APIFY_API_KEY")
         self.client = ApifyClient(token=self._api_key)
+
+    @property
+    def supported_formats(self) -> set[str]:
+        return {"apify_actor", "apify_dataset"}
+
+    def _load_single(
+        self, source: Union[str, Path], **kwargs: Any
+    ) -> Dict[str, Any]:
+        r"""Treats the source as an actor_id and runs it."""
+        actor_id = str(source)
+        result = self.run_actor(actor_id=actor_id, **kwargs)
+        return {"content": result, "source": actor_id}
 
     def run_actor(
         self,
@@ -98,7 +116,7 @@ class Apify:
                 timeout_secs=timeout_secs,
                 webhooks=webhooks,
                 wait_secs=wait_secs,
-            )
+            )  # type: ignore[call-arg, return-value]
         except Exception as e:
             raise RuntimeError(f"Failed to run actor {actor_id}: {e}") from e
 
@@ -219,7 +237,7 @@ class Apify:
         """
         try:
             return (
-                self.client.datasets()
+                self.client.datasets()  # type: ignore[return-value]
                 .list(unnamed=unnamed, limit=limit, offset=offset, desc=desc)
                 .items
             )

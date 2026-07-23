@@ -233,8 +233,7 @@ def main():
         'obsessed with how projects can be scaled into "unicorn" companies',
         worker=vc_agent,
     ).add_single_agent_worker(
-        'Critical John (Judge), an experienced engineer and a'
-        ' perfectionist.',
+        'Critical John (Judge), an experienced engineer and a perfectionist.',
         worker=eng_agent,
     ).add_single_agent_worker(
         'Innovator Iris (Judge), a well-known AI startup founder who'

@@ -334,8 +334,7 @@ class PythonVerifier(BaseVerifier):
                         return VerificationResult(
                             status=VerificationOutcome.ERROR,
                             result="",
-                            error_message="Ground truth evaluation error:"
-                            f"{e}",
+                            error_message=f"Ground truth evaluation error:{e}",
                         )
                     if self.float_tolerance is not None:
                         equal = self._is_equal_with_tolerance(sol_val, gt_val)

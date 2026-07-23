@@ -225,7 +225,7 @@ class ChatAgentOpenAPIServer:
                     else:
                         raise HTTPException(
                             status_code=400,
-                            detail=f"Tool '{name}' " f"not found in registry",
+                            detail=f"Tool '{name}' not found in registry",
                         )
 
             # system message

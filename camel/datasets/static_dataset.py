@@ -377,7 +377,7 @@ class StaticDataset(Dataset):
         for i, item in enumerate(raw_data):
             if not isinstance(item, dict):
                 raise ValueError(
-                    f"Expected a dictionary at record {i+1} (line {i+1}), "
+                    f"Expected a dictionary at record {i + 1} (line {i + 1}), "
                     f"got {type(item).__name__}"
                 )
         return raw_data

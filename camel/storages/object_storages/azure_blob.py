@@ -51,7 +51,9 @@ class AzureBlobStorage(BaseObjectStorage):
             # Make all the empty values None
             access_key = None
 
-        from azure.storage.blob import ContainerClient
+        from azure.storage.blob import (  # type: ignore[import-not-found]
+            ContainerClient,
+        )
 
         self._client = ContainerClient(
             account_url="https://"
@@ -64,7 +66,9 @@ class AzureBlobStorage(BaseObjectStorage):
 
     def _prepare_and_check(self) -> None:
         r"""Check privileges and existence of the container."""
-        from azure.core.exceptions import ClientAuthenticationError
+        from azure.core.exceptions import (  # type: ignore[import-not-found]
+            ClientAuthenticationError,
+        )
 
         try:
             exists = self._client.exists()

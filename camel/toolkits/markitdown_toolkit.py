@@ -14,7 +14,7 @@
 
 from typing import Dict, List, Optional
 
-from camel.loaders.markitdown import MarkItDownLoader
+from camel.loaders.markitdown_loader import MarkItDownLoader
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool

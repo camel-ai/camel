@@ -82,8 +82,7 @@ class EvolInstructPipeline:
             return random.choice(strategy_methods)
 
         logger.warning(
-            f"Invalid evolution method: {method_key}. "
-            f"Using random selection."
+            f"Invalid evolution method: {method_key}. Using random selection."
         )
         return random.choice(list(self.templates.EVOL_METHODS))
 

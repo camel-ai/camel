@@ -11,17 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 import random
 from datetime import datetime
 from typing import Dict, List, Tuple
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.memories import MemoryRecord, VectorDBMemory
 from camel.memories.context_creators import ScoreBasedContextCreator
 from camel.messages import BaseMessage
 from camel.types import ModelType, OpenAIBackendRole, RoleType
 from camel.utils.token_counting import OpenAITokenCounter
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
+)
 
 
 @pytest.fixture
@@ -143,6 +150,10 @@ def memory_and_message(request):
         }
     ],
     indirect=True,
+)
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
 )
 def test_vector_db_memory(
     memory_and_message: Tuple[

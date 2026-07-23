@@ -53,8 +53,8 @@ class GithubToolkit(BaseToolkit):
                 `get_github_access_token` method.
         """
         super().__init__(timeout=timeout)
-        from github.Auth import Token
-        from github.MainClass import Github
+        from github.Auth import Token  # type: ignore[import-not-found]
+        from github.MainClass import Github  # type: ignore[import-not-found]
 
         if access_token is None:
             access_token = self.get_github_access_token()
@@ -113,7 +113,9 @@ class GithubToolkit(BaseToolkit):
         """
         repo = self.github.get_repo(repo_name)
         default_branch = repo.get_branch(repo.default_branch)
-        from github.GithubException import GithubException
+        from github.GithubException import (  # type: ignore[import-not-found]
+            GithubException,
+        )
 
         try:
             repo.create_git_ref(
@@ -131,7 +133,9 @@ class GithubToolkit(BaseToolkit):
 
         file = repo.get_contents(file_path)
 
-        from github.ContentFile import ContentFile
+        from github.ContentFile import (  # type: ignore[import-not-found]
+            ContentFile,
+        )
 
         if isinstance(file, ContentFile):
             repo.update_file(
@@ -145,7 +149,7 @@ class GithubToolkit(BaseToolkit):
             )
 
             if pr is not None:
-                return f"Title: {pr.title}\n" f"Body: {pr.body}\n"
+                return f"Title: {pr.title}\nBody: {pr.body}\n"
             else:
                 return "Failed to create pull request."
         else:
@@ -296,7 +300,9 @@ class GithubToolkit(BaseToolkit):
             List[str]: A list of file paths within the specified directory
                 structure.
         """
-        from github.ContentFile import ContentFile
+        from github.ContentFile import (  # type: ignore[import-not-found]
+            ContentFile,
+        )
 
         repo = self.github.get_repo(repo_name)
 
@@ -333,7 +339,9 @@ class GithubToolkit(BaseToolkit):
         Returns:
             str: The decoded content of the file.
         """
-        from github.ContentFile import ContentFile
+        from github.ContentFile import (  # type: ignore[import-not-found]
+            ContentFile,
+        )
 
         repo = self.github.get_repo(repo_name)
 

@@ -183,7 +183,9 @@ class CustomAzureCredential:
         Raises:
             Exception: If requested scopes exceed allowed scopes.
         """
-        from azure.core.credentials import AccessToken
+        from azure.core.credentials import (  # type: ignore[import-not-found]
+            AccessToken,
+        )
 
         def _maybe_log_token_claims(token: str) -> None:
             if self._debug_claims_logged:
@@ -423,7 +425,9 @@ class OutlookMailToolkit(BaseToolkit):
         Raises:
             ValueError: If authentication fails or no authorization code.
         """
-        from azure.identity import AuthorizationCodeCredential
+        from azure.identity import (  # type: ignore[import-not-found]
+            AuthorizationCodeCredential,
+        )
 
         # offline_access scope is needed so the azure credential can refresh
         # internally after access token expires as azure handles it internally
@@ -575,7 +579,9 @@ class OutlookMailToolkit(BaseToolkit):
         Raises:
             ValueError: If authentication fails through both methods.
         """
-        from azure.identity import AuthorizationCodeCredential
+        from azure.identity import (  # type: ignore[import-not-found]
+            AuthorizationCodeCredential,
+        )
 
         try:
             self.tenant_id = os.getenv("MICROSOFT_TENANT_ID", "common")
@@ -588,7 +594,7 @@ class OutlookMailToolkit(BaseToolkit):
                 and self.refresh_token_file_path.exists()
             ):
                 try:
-                    credentials: CustomAzureCredential = (
+                    credentials: CustomAzureCredential = (  # type: ignore[annotation-unchecked]
                         self._authenticate_using_refresh_token()
                     )
                     return credentials
@@ -599,7 +605,7 @@ class OutlookMailToolkit(BaseToolkit):
                     )
 
             # Fall back to browser authentication
-            credentials: AuthorizationCodeCredential = (
+            credentials: AuthorizationCodeCredential = (  # type: ignore[annotation-unchecked]
                 self._authenticate_using_browser()
             )
             return credentials
@@ -623,7 +629,9 @@ class OutlookMailToolkit(BaseToolkit):
         Raises:
             ValueError: If client creation fails.
         """
-        from msgraph import GraphServiceClient
+        from msgraph import (  # type: ignore[import-not-found]
+            GraphServiceClient,
+        )
 
         try:
             return GraphServiceClient(credentials=credentials, scopes=scopes)
@@ -683,7 +691,9 @@ class OutlookMailToolkit(BaseToolkit):
         Raises:
             ValueError: If any file cannot be read or attached.
         """
-        from msgraph.generated.models.file_attachment import FileAttachment
+        from msgraph.generated.models.file_attachment import (  # type: ignore[import-not-found]
+            FileAttachment,
+        )
 
         attachment_list = []
 
@@ -726,7 +736,10 @@ class OutlookMailToolkit(BaseToolkit):
         """
         from email.utils import parseaddr
 
-        from msgraph.generated.models import email_address, recipient
+        from msgraph.generated.models import (  # type: ignore[import-not-found]
+            email_address,
+            recipient,
+        )
 
         recipients: List[Any] = []
         for email in email_list:
@@ -781,7 +794,11 @@ class OutlookMailToolkit(BaseToolkit):
             message.Message: A Microsoft Graph message object with only the
                 provided fields set.
         """
-        from msgraph.generated.models import body_type, item_body, message
+        from msgraph.generated.models import (  # type: ignore[import-not-found]
+            body_type,
+            item_body,
+            message,
+        )
 
         content_type = (
             body_type.BodyType.Html
@@ -863,7 +880,7 @@ class OutlookMailToolkit(BaseToolkit):
             Dict[str, Any]: A dictionary containing the result of the email
                 sending operation.
         """
-        from msgraph.generated.users.item.send_mail.send_mail_post_request_body import (  # noqa: E501
+        from msgraph.generated.users.item.send_mail.send_mail_post_request_body import (  # type: ignore[import-not-found]  # noqa: E501
             SendMailPostRequestBody,
         )
 
@@ -1053,7 +1070,7 @@ class OutlookMailToolkit(BaseToolkit):
             Dict[str, Any]: A dictionary containing the result of the email
                 move operation.
         """
-        from msgraph.generated.users.item.messages.item.move.move_post_request_body import (  # noqa: E501
+        from msgraph.generated.users.item.messages.item.move.move_post_request_body import (  # type: ignore[import-not-found]  # noqa: E501
             MovePostRequestBody,
         )
 
@@ -1161,11 +1178,11 @@ class OutlookMailToolkit(BaseToolkit):
             AttachmentsRequestBuilderGetRequestConfiguration: Query config
                 for the Graph API request.
         """
-        from msgraph.generated.users.item.messages.item.attachments.attachments_request_builder import (  # noqa: E501
+        from msgraph.generated.users.item.messages.item.attachments.attachments_request_builder import (  # type: ignore[import-not-found]  # noqa: E501
             AttachmentsRequestBuilder,
         )
 
-        query_params = AttachmentsRequestBuilder.AttachmentsRequestBuilderGetQueryParameters(  # noqa: E501
+        query_params = AttachmentsRequestBuilder.AttachmentsRequestBuilderGetQueryParameters(  # type: ignore[import-not-found]  # noqa: E501
             select=[
                 "id",
                 "lastModifiedDateTime",
@@ -1299,7 +1316,7 @@ class OutlookMailToolkit(BaseToolkit):
                 and removed HTML tags.
         """
         try:
-            import html2text
+            import html2text  # type: ignore[import-not-found]
 
             parser = html2text.HTML2Text()
 
@@ -1383,7 +1400,9 @@ class OutlookMailToolkit(BaseToolkit):
         """
         try:
             # Validate message object
-            from msgraph.generated.models.message import Message
+            from msgraph.generated.models.message import (  # type: ignore[import-not-found]
+                Message,
+            )
 
             if not isinstance(message, Message):
                 return {'error': 'Invalid message object provided'}
@@ -1610,19 +1629,19 @@ class OutlookMailToolkit(BaseToolkit):
         """
 
         try:
-            from msgraph.generated.users.item.mail_folders.item.messages.messages_request_builder import (  # noqa: E501
+            from msgraph.generated.users.item.mail_folders.item.messages.messages_request_builder import (  # type: ignore[import-not-found]    # noqa: E501
                 MessagesRequestBuilder,
             )
 
             # Build query parameters
-            query_params = MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters(  # noqa: E501
+            query_params = MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters(  # type: ignore[import-not-found]   # noqa: E501
                 top=top,
                 skip=skip,
                 orderby=order_by,
                 filter=filter_query,
             )
 
-            request_config = MessagesRequestBuilder.MessagesRequestBuilderGetRequestConfiguration(  # noqa: E501
+            request_config = MessagesRequestBuilder.MessagesRequestBuilderGetRequestConfiguration(  # type: ignore[import-not-found]    # noqa: E501
                 query_parameters=query_params
             )
             if not folder_ids:
@@ -1719,10 +1738,10 @@ class OutlookMailToolkit(BaseToolkit):
         Raises:
             ValueError: If replying to the email fails.
         """
-        from msgraph.generated.users.item.messages.item.reply.reply_post_request_body import (  # noqa: E501
+        from msgraph.generated.users.item.messages.item.reply.reply_post_request_body import (  # type: ignore[import-not-found]    # noqa: E501
             ReplyPostRequestBody,
         )
-        from msgraph.generated.users.item.messages.item.reply_all.reply_all_post_request_body import (  # noqa: E501
+        from msgraph.generated.users.item.messages.item.reply_all.reply_all_post_request_body import (  # type: ignore[import-not-found]    # noqa: E501
             ReplyAllPostRequestBody,
         )
 

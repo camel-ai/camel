@@ -14,7 +14,9 @@
 import unittest
 from unittest.mock import Mock, call, patch
 
-from unstructured.documents.elements import Element
+from unstructured.documents.elements import (  # type: ignore[import-not-found]
+    Element,  # type: ignore[import-not-found]
+)
 
 from camel.storages import NebulaGraph
 from camel.storages.graph_storages.graph_element import (

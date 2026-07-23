@@ -18,7 +18,7 @@ import tempfile
 import threading
 from pathlib import Path
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.toolkits.planning_worktree_toolkit import (
     PlanningWorktreeToolkit,
@@ -213,7 +213,7 @@ def test_worktree_remove_failure_preserves_state(monkeypatch, tmp_path):
 def test_concurrent_plan_mode_enter_exit():
     """Multiple agents can independently enter and exit plan mode."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        errors: list = []
+        errors: list = []  # type: ignore[annotation-unchecked]
 
         def agent_work(agent_id: int) -> None:
             try:

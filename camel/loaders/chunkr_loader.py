@@ -12,35 +12,24 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import json
 import os
-from typing import TYPE_CHECKING, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 if TYPE_CHECKING:
     from chunkr_ai.models import Configuration
 
+from camel.loaders.base_loader import BaseLoader
 from camel.logger import get_logger
 from camel.utils import api_keys_required
 
 logger = get_logger(__name__)
 
 
-class ChunkrReaderConfig:
-    r"""Defines the parameters for configuring the task.
-
-    Args:
-        chunk_processing (int, optional): The target chunk length.
-            (default: :obj:`512`)
-        high_resolution (bool, optional): Whether to use high resolution OCR.
-            (default: :obj:`True`)
-        ocr_strategy (str, optional): The OCR strategy. Defaults to 'Auto'.
-        **kwargs: Additional keyword arguments to pass to the Chunkr
-            Configuration. This accepts all other Configuration parameters
-            such as expires_in, pipeline, segment_processing,
-            segmentation_strategy, etc.
-            See: https://github.com/lumina-ai-inc/chunkr/blob/main/core/src/
-            models/task.rs#L749
-    """
+class ChunkrLoaderConfig:
+    r"""Defines the parameters for configuring the task."""
 
     def __init__(
         self,
@@ -55,18 +44,8 @@ class ChunkrReaderConfig:
         self.kwargs = kwargs
 
 
-class ChunkrReader:
-    r"""Chunkr Reader for processing documents and returning content
-    in various formats.
-
-    Args:
-        api_key (Optional[str], optional): The API key for Chunkr API. If not
-            provided, it will be retrieved from the environment variable
-            `CHUNKR_API_KEY`. (default: :obj:`None`)
-        url (Optional[str], optional): The url to the Chunkr service.
-            (default: :obj:`https://api.chunkr.ai/api/v1/task`)
-        **kwargs (Any): Additional keyword arguments for request headers.
-    """
+class ChunkrLoader(BaseLoader):
+    r"""Chunkr Loader adhering to the unified BaseLoader interface."""
 
     @api_keys_required(
         [
@@ -75,31 +54,63 @@ class ChunkrReader:
     )
     def __init__(
         self,
+        config: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = "https://api.chunkr.ai/api/v1/task",
+        **kwargs: Any,
     ) -> None:
+        if config:
+            api_key = config.get('api_key', api_key)
+            url = config.get('url', url)
+
+        super().__init__(config=config)
+
         from chunkr_ai import Chunkr
 
-        self._api_key = api_key or os.getenv('CHUNKR_API_KEY')
+        self._api_key = api_key or os.environ.get("CHUNKR_API_KEY")
+        self.url = url
         self._chunkr = Chunkr(api_key=self._api_key)
+
+    @property
+    def supported_formats(self) -> set[str]:
+        return {"pdf", "jpg", "jpeg", "png", "doc", "docx"}
+
+    def _load_single(
+        self, source: Union[str, Path], **kwargs: Any
+    ) -> Dict[str, Any]:
+        r"""Synchronous wrapper that submits the task and waits for the output."""  # noqa: E501
+        file_path = str(source)
+        chunkr_config = kwargs.get("chunkr_config")
+
+        async def _process_and_poll():
+            task_id = await self.submit_task(file_path, chunkr_config)
+            return await self.get_task_output(task_id)
+
+        try:
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+
+            if loop.is_running():
+                import nest_asyncio  # type: ignore[import-untyped]
+
+                nest_asyncio.apply()
+
+            result = loop.run_until_complete(_process_and_poll())
+            return {"content": result, "source": file_path}
+        except Exception as e:
+            raise RuntimeError(f"Failed to load {file_path} via Chunkr: {e}")
 
     async def submit_task(
         self,
         file_path: str,
-        chunkr_config: Optional[ChunkrReaderConfig] = None,
+        chunkr_config: Optional[ChunkrLoaderConfig] = None,
     ) -> str:
-        r"""Submits a file to the Chunkr API and returns the task ID.
-
-        Args:
-            file_path (str): The path to the file to be uploaded.
-            chunkr_config (ChunkrReaderConfig, optional): The configuration
-                for the Chunkr API. Defaults to None.
-
-        Returns:
-            str: The task ID.
-        """
+        r"""Submits a file to the Chunkr API and returns the task ID."""
         chunkr_config = self._to_chunkr_configuration(
-            chunkr_config or ChunkrReaderConfig()
+            chunkr_config or ChunkrLoaderConfig()
         )
 
         try:
@@ -115,16 +126,7 @@ class ChunkrReader:
             raise ValueError(f"Failed to submit task: {e}") from e
 
     async def get_task_output(self, task_id: str) -> str | None:
-        r"""Polls the Chunkr API to check the task status and returns the task
-        result.
-
-        Args:
-            task_id (str): The task ID to check the status for.
-
-        Returns:
-            Optional[str]: The formatted task result in JSON format, or `None`
-                if the task fails or is canceld.
-        """
+        r"""Polls the Chunkr API to check the task status and returns the task result."""  # noqa: E501
         from chunkr_ai.models import Status
 
         try:
@@ -153,36 +155,21 @@ class ChunkrReader:
             raise ValueError(f"Failed to retrieve task status: {e}") from e
 
     def _pretty_print_response(self, response_json: dict) -> str:
-        r"""Pretty prints the JSON response.
-
-        Args:
-            response_json (dict): The response JSON to pretty print.
-
-        Returns:
-            str: Formatted JSON as a string.
-        """
+        r"""Pretty prints the JSON response."""
         from datetime import datetime
 
         return json.dumps(
             response_json,
-            default=lambda o: o.isoformat()
-            if isinstance(o, datetime)
-            else None,
+            default=lambda o: (
+                o.isoformat() if isinstance(o, datetime) else None
+            ),
             indent=4,
         )
 
     def _to_chunkr_configuration(
-        self, chunkr_config: ChunkrReaderConfig
+        self, chunkr_config: ChunkrLoaderConfig
     ) -> "Configuration":
-        r"""Converts the ChunkrReaderConfig to Chunkr Configuration.
-
-        Args:
-            chunkr_config (ChunkrReaderConfig):
-                The ChunkrReaderConfig to convert.
-
-        Returns:
-            Configuration: Chunkr SDK configuration.
-        """
+        r"""Converts the ChunkrLoaderConfig to Chunkr Configuration."""
         from chunkr_ai.models import (
             ChunkProcessing,
             Configuration,
