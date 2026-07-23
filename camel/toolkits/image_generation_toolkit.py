@@ -286,9 +286,11 @@ class ImageGenToolkit(BaseToolkit):
                     logger.error(error_msg)
                     return error_msg
             else:
-                error_msg = f"No valid image data (URL or base64) found in image {i + 1}"
+                error_msg = (
+                    f"No valid image data (URL or base64) "
+                    f"found in image {i + 1}"
+                )
                 logger.error(error_msg)
-                results.append(error_msg)
 
         if results:
             count = len(response.data)

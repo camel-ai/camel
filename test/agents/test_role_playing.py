@@ -185,7 +185,8 @@ def test_role_playing_step(
                 f"Error in round {i + 1}: len(response.msgs) is not 1"
             )
             assert isinstance(response.msgs[0], BaseMessage), (
-                f"Error in round {i + 1}: response.msgs[0] is not a BaseMessage"
+                f"Error in round {i + 1}: "
+                f"response.msgs[0] is not a BaseMessage"
             )
             assert isinstance(response.terminated, bool), (
                 f"Error in round {i + 1}: response.terminated is not a bool"
@@ -255,7 +256,8 @@ async def test_role_playing_astep(
                 f"Error in round {i + 1}: len(response.msgs) is not 1"
             )
             assert isinstance(response.msgs[0], BaseMessage), (
-                f"Error in round {i + 1}: response.msgs[0] is not a BaseMessage"
+                f"Error in round {i + 1}: "
+                f"response.msgs[0] is not a BaseMessage"
             )
             assert isinstance(response.terminated, bool), (
                 f"Error in round {i + 1}: response.terminated is not a bool"

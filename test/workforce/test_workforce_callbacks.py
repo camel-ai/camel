@@ -536,7 +536,9 @@ def assert_event_sequence(
 @pytest.mark.model_backend
 @pytest.mark.skipif(
     MISSING_OPENAI_KEY,
-    reason="Workforce end-to-end event sequence requires a valid OpenAI API key",
+    reason=(
+        "Workforce end-to-end event sequence requires a valid OpenAI API key"
+    ),
 )
 def test_workforce_emits_expected_event_sequence():
     # Use STUB model to avoid real API calls and ensure fast,
@@ -624,25 +626,23 @@ def test_workforce_emits_expected_event_sequence():
         id='0',
     )
 
-    # Wrap task execution in try...except to catch API errors or STUB runner limitations
+    # Wrap task execution to catch API errors or STUB limitations
     try:
         workforce.process_task(human_task)
     except (openai.AuthenticationError, Exception) as e:
-        if (
-            "AuthenticationError" in str(e)
-            or "401" in str(e)
-            or "invalid_api_key" in str(e)
+        err_msg = str(e)
+        if any(
+            k in err_msg for k in ("AuthenticationError", "401", "invalid_key")
         ):
-            pytest.skip(
-                f"Skipping test due to invalid or unauthorized OpenAI API key: {e}"
-            )
+            pytest.skip(f"Skipping test due to invalid OpenAI API key: {e}")
         raise e
 
-    # If STUB model was unable to complete task/emit TaskCompletedEvent, skip gracefully
+    # If STUB model was unable to complete task, skip gracefully
     actual_events = [e.__class__ for e in cb.events]
     if TaskCompletedEvent not in actual_events:
         pytest.skip(
-            "STUB model did not produce full workforce event sequence; skipping sequence assertion."
+            "STUB model did not produce full workforce event sequence; "
+            "skipping sequence assertion."
         )
 
     assert_event_sequence(actual_events, min_worker_count=3)
