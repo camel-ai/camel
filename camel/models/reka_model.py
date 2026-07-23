@@ -50,6 +50,15 @@ except (ImportError, AttributeError):
     LLMEvent = None
 
 
+_FINISH_REASON_MAP = {
+    "stop": "stop",
+    "length": "length",
+    # Reka's "context" means the context window was exhausted before a
+    # natural stop, the same class of event OpenAI reports as "length".
+    "context": "length",
+}
+
+
 class RekaModel(BaseModelBackend):
     r"""Reka API in a unified OpenAICompatibleModel interface.
 
@@ -119,6 +128,16 @@ class RekaModel(BaseModelBackend):
             **kwargs,
         )
 
+    @staticmethod
+    def _map_finish_reason(reka_reason: str) -> str:
+        r"""Map a Reka finish reason to its OpenAI equivalent."""
+        try:
+            return _FINISH_REASON_MAP[reka_reason]
+        except KeyError as exc:
+            raise ValueError(
+                f"Unknown Reka finish reason: {reka_reason!r}"
+            ) from exc
+
     def _convert_reka_to_openai_response(
         self, response: 'ChatResponse'
     ) -> ChatCompletion:
@@ -131,6 +150,7 @@ class RekaModel(BaseModelBackend):
         Returns:
             ChatCompletion: An OpenAI-compatible chat completion response.
         """
+        reka_finish_reason = response.responses[0].finish_reason
         openai_response = ChatCompletion.construct(
             id=response.id,
             choices=[
@@ -139,8 +159,8 @@ class RekaModel(BaseModelBackend):
                         "role": response.responses[0].message.role,
                         "content": response.responses[0].message.content,
                     },
-                    finish_reason=response.responses[0].finish_reason
-                    if response.responses[0].finish_reason
+                    finish_reason=self._map_finish_reason(reka_finish_reason)
+                    if reka_finish_reason
                     else None,
                 )
             ],
