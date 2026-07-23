@@ -1,0 +1,154 @@
+<a id="camel.storages.key_value_storages.memanto"></a>
+
+# Memanto Key-Value Storage
+
+CAMEL integrates Memanto as a `BaseKeyValueStorage` backend. Point it at any
+running Memanto server with `base_url` and `agent_id` - local or cloud is
+decided by your Memanto deployment, not by CAMEL.
+
+**References:** [Memanto docs](https://docs.memanto.ai)
+
+---
+
+<a id="camel.storages.key_value_storages.memanto.MemantoRESTClient"></a>
+
+## MemantoRESTClient
+
+```python
+class MemantoRESTClient:
+```
+
+Low-level REST client used by `MemantoStorage` and `MemantoToolkit`.
+
+**Parameters:**
+
+- **agent_id** (str): Memanto agent identifier.
+- **base_url** (str, optional): Memanto server URL. Defaults to
+  `MEMANTO_BASE_URL` or `http://localhost:8000`.
+- **timeout** (float, optional): HTTP timeout in seconds. (default: `30.0`)
+
+**Environment variables:**
+
+- `MEMANTO_BASE_URL` - server URL
+- `MEMANTO_AGENT_ID` - default agent ID (used by storage/toolkit when omitted)
+
+**Session handling:** Calls `POST /api/v2/agents/{agent_id}/activate` on init.
+Memory operations send `X-Session-Token`. On `401`, the client re-activates once
+and retries automatically.
+
+### activate_session
+
+```python
+def activate_session(self) -> str:
+```
+
+Activates an agent session and returns the session token.
+
+### remember
+
+```python
+def remember(
+    self,
+    content: str,
+    memory_type: MemantoMemoryType = "context",
+    title: Optional[str] = None,
+    confidence: float = 1.0,
+    tags: Optional[List[str]] = None,
+) -> str:
+```
+
+Stores a single typed memory. Returns the memory ID.
+
+Supported `memory_type` values include: `fact`, `preference`, `goal`,
+`decision`, `artifact`, `learning`, `event`, `instruction`, `relationship`,
+`context`, `observation`, `commitment`, `error`.
+
+### recall
+
+```python
+def recall(
+    self,
+    query: str,
+    limit: int = 10,
+    memory_type: Optional[List[MemantoMemoryType]] = None,
+) -> List[Dict[str, Any]]:
+```
+
+Semantic search over stored memories.
+
+### recall_recent
+
+```python
+def recall_recent(
+    self,
+    limit: int = 100,
+    memory_type: Optional[List[MemantoMemoryType]] = None,
+) -> List[Dict[str, Any]]:
+```
+
+Returns the most recent memories (newest first). Used by `MemantoStorage.load()`.
+
+### answer
+
+```python
+def answer(self, question: str) -> str:
+```
+
+RAG-style answer grounded in stored memories (Memanto server-side LLM).
+
+### clear_all_memories
+
+```python
+def clear_all_memories(self) -> None:
+```
+
+Deletes all memories for the active agent.
+
+---
+
+<a id="camel.storages.key_value_storages.memanto.MemantoStorage"></a>
+
+## MemantoStorage
+
+```python
+class MemantoStorage(BaseKeyValueStorage):
+```
+
+Drop-in backend for `ChatHistoryBlock` and `ChatHistoryMemory`.
+
+**Parameters:**
+
+- **agent_id** (str, optional): Memanto agent ID. Falls back to `MEMANTO_AGENT_ID`.
+- **base_url** (str, optional): Memanto server URL.
+- **recall_limit** (int, optional): Max memories returned by `load()`. (default: `100`)
+
+### save
+
+```python
+def save(self, records: List[Dict[str, Any]]) -> None:
+```
+
+Saves CAMEL memory records to Memanto.
+
+### load
+
+```python
+def load(self) -> List[Dict[str, Any]]:
+```
+
+Loads recent records as CAMEL `MemoryRecord` dicts.
+
+### clear
+
+```python
+def clear(self) -> None:
+```
+
+Removes all memories for the configured agent.
+
+---
+
+## Related
+
+- [Memory module](/key_modules/memory) - agent memory patterns
+- [MemantoToolkit](/reference/camel.toolkits.memanto_toolkit) - function-calling tools
