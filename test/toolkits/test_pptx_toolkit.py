@@ -194,8 +194,7 @@ def test_create_presentation_invalid_image_url(pptx_toolkit):
             "heading": "Slide with Bad Image",
             "bullet_points": ["This slide has an invalid image URL."],
             "img_keywords": (
-                "https://invalid-url-that-does-not-exist.example.com/"
-                "image.jpg"
+                "https://invalid-url-that-does-not-exist.example.com/image.jpg"
             ),
         },
     ]

@@ -84,7 +84,7 @@ def ensure_java_available(
             # java -version outputs to stderr
             version_output = result.stderr.strip() or result.stdout.strip()
             if result.returncode == 0 and javac_result.returncode == 0:
-                info = f"Java is already available: " f"{version_output}"
+                info = f"Java is already available: {version_output}"
                 if update_callback:
                     update_callback(f"{info}\n")
                 return os.path.dirname(os.path.dirname(existing_java))
@@ -155,8 +155,7 @@ def ensure_java_available(
 
     if update_callback:
         update_callback(
-            "Failed to install Java. "
-            "If needed, please install it manually.\n"
+            "Failed to install Java. If needed, please install it manually.\n"
         )
     return None
 

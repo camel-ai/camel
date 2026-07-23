@@ -231,9 +231,9 @@ def test_milvus_bug_single_result(milvus_test_setup):
     results = storage.query(query=query)
 
     # Verify results - before fix would only return 1 result
-    assert (
-        len(results) == 1
-    ), "Before the fix, should return only 1 result, even if top_k=3"
+    assert len(results) == 1, (
+        "Before the fix, should return only 1 result, even if top_k=3"
+    )
 
     # Verify that it's the first result
     assert results[0].record.id == '1'

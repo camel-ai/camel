@@ -102,12 +102,12 @@ while True:
     history_context = ""
     for i in range(len(conversation_history)):
         item = conversation_history[i]
-        history_context += f"Round {i+1}:\n"
+        history_context += f"Round {i + 1}:\n"
         history_context += f"Task: {item['task']}\n"
         history_context += f"Result: {item['result']}\n\n"
 
     task_content = (
-        f"{history_context}{'='*50}\nNew task: {user_input}"
+        f"{history_context}{'=' * 50}\nNew task: {user_input}"
         if history_context
         else user_input
     )

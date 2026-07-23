@@ -111,9 +111,9 @@ async def test_graceful_shutdown_immediate_timeout():
     execution_time = end_time - start_time
 
     # Should complete immediately (well under 0.1 seconds)
-    assert (
-        execution_time < 0.1
-    ), f"Expected immediate shutdown, but took {execution_time:.2f} seconds"
+    assert execution_time < 0.1, (
+        f"Expected immediate shutdown, but took {execution_time:.2f} seconds"
+    )
     print(
         f"✓ Immediate shutdown test passed - execution time: "
         f"{execution_time:.3f}s"
@@ -141,9 +141,9 @@ async def test_graceful_shutdown_one_second_timeout():
 
     # Should take approximately 1 second
     # (allow 0.1s margin for processing overhead)
-    assert (
-        0.9 <= execution_time <= 1.2
-    ), f"Expected ~1 second shutdown, but took {execution_time:.2f} seconds"
+    assert 0.9 <= execution_time <= 1.2, (
+        f"Expected ~1 second shutdown, but took {execution_time:.2f} seconds"
+    )
     print(
         f"✓ 1-second timeout test passed - execution time: "
         f"{execution_time:.2f}s"

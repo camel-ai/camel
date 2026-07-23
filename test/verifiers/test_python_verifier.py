@@ -230,12 +230,12 @@ async def test_verify_with_float_tolerance(
     )
 
     if should_pass:
-        assert (
-            result.status == VerificationOutcome.SUCCESS
-        ), f"Expected success, got {result}"
+        assert result.status == VerificationOutcome.SUCCESS, (
+            f"Expected success, got {result}"
+        )
     else:
-        assert (
-            result.status == VerificationOutcome.FAILURE
-        ), f"Expected failure, got {result}"
+        assert result.status == VerificationOutcome.FAILURE, (
+            f"Expected failure, got {result}"
+        )
 
     await verifier.cleanup()

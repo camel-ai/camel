@@ -124,7 +124,7 @@ def test_task_creation_agent(model):
 @parametrize
 def test_task_prioritization_agent(model):
     original_task_prompt = (
-        "A high school student wants to " "prove the Riemann hypothesis"
+        "A high school student wants to prove the Riemann hypothesis"
     )
 
     task_list = [

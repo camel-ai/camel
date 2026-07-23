@@ -425,7 +425,7 @@ class MCPToolkit(BaseToolkit):
                 await self._disconnect_all_clients()
                 error_msg = (
                     f"Failed to connect to {len(failed)} MCP server(s): "
-                    + ", ".join(f"client {i+1}" for i in failed)
+                    + ", ".join(f"client {i + 1}" for i in failed)
                 )
                 raise MCPConnectionError(error_msg)
 
@@ -463,7 +463,7 @@ class MCPToolkit(BaseToolkit):
                 )
                 self._connected_clients.append(client)
                 logger.debug(
-                    f"Connected to client {i+1}/{len(self.clients)}"
+                    f"Connected to client {i + 1}/{len(self.clients)}"
                     + (f" (attempt {attempt})" if attempt > 1 else "")
                 )
                 return True
@@ -472,7 +472,7 @@ class MCPToolkit(BaseToolkit):
                 # Clean up partially-established resources before retry
                 await client._cleanup_connection()
                 logger.warning(
-                    f"Client {i+1} timed out after "
+                    f"Client {i + 1} timed out after "
                     f"{self._per_client_timeout}s "
                     f"(attempt {attempt}/{total_attempts})"
                 )
@@ -484,13 +484,13 @@ class MCPToolkit(BaseToolkit):
                 # Clean up partially-established resources before retry
                 await client._cleanup_connection()
                 logger.warning(
-                    f"Client {i+1} connection failed "
+                    f"Client {i + 1} connection failed "
                     f"(attempt {attempt}/{total_attempts}): {e}"
                 )
             if attempt < total_attempts:
                 await asyncio.sleep(self._retry_delay)
         raise ConnectionError(
-            f"Client {i+1} failed after {total_attempts} attempts"
+            f"Client {i + 1} failed after {total_attempts} attempts"
         ) from last_exc
 
     async def _connect_all_clients(self):
@@ -523,7 +523,7 @@ class MCPToolkit(BaseToolkit):
             if isinstance(result, asyncio.CancelledError):
                 raise result
             if isinstance(result, Exception):
-                logger.error(f"Failed to connect to client {i+1}: {result}")
+                logger.error(f"Failed to connect to client {i + 1}: {result}")
                 failed.append(i)
             else:
                 connected += 1
@@ -957,7 +957,7 @@ class MCPToolkit(BaseToolkit):
                     if name in seen_names:
                         logger.warning(
                             f"Duplicate tool name detected and "
-                            f"skipped: '{name}' from client {i+1}"
+                            f"skipped: '{name}' from client {i + 1}"
                         )
                         continue
                     seen_names.add(name)
@@ -965,11 +965,11 @@ class MCPToolkit(BaseToolkit):
 
                 all_tools.extend(strict_tools)
                 logger.debug(
-                    f"Client {i+1} contributed {len(strict_tools)} "
+                    f"Client {i + 1} contributed {len(strict_tools)} "
                     f"tools (strict mode enabled)"
                 )
             except Exception as e:
-                logger.error(f"Failed to get tools from client {i+1}: {e}")
+                logger.error(f"Failed to get tools from client {i + 1}: {e}")
 
         logger.info(
             f"Total tools available: {len(all_tools)} (all with strict "
@@ -995,11 +995,11 @@ class MCPToolkit(BaseToolkit):
                 client_tools_text = client.get_text_tools()
                 if client_tools_text:
                     tool_descriptions.append(
-                        f"=== Client {i+1} Tools ===\n{client_tools_text}"
+                        f"=== Client {i + 1} Tools ===\n{client_tools_text}"
                     )
             except Exception as e:
                 logger.error(
-                    f"Failed to get tool descriptions from client {i+1}: {e}"
+                    f"Failed to get tool descriptions from client {i + 1}: {e}"
                 )
 
         return "\n\n".join(tool_descriptions)
@@ -1059,12 +1059,14 @@ class MCPToolkit(BaseToolkit):
                     result = await client.call_tool(tool_name, tool_args)
                     logger.debug(
                         f"Tool '{tool_name}' called successfully "
-                        f"on client {i+1}"
+                        f"on client {i + 1}"
                     )
                     return result
             except Exception as e:
                 last_error = e
-                logger.debug(f"Tool '{tool_name}' failed on client {i+1}: {e}")
+                logger.debug(
+                    f"Tool '{tool_name}' failed on client {i + 1}: {e}"
+                )
                 continue
 
         # If we get here, the tool wasn't found or all calls failed
@@ -1092,9 +1094,9 @@ class MCPToolkit(BaseToolkit):
             try:
                 tools = client.get_tools()
                 tool_names = [tool.func.__name__ for tool in tools]
-                available_tools[f"client_{i+1}"] = tool_names
+                available_tools[f"client_{i + 1}"] = tool_names
             except Exception as e:
-                logger.error(f"Failed to list tools from client {i+1}: {e}")
-                available_tools[f"client_{i+1}"] = []
+                logger.error(f"Failed to list tools from client {i + 1}: {e}")
+                available_tools[f"client_{i + 1}"] = []
 
         return available_tools

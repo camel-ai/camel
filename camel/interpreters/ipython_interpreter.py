@@ -191,5 +191,5 @@ class JupyterKernelInterpreter(BaseInterpreter):
                 does not support updating the action space.
         """
         raise RuntimeError(
-            "JupyterKernelInterpreter doesn't support " "`action_space`."
+            "JupyterKernelInterpreter doesn't support `action_space`."
         )

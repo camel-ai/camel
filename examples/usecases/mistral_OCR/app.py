@@ -12,17 +12,18 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import base64
 import os
+import tempfile
+
 import streamlit as st
 from PIL import Image
-import tempfile
-import base64
 
-from camel.loaders import MistralReader
+from camel.agents import ChatAgent
 from camel.configs import MistralConfig
+from camel.loaders import MistralReader
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
-from camel.agents import ChatAgent
 
 
 # Load camel and mistral logo images as base64
@@ -30,6 +31,7 @@ def get_base64_img(path, w=32):
     with open(path, "rb") as img_f:
         b64 = base64.b64encode(img_f.read()).decode()
     return f"<img src='data:image/png;base64,{b64}' width='{w}' style='vertical-align:middle;margin-bottom:4px;'>"
+
 
 camel_logo = get_base64_img("assets/CAMEL_logo.jpg", 40)
 mistral_logo = get_base64_img("assets/mistral_logo.png", 40)
@@ -44,14 +46,16 @@ st.markdown(
         {mistral_logo}
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
 # --- Sidebar: API Key & Upload & Preview ---
 st.sidebar.header("⚙️ Configuration")
 api_key = st.sidebar.text_input(
-    "Mistral API Key", type="password", help="Get it from https://console.mistral.ai/home"
+    "Mistral API Key",
+    type="password",
+    help="Get it from https://console.mistral.ai/home",
 )
 if api_key:
     os.environ["MISTRAL_API_KEY"] = api_key
@@ -68,7 +72,9 @@ if uploaded:
     ext = uploaded.name.split('.')[-1].lower()
     if ext in ["png", "jpg", "jpeg"]:
         image = Image.open(uploaded)
-        st.sidebar.image(image, caption="Uploaded Image Preview", use_container_width=True)
+        st.sidebar.image(
+            image, caption="Uploaded Image Preview", use_container_width=True
+        )
         tmp_pdf = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
         image.convert("RGB").save(tmp_pdf.name)
         file_path = tmp_pdf.name
@@ -105,7 +111,9 @@ if uploaded:
 
 # --- Show OCR Results (expand/collapse if needed) ---
 if 'ocr_result' in st.session_state:
-    with st.expander("🔎 OCR Result (Full Extracted Markdown)", expanded=False):
+    with st.expander(
+        "🔎 OCR Result (Full Extracted Markdown)", expanded=False
+    ):
         resp = st.session_state['ocr_result']
         for page in resp.pages:
             if page.markdown:
@@ -154,7 +162,9 @@ if 'ocr_result' in st.session_state:
     user_prompt = st.chat_input("Ask anything about your document...")
     if user_prompt:
         # Show user message
-        st.session_state["chat_history"].append({"role": "user", "content": user_prompt})
+        st.session_state["chat_history"].append(
+            {"role": "user", "content": user_prompt}
+        )
         with st.chat_message("user"):
             st.markdown(user_prompt)
 
@@ -171,7 +181,9 @@ if 'ocr_result' in st.session_state:
                 response = agent.step(prompt)
                 answer = response.msgs[0].content
                 st.markdown(answer)
-                st.session_state["chat_history"].append({"role": "assistant", "content": answer})
+                st.session_state["chat_history"].append(
+                    {"role": "assistant", "content": answer}
+                )
 
 # --- Footer ---
 st.markdown("---")

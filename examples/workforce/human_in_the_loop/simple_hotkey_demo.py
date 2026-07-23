@@ -145,7 +145,7 @@ def main():
     workforce = create_simple_workforce()
     task = Task(
         content=(
-            "write a poem about the sun and the moon" "then write the md file"
+            "write a poem about the sun and the moonthen write the md file"
         ),
         id="sun_and_moon",
     )

@@ -28,21 +28,21 @@ from .unstructured_io import UnstructuredIO
 ScrapeGraphAI = ScrapeGraphAILoader
 
 __all__ = [
-    'File',
-    'create_file',
-    'create_file_from_raw_bytes',
-    'UnstructuredIO',
-    'JinaURLLoader',
-    'FirecrawlLoader',
     'ApifyLoader',
     'ChunkrLoader',
     'ChunkrLoaderConfig',
-    'MinerULoader',
     'Crawl4AILoader',
+    'File',
+    'FirecrawlLoader',
+    'JinaURLLoader',
     'MarkItDownLoader',
-    'ScrapeGraphAILoader',
-    'ScrapeGraphAI',
+    'MinerULoader',
     'MistralLoader',
+    'ScrapeGraphAI',
+    'ScrapeGraphAILoader',
+    'UnstructuredIO',
+    'create_file',
+    'create_file_from_raw_bytes',
 ]
 
 

@@ -188,9 +188,9 @@ def test_get_all_issues(mock_github):
     ):
         issues = github_toolkit.github_get_issue_list(repo_name="repo_name")
         expected_issues = [{"number": 1, "title": "Test Issue"}]
-        assert (
-            issues == expected_issues
-        ), f"Expected {expected_issues}, got {issues}"
+        assert issues == expected_issues, (
+            f"Expected {expected_issues}, got {issues}"
+        )
 
 
 @patch.dict('sys.modules', mock_modules)
@@ -216,9 +216,9 @@ def test_github_get_issue_content(mock_github):
             repo_name="repo_name", issue_number=1
         )
         expected_content = "Issue content"
-        assert (
-            content == expected_content
-        ), f"Expected {expected_content}, got {content}"
+        assert content == expected_content, (
+            f"Expected {expected_content}, got {content}"
+        )
 
 
 @patch.dict('sys.modules', mock_modules)
@@ -276,9 +276,9 @@ def test_github_get_pull_request_code(mock_github):
             repo_name="repo_name", pr_number=1
         )
         expected_files = [{"filename": "file1.py", "patch": "code changes"}]
-        assert (
-            files_changed == expected_files
-        ), f"Expected {expected_files}, got {files_changed}"
+        assert files_changed == expected_files, (
+            f"Expected {expected_files}, got {files_changed}"
+        )
 
 
 @patch.dict('sys.modules', mock_modules)
@@ -310,9 +310,9 @@ def test_github_get_pull_request_comments(mock_github):
             repo_name="repo_name", pr_number=1
         )
         expected_comments = [{"user": "user1", "body": "Test comment"}]
-        assert (
-            comments == expected_comments
-        ), f"Expected {expected_comments}, got {comments}"
+        assert comments == expected_comments, (
+            f"Expected {expected_comments}, got {comments}"
+        )
 
 
 @patch.dict('sys.modules', mock_modules)
@@ -335,6 +335,6 @@ def test_github_get_all_file_paths(mock_github):
     ):
         files = github_toolkit.github_get_all_file_paths(repo_name="repo_name")
         expected_files = ["path/to/file.py"]
-        assert (
-            files == expected_files
-        ), f"Expected {expected_files}, got {files}"
+        assert files == expected_files, (
+            f"Expected {expected_files}, got {files}"
+        )

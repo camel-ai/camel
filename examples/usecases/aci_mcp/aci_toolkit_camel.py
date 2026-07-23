@@ -31,7 +31,9 @@ def main():
     # get the linked account from env or use default
     linked_account_owner_id = os.getenv("LINKED_ACCOUNT_OWNER_ID")
     if not linked_account_owner_id:
-        raise ValueError("LINKED_ACCOUNT_OWNER_ID environment variable is required")
+        raise ValueError(
+            "LINKED_ACCOUNT_OWNER_ID environment variable is required"
+        )
     rprint(f"Using account: [cyan]{linked_account_owner_id}[/cyan]")
 
     # setup aci toolkit

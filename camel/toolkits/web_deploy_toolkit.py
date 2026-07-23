@@ -352,8 +352,7 @@ class WebDeployToolkit(BaseToolkit):
                 return {
                     'success': False,
                     'error': (
-                        'Cannot provide both html_content and '
-                        'html_file_path'
+                        'Cannot provide both html_content and html_file_path'
                     ),
                 }
 

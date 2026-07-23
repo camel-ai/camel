@@ -32,9 +32,9 @@ def test_base64_to_image_valid(image_toolkit):
     image = image_toolkit.base64_to_image(valid_base64_string)
 
     # test base64 converts to image
-    assert isinstance(
-        image, Image.Image
-    ), "The function should return a PIL Image object"
+    assert isinstance(image, Image.Image), (
+        "The function should return a PIL Image object"
+    )
 
 
 def test_base64_to_image_invalid(image_toolkit):
@@ -43,9 +43,9 @@ def test_base64_to_image_invalid(image_toolkit):
     image = image_toolkit.base64_to_image(invalid_base64_string)
 
     # check response is None
-    assert (
-        image is None
-    ), "The function should return None for an invalid base64 string"
+    assert image is None, (
+        "The function should return None for an invalid base64 string"
+    )
 
 
 def test_toolkit_initialization_and_tools(image_toolkit):
@@ -55,6 +55,6 @@ def test_toolkit_initialization_and_tools(image_toolkit):
     # test that only generate_image tool is available
     tools = image_toolkit.get_tools()
     assert len(tools) == 1, "Should only have one tool available"
-    assert (
-        tools[0].func.__name__ == "generate_image"
-    ), "Tool should be generate_image"
+    assert tools[0].func.__name__ == "generate_image", (
+        "Tool should be generate_image"
+    )

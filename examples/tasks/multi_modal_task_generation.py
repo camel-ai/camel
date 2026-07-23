@@ -114,7 +114,6 @@ for task in tasks:
     for t in new_tasks:
         print(t.to_string())
 
-# ruff: noqa: E501
 """
 ===============================================================================
 Task 0: Weng earns $12 an hour for babysitting. Yesterday, she just did 51

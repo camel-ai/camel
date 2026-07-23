@@ -17,7 +17,6 @@ from camel.prompts.base import TextPrompt, TextPromptDict
 from camel.types import RoleType
 
 
-# flake8: noqa :E501
 class ObjectRecognitionPromptTemplateDict(TextPromptDict):
     ASSISTANT_PROMPT = TextPrompt(
         """You have been assigned an object recognition task.

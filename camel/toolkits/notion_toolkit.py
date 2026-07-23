@@ -248,8 +248,11 @@ class NotionToolkit(BaseToolkit):
                     text = (
                         f"This block is synced with a block with ID: "
                         f"""
-                        {block['synced_block']['synced_from']
-                        [block['synced_block']['synced_from']['type']]}
+                        {
+                            block['synced_block']['synced_from'][
+                                block['synced_block']['synced_from']['type']
+                            ]
+                        }
                         """
                     )
                 else:

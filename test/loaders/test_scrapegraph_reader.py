@@ -17,7 +17,7 @@ import sys
 from types import ModuleType
 from unittest.mock import MagicMock, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.loaders.scrapegraph_loader import ScrapeGraphAILoader
 

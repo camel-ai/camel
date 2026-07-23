@@ -388,9 +388,9 @@ def test_sanitize_and_resolve_filepath(file_write_toolkit):
     expected_path = file_write_toolkit.working_directory / expected_sanitized
 
     # Check that the resolved path matches the expected path
-    assert (
-        resolved_path == expected_path.resolve()
-    ), "The resolved file path does not match the expected sanitized path."
+    assert resolved_path == expected_path.resolve(), (
+        "The resolved file path does not match the expected sanitized path."
+    )
 
 
 def test_backup_functionality(file_write_toolkit):

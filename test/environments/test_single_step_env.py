@@ -907,9 +907,9 @@ async def test_basegenerator_reset_reproducibility_with_identical_seed():
     questions2 = [obs.question for obs in observations2]
 
     # Same seed should produce same sampling order
-    assert (
-        questions1 == questions2
-    ), "Same seed should produce same sampling order"
+    assert questions1 == questions2, (
+        "Same seed should produce same sampling order"
+    )
     await env.close()
 
 
@@ -937,9 +937,9 @@ async def test_basegenerator_reset_variability_with_different_seeds():
     questions2 = [obs.question for obs in observations2]
 
     # Different seeds should produce different orders
-    assert (
-        questions1 != questions2
-    ), "Different seeds should produce different sampling orders"
+    assert questions1 != questions2, (
+        "Different seeds should produce different sampling orders"
+    )
     await env.close()
 
 

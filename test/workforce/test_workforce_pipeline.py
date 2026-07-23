@@ -224,9 +224,9 @@ def test_pipeline_execution_structure():
     workforce.pipeline_add("Step 1").pipeline_add("Step 2").pipeline_build()
 
     # Verify pipeline structure
-    assert (
-        len(workforce._pending_tasks) == 2
-    ), "Should have 2 tasks in pipeline"
+    assert len(workforce._pending_tasks) == 2, (
+        "Should have 2 tasks in pipeline"
+    )
     assert len(workforce._children) == 1, "Should have 1 worker"
 
     # Get the pipeline tasks
@@ -235,12 +235,12 @@ def test_pipeline_execution_structure():
     task_2 = pipeline_tasks[1]
 
     # Verify dependencies were set correctly
-    assert (
-        len(workforce._task_dependencies[task_1.id]) == 0
-    ), "Task 1 should have no dependencies"
-    assert (
-        task_1.id in workforce._task_dependencies[task_2.id]
-    ), "Task 2 should depend on Task 1"
+    assert len(workforce._task_dependencies[task_1.id]) == 0, (
+        "Task 1 should have no dependencies"
+    )
+    assert task_1.id in workforce._task_dependencies[task_2.id], (
+        "Task 2 should depend on Task 1"
+    )
 
     # Verify mode is PIPELINE
     assert workforce.mode == WorkforceMode.PIPELINE
@@ -290,9 +290,9 @@ async def test_pipeline_failed_task_continues_workflow():
         for dep_id in workforce._task_dependencies[task_3.id]
     )
 
-    assert (
-        all_deps_completed
-    ), "Task 3 dependencies should be marked as completed"
+    assert all_deps_completed, (
+        "Task 3 dependencies should be marked as completed"
+    )
 
     # In PIPELINE mode, should post task even if dependency failed
     should_post = (
@@ -337,17 +337,17 @@ async def test_pipeline_fork_with_one_branch_failing():
         for dep_id in workforce._task_dependencies[task_d.id]
     )
 
-    assert (
-        all_deps_completed
-    ), "Task D dependencies should all be completed (success or failure)"
+    assert all_deps_completed, (
+        "Task D dependencies should all be completed (success or failure)"
+    )
 
     # Task D should be ready to execute in PIPELINE mode
     should_post = (
         workforce.mode == WorkforceMode.PIPELINE and all_deps_completed
     )
-    assert (
-        should_post
-    ), "Task D (join) should execute even though Task C (branch) failed"
+    assert should_post, (
+        "Task D (join) should execute even though Task C (branch) failed"
+    )
 
 
 def test_pipeline_mode_reset_after_execution():
@@ -366,9 +366,9 @@ def test_pipeline_mode_reset_after_execution():
     workforce.mode = workforce._initial_mode
 
     # Verify mode was reset
-    assert (
-        workforce.mode == initial_mode
-    ), "Mode should reset to initial value after execution"
+    assert workforce.mode == initial_mode, (
+        "Mode should reset to initial value after execution"
+    )
 
 
 def test_all_pipeline_tasks_successful_with_failures():
@@ -390,9 +390,9 @@ def test_all_pipeline_tasks_successful_with_failures():
     # Should return False because task2 failed
     result = workforce._all_pipeline_tasks_successful()
 
-    assert (
-        result is False
-    ), "Pipeline should be marked as failed when any task fails"
+    assert result is False, (
+        "Pipeline should be marked as failed when any task fails"
+    )
 
 
 def test_all_pipeline_tasks_successful_all_done():
@@ -414,9 +414,9 @@ def test_all_pipeline_tasks_successful_all_done():
     # Should return True because all tasks succeeded
     result = workforce._all_pipeline_tasks_successful()
 
-    assert (
-        result is True
-    ), "Pipeline should be marked as successful when all tasks succeed"
+    assert result is True, (
+        "Pipeline should be marked as successful when all tasks succeed"
+    )
 
 
 def test_all_pipeline_tasks_successful_with_pending():
@@ -434,9 +434,9 @@ def test_all_pipeline_tasks_successful_with_pending():
     # Should return False because there are pending tasks
     result = workforce._all_pipeline_tasks_successful()
 
-    assert (
-        result is False
-    ), "Pipeline should not be marked successful with pending tasks"
+    assert result is False, (
+        "Pipeline should not be marked successful with pending tasks"
+    )
 
 
 def test_pipeline_reset_clears_state():
@@ -455,9 +455,9 @@ def test_pipeline_reset_clears_state():
 
     # Verify state was cleared
     assert len(workforce._pending_tasks) == 0
-    assert (
-        workforce.mode == workforce._initial_mode
-    ), "Mode should reset to initial value"
+    assert workforce.mode == workforce._initial_mode, (
+        "Mode should reset to initial value"
+    )
     assert workforce._pipeline_builder is None
 
 

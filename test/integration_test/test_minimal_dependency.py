@@ -50,8 +50,7 @@ def test_minimum_deps_module_importable(module_path):
         importlib.import_module(module_path)
     except ImportError as e:
         pytest.fail(
-            f"Failed to import {module_path} with"
-            f" minimal dependencies:\n{e!s}"
+            f"Failed to import {module_path} with minimal dependencies:\n{e!s}"
         )
 
 

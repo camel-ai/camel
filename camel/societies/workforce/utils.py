@@ -317,8 +317,7 @@ class FailureHandlingConfig(BaseModel):
                 except ValueError:
                     valid = [s.value for s in RecoveryStrategy]
                     raise ValueError(
-                        f"Invalid strategy '{item}'. "
-                        f"Valid options: {valid}"
+                        f"Invalid strategy '{item}'. Valid options: {valid}"
                     )
             else:
                 raise ValueError(

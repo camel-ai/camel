@@ -149,7 +149,7 @@ class GithubToolkit(BaseToolkit):
             )
 
             if pr is not None:
-                return f"Title: {pr.title}\n" f"Body: {pr.body}\n"
+                return f"Title: {pr.title}\nBody: {pr.body}\n"
             else:
                 return "Failed to create pull request."
         else:

@@ -20,7 +20,7 @@ from .discord_store import (
 
 __all__ = [
     "DiscordApp",
+    "DiscordBaseInstallationStore",
     "DiscordInstallation",
     "DiscordSQLiteInstallationStore",
-    "DiscordBaseInstallationStore",
 ]

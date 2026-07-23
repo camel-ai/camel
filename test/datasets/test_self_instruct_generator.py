@@ -148,11 +148,7 @@ class TestFormatSupportBlock:
         result = SelfInstructGenerator.format_support_block(datapoint)
 
         expected = (
-            f"Question:\n{datapoint.question}\n\n"
-            "Code:\n"
-            "```python\n"
-            "\n"
-            "```"
+            f"Question:\n{datapoint.question}\n\nCode:\n```python\n\n```"
         )
 
         assert result == expected

@@ -24,13 +24,13 @@ from .filter import (
 from .self_instruct import SelfInstructPipeline
 
 __all__ = [
-    'SelfInstructPipeline',
+    'FILTER_REGISTRY',
+    'FilterFunction',
     'InstructionFilter',
+    'KeywordFilter',
+    'LengthFilter',
     'NonEnglishFilter',
     'PunctuationFilter',
     'RougeSimilarityFilter',
-    'FilterFunction',
-    'KeywordFilter',
-    'LengthFilter',
-    'FILTER_REGISTRY',
+    'SelfInstructPipeline',
 ]

@@ -682,7 +682,7 @@ class LeducHoldemEnv(RLCardsEnv):
 
         obs_text += f"Your chips: {my_chips}\n"
         for i, chips in enumerate(opponent_chips):
-            obs_text += f"Opponent {i+1} chips: {chips}\n"
+            obs_text += f"Opponent {i + 1} chips: {chips}\n"
 
         return obs_text
 

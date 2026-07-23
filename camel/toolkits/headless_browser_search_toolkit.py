@@ -365,8 +365,7 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
             )
         elif engine == "bing":
             return (
-                f"https://www.bing.com/search?q={q}"
-                f"&first={page_idx * 10 + 1}"
+                f"https://www.bing.com/search?q={q}&first={page_idx * 10 + 1}"
             )
         else:  # brave
             return (
@@ -420,7 +419,7 @@ class HeadlessBrowserSearchToolkit(BaseToolkit):
                 if item.get("url")
             ]
         except Exception as e:
-            logger.warning(f"JS extraction failed: {e}, " f"raw={raw[:300]}")
+            logger.warning(f"JS extraction failed: {e}, raw={raw[:300]}")
             return []
 
     async def search(

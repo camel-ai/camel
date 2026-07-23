@@ -237,7 +237,7 @@ class ExcelToolkit(BaseToolkit):
             Markdown View of the content:
             {sheet_info['markdown_content']}
 
-            {'-'*40}
+            {'-' * 40}
             """
 
             return result_str

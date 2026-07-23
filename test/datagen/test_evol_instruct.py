@@ -107,7 +107,7 @@ class TestEvolInstructPipeline(unittest.TestCase):
             prompt, "method1", return_method=True
         )
         expected_instruction = (
-            "Use Method1 instruction to evolve: " "Original prompt"
+            "Use Method1 instruction to evolve: Original prompt"
         )
         self.mock_agent.reset.assert_called()  # Check that reset was called.
         self.mock_agent.step.assert_called_with(expected_instruction)

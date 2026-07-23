@@ -54,12 +54,13 @@ class ScrapeGraphAILoader(BaseLoader):
                         client as Client,
                     )
 
-        if hasattr(Client, "Client"):
-            Client = Client.Client
-        elif hasattr(Client, "client"):
-            Client = Client.client
-        elif hasattr(Client, "SmartScraperGraph"):
-            Client = Client.SmartScraperGraph
+        client_cls = Client
+        if hasattr(client_cls, "Client"):
+            client_cls = client_cls.Client
+        elif hasattr(client_cls, "client"):
+            client_cls = client_cls.client
+        elif hasattr(client_cls, "SmartScraperGraph"):
+            client_cls = client_cls.SmartScraperGraph
 
         self._api_key = api_key or os.environ.get("SCRAPEGRAPH_API_KEY")
         if not self._api_key:

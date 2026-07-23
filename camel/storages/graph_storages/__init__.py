@@ -20,6 +20,6 @@ from .neo4j_graph import Neo4jGraph
 __all__ = [
     'BaseGraphStorage',
     'GraphElement',
-    'Neo4jGraph',
     'NebulaGraph',
+    'Neo4jGraph',
 ]

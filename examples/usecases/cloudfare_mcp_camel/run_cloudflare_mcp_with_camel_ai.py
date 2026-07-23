@@ -11,12 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+
+import dotenv
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import MCPToolkit
-import dotenv
-import os
 
 dotenv.load_dotenv()
 
@@ -24,7 +26,7 @@ sys_msg = BaseMessage(
     role_name="cloudfare assistant",
     role_type="assistant",
     meta_dict={},
-    content="You are a helpful assistant that can access Cloudflare's documentation via MCP"
+    content="You are a helpful assistant that can access Cloudflare's documentation via MCP",
 )
 
 
@@ -34,9 +36,9 @@ model = ModelFactory.create(
     model_type="gemini-2.5-pro-preview-05-06",
     api_key=os.getenv("GEMINI_API_KEY"),
     model_config_dict={"temperature": 0.5, "max_tokens": 4096},
-    )
+)
 
-#configure the mcp camel toolkit with the path of the config file
+# configure the mcp camel toolkit with the path of the config file
 mcp_toolkit = MCPToolkit(config_path="mcp_config.json")
 
 # Get the tools from the toolkit

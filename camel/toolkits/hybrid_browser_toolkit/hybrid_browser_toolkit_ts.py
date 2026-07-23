@@ -2037,8 +2037,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         except asyncio.TimeoutError:
             wait_time = timeout_sec or 0.0
             logger.info(
-                f"User input timeout reached after {wait_time}s, "
-                f"auto-resuming"
+                f"User input timeout reached after {wait_time}s, auto-resuming"
             )
             result_msg = f"Timeout {timeout_sec}s reached, auto-resumed."
 
@@ -2079,8 +2078,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             headless=self._headless,
             user_data_dir=self._user_data_dir,
             stealth=self._stealth,
-            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_"
-            f"{new_session_id}/",
+            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_{new_session_id}/",
             enabled_tools=self.enabled_tools.copy(),
             browser_log_to_file=self._browser_log_to_file,
             session_id=new_session_id,

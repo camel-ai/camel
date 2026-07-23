@@ -151,8 +151,7 @@ class MilvusStorage(BaseVectorStorage):
             field_name="payload",
             datatype=DataType.JSON,
             description=(
-                'Any additional metadata or information related'
-                'to the vector'
+                'Any additional metadata or information relatedto the vector'
             ),
         )
 

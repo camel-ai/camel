@@ -27,7 +27,9 @@ def create_config():
 
     linked_account_owner_id = os.getenv("LINKED_ACCOUNT_OWNER_ID")
     if not linked_account_owner_id:
-        raise ValueError("LINKED_ACCOUNT_OWNER_ID environment variable is required")
+        raise ValueError(
+            "LINKED_ACCOUNT_OWNER_ID environment variable is required"
+        )
 
     config = {
         "mcpServers": {

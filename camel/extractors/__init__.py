@@ -24,8 +24,8 @@ __all__ = [
     "BaseExtractor",
     "BaseExtractorStrategy",
     "BoxedStrategy",
-    "PythonListStrategy",
     "PythonDictStrategy",
+    "PythonListStrategy",
     "PythonSetStrategy",
     "PythonTupleStrategy",
 ]

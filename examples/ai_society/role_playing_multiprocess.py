@@ -37,7 +37,7 @@ def generate_data(
 ) -> None:
     max_num_messages = 40
 
-    original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
+    original_task_prompt = task_prompt.replace(f"{task_idx + 1}. ", "")
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
@@ -88,7 +88,7 @@ def generate_data(
     )
     message_dict["role_2"] = f"{user_role_name}_{user_agent.role_type!s}"
     message_dict["id"] = (
-        f"{(assistant_idx+1):03}_{(user_idx+1):03}_{(task_idx+1):03}"
+        f"{(assistant_idx + 1):03}_{(user_idx + 1):03}_{(task_idx + 1):03}"
     )
     message_dict["original_task"] = original_task_prompt
     message_dict["specified_task"] = role_play_session.specified_task_prompt
@@ -292,8 +292,8 @@ def main() -> None:
 
             for task_idx, task_prompt in enumerate(tasks):
                 id = (
-                    f"{(assistant_idx+1):03}_"
-                    f"{(user_idx+1):03}_{(task_idx+1):03}"
+                    f"{(assistant_idx + 1):03}_"
+                    f"{(user_idx + 1):03}_{(task_idx + 1):03}"
                 )
                 if not os.path.exists(f"./camel_data/ai_society/{id}.json"):
                     pool.apply_async(

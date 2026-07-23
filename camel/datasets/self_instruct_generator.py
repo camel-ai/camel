@@ -217,11 +217,7 @@ class SelfInstructGenerator(BaseGenerator):
         support_q = dp.question.strip()
         support_code = dp.rationale.strip() if dp.rationale else ""
         return (
-            f"Question:\n{support_q}\n\n"
-            "Code:\n"
-            "```python\n"
-            f"{support_code}\n"
-            "```"
+            f"Question:\n{support_q}\n\nCode:\n```python\n{support_code}\n```"
         )
 
     def generate_new_instruction(
