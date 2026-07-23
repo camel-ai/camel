@@ -22,6 +22,14 @@ from camel.utils import Constants
 class BaseAudioModel(ABC):
     r"""Base class for audio models providing Text-to-Speech (TTS) and
     Speech-to-Text (STT) functionality.
+
+    Args:
+        api_key (Optional[str], optional): API key for the service.
+            (default: :obj:`None`)
+        url (Optional[str], optional): Base URL for the API.
+            (default: :obj:`None`)
+        timeout (Optional[float], optional): Request timeout in
+            seconds. (default: :obj:`Constants.TIMEOUT_THRESHOLD`)
     """
 
     def __init__(
