@@ -37,17 +37,18 @@ class SurrealStorage(BaseVectorStorage):
     `SurrealDB <https://surrealdb.com>`_
 
     Args:
-        url (str): WebSocket URL for connecting to SurrealDB
-            (default: "ws://localhost:8000/rpc").
-        table (str): Name of the table used for storing vectors
-            (default: "vector_store").
+        url (str): WebSocket URL for connecting to SurrealDB.
+            (default: :obj:`"ws://localhost:8000/rpc"`)
+        table (str): Name of the table used for storing vectors.
+            (default: :obj:`"vector_store"`)
         vector_dim (int): Dimensionality of the stored vectors.
         distance (VectorDistance): Distance metric used for similarity
-            comparisons (default: VectorDistance.COSINE).
-        namespace (str): SurrealDB namespace to use (default: "default").
-        database (str): SurrealDB database name (default: "demo").
-        user (str): Username for authentication (default: "root").
-        password (str): Password for authentication (default: "root").
+            comparisons. (default: :obj:`VectorDistance.COSINE`)
+        namespace (str): SurrealDB namespace to use.
+            (default: :obj:`"default"`)
+        database (str): SurrealDB database name. (default: :obj:`"demo"`)
+        user (str): Username for authentication. (default: :obj:`"root"`)
+        password (str): Password for authentication. (default: :obj:`"root"`)
 
     Notes:
         - SurrealDB supports flexible schema and powerful querying capabilities
@@ -73,27 +74,7 @@ class SurrealStorage(BaseVectorStorage):
         user: str = "root",
         password: str = "root",
     ) -> None:
-        r"""Initialize SurrealStorage with connection settings and ensure
-        the target table exists.
-
-        Args:
-            url (str): WebSocket URL for connecting to SurrealDB.
-                (default: :obj:`"ws://localhost:8000/rpc"`)
-            table (str): Name of the table used for vector storage.
-                (default: :obj:`"vector_store"`)
-            vector_dim (int): Dimensionality of the stored vectors.
-                (default: :obj:`786`)
-            distance (VectorDistance): Distance metric for similarity
-                searches. (default: :obj:`VectorDistance.COSINE`)
-            namespace (str): SurrealDB namespace to use.
-                (default: :obj:`"default"`)
-            database (str): SurrealDB database name.
-                (default: :obj:`"demo"`)
-            user (str): Username for authentication.
-                (default: :obj:`"root"`)
-            password (str): Password for authentication.
-                (default: :obj:`"root"`)
-        """
+        r"""Initialize SurrealStorage with connection settings."""
 
         from surrealdb import Surreal
 
@@ -156,6 +137,9 @@ class SurrealStorage(BaseVectorStorage):
 
         Documentation: https://surrealdb.com/docs/surrealdb/reference-guide/
         vector-search#vector-search-cheat-sheet
+
+        Raises:
+            ValueError: If unsupported distance metric or table creation fails.
         """
         if self.distance.value not in ["cosine", "euclidean", "manhattan"]:
             raise ValueError(
@@ -187,6 +171,10 @@ class SurrealStorage(BaseVectorStorage):
     def _check_and_create_table(self):
         r"""Check if the table exists and matches the expected vector
         dimension. If not, create a new table.
+
+        Raises:
+            ValueError: If existing table dimension does not match expected
+                dimension.
         """
         if self._table_exists():
             in_dim = self._get_table_info()["dim"]
@@ -209,6 +197,9 @@ class SurrealStorage(BaseVectorStorage):
 
         Returns:
             List[Dict]: Transformed list of dicts ready for insertion.
+
+        Raises:
+            ValueError: If vector dimension mismatch occurs.
         """
         validate_data = []
         for record in records:
@@ -236,6 +227,7 @@ class SurrealStorage(BaseVectorStorage):
         Args:
             query (VectorDBQuery): Query containing the query vector
                 and top_k value.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             List[VectorDBQueryResult]: Ranked list of matching records
@@ -276,7 +268,14 @@ class SurrealStorage(BaseVectorStorage):
         return results
 
     def _distance_to_similarity(self, distance: float) -> float:
-        r"""Convert a SurrealDB distance value to high-is-better similarity."""
+        r"""Convert a SurrealDB distance value to high-is-better similarity.
+
+        Args:
+            distance (float): The distance value returned by SurrealDB.
+
+        Returns:
+            float: The similarity score.
+        """
         distance = max(0.0, distance)
         if self.distance == VectorDistance.COSINE:
             return max(0.0, min(1.0, 1.0 - distance))
@@ -287,6 +286,10 @@ class SurrealStorage(BaseVectorStorage):
 
         Args:
             records (List[VectorRecord]): List of vector records to add.
+            **kwargs (Any): Additional keyword arguments.
+
+        Raises:
+            Exception: If adding records fails.
         """
         logger.info(
             "Adding %d records to table '%s'.", len(records), self.table
@@ -318,6 +321,11 @@ class SurrealStorage(BaseVectorStorage):
         Args:
             ids (Optional[List[str]]): List of record IDs to delete.
             if_all (bool): Whether to delete all records in the table.
+            **kwargs (Any): Additional keyword arguments.
+
+        Raises:
+            ValueError: If neither ids nor if_all=True is provided.
+            RuntimeError: If deleting records fails.
         """
         from surrealdb.data.types.record_id import RecordID
 
@@ -347,6 +355,9 @@ class SurrealStorage(BaseVectorStorage):
 
         Returns:
             VectorDBStatus: Object containing vector table metadata.
+
+        Raises:
+            ValueError: If vector dimension or count is None.
         """
         status = self._get_table_info()
 
@@ -367,11 +378,20 @@ class SurrealStorage(BaseVectorStorage):
         self._create_table()
 
     def load(self) -> None:
-        r"""Load the collection hosted on cloud service."""
+        r"""Load the collection hosted on cloud service.
+
+        Raises:
+            NotImplementedError: Always raised as SurrealDB does not support
+                loading.
+        """
         # SurrealDB doesn't require explicit loading
         raise NotImplementedError("SurrealDB does not support loading")
 
     @property
     def client(self) -> Any:
-        r"""Provides access to the underlying SurrealDB client."""
+        r"""Provides access to the underlying SurrealDB client.
+
+        Returns:
+            Any: The underlying SurrealDB client instance.
+        """
         return self._surreal_client
