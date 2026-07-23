@@ -18,7 +18,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -36,6 +36,7 @@ class NetworkXToolkit(BaseToolkit):
             cls._nx = networkx
         return cls._nx
 
+    @dependencies_required('networkx')
     def __init__(
         self,
         timeout: Optional[float] = None,

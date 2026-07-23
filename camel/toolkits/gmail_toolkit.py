@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -1279,6 +1279,13 @@ class GmailToolkit(BaseToolkit):
         except Exception as e:
             raise ValueError(f"Failed to build People service: {e}") from e
 
+    @dependencies_required(
+        'googleapiclient',
+        'google_auth_oauthlib',
+        'google.auth',
+        'google.oauth2',
+        'dotenv',
+    )
     def _authenticate(self):
         r"""Authenticate with Google APIs using OAuth2.
 
