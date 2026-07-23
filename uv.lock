@@ -970,6 +970,7 @@ all = [
     { name = "ibm-watsonx-ai", version = "1.5.14", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "imageio", extra = ["pyav"] },
     { name = "ipykernel" },
+    { name = "islo" },
     { name = "jupyter-client" },
     { name = "langfuse" },
     { name = "linkup-sdk" },
@@ -1129,6 +1130,7 @@ dev-tools = [
     { name = "docker" },
     { name = "e2b-code-interpreter" },
     { name = "ipykernel" },
+    { name = "islo" },
     { name = "jupyter-client" },
     { name = "langfuse" },
     { name = "mcp" },
@@ -1530,6 +1532,8 @@ requires-dist = [
     { name = "imageio", extras = ["pyav"], marker = "extra == 'owl'", specifier = ">=2.34.2,<3" },
     { name = "ipykernel", marker = "extra == 'all'", specifier = ">=6.0.0,<7" },
     { name = "ipykernel", marker = "extra == 'dev-tools'", specifier = ">=6.0.0,<7" },
+    { name = "islo", marker = "extra == 'all'", specifier = ">=0.3.11,<0.4" },
+    { name = "islo", marker = "extra == 'dev-tools'", specifier = ">=0.3.11,<0.4" },
     { name = "jsonschema", specifier = ">=4,<5" },
     { name = "jupyter-client", marker = "extra == 'all'", specifier = ">=8.6.2,<9" },
     { name = "jupyter-client", marker = "extra == 'dev-tools'", specifier = ">=8.6.2,<9" },
@@ -4722,6 +4726,20 @@ wheels = [
 ]
 
 [[package]]
+name = "islo"
+version = "0.3.11"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8d/2a/8a1fc0d5a056deda8a54a47ddb62a0f75fff7fd341f7f1542f7587b2d4cc/islo-0.3.11.tar.gz", hash = "sha256:7eda29022686429f6308c1ffa71da6d3747d3594935bb8941184be3d1587119c", size = 111539, upload-time = "2026-07-12T14:39:02.85Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/eb/f9/b162c490115383fe83409c2cecb86b6a731a82dc079b9aace85505b3f759/islo-0.3.11-py3-none-any.whl", hash = "sha256:fbfd3ea7048d0cf820ed33897d6556edff38eed8598ef0b89d61ee803ed5d3a3", size = 258479, upload-time = "2026-07-12T14:39:01.348Z" },
+]
+
+[[package]]
 name = "isodate"
 version = "0.7.2"
 source = { registry = "https://pypi.org/simple" }
@@ -7755,7 +7773,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess", marker = "python_full_version < '3.13' or sys_platform != 'win32'" },
+    { name = "ptyprocess", marker = "sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [

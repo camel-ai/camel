@@ -1,0 +1,203 @@
+<a id="camel.interpreters.islo_interpreter"></a>
+
+<a id="camel.interpreters.islo_interpreter.IsloInterpreter"></a>
+
+## IsloInterpreter
+
+```python
+class IsloInterpreter(BaseInterpreter):
+```
+
+Islo Code Interpreter implementation.
+
+This interpreter executes code in an isolated cloud sandbox provided
+by islo.dev (https://docs.islo.dev), using the official `islo`
+Python SDK. The sandbox is created lazily on the first execution and
+can optionally be deleted when the interpreter is cleaned up.
+
+**Parameters:**
+
+- **require_confirm** (bool, optional): If True, prompt user before running code strings for security. (default: :obj:`True`)
+- **api_key** (Optional[str], optional): API key for the Islo service. If not provided, the ISLO_API_KEY environment variable will be used. (default: :obj:`None`)
+- **sandbox_name** (Optional[str], optional): Name of an existing sandbox to attach to. If not provided, a new sandbox with a generated name is created on first use. (default: :obj:`None`)
+- **image** (str, optional): Container image used when creating a new sandbox. (default: :obj:`"ghcr.io/islo-labs/islo-runner:latest"`)
+- **workdir** (Optional[str], optional): Working directory for command execution inside the sandbox. (default: :obj:`None`)
+- **user** (Optional[str], optional): User to run commands as inside the sandbox. If not provided, uses the image default. (default: :obj:`None`)
+- **vcpus** (Optional[int], optional): Number of vCPUs for a newly created sandbox. (default: :obj:`None`)
+- **memory_mb** (Optional[int], optional): Memory in MB for a newly created sandbox. (default: :obj:`None`)
+- **disk_gb** (Optional[int], optional): Disk size in GB for a newly created sandbox. (default: :obj:`None`)
+- **exec_timeout** (int, optional): Timeout in seconds for a single code or command execution. (default: :obj:`60`)
+- **poll_interval** (float, optional): Interval in seconds between polls while waiting for sandbox startup or execution results. (default: :obj:`1.0`)
+- **startup_timeout** (int, optional): Timeout in seconds to wait for the sandbox to reach the running state. (default: :obj:`120`)
+- **delete_on_exit** (Optional[bool], optional): Whether to delete the sandbox on cleanup. If :obj:`None`, defaults to :obj:`True` when the interpreter created the sandbox and :obj:`False` when attached to an existing one via `sandbox_name`. (default: :obj:`None`) Environment Variables:
+- **ISLO_API_KEY**: The API key for authenticating with the Islo service. Create one with the Islo CLI: islo api-key create camel --expires 90 --show.
+
+<a id="camel.interpreters.islo_interpreter.IsloInterpreter.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    require_confirm: bool = True,
+    api_key: Optional[str] = None,
+    sandbox_name: Optional[str] = None,
+    image: str = 'ghcr.io/islo-labs/islo-runner:latest',
+    workdir: Optional[str] = None,
+    user: Optional[str] = None,
+    vcpus: Optional[int] = None,
+    memory_mb: Optional[int] = None,
+    disk_gb: Optional[int] = None,
+    exec_timeout: int = 60,
+    poll_interval: float = 1.0,
+    startup_timeout: int = 120,
+    delete_on_exit: Optional[bool] = None
+):
+```
+
+<a id="camel.interpreters.islo_interpreter.IsloInterpreter.run"></a>
+
+### run
+
+```python
+def run(self, code: str, code_type: str = 'python'):
+```
+
+Executes the given code in the Islo sandbox.
+
+**Parameters:**
+
+- **code** (str): The code string to execute.
+- **code_type** (str): The type of code to execute (e.g., 'python', 'bash', 'javascript'). (default: obj:`python`)
+
+**Returns:**
+
+  str: The string representation of the output of the executed
+code.
+
+<a id="camel.interpreters.islo_interpreter.IsloInterpreter.supported_code_types"></a>
+
+### supported_code_types
+
+```python
+def supported_code_types(self):
+```
+
+Provides supported code types by the interpreter.
+
+<a id="camel.interpreters.islo_interpreter.IsloInterpreter.update_action_space"></a>
+
+### update_action_space
+
+```python
+def update_action_space(self, action_space: Dict[str, Any]):
+```
+
+Updates action space for *python* interpreter
+
+<a id="camel.interpreters.islo_interpreter.IsloInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Execute a command can be used to resolve the dependency of the
+code.
+
+**Parameters:**
+
+- **command** (str): The command to execute.
+
+**Returns:**
+
+  str: The output of the command.
+
+<a id="camel.interpreters.islo_interpreter.IsloInterpreter.cleanup"></a>
+
+### cleanup
+
+```python
+def cleanup(self):
+```
+
+Deletes the sandbox if the interpreter is responsible for it.
+
+The sandbox is deleted only when it has been created (or
+attached) and `delete_on_exit` is :obj:`True`.
+
+<a id="camel.interpreters.islo_interpreter.IsloInterpreter.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+Destructor for the IsloInterpreter class.
+
+This method ensures that the Islo sandbox is deleted when the
+interpreter is garbage collected, if the interpreter owns it.
+
+<a id="camel.interpreters.islo_interpreter.IsloInterpreter._ensure_sandbox"></a>
+
+### _ensure_sandbox
+
+```python
+def _ensure_sandbox(self):
+```
+
+<a id="camel.interpreters.islo_interpreter.IsloInterpreter._wait_for_running"></a>
+
+### _wait_for_running
+
+```python
+def _wait_for_running(self, name: str):
+```
+
+Polls the sandbox until it reaches the running state.
+
+**Parameters:**
+
+- **name** (str): The name of the sandbox to wait for.
+
+<a id="camel.interpreters.islo_interpreter.IsloInterpreter._exec_blocking"></a>
+
+### _exec_blocking
+
+```python
+def _exec_blocking(self, command: List[str]):
+```
+
+Starts a command in the sandbox and polls for its result.
+
+The Islo exec API is asynchronous: `exec_in_sandbox` returns an
+exec ID, and the result is polled via `get_exec_result` until
+the execution reaches a terminal status.
+
+**Parameters:**
+
+- **command** (List[str]): The command (argv) to execute.
+
+**Returns:**
+
+  ExecResultResponse: The terminal execution result.
+
+<a id="camel.interpreters.islo_interpreter.IsloInterpreter._format_output"></a>
+
+### _format_output
+
+```python
+def _format_output(self, result: 'ExecResultResponse'):
+```
+
+Formats a terminal execution result into a string.
+
+**Parameters:**
+
+- **result** (ExecResultResponse): The terminal execution result.
+
+**Returns:**
+
+  str: The formatted output.

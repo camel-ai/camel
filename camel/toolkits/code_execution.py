@@ -17,6 +17,7 @@ from camel.interpreters import (
     DockerInterpreter,
     E2BInterpreter,
     InternalPythonInterpreter,
+    IsloInterpreter,
     JupyterKernelInterpreter,
     MicrosandboxInterpreter,
     SubprocessInterpreter,
@@ -51,6 +52,11 @@ class CodeExecutionToolkit(BaseToolkit):
             interpreter. Available keys: 'server_url', 'api_key',
             'namespace', 'sandbox_name', 'timeout'.
             If None, uses default configuration. (default: :obj:`None`)
+        islo_config (Optional[dict]): Configuration for the Islo
+            interpreter. Available keys: 'sandbox_name', 'image',
+            'workdir', 'user', 'exec_timeout', 'vcpus', 'memory_mb',
+            'disk_gb', 'delete_on_exit'.
+            If None, uses default configuration. (default: :obj:`None`)
     """
 
     def __init__(
@@ -62,6 +68,7 @@ class CodeExecutionToolkit(BaseToolkit):
             "subprocess",
             "e2b",
             "microsandbox",
+            "islo",
         ] = "subprocess",
         verbose: bool = False,
         unsafe_mode: bool = False,
@@ -70,6 +77,8 @@ class CodeExecutionToolkit(BaseToolkit):
         timeout: Optional[float] = None,
         # Microsandbox configuration dictionary
         microsandbox_config: Optional[dict] = None,
+        # Islo configuration dictionary
+        islo_config: Optional[dict] = None,
     ) -> None:
         super().__init__(timeout=timeout)
         self.verbose = verbose
@@ -90,6 +99,7 @@ class CodeExecutionToolkit(BaseToolkit):
             SubprocessInterpreter,
             E2BInterpreter,
             MicrosandboxInterpreter,
+            IsloInterpreter,
         ]
 
         if sandbox == "internal_python":
@@ -131,6 +141,24 @@ class CodeExecutionToolkit(BaseToolkit):
                 namespace=config.get("namespace", "default"),
                 sandbox_name=config.get("sandbox_name"),
                 timeout=config.get("timeout", 30),
+            )
+        elif sandbox == "islo":
+            # Extract parameters with proper types for islo
+            config = islo_config or {}
+
+            self.interpreter = IsloInterpreter(
+                require_confirm=resolved_require_confirm,
+                sandbox_name=config.get("sandbox_name"),
+                image=config.get(
+                    "image", "ghcr.io/islo-labs/islo-runner:latest"
+                ),
+                workdir=config.get("workdir"),
+                user=config.get("user"),
+                vcpus=config.get("vcpus"),
+                memory_mb=config.get("memory_mb"),
+                disk_gb=config.get("disk_gb"),
+                exec_timeout=config.get("exec_timeout", 60),
+                delete_on_exit=config.get("delete_on_exit"),
             )
         else:
             raise RuntimeError(
