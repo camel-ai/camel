@@ -1,0 +1,4 @@
+camel-ai[all]==0.2.62
+python-dotenv==1.1.0
+yfinance==0.2.63
+plotly==6.1.2
