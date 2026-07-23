@@ -71,6 +71,7 @@ class SGLangConfig(BaseConfig):
     stream: Optional[bool] = None
     max_tokens: Optional[int] = None
     tools: Optional[Union[List[Dict[str, Any]]]] = None
+    response_format: Optional[Dict[str, Any]] = None
 
 
 SGLANG_API_PARAMS = {param for param in SGLangConfig.model_fields.keys()}
