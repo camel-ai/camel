@@ -3515,6 +3515,41 @@ class ChatAgent(BaseAgent):
         )
         tracker["total_tokens"] += usage_dict.get("total_tokens") or 0
 
+    def _apply_stream_usage_snapshot(
+        self,
+        request_token_usage: Dict[str, int],
+        step_token_usage: Dict[str, int],
+        usage_dict: Dict[str, Any],
+    ) -> None:
+        r"""Applies a streamed chunk's usage as the request's running
+        total, not an additional delta.
+
+        A `usage` field on a `ChatCompletionChunk` reports the cumulative
+        total for the whole request so far, the same as the `usage` on a
+        non-streamed completion. Most backends attach it once, on the
+        final chunk, so accumulating it works by accident. Some
+        OpenAI-compatible backends attach it to more than one chunk in the
+        same stream (running estimates, heartbeats); accumulating each of
+        those into the tracker sums the same cumulative total several
+        times over. This replaces request_token_usage with the latest
+        snapshot and folds only the resulting delta into step_token_usage,
+        so a request contributes its usage exactly once regardless of how
+        many usage-bearing chunks it emits.
+
+        Args:
+            request_token_usage (Dict[str, int]): The tracker for the
+                current streamed request; reset to the latest snapshot.
+            step_token_usage (Dict[str, int]): The tracker for the whole
+                step, accumulated across requests; advanced by the delta.
+            usage_dict (Dict[str, Any]): The usage dict from the chunk
+                that triggered this update.
+        """
+        for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+            new_value = usage_dict.get(key) or 0
+            delta = new_value - request_token_usage[key]
+            request_token_usage[key] = new_value
+            step_token_usage[key] += delta
+
     def _emit_request_usage(
         self,
         usage_dict: Dict[str, Any],
@@ -4803,13 +4838,15 @@ class ChatAgent(BaseAgent):
                         self.record_message(final_message)
             if chunk.usage:
                 # Handle final usage chunk, whether or not choices are present.
-                # This happens when stream_options={"include_usage": True}
-                # Update the final usage from this chunk
-                self._update_token_usage_tracker(
-                    request_token_usage, safe_model_dump(chunk.usage)
-                )
-                self._update_token_usage_tracker(
-                    step_token_usage, safe_model_dump(chunk.usage)
+                # This happens when stream_options={"include_usage": True}.
+                # chunk.usage is the request's running total, not a delta:
+                # snapshot it instead of accumulating, so a stream that
+                # attaches usage to more than one chunk does not count the
+                # same total several times over.
+                self._apply_stream_usage_snapshot(
+                    request_token_usage,
+                    step_token_usage,
+                    safe_model_dump(chunk.usage),
                 )
 
                 # Create final response with final usage
@@ -5933,13 +5970,15 @@ class ChatAgent(BaseAgent):
                         self.record_message(final_message)
             if chunk.usage:
                 # Handle final usage chunk, whether or not choices are present.
-                # This happens when stream_options={"include_usage": True}
-                # Update the final usage from this chunk
-                self._update_token_usage_tracker(
-                    request_token_usage, safe_model_dump(chunk.usage)
-                )
-                self._update_token_usage_tracker(
-                    step_token_usage, safe_model_dump(chunk.usage)
+                # This happens when stream_options={"include_usage": True}.
+                # chunk.usage is the request's running total, not a delta:
+                # snapshot it instead of accumulating, so a stream that
+                # attaches usage to more than one chunk does not count the
+                # same total several times over.
+                self._apply_stream_usage_snapshot(
+                    request_token_usage,
+                    step_token_usage,
+                    safe_model_dump(chunk.usage),
                 )
 
                 # Create final response with final usage

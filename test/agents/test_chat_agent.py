@@ -1012,6 +1012,168 @@ async def test_chat_agent_async_stream_on_request_usage_callback():
 
 
 @pytest.mark.model_backend
+def test_chat_agent_stream_usage_not_double_counted_across_usage_chunks():
+    r"""A running usage estimate attached to a mid-stream chunk (no
+    finish_reason yet) followed by the true final usage chunk must not
+    have both counted into the tracked totals: the tracker should reflect
+    the last chunk's usage, not the sum of every usage-bearing chunk."""
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+
+    chunks = [
+        ChatCompletionChunk(
+            id="mock_stream_running_usage_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="Hello", role="assistant"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            # Running/partial usage estimate on a non-final chunk, as
+            # some OpenAI-compatible backends emit.
+            usage={
+                "prompt_tokens": 10,
+                "completion_tokens": 1,
+                "total_tokens": 11,
+            },
+        ),
+        ChatCompletionChunk(
+            id="mock_stream_running_usage_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content=" world"),
+                    index=0,
+                    finish_reason="stop",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "prompt_tokens": 10,
+                "completion_tokens": 3,
+                "total_tokens": 13,
+            },
+        ),
+    ]
+
+    def mock_stream():
+        for chunk in chunks:
+            yield chunk
+
+    model.run = MagicMock(return_value=mock_stream())
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+    )
+
+    responses = list(agent.step("Say hello"))
+    assert len(responses) > 0
+    final_usage = responses[-1].info["usage"]
+    assert final_usage["total_tokens"] == 13
+    assert final_usage["prompt_tokens"] == 10
+    assert final_usage["completion_tokens"] == 3
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_usage_not_double_counted_across_usage_chunks():  # noqa: E501
+    r"""Async twin of the sync running-usage-chunk regression above."""
+    from typing import AsyncGenerator
+
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+
+    chunks = [
+        ChatCompletionChunk(
+            id="mock_async_stream_running_usage_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="Hello", role="assistant"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "prompt_tokens": 11,
+                "completion_tokens": 1,
+                "total_tokens": 12,
+            },
+        ),
+        ChatCompletionChunk(
+            id="mock_async_stream_running_usage_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content=" world"),
+                    index=0,
+                    finish_reason="stop",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "prompt_tokens": 11,
+                "completion_tokens": 4,
+                "total_tokens": 15,
+            },
+        ),
+    ]
+
+    async def mock_async_stream() -> AsyncGenerator[ChatCompletionChunk, None]:
+        for chunk in chunks:
+            yield chunk
+
+    model.arun = AsyncMock(return_value=mock_async_stream())
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+    )
+
+    responses = []
+    streaming_response = await agent.astep("Say hello")
+    async for response in streaming_response:
+        responses.append(response)
+
+    assert len(responses) > 0
+    final_usage = responses[-1].info["usage"]
+    assert final_usage["total_tokens"] == 15
+    assert final_usage["prompt_tokens"] == 11
+    assert final_usage["completion_tokens"] == 4
+
+
+@pytest.mark.model_backend
 def test_chat_agent_messages_window():
     system_msg = BaseMessage(
         role_name="assistant",
