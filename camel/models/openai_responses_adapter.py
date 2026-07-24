@@ -48,6 +48,37 @@ def _get(value: Any, key: str, default: Any = None) -> Any:
     return getattr(value, key, default)
 
 
+# Responses API `incomplete_details.reason` -> Chat Completions
+# `finish_reason`. A response truncated at `max_output_tokens` (status ==
+# "incomplete") is reported by the Chat Completions contract as "length"; a
+# moderation stop is "content_filter".
+_INCOMPLETE_REASON_TO_FINISH_REASON = {
+    "max_output_tokens": "length",
+    "content_filter": "content_filter",
+}
+
+
+def _finish_reason_from_response(
+    response: Any, *, has_tool_calls: bool
+) -> str:
+    r"""Map a Responses API response's terminal status to an OpenAI Chat
+    Completions ``finish_reason``.
+
+    A response truncated at ``max_output_tokens`` carries
+    ``status == "incomplete"`` and ``incomplete_details.reason ==
+    "max_output_tokens"``, which the Chat Completions contract reports as
+    ``"length"``. Any other terminal response is ``"tool_calls"`` when it
+    emitted tool calls, otherwise ``"stop"`` (the prior behavior).
+    """
+    status = _get(response, "status")
+    if status in ("incomplete", "failed"):
+        reason = _get(_get(response, "incomplete_details"), "reason")
+        mapped = _INCOMPLETE_REASON_TO_FINISH_REASON.get(reason)
+        if mapped is not None:
+            return mapped
+    return "tool_calls" if has_tool_calls else "stop"
+
+
 def _usage_to_openai(usage: Any) -> Optional[Dict[str, int]]:
     if not usage:
         return None
@@ -232,14 +263,20 @@ def _process_response_stream_event(
             )
         ]
 
-    if event_type == "response.completed":
+    if event_type in (
+        "response.completed",
+        "response.incomplete",
+        "response.failed",
+    ):
         resp = _get(event, "response")
         if resp:
             state.response_id = _get(resp, "id", state.response_id)
             state.usage = _usage_to_openai(_get(resp, "usage"))
         if on_response_completed is not None and state.response_id:
             on_response_completed(state.response_id)
-        finish_reason = "tool_calls" if state.has_tool_call else "stop"
+        finish_reason = _finish_reason_from_response(
+            resp, has_tool_calls=state.has_tool_call
+        )
         state.has_finish_reason = True
         return [
             _build_chat_completion_chunk(
@@ -270,7 +307,9 @@ def response_to_chat_completion(
         elif item_type == "function_call":
             tool_calls.append(_extract_tool_call(item))
 
-    finish_reason = "tool_calls" if tool_calls else "stop"
+    finish_reason = _finish_reason_from_response(
+        response, has_tool_calls=bool(tool_calls)
+    )
     message: Dict[str, Any] = {"role": "assistant", "content": content}
     if tool_calls:
         message["tool_calls"] = tool_calls
