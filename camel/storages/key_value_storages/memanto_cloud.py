@@ -53,9 +53,10 @@ class MemantoStorage(BaseKeyValueStorage):
             "MEMANTO_AGENT_ID", "default_agent"
         )
         self.api_key = api_key or os.getenv("MEMANTO_API_KEY")
-        self.base_url = (  # type: ignore[union-attr]
+        raw_url = (  # type: ignore[union-attr]
             base_url or os.getenv("MEMANTO_BASE_URL", "http://localhost:8000")
-        ).rstrip('/')
+        )
+        self.base_url = raw_url.rstrip('/')  # type: ignore[union-attr]
 
         # Initialize Memanto client SDK
         self.client = Memanto(
