@@ -344,6 +344,39 @@ def test_workforce_initialization(mock_model, share_memory):
     assert workforce.graceful_shutdown_timeout == 2.0
 
 
+def test_resume_from_task_requeues_tasks_moved_back(mock_model):
+    r"""Tasks ahead of the resume target must stay tracked in
+    _pending_tasks, not vanish from both _pending_tasks and
+    _completed_tasks."""
+    from camel.societies.workforce.workforce import WorkforceState
+
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.", model=mock_model
+    )
+    task_agent = ChatAgent("You are a helpful task planner.", model=mock_model)
+
+    workforce = Workforce(
+        description="Resume Test",
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
+    )
+    workforce._state = WorkforceState.PAUSED
+
+    task_done = Task(content="first", id="1", state=TaskState.DONE)
+    task_target = Task(content="second", id="2", state=TaskState.OPEN)
+    task_after = Task(content="third", id="3", state=TaskState.OPEN)
+    workforce._pending_tasks = deque([task_done, task_target, task_after])
+
+    assert workforce.resume_from_task("2") is True
+
+    pending_ids = [task.id for task in workforce._pending_tasks]
+    completed_ids = [task.id for task in workforce._completed_tasks]
+    assert pending_ids == ["1", "2", "3"]
+    assert completed_ids == []
+    assert task_done.state == TaskState.FAILED
+    assert task_done.result is None
+
+
 def test_shared_memory_operations(
     mock_model, mock_agent, sample_shared_memory
 ):

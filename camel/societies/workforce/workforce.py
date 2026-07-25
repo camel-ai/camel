@@ -2520,17 +2520,13 @@ class Workforce(BaseNode):
             logger.warning(f"Task {task_id} not found in pending tasks.")
             return False
 
-        # Move completed tasks that come after the target task back to pending
+        # Tasks that were ahead of the target task get reset and re-queued
+        # alongside it, rather than being dropped from tracking entirely.
         tasks_to_move_back = tasks_list[:target_index]
         remaining_tasks = tasks_list[target_index:]
 
-        # Update pending tasks to start from the target task
-        self._pending_tasks = deque(remaining_tasks)
-
-        # Move previously "completed" tasks that are after target back to
-        # pending and reset their state
+        # Reset state for tasks being moved back to pending
         if tasks_to_move_back:
-            # Reset state for tasks being moved back to pending
             for task in tasks_to_move_back:
                 # Handle all possible task states
                 if task.state in [TaskState.DONE, TaskState.OPEN]:
@@ -2544,6 +2540,11 @@ class Workforce(BaseNode):
                 f"Moving {len(tasks_to_move_back)} tasks back to pending "
                 f"state."
             )
+
+        # Re-queue every task in its original order (moved-back tasks
+        # ahead of the target) so none of them is dropped from both
+        # _pending_tasks and _completed_tasks.
+        self._pending_tasks = deque(tasks_to_move_back + remaining_tasks)
 
         logger.info(f"Ready to resume from task: {task_id}")
         return True
