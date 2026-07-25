@@ -24,6 +24,16 @@ from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
 
 
+_UNSAFE_ATTRIBUTES = frozenset({
+    "__class__", "__bases__", "__subclasses__", "__mro__",
+    "__init__", "__globals__", "__builtins__", "__code__",
+    "__reduce__", "__reduce_ex__", "__dict__",
+    "__func__", "__self__", "__wrapped__",
+    "gi_frame", "gi_code", "f_globals", "f_locals", "f_builtins",
+    "co_consts", "co_names", "cr_frame", "ag_frame",
+})
+
+
 class InternalPythonInterpreter(BaseInterpreter):
     r"""A customized python interpreter to control the execution of
     LLM-generated codes. The interpreter makes sure the code can only execute
@@ -301,6 +311,10 @@ class InternalPythonInterpreter(BaseInterpreter):
             # and return the new value
             return self._execute_augassign(expression)
         elif isinstance(expression, ast.Attribute):
+            if expression.attr in _UNSAFE_ATTRIBUTES:
+                raise InterpreterError(
+                    f"Access to '{expression.attr}' is not allowed."
+                )
             value = self._execute_ast(expression.value)
             return getattr(value, expression.attr)
         elif isinstance(expression, ast.BinOp):
