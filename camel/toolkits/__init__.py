@@ -22,6 +22,7 @@ from .function_tool import (
 from .open_api_specs.security_config import openapi_security_config
 
 from .math_toolkit import MathToolkit
+from .memanto_toolkit import MemantoToolkit
 from .search_toolkit import SearchToolkit
 from .weather_toolkit import WeatherToolkit
 from .image_generation_toolkit import ImageGenToolkit, OpenAIImageToolkit
@@ -151,6 +152,7 @@ __all__ = [
     'MCPToolkit',
     'MarkItDownToolkit',
     'MathToolkit',
+    'MemantoToolkit',
     'MemoryToolkit',
     'MeshyToolkit',
     'MinerUToolkit',
