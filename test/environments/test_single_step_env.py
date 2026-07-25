@@ -15,7 +15,7 @@ import re
 from typing import Dict, List
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.datasets import BaseGenerator, DataPoint, StaticDataset
 from camel.environments import (

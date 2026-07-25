@@ -12,6 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
+
+import pytest  # type: ignore[import-not-found]
+
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.data_collectors import ShareGPTDataCollector
@@ -20,7 +24,17 @@ from camel.models import ModelFactory
 from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType
 
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
+)
 
+
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_sharegpt_converter():
     tool_list = MathToolkit().get_tools()
 
@@ -57,6 +71,10 @@ def test_sharegpt_converter():
     assert len(resp["conversations"]) in {3, 4}
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_sharegpt_llm_converter():
     tool_list = MathToolkit().get_tools()
 

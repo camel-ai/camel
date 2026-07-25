@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.configs import (
     AnthropicConfig,
@@ -29,6 +29,12 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils import (
     AnthropicTokenCounter,
     OpenAITokenCounter,
+)
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
 )
 
 parametrize = pytest.mark.parametrize(
@@ -126,6 +132,10 @@ parameterize_token_counter = pytest.mark.parametrize(
 )
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 @parametrize
 def test_model_factory(model_platform, model_type):
     model_config_dict = ChatGPTConfig().as_dict()

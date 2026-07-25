@@ -11,31 +11,55 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from mock import patch
+import os
+
+import pytest  # type: ignore[import-not-found]
+from mock import patch  # type: ignore[import-not-found]
 
 import examples.role_description.role_generation
 import examples.role_description.role_playing_with_role_description
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
-model_gpt = ModelFactory.create(
-    ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
-)
-
-model_stub = ModelFactory.create(
-    ModelPlatformType.OPENAI,
-    model_type=ModelType.STUB,
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
 )
 
 
+def _make_gpt_model():
+    return ModelFactory.create(
+        ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O,
+    )
+
+
+def _make_stub_model():
+    return ModelFactory.create(
+        ModelPlatformType.OPENAI,
+        model_type=ModelType.STUB,
+    )
+
+
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_role_generation_example():
-    with patch('time.sleep', return_value=None):
+    model_gpt = _make_gpt_model()
+    with patch("time.sleep", return_value=None):
         examples.role_description.role_generation.main(model_gpt)
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_role_playing_with_role_description_example():
-    with patch('time.sleep', return_value=None):
+    model_gpt = _make_gpt_model()
+    model_stub = _make_stub_model()
+    with patch("time.sleep", return_value=None):
         examples.role_description.role_playing_with_role_description.main(
             model_gpt, model_stub, chat_turn_limit=2
         )

@@ -21,7 +21,10 @@ from camel.interpreters.interpreter_error import InterpreterError
 from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
-    from jupyter_client import BlockingKernelClient, KernelManager
+    from jupyter_client import (  # type: ignore[import-not-found]
+        BlockingKernelClient,
+        KernelManager,
+    )
 
 TIMEOUT = 30
 
@@ -70,7 +73,9 @@ class JupyterKernelInterpreter(BaseInterpreter):
         if self.kernel_manager is not None:
             return
 
-        from jupyter_client.manager import start_new_kernel
+        from jupyter_client.manager import (  # type: ignore[import-not-found]
+            start_new_kernel,  # type: ignore[import-not-found]
+        )
 
         self.kernel_manager, self.client = start_new_kernel()
 
@@ -186,5 +191,5 @@ class JupyterKernelInterpreter(BaseInterpreter):
                 does not support updating the action space.
         """
         raise RuntimeError(
-            "JupyterKernelInterpreter doesn't support " "`action_space`."
+            "JupyterKernelInterpreter doesn't support `action_space`."
         )

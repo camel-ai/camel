@@ -17,10 +17,10 @@ import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from datasets import Dataset as HFDataset
 from pydantic import ValidationError
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset  # type: ignore[import-not-found]
 
 from camel.datasets import (
     DataPoint,
@@ -606,7 +606,7 @@ def test_static_dataset_init_from_jsonl_file():
     import tempfile
     from pathlib import Path
 
-    import pytest
+    import pytest  # type: ignore[import-not-found]
 
     # **Test 1: Initialization with a valid JSONL file (only required fields)**
     with tempfile.NamedTemporaryFile(
@@ -660,8 +660,7 @@ def test_static_dataset_init_from_jsonl_file():
     ) as tmp_file:
         # Write a malformed JSON line (missing closing brace).
         tmp_file.write(
-            '{"question": "Test", "rationale": "Test",'
-            '"final_answer": "Test"\n'
+            '{"question": "Test", "rationale": "Test","final_answer": "Test"\n'
         )
         tmp_file_path = Path(tmp_file.name)
 
@@ -1539,18 +1538,18 @@ async def test_few_shot_generator_save_to_jsonl(tmp_path):
         parsed_line = json.loads(line)
         assert (
             parsed_line["question"] == expected_dp.question
-        ), f"Question mismatch at line {i+1}"
+        ), f"Question mismatch at line {i + 1}"
         assert (
             parsed_line["rationale"] == expected_dp.rationale
-        ), f"Rationale mismatch at line {i+1}"
+        ), f"Rationale mismatch at line {i + 1}"
         assert (
             parsed_line["final_answer"] == expected_dp.final_answer
-        ), f"Final answer mismatch at line {i+1}"
-        assert "metadata" in parsed_line, f"Metadata missing at line {i+1}"
+        ), f"Final answer mismatch at line {i + 1}"
+        assert "metadata" in parsed_line, f"Metadata missing at line {i + 1}"
         assert (
             parsed_line["metadata"]["created"]
             == expected_dp.metadata["created"]
-        ), f"Metadata mismatch at line {i+1}"
+        ), f"Metadata mismatch at line {i + 1}"
 
     # Test 2: Empty dataset raises ValueError
     dataset._data = []
@@ -1700,18 +1699,18 @@ async def test_few_shot_generator_flush(tmp_path):
         expected_dp = original_data[i]
         assert (
             parsed_line["question"] == expected_dp["question"]
-        ), f"Question mismatch at line {i+1}"
+        ), f"Question mismatch at line {i + 1}"
         assert (
             parsed_line["rationale"] == expected_dp["rationale"]
-        ), f"Rationale mismatch at line {i+1}"
+        ), f"Rationale mismatch at line {i + 1}"
         assert (
             parsed_line["final_answer"] == expected_dp["final_answer"]
-        ), f"Final answer mismatch at line {i+1}"
-        assert "metadata" in parsed_line, f"Metadata missing at line {i+1}"
+        ), f"Final answer mismatch at line {i + 1}"
+        assert "metadata" in parsed_line, f"Metadata missing at line {i + 1}"
         assert (
             parsed_line["metadata"]["created"]
             == expected_dp["metadata"]["created"]
-        ), f"Metadata mismatch at line {i+1}"
+        ), f"Metadata mismatch at line {i + 1}"
 
     # Verify that internal data is cleared
     assert len(dataset._data) == 0, "Internal data was not cleared after flush"

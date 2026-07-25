@@ -14,16 +14,16 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
+import pytest  # type: ignore[import]
 
-from camel.loaders.mineru_extractor import MinerU
+from camel.loaders.mineru_loader import MinerULoader
 from camel.toolkits import MinerUToolkit
 
 
 @pytest.fixture
 def mock_mineru():
     """Create a mock MinerU client with all required responses."""
-    mock = MagicMock(spec=MinerU)
+    mock = MagicMock(spec=MinerULoader)
 
     # Mock single URL extraction
     mock.extract_url.return_value = {'task_id': 'test_task'}
@@ -68,7 +68,8 @@ def mineru_toolkit(mock_mineru):
     """Create a MinerUToolkit instance with mocked client."""
     with patch.dict('os.environ', {'MINERU_API_KEY': 'fake_api_key'}):
         with patch(
-            'camel.toolkits.mineru_toolkit.MinerU', return_value=mock_mineru
+            'camel.toolkits.mineru_toolkit.MinerULoader',
+            return_value=mock_mineru,
         ):
             toolkit = MinerUToolkit()
             toolkit.client = mock_mineru

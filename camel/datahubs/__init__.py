@@ -18,6 +18,6 @@ from .models import Record
 
 __all__ = [
     "BaseDatasetManager",
-    "Record",
     "HuggingFaceDatasetManager",
+    "Record",
 ]

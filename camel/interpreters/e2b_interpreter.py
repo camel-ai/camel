@@ -177,7 +177,7 @@ class E2BInterpreter(BaseInterpreter):
                 jpeg_data = result._repr_jpeg_()
                 if jpeg_data:
                     output_parts.append(
-                        f"\n![image](data:image/jpeg;base64," f"{jpeg_data})\n"
+                        f"\n![image](data:image/jpeg;base64,{jpeg_data})\n"
                     )
                     continue
 
@@ -226,7 +226,7 @@ class E2BInterpreter(BaseInterpreter):
 
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
-        raise RuntimeError("E2B doesn't support " "`action_space`.")
+        raise RuntimeError("E2B doesn't support `action_space`.")
 
     def execute_command(self, command: str) -> str:
         r"""Execute a command can be used to resolve the dependency of the

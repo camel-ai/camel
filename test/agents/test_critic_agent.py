@@ -11,11 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-import pytest
+import os
+
+import pytest  # type: ignore[import-not-found]
 
 from camel.agents import CriticAgent
 from camel.messages import BaseMessage
 from camel.types import RoleType
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
+)
 
 
 @pytest.fixture
@@ -62,6 +69,10 @@ def test_flatten_options(critic_agent: CriticAgent):
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_get_option(critic_agent: CriticAgent):
     messages = [
         BaseMessage(
@@ -103,6 +114,10 @@ def test_parse_critic(critic_agent: CriticAgent):
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_reduce_step(critic_agent: CriticAgent):
     messages = [
         BaseMessage(

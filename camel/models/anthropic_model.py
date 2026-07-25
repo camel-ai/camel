@@ -36,12 +36,16 @@ from camel.utils import (
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse.decorators import (  # type: ignore[import-not-found]
+            observe,  # type: ignore[import-not-found]
+        )
     except ImportError:
         from camel.utils import observe
 elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
-        from traceroot import trace as observe  # type: ignore[import]
+        from traceroot import (  # type: ignore[import-not-found]
+            trace as observe,
+        )
     except ImportError:
         from camel.utils import observe
 else:
@@ -169,7 +173,10 @@ class AnthropicModel(BaseModelBackend):
         )
 
         # Initialize Anthropic clients
-        from anthropic import Anthropic, AsyncAnthropic
+        from anthropic import (  # type: ignore[import-not-found]
+            Anthropic,
+            AsyncAnthropic,
+        )
 
         if client is not None:
             self._client = client
@@ -425,7 +432,9 @@ class AnthropicModel(BaseModelBackend):
                 the system message (if any) and the list of messages in
                 Anthropic format.
         """
-        from anthropic.types import MessageParam
+        from anthropic.types import (  # type: ignore[import-not-found]
+            MessageParam,
+        )
 
         system_message = None
         anthropic_messages: List[MessageParam] = []
@@ -581,7 +590,9 @@ class AnthropicModel(BaseModelBackend):
         self, response_format: Type[BaseModel]
     ) -> Dict[str, Any]:
         r"""Build Anthropic output_config.format from a Pydantic model."""
-        from anthropic import transform_schema
+        from anthropic import (  # type: ignore[import-not-found]
+            transform_schema,
+        )
 
         schema = transform_schema(response_format.model_json_schema())
         return {
@@ -997,7 +1008,9 @@ class AnthropicModel(BaseModelBackend):
                 func = tool["function"]
                 input_schema = func.get("parameters", {})
                 if func.get("strict") is True and input_schema:
-                    from anthropic import transform_schema
+                    from anthropic import (  # type: ignore[import-not-found]
+                        transform_schema,
+                    )
 
                     input_schema = transform_schema(
                         self._normalize_type_list_for_anthropic_schema(
@@ -1406,8 +1419,8 @@ class AnthropicModel(BaseModelBackend):
         """
 
         def _generate_chunks():
-            tool_call_index: Dict[str, int] = {}
-            thinking_state: Dict[str, Any] = {}
+            tool_call_index: Dict[str, int] = {}  # type: ignore[annotation-unchecked]
+            thinking_state: Dict[str, Any] = {}  # type: ignore[annotation-unchecked]
             finish_reason_sent = False
             for chunk in stream:
                 converted = self._convert_anthropic_stream_to_openai_chunk(
@@ -1447,8 +1460,8 @@ class AnthropicModel(BaseModelBackend):
         """
 
         async def _generate_chunks():
-            tool_call_index: Dict[str, int] = {}
-            thinking_state: Dict[str, Any] = {}
+            tool_call_index: Dict[str, int] = {}  # type: ignore[annotation-unchecked]
+            thinking_state: Dict[str, Any] = {}  # type: ignore[annotation-unchecked]
             finish_reason_sent = False
             async for chunk in stream:
                 converted = self._convert_anthropic_stream_to_openai_chunk(

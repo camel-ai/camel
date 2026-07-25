@@ -11,12 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-import pytest
+import os
+
+import pytest  # type: ignore[import-not-found]
 from pydantic import BaseModel, Field
 
 from camel.models import OpenAIModel
 from camel.toolkits import FunctionTool
 from camel.types import ModelType
+
+# Check if a valid OpenAI API key is available
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
+)
 
 
 def sample_function(a, b):
@@ -25,6 +33,10 @@ def sample_function(a, b):
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or is a collection dummy key",
+)
 def test_synthesize_execution_output_with_kwargs():
     function_tool = FunctionTool(
         func=sample_function,
@@ -39,6 +51,10 @@ def test_synthesize_execution_output_with_kwargs():
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or is a collection dummy key",
+)
 def test_synthesize_execution_output_without_kwargs():
     function_tool = FunctionTool(
         func=sample_function,
@@ -60,6 +76,10 @@ class FormattedResponse(BaseModel):
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or is a collection dummy key",
+)
 def test_synthesize_execution_output_with_synthesize_output_format():
     # Assuming you have a custom response format
 
@@ -79,6 +99,10 @@ def test_synthesize_execution_output_with_synthesize_output_format():
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or is a collection dummy key",
+)
 def test_synthesize_output_with_custom_model():
     # Use a specific model by specifying model_type
     custom_model = OpenAIModel(model_type=ModelType.GPT_4O_MINI)

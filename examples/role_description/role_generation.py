@@ -35,8 +35,7 @@ def main(model=None, num_roles=3) -> None:
     print(Fore.GREEN + f"List of {num_roles} roles with description:")
     for role_name in role_description_dict.keys():
         print(
-            Fore.BLUE + f"{role_name}:\n"
-            f"{role_description_dict[role_name]}\n"
+            Fore.BLUE + f"{role_name}:\n{role_description_dict[role_name]}\n"
         )
 
 

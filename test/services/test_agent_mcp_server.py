@@ -11,24 +11,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from unittest.mock import AsyncMock, Mock, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from mcp.server.fastmcp import Context
 
-from camel.messages import BaseMessage
-from camel.responses import ChatAgentResponse
-from camel.toolkits import FunctionTool
-from services.agent_mcp.agent_config import agents_dict, description_dict
-from services.agent_mcp.agent_mcp_server import (
-    get_agent_info,
-    get_agents_info,
-    get_available_tools,
-    get_chat_history,
-    reset,
-    set_output_language,
-    step,
+MISSING_DEEPSEEK_KEY = (
+    "DEEPSEEK_API_KEY" not in os.environ
+    or not os.environ.get("DEEPSEEK_API_KEY")
+    or os.environ.get("DEEPSEEK_API_KEY", "").startswith("dummy")
 )
+
+pytestmark = pytest.mark.skipif(
+    MISSING_DEEPSEEK_KEY,
+    reason="DEEPSEEK_API_KEY missing or dummy key",
+)
+
+try:
+    from camel.messages import BaseMessage
+    from camel.responses import ChatAgentResponse
+    from camel.toolkits import FunctionTool
+    from services.agent_mcp.agent_config import agents_dict, description_dict
+    from services.agent_mcp.agent_mcp_server import (
+        get_agent_info,
+        get_agents_info,
+        get_available_tools,
+        get_chat_history,
+        reset,
+        set_output_language,
+        step,
+    )
+except ValueError:
+    pass
 
 
 @pytest.fixture

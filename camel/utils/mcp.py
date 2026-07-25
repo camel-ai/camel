@@ -236,7 +236,7 @@ class MCPServer:
                     "Please specify function names or use BaseToolkit."
                 )
 
-            tool_entries: List[Tuple[str, Callable[..., Any]]] = []
+            tool_entries: List[Tuple[str, Callable[..., Any]]] = []  # type: ignore[annotation-unchecked]
             if not self.function_names and isinstance(instance, BaseToolkit):
                 for tool in instance.get_tools():
                     name = tool.get_function_name()

@@ -429,18 +429,22 @@ class UnstructuredIO:
             "convert_to_dataframe": base.convert_to_dataframe,
             "convert_to_dict": base.convert_to_dict,
             "dict_to_elements": base.dict_to_elements,
-            "stage_csv_for_prodigy": lambda els,
-            **kw: prodigy.stage_csv_for_prodigy(els, kw.get('metadata', [])),
+            "stage_csv_for_prodigy": lambda els, **kw: (
+                prodigy.stage_csv_for_prodigy(els, kw.get('metadata', []))
+            ),
             "stage_for_prodigy": lambda els, **kw: prodigy.stage_for_prodigy(
                 els, kw.get('metadata', [])
             ),
             "stage_for_baseplate": baseplate.stage_for_baseplate,
-            "stage_for_datasaur": lambda els,
-            **kw: datasaur.stage_for_datasaur(els, kw.get('entities', [])),
-            "stage_for_label_box": lambda els,
-            **kw: label_box.stage_for_label_box(els, **kw),
-            "stage_for_label_studio": lambda els,
-            **kw: label_studio.stage_for_label_studio(els, **kw),
+            "stage_for_datasaur": lambda els, **kw: (
+                datasaur.stage_for_datasaur(els, kw.get('entities', []))
+            ),
+            "stage_for_label_box": lambda els, **kw: (
+                label_box.stage_for_label_box(els, **kw)
+            ),
+            "stage_for_label_studio": lambda els, **kw: (
+                label_studio.stage_for_label_studio(els, **kw)
+            ),
             "stage_for_weaviate": weaviate.stage_for_weaviate,
         }
 

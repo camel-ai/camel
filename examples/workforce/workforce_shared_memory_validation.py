@@ -118,7 +118,7 @@ def main():
         for i, msg in enumerate(context[-2:]):  # Show last 2 messages
             role = msg.get('role', 'unknown')
             content = msg.get('content', '')[:80]
-            print(f"       {i+1}. [{role}] {content}...")
+            print(f"       {i + 1}. [{role}] {content}...")
         return token_count, len(context)
 
     print("   Memory state BEFORE synchronization:")
@@ -271,7 +271,7 @@ def main():
     )
     print(
         f"   Success rate: "
-        f"{(total_cross_access/max_possible_cross_access)*100:.1f}%"
+        f"{(total_cross_access / max_possible_cross_access) * 100:.1f}%"
     )
 
     # Determine if shared memory is working
@@ -363,7 +363,7 @@ def main():
     )
     print(
         f"   Control group success rate: "
-        f"{(total_cross_access_2/max_possible_cross_access)*100:.1f}%"
+        f"{(total_cross_access_2 / max_possible_cross_access) * 100:.1f}%"
     )
 
     # === FINAL CONCLUSION ===

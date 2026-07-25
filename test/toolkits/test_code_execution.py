@@ -14,7 +14,7 @@
 
 import socket
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.interpreters import (
     InternalPythonInterpreter,
@@ -51,7 +51,7 @@ def code_execution_toolkit():
 def jupyter_code_execution_toolkit():
     # Try to check if jupyter kernel is available
     try:
-        from jupyter_client import kernelspec
+        from jupyter_client import kernelspec  # type: ignore[import-not-found]
 
         # This will raise an exception if the kernel spec is not found
         spec = kernelspec.get_kernel_spec('python3')

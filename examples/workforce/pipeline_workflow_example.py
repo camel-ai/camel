@@ -57,9 +57,9 @@ model = ModelFactory.create(
 
 def print_section(title: str):
     """Print a colored section header."""
-    print(f"\n{Fore.CYAN}{'='*60}")
+    print(f"\n{Fore.CYAN}{'=' * 60}")
     print(f"{Fore.CYAN}{title}")
-    print(f"{Fore.CYAN}{'='*60}{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
 
 
 def print_result(task_id: str, result: str):
@@ -124,7 +124,7 @@ async def example_1_literature_analysis_pipeline():
     # Add multiple summary agents for parallel processing
     for i in range(5):
         summary_system_message = BaseMessage.make_assistant_message(
-            role_name=f"Summary Specialist {i+1}",
+            role_name=f"Summary Specialist {i + 1}",
             content=(
                 "You are a literature summary specialist. Focus on extracting "
                 "key insights, methodologies, and contributions from research "
@@ -135,7 +135,7 @@ async def example_1_literature_analysis_pipeline():
             system_message=summary_system_message, model=model, tools=[]
         )
         workforce.add_single_agent_worker(
-            f"Summary Specialist {i+1}", summary_agent
+            f"Summary Specialist {i + 1}", summary_agent
         )
 
     # Add synthesis agent
@@ -204,16 +204,13 @@ def print_summary():
 
     print(f"{Fore.GREEN}Pipeline pattern demonstrated:")
     patterns = [
-        ("✓ FORK-JOIN: Single task → 5 parallel processing " "→ 1 synthesis"),
+        ("✓ FORK-JOIN: Single task → 5 parallel processing → 1 synthesis"),
         "✓ PARALLEL SCALING: Easy adjustment of parallel worker count",
         (
             "✓ DEPENDENCY CHAINS: Automatic synchronization and "
             "dependency resolution"
         ),
-        (
-            "✓ STRUCTURED OUTPUT: Using [markers] for smart task "
-            "distribution"
-        ),
+        ("✓ STRUCTURED OUTPUT: Using [markers] for smart task distribution"),
     ]
 
     for pattern in patterns:

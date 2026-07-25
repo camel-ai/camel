@@ -11,8 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-import pytest
-from mock import patch
+import pytest  # type: ignore[import-not-found]
+from mock import patch  # type: ignore[import-not-found]
 
 from camel.agents import ChatAgent, RoleAssignmentAgent
 from camel.messages import BaseMessage

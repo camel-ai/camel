@@ -17,9 +17,16 @@ import os
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
-    from aci.types.app_configurations import AppConfiguration
-    from aci.types.apps import AppBasic, AppDetails
-    from aci.types.linked_accounts import LinkedAccount
+    from aci.types.app_configurations import (  # type: ignore[import-not-found]
+        AppConfiguration,
+    )
+    from aci.types.apps import (  # type: ignore[import-not-found]
+        AppBasic,
+        AppDetails,
+    )
+    from aci.types.linked_accounts import (  # type: ignore[import-not-found]
+        LinkedAccount,
+    )
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
@@ -58,7 +65,7 @@ class ACIToolkit(BaseToolkit):
             timeout (Optional[float]): Request timeout.
                 (default: :obj:`None`)
         """
-        from aci import ACI
+        from aci import ACI  # type: ignore[import-not-found]
 
         super().__init__(timeout)
 
@@ -151,7 +158,9 @@ class ACIToolkit(BaseToolkit):
         Returns:
             Union[Dict, str]: Configuration result or error message.
         """
-        from aci.types.enums import SecurityScheme
+        from aci.types.enums import (  # type: ignore[import-not-found]
+            SecurityScheme,
+        )
 
         try:
             app_details = self.get_app_details(app_name)
@@ -217,7 +226,9 @@ class ACIToolkit(BaseToolkit):
             Union[LinkedAccount, str]: LinkedAccount object if successful,
                 error message otherwise.
         """
-        from aci.types.enums import SecurityScheme
+        from aci.types.enums import (  # type: ignore[import-not-found]
+            SecurityScheme,
+        )
 
         try:
             security_scheme = self.client.app_configurations.get(

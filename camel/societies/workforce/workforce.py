@@ -6125,9 +6125,9 @@ class Workforce(BaseNode):
                 >>> for child in children:
                 ...     print(f"{child['type']}: {child['description']}")
             """
-            children_info: List[Dict[str, Any]] = []
+            children_info: List[Dict[str, Any]] = []  # type: ignore[annotation-unchecked]
             for child in workforce_instance._children:
-                child_info: Dict[str, Any] = {
+                child_info: Dict[str, Any] = {  # type: ignore[annotation-unchecked]
                     "node_id": child.node_id,
                     "description": child.description,
                     "type": type(child).__name__,

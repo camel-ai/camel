@@ -12,33 +12,37 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .apify_reader import Apify
+from camel.loaders.scrapegraph_loader import ScrapeGraphAILoader
+
+from .apify_loader import ApifyLoader
 from .base_io import File, create_file, create_file_from_raw_bytes
-from .chunkr_reader import ChunkrReader, ChunkrReaderConfig
-from .crawl4ai_reader import Crawl4AI
-from .firecrawl_reader import Firecrawl
-from .jina_url_reader import JinaURLReader
-from .markitdown import MarkItDownLoader
-from .mineru_extractor import MinerU
-from .mistral_reader import MistralReader
-from .scrapegraph_reader import ScrapeGraphAI
+from .chunkr_loader import ChunkrLoader, ChunkrLoaderConfig
+from .crawl4ai_loader import Crawl4AILoader
+from .firecrawl_loader import FirecrawlLoader
+from .jina_url_loader import JinaURLLoader
+from .markitdown_loader import MarkItDownLoader
+from .mineru_loader import MinerULoader
+from .mistral_loader import MistralLoader
 from .unstructured_io import UnstructuredIO
 
+ScrapeGraphAI = ScrapeGraphAILoader
+
 __all__ = [
+    'ApifyLoader',
+    'ChunkrLoader',
+    'ChunkrLoaderConfig',
+    'Crawl4AILoader',
     'File',
+    'FirecrawlLoader',
+    'JinaURLLoader',
+    'MarkItDownLoader',
+    'MinerULoader',
+    'MistralLoader',
+    'ScrapeGraphAI',
+    'ScrapeGraphAILoader',
+    'UnstructuredIO',
     'create_file',
     'create_file_from_raw_bytes',
-    'UnstructuredIO',
-    'JinaURLReader',
-    'Firecrawl',
-    'Apify',
-    'ChunkrReader',
-    'ChunkrReaderConfig',
-    'MinerU',
-    'Crawl4AI',
-    'MarkItDownLoader',
-    'ScrapeGraphAI',
-    'MistralReader',
 ]
 
 

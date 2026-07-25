@@ -14,10 +14,16 @@
 import os
 from unittest.mock import MagicMock
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.loaders.unstructured_io import UnstructuredIO
 from camel.retrievers.hybrid_retrival import HybridRetriever
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
+)
 
 
 @pytest.fixture
@@ -49,6 +55,10 @@ def mock_hybrid_retriever(monkeypatch):
     return hybrid_retriever
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_sort_rrf_scores_integration(mock_hybrid_retriever):
     # Call the method that integrates _sort_rrf_scores
     # This is a hypothetical method that would use _sort_rrf_scores internally
@@ -62,6 +72,10 @@ def test_sort_rrf_scores_integration(mock_hybrid_retriever):
     assert results['Retrieved Context'][1]['text'] == 'Document 1'
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_query_with_reranker(mock_hybrid_retriever):
     # A mock reranker that reverses the fused order and returns top_k items.
     def _rerank(query, retrieved_result, top_k):

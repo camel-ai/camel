@@ -28,7 +28,7 @@ from camel.storages.vectordb_storages import (
 from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
-    from pytidb import Table, TiDBClient
+    from pytidb import Table, TiDBClient  # type: ignore[import-not-found]
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class TiDBStorage(BaseVectorStorage):
         url_and_api_key: Optional[Union[Tuple[str, str], str]] = None,
         **kwargs: Any,
     ) -> None:
-        from pytidb import TiDBClient
+        from pytidb import TiDBClient  # type: ignore[import-not-found]
 
         self._client: TiDBClient
         database_url = None
@@ -99,7 +99,7 @@ class TiDBStorage(BaseVectorStorage):
                 the TiDB server.
             **kwargs: Additional keyword arguments passed to the TiDB client.
         """
-        from pytidb import TiDBClient
+        from pytidb import TiDBClient  # type: ignore[import-not-found]
 
         self._client = TiDBClient.connect(
             database_url,
@@ -108,9 +108,13 @@ class TiDBStorage(BaseVectorStorage):
 
     def _get_table_model(self, collection_name: str) -> Any:
         from pytidb.datatype import JSON  # type: ignore[import-not-found]
-        from pytidb.schema import Field, TableModel, VectorField
+        from pytidb.schema import (  # type: ignore[import-not-found]
+            Field,
+            TableModel,
+            VectorField,
+        )
 
-        class VectorDBRecordBase(TableModel, table=False):
+        class VectorDBRecordBase(TableModel, table=False):  # type: ignore[call-arg]
             id: Optional[str] = Field(None, primary_key=True)
             vector: list[float] = VectorField(self.vector_dim)
             payload: Optional[dict[str, Any]] = Field(None, sa_type=JSON)

@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from camel.loaders.mistral_reader import MistralReader
+from camel.loaders.mistral_loader import MistralLoader
 
 
 @pytest.mark.skipif(
@@ -27,29 +27,29 @@ from camel.loaders.mistral_reader import MistralReader
     reason="MISTRAL_API_KEY not available",
 )
 def test_init_with_env_variable():
-    r"""Test MistralReader initialization with environment variable."""
+    r"""Test MistralLoader initialization with environment variable."""
     with patch("mistralai.Mistral") as mock_mistral:
-        reader = MistralReader()
+        loader = MistralLoader()
         mock_mistral.assert_called_once_with(
             api_key=os.environ.get("MISTRAL_API_KEY")
         )
-        assert reader.model == "mistral-ocr-latest"
+        assert loader.model == "mistral-ocr-latest"
 
 
 def test_init_with_api_key():
-    r"""Test MistralReader initialization with provided API key."""
+    r"""Test MistralLoader initialization with provided API key."""
     test_api_key = "test_api_key"
     test_model = "test-model"
 
     with patch("mistralai.Mistral") as mock_mistral:
-        reader = MistralReader(api_key=test_api_key, model=test_model)
+        loader = MistralLoader(api_key=test_api_key, model=test_model)
         mock_mistral.assert_called_once_with(api_key=test_api_key)
-        assert reader.model == test_model
+        assert loader.model == test_model
 
 
 def test_encode_file_success():
     r"""Test file encoding with a valid file."""
-    reader = MistralReader(api_key="dummy_key")
+    loader = MistralLoader(api_key="dummy_key")
 
     # Create a temporary file for testing
     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
@@ -58,7 +58,7 @@ def test_encode_file_success():
 
     try:
         # Test encoding
-        encoded = reader._encode_file(temp_file_path)
+        encoded = loader._encode_file(temp_file_path)
         assert encoded == base64.b64encode(b"test content").decode('utf-8')
     finally:
         # Clean up
@@ -68,17 +68,17 @@ def test_encode_file_success():
 
 def test_encode_file_not_found():
     r"""Test file encoding with a non-existent file."""
-    reader = MistralReader(api_key="dummy_key")
+    loader = MistralLoader(api_key="dummy_key")
 
     # Test with a non-existent file
-    with patch("camel.loaders.mistral_reader.logger") as mock_logger:
-        encoded = reader._encode_file("/non/existent/file.pdf")
+    with patch("camel.loaders.mistral_loader.logger") as mock_logger:
+        encoded = loader._encode_file("/non/existent/file.pdf")
         assert encoded == ""
         mock_logger.error.assert_called_once()
 
 
-def test_extract_text_local_file():
-    r"""Test extract_text with a local file."""
+def test_load_single_local_file():
+    r"""Test _load_single with a local file."""
     # Mock OCR response
     mock_ocr_response = MagicMock()
 
@@ -95,12 +95,12 @@ def test_extract_text_local_file():
             mock_mistral.ocr = MagicMock()
             mock_mistral.ocr.process.return_value = mock_ocr_response
 
-            # Create reader and test extract_text
-            reader = MistralReader(api_key="dummy_key")
-            result = reader.extract_text(temp_file_path)
+            # Create loader and test _load_single
+            loader = MistralLoader(api_key="dummy_key")
+            result = loader._load_single(temp_file_path)
 
-            # Verify the result and that the correct methods were called
-            assert result == mock_ocr_response
+            # Verify the result contains our mock response
+            assert result["content"] == mock_ocr_response
             mock_mistral.ocr.process.assert_called_once()
 
             # Verify document_config was correctly constructed
@@ -117,8 +117,8 @@ def test_extract_text_local_file():
             os.remove(temp_file_path)
 
 
-def test_extract_text_url():
-    r"""Test extract_text with a URL."""
+def test_load_single_url():
+    r"""Test _load_single with a URL."""
     # Mock OCR response
     mock_ocr_response = MagicMock()
     test_url = "https://example.com/document.pdf"
@@ -130,12 +130,12 @@ def test_extract_text_url():
         mock_mistral.ocr = MagicMock()
         mock_mistral.ocr.process.return_value = mock_ocr_response
 
-        # Create reader and test extract_text with URL
-        reader = MistralReader(api_key="dummy_key")
-        result = reader.extract_text(test_url)
+        # Create loader and test _load_single with URL
+        loader = MistralLoader(api_key="dummy_key")
+        result = loader._load_single(test_url)
 
-        # Verify the result and that the correct methods were called
-        assert result == mock_ocr_response
+        # Verify the result
+        assert result["content"] == mock_ocr_response
         mock_mistral.ocr.process.assert_called_once()
 
         # Verify document_config was correctly constructed
@@ -145,8 +145,8 @@ def test_extract_text_url():
         assert call_args["document"]["document_url"] == test_url
 
 
-def test_extract_text_image():
-    r"""Test extract_text with an image file."""
+def test_load_single_image():
+    r"""Test _load_single with an image file."""
     # Mock OCR response
     mock_ocr_response = MagicMock()
     test_url = "https://example.com/image.jpg"
@@ -158,12 +158,12 @@ def test_extract_text_image():
         mock_mistral.ocr = MagicMock()
         mock_mistral.ocr.process.return_value = mock_ocr_response
 
-        # Create reader and test extract_text with image URL
-        reader = MistralReader(api_key="dummy_key")
-        result = reader.extract_text(test_url, is_image=True)
+        # Create loader and test _load_single with image URL
+        loader = MistralLoader(api_key="dummy_key", is_image=True)
+        result = loader._load_single(test_url)
 
-        # Verify the result and that the correct methods were called
-        assert result == mock_ocr_response
+        # Verify the result
+        assert result["content"] == mock_ocr_response
         mock_mistral.ocr.process.assert_called_once()
 
         # Verify document_config was correctly constructed

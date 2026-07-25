@@ -100,7 +100,7 @@ def send_message_to_user(
     Returns:
         str: Confirmation that the message was successfully sent.
     """
-    print(f"\nAgent Message:\n{message_title} " f"\n{message_description}\n")
+    print(f"\nAgent Message:\n{message_title} \n{message_description}\n")
     if message_attachment:
         print(message_attachment)
     logger.info(

@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-import gradio as gr
-import pytest
+import os
+
+import gradio as gr  # type: ignore[import-not-found]
+import pytest  # type: ignore[import-not-found]
 
 from apps.agents.agents import (
     State,
@@ -23,6 +25,12 @@ from apps.agents.agents import (
     role_playing_chat_init,
     role_playing_start,
     stop_session,
+)
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
+    or not os.environ.get("OPENAI_API_KEY")
 )
 
 
@@ -37,6 +45,10 @@ def test_utils():
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_session():
     for society_name in ("AI Society", "Code"):
         state = State.empty()

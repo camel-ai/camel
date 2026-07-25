@@ -202,9 +202,9 @@ PROMPT: here is the updated prompt!
             tmp_paths = deepcopy(image_paths)
             response_msg = re.sub(
                 pattern,
-                lambda x, image_paths=image_paths: "("
-                + image_paths.pop(0)
-                + ")",
+                lambda x, image_paths=image_paths: (
+                    "(" + image_paths.pop(0) + ")"
+                ),
                 response.msg.content,
             )
             image_paths = deepcopy(tmp_paths)

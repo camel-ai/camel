@@ -19,8 +19,8 @@ from .python_verifier import PythonVerifier
 
 __all__ = [
     "BaseVerifier",
-    "VerificationOutcome",
-    "PythonVerifier",
     "MathVerifier",
     "PhysicsVerifier",
+    "PythonVerifier",
+    "VerificationOutcome",
 ]

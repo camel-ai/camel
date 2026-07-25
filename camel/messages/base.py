@@ -542,7 +542,7 @@ class BaseMessage:
                     )
 
         if self.video_bytes:
-            import imageio.v3 as iio
+            import imageio.v3 as iio  # type: ignore[import-not-found]
             import numpy as np
 
             base64Frames: List[str] = []

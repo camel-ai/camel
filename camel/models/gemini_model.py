@@ -380,8 +380,7 @@ class GeminiModel(OpenAICompatibleModel):
         if not self._is_stale_cached_content_error(err):
             raise
         logger.warning(
-            "Gemini cached_content %s is unavailable; "
-            "retrying without cache.",
+            "Gemini cached_content %s is unavailable; retrying without cache.",
             self._cached_content,
         )
         self._cached_content = None

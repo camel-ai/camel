@@ -13,20 +13,21 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-import os
+import json
 import re
+
 import streamlit as st
 from dotenv import load_dotenv
-import json
 
 # Import CAMEL components
 from camel.agents import ChatAgent
+from camel.loaders import Firecrawl
 from camel.models import ModelFactory
 from camel.toolkits import CodeExecutionToolkit, MathToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.loaders import Firecrawl
 
 load_dotenv()
+
 
 class ProblemSolver:
     """Main problem solver with CAMEL agents"""
@@ -36,7 +37,7 @@ class ProblemSolver:
         self.model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_4O,
-            model_config_dict={"temperature": 0.1, "max_tokens": 4000}
+            model_config_dict={"temperature": 0.1, "max_tokens": 4000},
         )
 
         # Initialize toolkits
@@ -48,7 +49,7 @@ class ProblemSolver:
         self.agent = ChatAgent(
             model=self.model,
             tools=[*self.code_tools, *self.math_tools],
-            system_message=self._get_system_message()
+            system_message=self._get_system_message(),
         )
 
         # Initialize Firecrawl
@@ -73,12 +74,14 @@ class ProblemSolver:
     def fetch_content(self, url: str) -> str:
         """Fetch content from URL"""
         try:
-            result = self.firecrawl.scrape(url, params={'formats': ['markdown']})
+            result = self.firecrawl.scrape(
+                url, params={'formats': ['markdown']}
+            )
             if isinstance(result, dict):
                 return result.get('markdown', result.get('content', ''))
             return str(result)
         except Exception as e:
-            raise Exception(f"Failed to fetch content: {str(e)}")
+            raise Exception(f"Failed to fetch content: {e!s}")
 
     def solve_problem(self, problem_content: str) -> str:
         """Generate solution for the problem"""
@@ -93,7 +96,9 @@ class ProblemSolver:
         response = self.agent.step(query)
         return self._extract_code(response.msgs[0].content.strip())
 
-    def debug_solution(self, code: str, problem_content: str, failed_tests: list) -> str:
+    def debug_solution(
+        self, code: str, problem_content: str, failed_tests: list
+    ) -> str:
         """Debug and fix the solution"""
         query = f"""
         Fix this failing solution:
@@ -113,11 +118,17 @@ class ProblemSolver:
         response = self.agent.step(query)
         return self._extract_code(response.msgs[0].content.strip())
 
-    def run_test(self, code: str, test_input: str, expected_output: str) -> dict:
+    def run_test(
+        self, code: str, test_input: str, expected_output: str
+    ) -> dict:
         """Run a single test case using CAMEL's code execution"""
         try:
             # Escape the test input to handle newlines and quotes properly
-            escaped_input = test_input.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
+            escaped_input = (
+                test_input.replace('\\', '\\\\')
+                .replace('"', '\\"')
+                .replace('\n', '\\n')
+            )
 
             # Create a test script that handles input/output
             test_code = f'''
@@ -170,7 +181,7 @@ else:
                         'passed': False,
                         'error': f"Runtime error: {execution_result['error']}",
                         'actual': execution_result.get('output', '').strip(),
-                        'expected': expected_output.strip()
+                        'expected': expected_output.strip(),
                     }
                 actual_output = execution_result.get('output', '').strip()
             else:
@@ -180,16 +191,18 @@ else:
                 # Extract actual output from CAMEL's execution result
                 # Look for the pattern "> Executed Results:" and get everything after it
                 if "> Executed Results:" in result_str:
-                    actual_output = result_str.split("> Executed Results:")[-1].strip()
+                    actual_output = result_str.split("> Executed Results:")[
+                        -1
+                    ].strip()
                 elif "ERROR: " in result_str:
                     # Extract error message
                     error_start = result_str.find("ERROR: ")
-                    error_msg = result_str[error_start + 7:].split('\n')[0]
+                    error_msg = result_str[error_start + 7 :].split('\n')[0]
                     return {
                         'passed': False,
                         'error': f"Runtime error: {error_msg}",
                         'actual': "",
-                        'expected': expected_output.strip()
+                        'expected': expected_output.strip(),
                     }
                 else:
                     # Fallback: use the entire result
@@ -201,21 +214,26 @@ else:
                 'passed': actual_output == expected,
                 'actual': actual_output,
                 'expected': expected,
-                'error': None if actual_output == expected else "Output mismatch"
+                'error': None
+                if actual_output == expected
+                else "Output mismatch",
             }
 
         except Exception as e:
             return {
                 'passed': False,
-                'error': f"Execution error: {str(e)}",
+                'error': f"Execution error: {e!s}",
                 'actual': "",
-                'expected': expected_output.strip()
+                'expected': expected_output.strip(),
             }
 
     def _indent_code(self, code: str, spaces: int) -> str:
         """Indent code by specified number of spaces"""
         indent = ' ' * spaces
-        return '\n'.join(indent + line if line.strip() else line for line in code.split('\n'))
+        return '\n'.join(
+            indent + line if line.strip() else line
+            for line in code.split('\n')
+        )
 
     def _extract_code(self, response: str) -> str:
         """Extract Python code from response"""
@@ -223,7 +241,7 @@ else:
         patterns = [
             r'```python\s*(.*?)\s*```',
             r'```py\s*(.*?)\s*```',
-            r'```\s*(.*?)\s*```'
+            r'```\s*(.*?)\s*```',
         ]
 
         for pattern in patterns:
@@ -247,6 +265,7 @@ else:
         except:
             return False
 
+
 class CodeforcesSolver(ProblemSolver):
     """Codeforces-specific solver"""
 
@@ -262,8 +281,14 @@ class CodeforcesSolver(ProblemSolver):
 
         # Pattern to match input/output blocks
         patterns = [
-            re.compile(r'###\s*Input\s*```(?:\w+)?\s*(.*?)```.*?###\s*Output\s*```(?:\w+)?\s*(.*?)```', re.DOTALL | re.IGNORECASE),
-            re.compile(r'(?:Input|input)\s*(?:Copy)?\s*```(?:\w+)?\s*(.*?)```.*?(?:Output|output)\s*(?:Copy)?\s*```(?:\w+)?\s*(.*?)```', re.DOTALL | re.IGNORECASE),
+            re.compile(
+                r'###\s*Input\s*```(?:\w+)?\s*(.*?)```.*?###\s*Output\s*```(?:\w+)?\s*(.*?)```',
+                re.DOTALL | re.IGNORECASE,
+            ),
+            re.compile(
+                r'(?:Input|input)\s*(?:Copy)?\s*```(?:\w+)?\s*(.*?)```.*?(?:Output|output)\s*(?:Copy)?\s*```(?:\w+)?\s*(.*?)```',
+                re.DOTALL | re.IGNORECASE,
+            ),
         ]
 
         for pattern in patterns:
@@ -278,6 +303,7 @@ class CodeforcesSolver(ProblemSolver):
 
         return samples[:5]  # Limit to 5 samples
 
+
 class LeetCodeSolver(ProblemSolver):
     """LeetCode-specific solver"""
 
@@ -287,7 +313,7 @@ class LeetCodeSolver(ProblemSolver):
         self.agent = ChatAgent(
             model=self.model,
             tools=[*self.code_tools, *self.math_tools],
-            system_message=self._get_leetcode_system_message()
+            system_message=self._get_leetcode_system_message(),
         )
 
     def _get_leetcode_system_message(self):
@@ -317,9 +343,15 @@ class LeetCodeSolver(ProblemSolver):
         # More precise patterns for LeetCode examples
         patterns = [
             # Pattern 1: Example X: Input: ... Output: ...
-            re.compile(r'Example\s*\d+:\s*Input:\s*([^\n]+)\s*Output:\s*([^\n]+)', re.IGNORECASE),
+            re.compile(
+                r'Example\s*\d+:\s*Input:\s*([^\n]+)\s*Output:\s*([^\n]+)',
+                re.IGNORECASE,
+            ),
             # Pattern 2: Input: ... Output: ... (without Example prefix)
-            re.compile(r'(?:^|\n)Input:\s*([^\n]+)\s*Output:\s*([^\n]+)', re.IGNORECASE | re.MULTILINE),
+            re.compile(
+                r'(?:^|\n)Input:\s*([^\n]+)\s*Output:\s*([^\n]+)',
+                re.IGNORECASE | re.MULTILINE,
+            ),
         ]
 
         for pattern in patterns:
@@ -358,6 +390,7 @@ class LeetCodeSolver(ProblemSolver):
         text = re.sub(r'^(Input:|Output:)\s*', '', text, flags=re.IGNORECASE)
 
         return text.strip()
+
 
 def solve_problem(platform: str, problem_id: str) -> bool:
     """Main solving function"""
@@ -402,8 +435,9 @@ def solve_problem(platform: str, problem_id: str) -> bool:
         return True
 
     except Exception as e:
-        st.error(f"Solving failed: {str(e)}")
+        st.error(f"Solving failed: {e!s}")
         return False
+
 
 def improve_solution(max_attempts: int = 5) -> bool:
     """Iteratively improve solution (only for Codeforces)"""
@@ -429,18 +463,24 @@ def improve_solution(max_attempts: int = 5) -> bool:
         # Test current solution
         failed_tests = []
         for idx, (test_input, expected_output) in enumerate(samples):
-            result = solver.run_test(st.session_state.generated_code, test_input, expected_output)
+            result = solver.run_test(
+                st.session_state.generated_code, test_input, expected_output
+            )
             if not result['passed']:
-                failed_tests.append({
-                    'test_id': idx + 1,
-                    'input': test_input,
-                    'expected': expected_output,
-                    'actual': result['actual'],
-                    'error': result['error']
-                })
+                failed_tests.append(
+                    {
+                        'test_id': idx + 1,
+                        'input': test_input,
+                        'expected': expected_output,
+                        'actual': result['actual'],
+                        'error': result['error'],
+                    }
+                )
 
         if not failed_tests:
-            st.success(f"Success! Solution works after {attempt + 1} attempts!")
+            st.success(
+                f"Success! Solution works after {attempt + 1} attempts!"
+            )
             return True
 
         # Debug and improve
@@ -448,12 +488,13 @@ def improve_solution(max_attempts: int = 5) -> bool:
             improved_code = solver.debug_solution(
                 st.session_state.generated_code,
                 st.session_state.problem_content,
-                failed_tests
+                failed_tests,
             )
             st.session_state.generated_code = improved_code
 
     st.error(f"Could not fix solution after {max_attempts} attempts")
     return False
+
 
 def display_results():
     """Display solution and test results"""
@@ -471,7 +512,9 @@ def display_results():
 
         if platform == "LeetCode":
             # For LeetCode, only display test cases without running them
-            for idx, (test_input, expected_output) in enumerate(st.session_state.samples):
+            for idx, (test_input, expected_output) in enumerate(
+                st.session_state.samples
+            ):
                 with st.expander(f"Test Case {idx + 1}"):
                     col1, col2 = st.columns(2)
                     with col1:
@@ -484,10 +527,18 @@ def display_results():
         elif platform == "Codeforces":
             # For Codeforces, run and display test results
             solver = st.session_state.solver
-            for idx, (test_input, expected_output) in enumerate(st.session_state.samples):
-                result = solver.run_test(st.session_state.generated_code, test_input, expected_output)
+            for idx, (test_input, expected_output) in enumerate(
+                st.session_state.samples
+            ):
+                result = solver.run_test(
+                    st.session_state.generated_code,
+                    test_input,
+                    expected_output,
+                )
 
-                with st.expander(f"Test Case {idx + 1} {'✅' if result['passed'] else '❌'}"):
+                with st.expander(
+                    f"Test Case {idx + 1} {'✅' if result['passed'] else '❌'}"
+                ):
                     col1, col2, col3 = st.columns(3)
                     with col1:
                         st.text("Input:")
@@ -501,6 +552,7 @@ def display_results():
 
                     if not result['passed']:
                         st.error(f"Error: {result['error']}")
+
 
 def main():
     st.title("🚀 CAMEL Problem Solver")
@@ -529,7 +581,10 @@ def main():
     display_results()
 
     # Improvement section (only for Codeforces)
-    if st.session_state.get('problem_solved', False) and st.session_state.get('platform') == 'Codeforces':
+    if (
+        st.session_state.get('problem_solved', False)
+        and st.session_state.get('platform') == 'Codeforces'
+    ):
         st.markdown("---")
         col1, col2 = st.columns(2)
         with col1:
@@ -538,6 +593,7 @@ def main():
             if st.button("🔧 Auto-Fix", type="primary"):
                 if improve_solution(max_attempts):
                     st.rerun()
+
 
 if __name__ == "__main__":
     main()

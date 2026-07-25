@@ -125,7 +125,7 @@ class RegisteredAgentToolkit:
     """
 
     def __init__(self):
-        self._agent: Optional["ChatAgent"] = None
+        self._agent: Optional["ChatAgent"] = None  # type: ignore[annotation-unchecked]
 
     @property
     def agent(self) -> Optional["ChatAgent"]:

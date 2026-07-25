@@ -58,7 +58,7 @@ async def main():
         system_message = BaseMessage.make_assistant_message(
             role_name="Assistant",
             content="You are a helpful assistant with access to search, "
-                   "GitHub, and arXiv tools.",
+            "GitHub, and arXiv tools.",
         )
 
         # create camel agent

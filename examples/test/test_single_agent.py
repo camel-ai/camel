@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-import pytest
+import os
+
+import pytest  # type: ignore[import-not-found]
 
 import examples.agents.single_agent
 import examples.code.generate_meta_data
@@ -20,6 +22,17 @@ import examples.evaluation.single_agent
 import examples.misalignment.single_agent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
+)
+
+pytestmark = pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key missing or dummy key",
+)
 
 parametrize = pytest.mark.parametrize(
     'model',

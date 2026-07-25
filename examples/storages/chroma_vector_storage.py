@@ -179,7 +179,7 @@ def run_storage_example(chroma_storage: ChromaStorage):
 
     # Display query results
     for i, result in enumerate(query_results):
-        print(f"Result {i+1}:")
+        print(f"Result {i + 1}:")
         print(f"  ID: {result.record.id}")
         print(f"  Payload: {result.record.payload}")
         print(f"  Similarity: {result.similarity:.4f}")

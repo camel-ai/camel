@@ -118,7 +118,7 @@ class MathVerifier(BaseVerifier):
                 status=VerificationOutcome.ERROR,
                 result="",
                 error_message=(
-                    "Ground truth is required for " "mathematical verification"
+                    "Ground truth is required for mathematical verification"
                 ),
             )
 

@@ -317,8 +317,7 @@ class FailureHandlingConfig(BaseModel):
                 except ValueError:
                     valid = [s.value for s in RecoveryStrategy]
                     raise ValueError(
-                        f"Invalid strategy '{item}'. "
-                        f"Valid options: {valid}"
+                        f"Invalid strategy '{item}'. Valid options: {valid}"
                     )
             else:
                 raise ValueError(
@@ -432,7 +431,7 @@ class PipelineTaskBuilder:
             None  # Track the last added task for chain inference
         )
         # Track the last added parallel tasks for sync
-        self._last_parallel_tasks: List[str] = []
+        self._last_parallel_tasks: List[str] = []  # type: ignore[annotation-unchecked]
 
     def add(
         self,

@@ -164,7 +164,7 @@ print(f"Factorial of 5: {factorial(5)}")
 def main():
     """Main function demonstrating E2B custom endpoint configuration"""
     print(f"{Fore.MAGENTA}CAMEL E2B Custom Endpoint Test{Fore.RESET}")
-    print(f"{Fore.MAGENTA}{'='*40}{Fore.RESET}")
+    print(f"{Fore.MAGENTA}{'=' * 40}{Fore.RESET}")
 
     print(
         "\nThis example tests CAMEL's E2B integration with custom "

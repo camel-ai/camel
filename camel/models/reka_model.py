@@ -30,20 +30,25 @@ from camel.utils import (
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse.decorators import (
+            observe,  # type: ignore[import-not-found]
+        )
     except ImportError:
         from camel.utils import observe
 else:
     from camel.utils import observe
 
 if TYPE_CHECKING:
-    from reka.types import ChatMessage, ChatResponse
+    from reka.types import (  # type: ignore[import-not-found]
+        ChatMessage,
+        ChatResponse,
+    )
 
 try:
     import os
 
     if os.getenv("AGENTOPS_API_KEY") is not None:
-        from agentops import LLMEvent, record
+        from agentops import LLMEvent, record  # type: ignore[import-not-found]
     else:
         raise ImportError
 except (ImportError, AttributeError):
@@ -90,7 +95,10 @@ class RekaModel(BaseModelBackend):
         timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
-        from reka.client import AsyncReka, Reka
+        from reka.client import (  # type: ignore[import-not-found]
+            AsyncReka,
+            Reka,
+        )
 
         if model_config_dict is None:
             model_config_dict = RekaConfig().as_dict()
@@ -167,7 +175,7 @@ class RekaModel(BaseModelBackend):
         Returns:
             List[ChatMessage]: A list of messages converted to Reka's format.
         """
-        from reka.types import ChatMessage
+        from reka.types import ChatMessage  # type: ignore[import-not-found]
 
         reka_messages = []
         for msg in messages:

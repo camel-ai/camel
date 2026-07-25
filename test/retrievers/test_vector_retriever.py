@@ -126,8 +126,7 @@ def test_query_payload_none(vector_retriever):
     with pytest.raises(
         ValueError,
         match=(
-            "Payload of vector storage is None, "
-            "please check the collection."
+            "Payload of vector storage is None, please check the collection."
         ),
     ):
         vector_retriever.query(query, top_k=top_k)

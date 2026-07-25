@@ -53,8 +53,9 @@ class MemoryRecord(BaseModel):
     uuid: UUID = Field(default_factory=uuid4)
     extra_info: Dict[str, str] = Field(default_factory=dict)
     timestamp: float = Field(
-        default_factory=lambda: time.time_ns()
-        / 1_000_000_000  # Nanosecond precision
+        default_factory=lambda: (
+            time.time_ns() / 1_000_000_000
+        )  # Nanosecond precision
     )
     agent_id: str = Field(default="")
 
@@ -190,6 +191,7 @@ class ContextRecord(BaseModel):
     memory_record: MemoryRecord
     score: float
     timestamp: float = Field(
-        default_factory=lambda: time.time_ns()
-        / 1_000_000_000  # Nanosecond precision
+        default_factory=lambda: (
+            time.time_ns() / 1_000_000_000
+        )  # Nanosecond precision
     )

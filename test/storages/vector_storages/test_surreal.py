@@ -14,8 +14,8 @@
 import sys
 from unittest.mock import MagicMock, patch
 
-import pytest
-from surrealdb import RecordID
+import pytest  # type: ignore[import-not-found]
+from surrealdb import RecordID  # type: ignore[import-not-found]
 
 from camel.storages.vectordb_storages.surreal import (
     SurrealStorage,

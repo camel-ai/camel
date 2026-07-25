@@ -49,8 +49,7 @@ def _fake_get(self, url):
         request=request,
         headers={"content-type": "text/html"},
         text=(
-            "<html><body><h1>Pricing</h1>"
-            "<p>Free</p><p>Pro</p></body></html>"
+            "<html><body><h1>Pricing</h1><p>Free</p><p>Pro</p></body></html>"
         ),
     )
 

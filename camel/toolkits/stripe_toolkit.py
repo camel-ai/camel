@@ -56,7 +56,7 @@ class StripeToolkit(BaseToolkit):
                 case of failure. (default: :obj:`3`)
         """
         super().__init__(timeout=timeout)
-        import stripe
+        import stripe  # type: ignore[import-not-found]
 
         stripe.max_network_retries = retries
         stripe.log = 'info'
@@ -80,7 +80,7 @@ class StripeToolkit(BaseToolkit):
         Returns:
             str: The customer data as a str.
         """
-        import stripe
+        import stripe  # type: ignore[import-not-found]
 
         try:
             self.logger.info(f"Retrieving customer with ID: {customer_id}")
@@ -102,7 +102,7 @@ class StripeToolkit(BaseToolkit):
             str: An output str if successful, or an error message string if
                 failed.
         """
-        import stripe
+        import stripe  # type: ignore[import-not-found]
 
         try:
             self.logger.info(f"Listing customers with limit={limit}")
@@ -123,7 +123,7 @@ class StripeToolkit(BaseToolkit):
             str: A str containing the account balance if successful, or an
                 error message string if failed.
         """
-        import stripe
+        import stripe  # type: ignore[import-not-found]
 
         try:
             self.logger.info("Retrieving account balance.")
@@ -146,7 +146,7 @@ class StripeToolkit(BaseToolkit):
             str: A list of balance transaction data if successful, or an error
                 message string if failed.
         """
-        import stripe
+        import stripe  # type: ignore[import-not-found]
 
         try:
             self.logger.info(
@@ -174,7 +174,7 @@ class StripeToolkit(BaseToolkit):
             str:The payment data as a str if successful, or an error message
                 string if failed.
         """
-        import stripe
+        import stripe  # type: ignore[import-not-found]
 
         try:
             self.logger.info(f"Retrieving payment with ID: {payment_id}")
@@ -195,7 +195,7 @@ class StripeToolkit(BaseToolkit):
             str: A list of payment data if successful, or an error message
                 string if failed.
         """
-        import stripe
+        import stripe  # type: ignore[import-not-found]
 
         try:
             self.logger.info(f"Listing payments with limit={limit}")
@@ -219,7 +219,7 @@ class StripeToolkit(BaseToolkit):
             str: The refund data as a str if successful, or an error message
                 string if failed.
         """
-        import stripe
+        import stripe  # type: ignore[import-not-found]
 
         try:
             self.logger.info(f"Retrieving refund with ID: {refund_id}")
@@ -240,7 +240,7 @@ class StripeToolkit(BaseToolkit):
             str: A list of refund data as a str if successful, or an error
                 message string if failed.
         """
-        import stripe
+        import stripe  # type: ignore[import-not-found]
 
         try:
             self.logger.info(f"Listing refunds with limit={limit}")
@@ -263,7 +263,7 @@ class StripeToolkit(BaseToolkit):
         Returns:
             str: An error message string.
         """
-        from stripe import StripeError
+        from stripe import StripeError  # type: ignore[import-not-found]
 
         if isinstance(error, StripeError):
             message = error.user_message or str(error)

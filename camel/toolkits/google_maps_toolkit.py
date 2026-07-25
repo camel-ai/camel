@@ -37,7 +37,6 @@ def handle_googlemaps_exceptions(
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
-            # ruff: noqa: E501
             from googlemaps.exceptions import (  # type: ignore[import]
                 ApiError,
                 HTTPError,

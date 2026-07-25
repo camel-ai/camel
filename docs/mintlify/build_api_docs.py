@@ -640,8 +640,14 @@ def escape_mdx_content(text):
         """Find comparison operators and wrap them with backticks when appropriate"""
         # Pattern for length constraints like "length >= 1 and <= 100"
         # Match the full expression and wrap it once
-        text = re.sub(r'(?<![`\w])(length\s*>=\s*\d+\s*and\s*<=\s*\d+)(?![`\w])', r'`\1`', text)
-        text = re.sub(r'(?<![`\w])(>=\s*\d+\s*and\s*<=\s*\d+)(?![`\w])', r'`\1`', text)
+        text = re.sub(
+            r'(?<![`\w])(length\s*>=\s*\d+\s*and\s*<=\s*\d+)(?![`\w])',
+            r'`\1`',
+            text,
+        )
+        text = re.sub(
+            r'(?<![`\w])(>=\s*\d+\s*and\s*<=\s*\d+)(?![`\w])', r'`\1`', text
+        )
 
         # Extract newly created inline codes to protect them from further processing
         protected = []
@@ -1129,7 +1135,7 @@ def generate_custom_docs(modules, output_dir, package_name="camel"):
     skipped_count = 0
 
     for i, module in enumerate(modules):
-        print(f"  [{i+1}/{len(modules)}] Processing {module}...")
+        print(f"  [{i + 1}/{len(modules)}] Processing {module}...")
 
         output_file = generate_ast_docs(module, output_dir)
         if output_file:

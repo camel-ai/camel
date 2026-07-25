@@ -13,8 +13,10 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 
-import pytest
-from unstructured.documents.elements import Element
+import pytest  # type: ignore[import-not-found]
+from unstructured.documents.elements import (  # type: ignore[import-not-found]
+    Element,
+)
 
 from camel.storages import Neo4jGraph
 from camel.storages.graph_storages.graph_element import (

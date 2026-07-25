@@ -11,11 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 import uuid
 from typing import Dict
 from unittest.mock import MagicMock, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.embeddings import OpenAIEmbedding
 from camel.messages import BaseMessage
@@ -25,6 +26,12 @@ from camel.types import (
     EmbeddingModelType,
     ModelType,
     RoleType,
+)
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
 )
 
 # Mock responses
@@ -166,6 +173,10 @@ def test_persona_to_persona(persona_generator: PersonaHub):
     assert any(p.name == "Data Engineer" for p in related_personas.values())
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_deduplicate(persona_generator: PersonaHub):
     persona1 = Persona(
         name="Test Persona 1",
@@ -189,6 +200,10 @@ def test_deduplicate(persona_generator: PersonaHub):
     )  # Only one persona left as the persona descriptions are very similar
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_is_similar(persona_generator: PersonaHub):
     persona1 = Persona(
         name="Test Persona 1",

@@ -51,7 +51,7 @@ def sanitize_filename(
     """
     if max_length < 1:
         raise ValueError(
-            f"`max_length` must be greater than " f"0, got {max_length}"
+            f"`max_length` must be greater than 0, got {max_length}"
         )
 
     if not url_name:

@@ -18,9 +18,9 @@ import random
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional
 
-import tree_sitter_python as tspython
+import tree_sitter_python as tspython  # type: ignore[import-not-found]
 from tqdm import tqdm
-from tree_sitter import Language, Parser
+from tree_sitter import Language, Parser  # type: ignore[import-not-found]
 
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark

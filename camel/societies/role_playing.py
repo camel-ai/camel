@@ -290,7 +290,7 @@ class RolePlaying:
             )
             self.planned_task_prompt = task_planner_agent.run(self.task_prompt)
             self.task_prompt = (
-                f"{self.task_prompt}\n" f"{self.planned_task_prompt}"
+                f"{self.task_prompt}\n{self.planned_task_prompt}"
             )
         else:
             self.planned_task_prompt = None

@@ -309,7 +309,7 @@ class AnthropicTokenCounter(BaseTokenCounter):
                 service. If not provided, it will use the default Anthropic
                 URL. (default: :obj:`None`)
         """
-        from anthropic import Anthropic
+        from anthropic import Anthropic  # type: ignore[import-not-found]
 
         self.client = Anthropic(api_key=api_key, base_url=base_url)
         self.model = model
@@ -326,7 +326,9 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        from anthropic.types import MessageParam
+        from anthropic.types import (  # type: ignore[import-not-found]
+            MessageParam,
+        )
 
         return self.client.messages.count_tokens(
             messages=[
@@ -430,7 +432,7 @@ class LiteLLMTokenCounter(BaseTokenCounter):
         """
         from litellm import encoding
 
-        return encoding.encode(text, disallowed_special=())
+        return encoding.encode(text, disallowed_special=())  # type: ignore[attr-defined]
 
     def decode(self, token_ids: List[int]) -> str:
         r"""Decode token IDs back to text.
@@ -443,7 +445,7 @@ class LiteLLMTokenCounter(BaseTokenCounter):
         """
         from litellm import encoding
 
-        return encoding.decode(token_ids)
+        return encoding.decode(token_ids)  # type: ignore[attr-defined]
 
 
 class MistralTokenCounter(BaseTokenCounter):
@@ -506,7 +508,7 @@ class MistralTokenCounter(BaseTokenCounter):
                 format.
         """
 
-        from mistral_common.protocol.instruct.request import (
+        from mistral_common.protocol.instruct.request import (  # type:ignore[import-not-found]
             ChatCompletionRequest,  # type:ignore[import-not-found]
         )
 

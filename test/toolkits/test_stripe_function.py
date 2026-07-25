@@ -15,8 +15,8 @@ import json
 import os
 from unittest.mock import MagicMock, patch
 
-import pytest
-from stripe import (
+import pytest  # type: ignore[import-not-found]
+from stripe import (  # type: ignore[import-not-found]
     Balance,
     BalanceTransaction,
     Customer,
@@ -29,7 +29,7 @@ from camel.toolkits.stripe_toolkit import StripeToolkit
 
 @pytest.fixture(scope="function")
 def stripe_toolkit_fixture():
-    import stripe
+    import stripe  # type: ignore[import-not-found]
 
     r"""Fixture to set up the StripeToolkit with a mock API key."""
     with patch.dict(os.environ, {"STRIPE_API_KEY": "sk_test_xxxx"}):

@@ -14,12 +14,18 @@
 import os
 import shutil
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.loaders import UnstructuredIO
 from camel.retrievers import AutoRetriever
 from camel.storages import QdrantStorage
 from camel.types import StorageType
+
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or not os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "").startswith("dummy")
+)
 
 
 @pytest.fixture
@@ -48,6 +54,10 @@ def test__initialize_vector_storage(auto_retriever):
     assert isinstance(storage_custom, QdrantStorage)
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_run_vector_retriever(auto_retriever):
     # Define mock data for testing
     query_unrealted = "unrelated query"
@@ -63,6 +73,10 @@ def test_run_vector_retriever(auto_retriever):
     assert "No suitable information retrieved from" in str(result_unrelated)
 
 
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 def test_run_vector_retriever_with_element_input(auto_retriever):
     uio = UnstructuredIO()
     test_element = uio.create_element_from_text(

@@ -14,7 +14,7 @@
 
 from typing import List
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from camel.embeddings.base import BaseEmbedding
 from camel.utils import DeduplicationResult, deduplicate_internally
@@ -69,7 +69,7 @@ def test_deduplicate_internally_with_mock_embedding():
     texts = ["Hello world!", "Hello world!", "HELLO WORLD!", "Something else"]
     mock_embedding_instance = MockEmbedding()
 
-    result: DeduplicationResult = deduplicate_internally(
+    result: DeduplicationResult = deduplicate_internally(  # type: ignore[annotation-unchecked]
         texts=texts,
         threshold=0.9,
         embedding_instance=mock_embedding_instance,
@@ -115,7 +115,7 @@ def test_deduplicate_internally_with_precomputed_embeddings():
         [0.0, 0.0, 1.0],
     ]
 
-    result: DeduplicationResult = deduplicate_internally(
+    result: DeduplicationResult = deduplicate_internally(  # type: ignore[annotation-unchecked]
         texts=texts,
         threshold=0.95,
         embeddings=embeddings,
@@ -169,7 +169,7 @@ def test_deduplicate_internally_chain_scenario():
         [0.0, 1.0],  # D
     ]
 
-    result: DeduplicationResult = deduplicate_internally(
+    result: DeduplicationResult = deduplicate_internally(  # type: ignore[annotation-unchecked]
         texts=texts,
         threshold=0.8,
         embeddings=embeddings,

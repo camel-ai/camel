@@ -12,9 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
 from unittest.mock import MagicMock, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from pydantic import BaseModel
 
 from camel.configs import ChatGPTConfig
@@ -22,8 +23,17 @@ from camel.models import OpenAIModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
+MISSING_OPENAI_KEY = (
+    "OPENAI_API_KEY" not in os.environ
+    or os.environ["OPENAI_API_KEY"] == "dummy-key-for-test-collectioncases"
+)
+
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    MISSING_OPENAI_KEY,
+    reason="OpenAI API key is missing or dummy",
+)
 @pytest.mark.parametrize(
     "model_type",
     [
@@ -476,11 +486,11 @@ def test_responses_mode_normalizes_function_tools_schema():
 
 def test_responses_mode_structured_output_enforces_additional_properties():
     class Destination(BaseModel):
-        city: str
+        city: str  # type: ignore[annotation-unchecked]
 
     class TravelAdvice(BaseModel):
-        destination: Destination
-        clothing: str
+        destination: Destination  # type: ignore[annotation-unchecked]
+        clothing: str  # type: ignore[annotation-unchecked]
 
     with patch("camel.models.openai_model.OpenAI") as mock_openai:
         mock_client = MagicMock()

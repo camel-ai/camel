@@ -20,9 +20,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 if TYPE_CHECKING:
-    from pptx import presentation
-    from pptx.slide import Slide
-    from pptx.text.text import TextFrame
+    from pptx import presentation  # type: ignore[import-not-found]
+    from pptx.slide import Slide  # type: ignore[import-not-found]
+    from pptx.text.text import TextFrame  # type: ignore[import-not-found]
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -135,7 +135,7 @@ class PPTXToolkit(BaseToolkit):
             set_color_to_white (bool): Whether to set the color to white.
                 (default: :obj:`False`)
         """
-        from pptx.dml.color import RGBColor
+        from pptx.dml.color import RGBColor  # type: ignore[import-not-found]
 
         matches = list(BOLD_ITALICS_PATTERN.finditer(text))
         last_index = 0
@@ -273,7 +273,7 @@ class PPTXToolkit(BaseToolkit):
                 provided, the default template will be used. (default: :obj:
                 `None`)
         """
-        from pptx import Presentation
+        from pptx import Presentation  # type: ignore[import-not-found]
 
         # Use template if provided, otherwise create new presentation
         if template is not None:
@@ -680,9 +680,14 @@ class PPTXToolkit(BaseToolkit):
             slide_width_inch (float): The width of the slide in inches.
             slide_height_inch (float): The height of the slide in inches.
         """
-        from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE
-        from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
-        from pptx.util import Inches, Pt
+        from pptx.enum.shapes import (  # type: ignore[import-not-found]
+            MSO_AUTO_SHAPE_TYPE,
+        )
+        from pptx.enum.text import (  # type: ignore[import-not-found]
+            MSO_ANCHOR,
+            PP_ALIGN,
+        )
+        from pptx.util import Inches, Pt  # type: ignore[import-not-found]
 
         steps = slide_json['bullet_points']
         n_steps = len(steps)

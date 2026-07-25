@@ -284,8 +284,7 @@ class QdrantStorage(BaseVectorStorage):
         )
         if op_info.status != UpdateStatus.COMPLETED:
             raise RuntimeError(
-                "Failed to add vectors in Qdrant, operation info: "
-                f"{op_info}."
+                f"Failed to add vectors in Qdrant, operation info: {op_info}."
             )
 
     def update_payload(
