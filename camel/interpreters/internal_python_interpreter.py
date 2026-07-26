@@ -474,7 +474,36 @@ class InternalPythonInterpreter(BaseInterpreter):
             keyword.arg: self._execute_ast(keyword.value)
             for keyword in call.keywords
         }
+
+        # Block dunder access laundered through getattr/setattr/vars, which
+        # would otherwise reach the same attributes the ast.Attribute gate
+        # rejects (e.g. getattr(x, "__class__")).
+        self._check_unsafe_reflection(callable_func, args, kwargs)
+
         return callable_func(*args, **kwargs)  # type: ignore[arg-type]
+
+    def _check_unsafe_reflection(
+        self,
+        callable_func: Any,
+        args: List[Any],
+        kwargs: Dict[str, Any],
+    ) -> None:
+        r"""Reject reflective builtins that resolve a blocked dunder
+        attribute at runtime, closing the escape the ``ast.Attribute``
+        gate leaves open.
+        """
+        if callable_func is getattr or callable_func is setattr:
+            # getattr(obj, name[, default]) / setattr(obj, name, value)
+            name = args[1] if len(args) > 1 else kwargs.get("name")
+            if isinstance(name, str) and name in _UNSAFE_ATTRIBUTES:
+                raise InterpreterError(
+                    f"Access to '{name}' is not allowed."
+                )
+        elif callable_func is vars and (args or kwargs):
+            # vars(obj) is equivalent to obj.__dict__, already blocked.
+            raise InterpreterError(
+                "Access to '__dict__' is not allowed."
+            )
 
     def _execute_subscript(self, subscript: ast.Subscript):
         index = self._execute_ast(subscript.slice)
