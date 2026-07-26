@@ -62,7 +62,9 @@ class BaseToolkit(metaclass=AgentOpsMeta):
     r"""Base class for toolkits.
 
     Args:
-        timeout (Optional[float]): The timeout for the toolkit.
+        timeout (float, optional): The timeout threshold for the toolkit in
+            seconds. If `None`, no timeout will be applied.
+            (default: :obj:`Constants.TIMEOUT_THRESHOLD`)
     """
 
     from mcp.server import FastMCP
