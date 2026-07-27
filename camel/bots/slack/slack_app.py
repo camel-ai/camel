@@ -26,7 +26,7 @@ from camel.bots.slack.models import (
     SlackEventBody,
     SlackEventProfile,
 )
-from camel.utils import dependencies_required
+from camel.utils import api_keys_required, dependencies_required
 
 if TYPE_CHECKING:
     from slack_bolt.context.async_context import AsyncBoltContext
@@ -58,6 +58,13 @@ class SlackApp:
     """
 
     @dependencies_required('slack_bolt')
+    @api_keys_required(
+        [
+            ("token", "SLACK_TOKEN"),
+            ("scopes", "SLACK_SCOPES"),
+            ("signing_secret", "SLACK_SIGNING_SECRET"),
+        ]
+    )
     def __init__(
         self,
         token: Optional[str] = None,
@@ -100,13 +107,6 @@ class SlackApp:
         self.client_secret: Optional[str] = client_secret or os.getenv(
             "SLACK_CLIENT_SECRET"
         )
-
-        if not all([self.token, self.scopes, self.signing_secret]):
-            raise ValueError(
-                "`SLACK_TOKEN`, `SLACK_SCOPES`, and `SLACK_SIGNING_SECRET` "
-                "environment variables must be set. Get it here: "
-                "`https://api.slack.com/apps`."
-            )
 
         # Setup OAuth settings if client ID and secret are provided
         if self.client_id and self.client_secret:

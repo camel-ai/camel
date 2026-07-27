@@ -362,6 +362,16 @@ def test_unsafe_mode_eval(unsafe_interpreter):
     assert result == "3"
 
 
+def test_unsafe_mode_eval_executes_once(unsafe_interpreter):
+    values = []
+    unsafe_interpreter.update_action_space({"values": values})
+
+    result = unsafe_interpreter.run("values.append(1)", code_type="python")
+
+    assert result == "None"
+    assert values == [1]
+
+
 def test_unsafe_mode_exec(unsafe_interpreter):
     # Test print statement
     result = unsafe_interpreter.run("print('hello world')", code_type="python")
