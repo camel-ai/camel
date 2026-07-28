@@ -34,18 +34,33 @@ Please refer to the paper for more details: https://arxiv.org/pdf/2406.20094.
 def __init__(self, model: Optional[BaseModelBackend] = None):
 ```
 
+<a id="camel.personas.persona_hub.PersonaHub.add"></a>
+
+### add
+
+```python
+def add(self, persona: Persona):
+```
+
+Add a persona to the group, keyed by its own ID.
+
+**Parameters:**
+
+- **persona** (Persona): The persona to add.
+
 <a id="camel.personas.persona_hub.PersonaHub.__setitem__"></a>
 
 ### __setitem__
 
 ```python
-def __setitem__(self, persona: Persona):
+def __setitem__(self, persona_id: uuid.UUID, persona: Persona):
 ```
 
-Add a persona to the group.
+Add a persona to the group under the given ID.
 
 **Parameters:**
 
+- **persona_id** (uuid.UUID): The ID to store the persona under.
 - **persona** (Persona): The persona to add.
 
 <a id="camel.personas.persona_hub.PersonaHub.__delitem__"></a>

@@ -63,13 +63,22 @@ class PersonaHub:
         self.model = model
         self.personas: Dict[uuid.UUID, Persona] = {}
 
-    def __setitem__(self, persona: Persona):
-        r"""Add a persona to the group.
+    def add(self, persona: Persona) -> None:
+        r"""Add a persona to the group, keyed by its own ID.
 
         Args:
             persona (Persona): The persona to add.
         """
         self.personas[persona.id] = persona
+
+    def __setitem__(self, persona_id: uuid.UUID, persona: Persona):
+        r"""Add a persona to the group under the given ID.
+
+        Args:
+            persona_id (uuid.UUID): The ID to store the persona under.
+            persona (Persona): The persona to add.
+        """
+        self.personas[persona_id] = persona
 
     def __delitem__(self, persona_id: uuid.UUID):
         r"""Remove a persona from the group by ID.
