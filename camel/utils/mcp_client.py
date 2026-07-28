@@ -1185,7 +1185,7 @@ def create_mcp_client_from_config_file(
     import json
 
     config_path = Path(config_path)
-    with open(config_path, 'r') as f:
+    with open(config_path, 'r', encoding='utf-8') as f:
         config_data = json.load(f)
 
     servers = config_data.get("mcpServers", {})

@@ -16,6 +16,7 @@ Tests for the unified MCP client.
 """
 
 import asyncio
+import builtins
 import json
 import tempfile
 from pathlib import Path
@@ -424,6 +425,53 @@ class TestCreateMCPClientFromConfigFile:
             with pytest.raises(json.JSONDecodeError):
                 create_mcp_client_from_config_file(config_path, "test")
         finally:
+            Path(config_path).unlink()
+
+    def test_create_from_config_file_non_ascii(self, monkeypatch):
+        """Test loading a UTF-8 config file that contains non-ASCII text.
+
+        The config file is always written as UTF-8 (that is what editors and
+        MCP clients produce), so it must also be read as UTF-8 regardless of
+        the locale encoding of the machine running CAMEL. ``builtins.open`` is
+        patched to force a non-UTF-8 default so the test is deterministic on
+        every platform instead of only failing on non-UTF-8 locales.
+        """
+        config_data = {
+            "mcpServers": {
+                "文件系统": {
+                    "command": "npx",
+                    "args": [
+                        "-y",
+                        "@modelcontextprotocol/server-filesystem",
+                        "/家/資料",
+                    ],
+                }
+            }
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False, encoding="utf-8"
+        ) as f:
+            json.dump(config_data, f, ensure_ascii=False)
+            config_path = f.name
+
+        real_open = builtins.open
+
+        def open_with_narrow_locale(file, mode='r', *args, **kwargs):
+            if 'b' not in mode and kwargs.get('encoding') is None:
+                kwargs['encoding'] = 'ascii'
+            return real_open(file, mode, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "open", open_with_narrow_locale)
+
+        try:
+            client = create_mcp_client_from_config_file(
+                config_path, "文件系统"
+            )
+            assert client.config.command == "npx"
+            assert client.config.args[-1] == "/家/資料"
+        finally:
+            monkeypatch.undo()
             Path(config_path).unlink()
 
 
