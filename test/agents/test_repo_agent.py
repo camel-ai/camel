@@ -269,6 +269,57 @@ def test_check_switch_mode(mock_vector_retriever):
     mock_vector_retriever.process.assert_called_once()
 
 
+@pytest.mark.parametrize(
+    "similarity, top_k, expected_similarity, expected_top_k",
+    [
+        # 0.0 disables similarity filtering (vector_retriever.query compares
+        # with `result.similarity >= similarity_threshold`), and it was the one
+        # value `self.similarity or 0.6` could not express: asking for no
+        # filtering silently applied the default 0.6 instead.
+        (0.0, 0, 0.0, 0),
+        # Explicit non-default values were always forwarded correctly.
+        (0.9, 3, 0.9, 3),
+        # None means "unset", so the defaults still apply.
+        (None, None, 0.6, 5),
+    ],
+)
+def test_step_in_rag_mode_forwards_falsy_retrieval_settings(
+    mock_vector_retriever,
+    similarity,
+    top_k,
+    expected_similarity,
+    expected_top_k,
+):
+    r"""RepoAgent must query with the similarity/top_k it was configured with.
+
+    Regression test: the query used `self.similarity or 0.6` and
+    `self.top_k or 5`, so a configured 0 was replaced by the default while
+    `agent.similarity` / `agent.top_k` still read 0. The agent's state and its
+    actual retrieval behaviour disagreed, with nothing to indicate it.
+    """
+    # Arrange
+    agent = RepoAgent(
+        vector_retriever=mock_vector_retriever,
+        similarity=similarity,
+        top_k=top_k,
+    )
+    agent.processing_mode = ProcessingMode.RAG
+    agent.vector_retriever.query.return_value = []
+
+    # Act
+    with patch('camel.agents.repo_agent.ChatAgent.step') as mock_step:
+        mock_step.return_value = MagicMock(spec=ChatAgentResponse)
+        agent.step("Test query")
+
+    # Assert
+    query_kwargs = agent.vector_retriever.query.call_args.kwargs
+    assert query_kwargs["similarity_threshold"] == expected_similarity
+    assert query_kwargs["top_k"] == expected_top_k
+    # The agent must not contradict what it reports about itself.
+    assert agent.similarity == similarity
+    assert agent.top_k == top_k
+
+
 def test_step_in_rag_mode(mock_vector_retriever):
     r"""Test step method in RAG mode."""
     # Arrange

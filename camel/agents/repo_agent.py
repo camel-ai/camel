@@ -461,8 +461,10 @@ class RepoAgent(ChatAgent):
                 try:
                     raw_rag_content = self.vector_retriever.query(
                         query=user_query,
-                        top_k=self.top_k or 5,
-                        similarity_threshold=self.similarity or 0.6,
+                        top_k=5 if self.top_k is None else self.top_k,
+                        similarity_threshold=(
+                            0.6 if self.similarity is None else self.similarity
+                        ),
                     )
                     # Remove duplicates and retrieve the whole file
                     paths = []
