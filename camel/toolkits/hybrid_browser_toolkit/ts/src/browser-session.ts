@@ -2558,7 +2558,71 @@ export class HybridBrowserSession {
     }
   }
 
+  /**
+   * Reconcile the internally tracked tabs (`this.pages`) with the pages that
+   * actually exist in the browser context. This keeps the tab list in sync in
+   * both directions when the toolkit shares a browser with an external driver
+   * (e.g. the desktop app driving the browser over CDP):
+   *   - pages opened outside the toolkit are registered so they show up here.
+   *   - pages closed outside the toolkit are dropped so they no longer show up.
+   *
+   * In non-CDP mode every page is created by the toolkit and already tracked,
+   * so this is effectively a no-op (aside from pruning closed pages).
+   */
+  private async syncPagesWithContext(): Promise<void> {
+    if (!this.context) {
+      return;
+    }
+
+    let contextPages: Page[];
+    try {
+      contextPages = this.context.pages();
+    } catch {
+      // Context may be closing/closed; nothing to reconcile.
+      return;
+    }
+
+    const browserConfig = this.configLoader.getBrowserConfig();
+    const trackedPages = new Set(this.pages.values());
+
+    // 1. Register pages that exist in the context but aren't tracked yet
+    //    (e.g. tabs opened directly in the desktop app).
+    for (const page of contextPages) {
+      if (page.isClosed() || trackedPages.has(page)) {
+        continue;
+      }
+      const tabId = this.generateTabId();
+      this.registerNewPage(tabId, page);
+      try {
+        page.setDefaultNavigationTimeout(browserConfig.navigationTimeout);
+        page.setDefaultTimeout(browserConfig.navigationTimeout);
+      } catch {
+        // Ignore pages that reject timeout configuration.
+      }
+    }
+
+    // 2. Drop tracked tabs whose pages have been closed or are no longer part
+    //    of the context (e.g. tabs closed in the desktop app).
+    const contextPageSet = new Set(contextPages);
+    for (const [tabId, page] of Array.from(this.pages.entries())) {
+      if (page.isClosed() || !contextPageSet.has(page)) {
+        this.pages.delete(tabId);
+        this.consoleLogs.delete(tabId);
+      }
+    }
+
+    // 3. Ensure currentTabId still points at a live tab.
+    if (!this.currentTabId || !this.pages.has(this.currentTabId)) {
+      const remainingTabs = Array.from(this.pages.keys());
+      this.currentTabId = remainingTabs.length > 0 ? remainingTabs[0] : null;
+    }
+  }
+
   async getTabInfo(): Promise<TabInfo[]> {
+    // Reconcile with the real browser context first so tabs opened or closed
+    // outside the toolkit (e.g. in the desktop app) are reflected here.
+    await this.syncPagesWithContext();
+
     const tabInfo: TabInfo[] = [];
 
     for (const [tabId, page] of this.pages) {
