@@ -104,13 +104,18 @@ class RepoAgent(ChatAgent):
         chunk_size (Optional[int]): Maximum number of characters per code chunk
             when indexing files for RAG. (default: :obj:`8192`)
         top_k (int): Number of top-matching chunks to retrieve from the vector
-            store in RAG mode. (default: :obj:`5`)
+            store in RAG mode. Must be positive; ``VectorRetriever.query``
+            rejects values <= 0. (default: :obj:`5`)
         similarity (Optional[float]): Minimum similarity score required to
-            include a chunk in the RAG context. (default: :obj:`0.6`)
+            include a chunk in the RAG context. ``0.0`` is valid and means
+            "keep every match". (default: :obj:`0.6`)
         collection_name (Optional[str]): Name of the vector database
             collection to use for storing and retrieving chunks. (default:
             :obj:`None`)
         **kwargs: Inherited from ChatAgent
+
+    Raises:
+        ValueError: If ``top_k`` is not None and not a positive integer.
 
     Note:
         The current implementation of RAG mode requires using Qdrant as the
@@ -135,6 +140,15 @@ class RepoAgent(ChatAgent):
         collection_name: Optional[str] = None,
         **kwargs,
     ):
+        # Validate here rather than at the query call. `VectorRetriever.query`
+        # already rejects `top_k <= 0`, but `step` wraps the call in a bare
+        # `except Exception` that logs a qdrant failure and falls through to
+        # `super().step()`, so a rejected value would surface as "retrieval
+        # returned nothing" long after construction. Raising in `__init__`
+        # points at the argument that is actually wrong.
+        if top_k is not None and top_k <= 0:
+            raise ValueError(f"top_k must be a positive integer, got {top_k}.")
+
         if model is None:
             model = ModelFactory.create(
                 model_platform=ModelPlatformType.DEFAULT,

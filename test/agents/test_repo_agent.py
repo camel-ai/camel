@@ -275,8 +275,10 @@ def test_check_switch_mode(mock_vector_retriever):
         # 0.0 disables similarity filtering (vector_retriever.query compares
         # with `result.similarity >= similarity_threshold`), and it was the one
         # value `self.similarity or 0.6` could not express: asking for no
-        # filtering silently applied the default 0.6 instead.
-        (0.0, 0, 0.0, 0),
+        # filtering silently applied the default 0.6 instead. top_k is left at
+        # its minimum valid value here -- 0 is rejected in __init__, covered by
+        # test_rejects_non_positive_top_k below.
+        (0.0, 1, 0.0, 1),
         # Explicit non-default values were always forwarded correctly.
         (0.9, 3, 0.9, 3),
         # None means "unset", so the defaults still apply.
@@ -318,6 +320,28 @@ def test_step_in_rag_mode_forwards_falsy_retrieval_settings(
     # The agent must not contradict what it reports about itself.
     assert agent.similarity == similarity
     assert agent.top_k == top_k
+
+
+@pytest.mark.parametrize("top_k", [0, -1])
+def test_rejects_non_positive_top_k(mock_vector_retriever, top_k):
+    r"""A top_k the retriever cannot use must fail at construction.
+
+    `VectorRetriever.query` raises `ValueError` for `top_k <= 0`, but `step`
+    catches every exception from the query, logs it as a qdrant failure, and
+    falls through to `super().step()`. Forwarding 0 would therefore turn a bad
+    argument into "retrieval silently returned nothing" at query time. Raising
+    in `__init__` reports it where the caller can still fix it.
+
+    This is asserted on the real constructor rather than through a query,
+    because `mock_vector_retriever` is a `MagicMock` and never runs the
+    retriever's own guard.
+    """
+    with pytest.raises(ValueError, match="top_k must be a positive integer"):
+        RepoAgent(
+            vector_retriever=mock_vector_retriever,
+            similarity=0.0,
+            top_k=top_k,
+        )
 
 
 def test_step_in_rag_mode(mock_vector_retriever):
