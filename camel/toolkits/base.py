@@ -20,6 +20,8 @@ from camel.toolkits import FunctionTool
 from camel.utils import AgentOpsMeta, Constants, with_timeout
 
 if TYPE_CHECKING:
+    from mcp.server.fastmcp import FastMCP
+
     from camel.agents import ChatAgent
 
 F = TypeVar('F', bound=Callable)
@@ -65,9 +67,7 @@ class BaseToolkit(metaclass=AgentOpsMeta):
         timeout (Optional[float]): The timeout for the toolkit.
     """
 
-    from mcp.server.fastmcp import FastMCP
-
-    mcp: FastMCP
+    mcp: "FastMCP"
     timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
 
     def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
