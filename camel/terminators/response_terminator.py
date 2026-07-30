@@ -125,4 +125,4 @@ class ResponseWordsTerminator(ResponseTerminator):
         r"""Reset the terminator."""
         self._terminated = False
         self._termination_reason = None
-        self._word_count_dict = defaultdict(int)
+        self._word_count_dict = []

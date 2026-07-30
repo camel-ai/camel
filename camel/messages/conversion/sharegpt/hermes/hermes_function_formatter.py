@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import ast
 import json
 import re
 from typing import Any, Dict, List, Optional
@@ -41,6 +42,26 @@ class HermesFunctionFormatter(
 ):
     r"""Hermes-style function calling format implementation with validation"""
 
+    @staticmethod
+    def _loads(raw: str) -> Any:
+        r"""Parse a Hermes tool-call/response object into a Python value.
+
+        Real Hermes output is JSON, so parse it as JSON first. Fall back to
+        :func:`ast.literal_eval` for legacy Python-``repr`` payloads (single
+        quotes, ``True``/``False``/``None``) that earlier CAMEL versions
+        emitted, so older serialized data keeps round-tripping.
+
+        Args:
+            raw (str): The raw object substring captured from the message.
+
+        Returns:
+            Any: The parsed object (typically a ``dict``).
+        """
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            return ast.literal_eval(raw)
+
     def extract_tool_calls(self, message: str) -> List[HermesToolCall]:
         r"""Extracts all tool calls from the provided message string.
 
@@ -57,7 +78,7 @@ class HermesFunctionFormatter(
 
         for match in matches:
             try:
-                call_dict = json.loads(match.group(1).replace("'", '"'))
+                call_dict = self._loads(match.group(1))
                 tool_calls.append(HermesToolCall.model_validate(call_dict))
             except Exception as e:
                 print(f"Warning: Failed to parse tool call: {e}")
@@ -83,8 +104,7 @@ class HermesFunctionFormatter(
 
         if match:
             try:
-                response_json = match.group(1)
-                response_dict = json.loads(response_json.replace("'", '"'))
+                response_dict = self._loads(match.group(1))
                 return HermesToolResponse.model_validate(response_dict)
             except Exception as e:
                 print(f"Warning: Failed to parse tool response: {e}")
@@ -109,10 +129,11 @@ class HermesFunctionFormatter(
                 format.
         """
         tool_call_dict = {"name": func_name, "arguments": args}
+        tool_call_json = json.dumps(tool_call_dict, ensure_ascii=False)
 
         if content:
-            return f"{content}\n<tool_call>\n{tool_call_dict}\n</tool_call>"
-        return f"<tool_call>\n{tool_call_dict}\n</tool_call>"
+            return f"{content}\n<tool_call>\n{tool_call_json}\n</tool_call>"
+        return f"<tool_call>\n{tool_call_json}\n</tool_call>"
 
     def format_tool_response(self, func_name: str, result: Any) -> str:
         r"""Formats a tool response message with the given function name and
@@ -128,4 +149,5 @@ class HermesFunctionFormatter(
                 format.
         """
         response_dict = {"name": func_name, "content": result}
-        return f"<tool_response>\n{response_dict}\n</tool_response>"
+        response_json = json.dumps(response_dict, ensure_ascii=False)
+        return f"<tool_response>\n{response_json}\n</tool_response>"

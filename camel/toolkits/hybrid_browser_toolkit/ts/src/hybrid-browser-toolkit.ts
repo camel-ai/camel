@@ -619,6 +619,8 @@ export class HybridBrowserToolkit {
 
           let result;
           try {
+            // Trust boundary: this intentionally executes caller-provided
+            // JavaScript in the active page context, not in a sandbox.
             result = eval(${JSON.stringify(code)});
           } catch (e) {
             try {
