@@ -218,11 +218,11 @@ class MCPServer:
                 `BaseToolkit` subclass,
                 or if a specified method cannot be found or is not callable.
         """
-        from mcp.server.fastmcp import FastMCP
-
         original_init = cls.__init__
 
         def new_init(instance, *args, **kwargs):
+            from mcp.server.fastmcp import FastMCP
+
             from camel.toolkits.base import BaseToolkit
 
             original_init(instance, *args, **kwargs)
