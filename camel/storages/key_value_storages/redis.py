@@ -15,6 +15,7 @@
 import asyncio
 import json
 import logging
+import threading
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
@@ -58,7 +59,15 @@ class RedisStorage(BaseKeyValueStorage):
         self._client: Optional[aredis.Redis] = None
         self._url = url
         self._sid = sid
-        self._loop = loop or asyncio.get_event_loop()
+        # A loop is no longer captured eagerly. ``asyncio.get_event_loop()``
+        # raises in a thread that has none, and a loop captured at
+        # construction time is the wrong one to wait on if the caller later
+        # runs a different loop on the same thread. When no loop is supplied,
+        # one is created on a background thread on first use instead.
+        self._loop = loop
+        self._owned_loop: Optional[asyncio.AbstractEventLoop] = None
+        self._owned_thread: Optional[threading.Thread] = None
+        self._owned_loop_lock = threading.Lock()
 
         self._create_client(**kwargs)
 
@@ -66,7 +75,14 @@ class RedisStorage(BaseKeyValueStorage):
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        self._run_async(self.close())
+        try:
+            self._run_async(self.close())
+        finally:
+            # The background loop runs on a daemon thread, so leaving it alive
+            # would not block interpreter exit, but a caller who scopes the
+            # storage with ``with`` should not be left with a thread per
+            # instance either.
+            self._close_background_loop()
 
     async def close(self) -> None:
         r"""Closes the Redis client asynchronously."""
@@ -156,9 +172,87 @@ class RedisStorage(BaseKeyValueStorage):
         except Exception as e:
             logger.error(f"Error clearing records: {e}")
 
+    def _background_loop(self) -> asyncio.AbstractEventLoop:
+        r"""Returns this instance's loop, starting it on first use.
+
+        The loop lives on a daemon thread for the lifetime of the storage, so
+        every coroutine runs on the same loop. ``redis.asyncio`` binds its
+        connection pool to the loop that first uses it, so a fresh loop per
+        call would discard the pool and can leave the previous loop's
+        connections unusable.
+        """
+        with self._owned_loop_lock:
+            if self._owned_loop is None or self._owned_loop.is_closed():
+                loop = asyncio.new_event_loop()
+                started = threading.Event()
+
+                def run() -> None:
+                    asyncio.set_event_loop(loop)
+                    loop.call_soon(started.set)
+                    loop.run_forever()
+
+                thread = threading.Thread(
+                    target=run,
+                    name=f"camel-redis-{self._sid}",
+                    daemon=True,
+                )
+                thread.start()
+                # The loop must be confirmed running before it is returned:
+                # a caller that sees ``is_running() is False`` would try to
+                # drive it with ``run_until_complete`` from its own thread.
+                started.wait(timeout=10)
+                self._owned_loop = loop
+                self._owned_thread = thread
+            return self._owned_loop
+
     def _run_async(self, coro):
-        if not self._loop.is_running():
-            return self._loop.run_until_complete(coro)
+        r"""Runs a coroutine from a synchronous caller.
+
+        A caller-supplied loop is used when it can be, so an application that
+        passes its own loop keeps its Redis traffic there. Two situations rule
+        it out, and both used to fail:
+
+        - it is the loop running in *this* thread. ``.result()`` would occupy
+          the very thread that loop needs in order to advance the coroutine,
+          so the call would hang forever.
+        - it is idle while this thread runs some other loop.
+          ``run_until_complete`` refuses to drive a second loop on a thread
+          that is already running one.
+
+        In either case the coroutine goes to the background loop, which runs
+        on a thread of its own and so is never the one being blocked.
+        """
+        try:
+            running_loop: Optional[asyncio.AbstractEventLoop] = (
+                asyncio.get_running_loop()
+            )
+        except RuntimeError:
+            running_loop = None
+
+        supplied = self._loop
+        if (
+            supplied is None
+            or supplied.is_closed()
+            or supplied is running_loop
+            or (running_loop is not None and not supplied.is_running())
+        ):
+            loop = self._background_loop()
         else:
-            future = asyncio.run_coroutine_threadsafe(coro, self._loop)
-            return future.result()
+            loop = supplied
+
+        if loop.is_running():
+            return asyncio.run_coroutine_threadsafe(coro, loop).result()
+        return loop.run_until_complete(coro)
+
+    def _close_background_loop(self) -> None:
+        r"""Stops the background event loop, if one was started."""
+        with self._owned_loop_lock:
+            loop, thread = self._owned_loop, self._owned_thread
+            self._owned_loop, self._owned_thread = None, None
+
+        if loop is None:
+            return
+        loop.call_soon_threadsafe(loop.stop)
+        if thread is not None:
+            thread.join(timeout=5)
+        loop.close()
