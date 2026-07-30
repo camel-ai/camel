@@ -30,18 +30,20 @@ _agent_session_id_var: ContextVar[str | None] = ContextVar(
 _langfuse_configured = False
 _langfuse_client: Any | None = None
 
+_langfuse_sdk: Any | None = None
 try:
-    import langfuse as _langfuse_sdk
+    import langfuse
 
+    _langfuse_sdk = langfuse
     LANGFUSE_AVAILABLE = True
 except ImportError:
-    _langfuse_sdk = None
     LANGFUSE_AVAILABLE = False
 
+_langfuse_v2_context: Any | None = None
 try:
-    from langfuse.decorators import (
-        langfuse_context as _langfuse_v2_context,
-    )
+    from langfuse.decorators import langfuse_context
+
+    _langfuse_v2_context = langfuse_context
 except ImportError:
     _langfuse_v2_context = None
 
@@ -158,7 +160,7 @@ def configure_langfuse(
     )
 
     try:
-        if _is_langfuse_v3():
+        if _is_langfuse_v3() and _langfuse_sdk is not None:
             _langfuse_client = _langfuse_sdk.Langfuse(
                 public_key=public_key,
                 secret_key=secret_key,
@@ -177,7 +179,7 @@ def configure_langfuse(
             _langfuse_client = None
         else:
             raise RuntimeError('Installed Langfuse SDK has no supported API')
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         _langfuse_client = None
         _langfuse_configured = False
         logger.error(f'Failed to configure Langfuse: {exc}')
