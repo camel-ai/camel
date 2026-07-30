@@ -3201,10 +3201,6 @@ class Workforce(BaseNode):
         self._start_child_node_when_paused(workforce.start())
         return self
 
-    async def _async_reset(self) -> None:
-        r"""Async implementation of reset to run on the event loop."""
-        self._pause_event.set()
-
     @check_if_running(False)
     def reset(self) -> None:
         r"""Reset the workforce and all the child nodes under it. Can only
@@ -3237,20 +3233,28 @@ class Workforce(BaseNode):
         self._state = WorkforceState.IDLE
         self._stop_requested = False
         self._skip_requested = False
-        # Handle asyncio.Event in a thread-safe way
-        if self._loop and not self._loop.is_closed():
-            # If we have a loop, use it to set the event safely
-            try:
-                asyncio.run_coroutine_threadsafe(
-                    self._async_reset(), self._loop
-                ).result()
-            except RuntimeError as e:
-                logger.warning(f"Failed to reset via existing loop: {e}")
-                # Fallback to direct event manipulation
-                self._pause_event.set()
-        else:
-            # No active loop, directly set the event
-            self._pause_event.set()
+        # ``asyncio.Event.set()`` is called directly rather than routed onto
+        # ``self._loop``. It only flips a flag and schedules the wake-ups of
+        # already-awaiting tasks onto the loop those tasks belong to, so it
+        # needs no loop of its own -- which is why every sibling intervention
+        # method already sets it synchronously when no loop is available.
+        #
+        # Routing it was also unsafe here. Waiting on
+        # ``run_coroutine_threadsafe(...).result()`` blocks until the target
+        # loop advances the coroutine, and ``reset()`` is reachable in two
+        # states where it never will:
+        #
+        # - ``self._loop`` is open but idle.
+        #   ``_process_task_with_intervention`` deliberately leaves the loop
+        #   open when it returns in the ``PAUSED`` state so that
+        #   ``continue_from_pause`` can reuse it, and nothing drives it in
+        #   between.
+        # - ``self._loop`` is the loop running on this very thread, which the
+        #   wait would be occupying.
+        #
+        # Neither raises, so the ``except RuntimeError`` fallback could not
+        # fire, and the wait had no timeout.
+        self._pause_event.set()
 
         for cb in self._callbacks:
             if isinstance(cb, WorkforceMetrics):
