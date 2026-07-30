@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+import concurrent.futures
 import json
 import platform
 from typing import (
@@ -430,11 +431,19 @@ class MCPAgent(ChatAgent):
             loop = None
 
         if loop and loop.is_running():
-            # Running inside an existing loop (e.g., Jupyter/FastAPI)
-            # Use create_task and run with a future
-            coro = self.astep(input_message, *args, **kwargs)
-            future = asyncio.ensure_future(coro)
-            return asyncio.run_coroutine_threadsafe(future, loop).result()  # type: ignore [arg-type]
+            # Running inside an existing loop (e.g., Jupyter/FastAPI).
+            # The coroutine cannot be driven by that loop, because this
+            # method occupies its thread and would block the loop it is
+            # waiting on. Run it on a worker thread with its own loop
+            # instead, mirroring how ``ChatAgent.step`` offloads work.
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=1
+            ) as executor:
+                return executor.submit(
+                    lambda: asyncio.run(
+                        self.astep(input_message, *args, **kwargs)
+                    )
+                ).result()
         else:
             # Safe to run normally
             return asyncio.run(self.astep(input_message, *args, **kwargs))
