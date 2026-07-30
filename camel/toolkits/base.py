@@ -65,7 +65,7 @@ class BaseToolkit(metaclass=AgentOpsMeta):
         timeout (Optional[float]): The timeout for the toolkit.
     """
 
-    from mcp.server import FastMCP
+    from mcp.server.fastmcp import FastMCP
 
     mcp: FastMCP
     timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
