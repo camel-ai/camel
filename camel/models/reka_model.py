@@ -139,9 +139,9 @@ class RekaModel(BaseModelBackend):
                         "role": response.responses[0].message.role,
                         "content": response.responses[0].message.content,
                     },
-                    finish_reason=response.responses[0].finish_reason
-                    if response.responses[0].finish_reason
-                    else None,
+                    finish_reason=self._normalize_finish_reason(
+                        response.responses[0].finish_reason
+                    ),
                 )
             ],
             created=None,
@@ -151,6 +151,18 @@ class RekaModel(BaseModelBackend):
         )
 
         return openai_response
+
+    @staticmethod
+    def _normalize_finish_reason(reason: Optional[str]) -> Optional[str]:
+        r"""Map Reka finish reasons to the OpenAI vocabulary.
+
+        Reka uses ``"context"`` when the context window is exhausted;
+        OpenAI's equivalent is ``"length"``.  ``"stop"`` and ``"length"``
+        pass through unchanged.
+        """
+        if reason == "context":
+            return "length"
+        return reason
 
     def _convert_openai_to_reka_messages(
         self,
