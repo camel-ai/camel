@@ -71,7 +71,7 @@ def _finish_reason_from_response(
     emitted tool calls, otherwise ``"stop"`` (the prior behavior).
     """
     status = _get(response, "status")
-    if status in ("incomplete", "failed"):
+    if status == "incomplete":
         reason = _get(_get(response, "incomplete_details"), "reason")
         mapped = _INCOMPLETE_REASON_TO_FINISH_REASON.get(reason)
         if mapped is not None:
@@ -263,11 +263,16 @@ def _process_response_stream_event(
             )
         ]
 
-    if event_type in (
-        "response.completed",
-        "response.incomplete",
-        "response.failed",
-    ):
+    if event_type == "response.failed":
+        resp = _get(event, "response")
+        error = _get(resp, "error")
+        error_code = _get(error, "code")
+        error_message = _get(error, "message") or "Unknown error"
+        if error_code:
+            error_message = f"{error_code}: {error_message}"
+        raise RuntimeError(f"Responses API response failed: {error_message}")
+
+    if event_type in ("response.completed", "response.incomplete"):
         resp = _get(event, "response")
         if resp:
             state.response_id = _get(resp, "id", state.response_id)

@@ -13,6 +13,8 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from types import SimpleNamespace
 
+import pytest
+
 from camel.models.openai_responses_adapter import (
     iter_response_events_to_chat_chunks,
     response_to_chat_completion,
@@ -187,10 +189,7 @@ def test_streaming_completed_is_stop():
     assert finish_chunks[0].choices[0].finish_reason == "stop"
 
 
-def test_streaming_failed_emits_single_terminal_chunk():
-    # A failed stream terminates through the terminal branch, not the
-    # abnormal-termination fallback, so usage is preserved and only one
-    # finishing chunk is emitted.
+def test_streaming_failed_raises_without_completing():
     events = [
         SimpleNamespace(
             type="response.created",
@@ -203,11 +202,25 @@ def test_streaming_failed_emits_single_terminal_chunk():
                 status="failed",
                 incomplete_details=None,
                 usage=_usage(),
+                error=SimpleNamespace(
+                    code="server_error",
+                    message="generation failed",
+                ),
             ),
         ),
     ]
+    completed_response_ids = []
 
-    finish_chunks = _stream_finish_chunks(events)
+    with pytest.raises(
+        RuntimeError,
+        match="server_error: generation failed",
+    ):
+        list(
+            iter_response_events_to_chat_chunks(
+                iter(events),
+                MODEL,
+                completed_response_ids.append,
+            )
+        )
 
-    assert len(finish_chunks) == 1
-    assert finish_chunks[0].usage is not None
+    assert completed_response_ids == []
