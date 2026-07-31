@@ -556,6 +556,45 @@ usr_msg = "What are the latest developments in multi-agent AI systems?"
 response = querit_agent.step(input_message=usr_msg, response_format=None)
 print(response.msgs[0].content)
 
+# Example using Querit content to read the full text behind a URL
+querit_content_response = SearchToolkit().fetch_querit_content(
+    urls=["https://www.camel-ai.org/"],
+    content_format="markdown",
+    extras_meta=True,
+)
+print(querit_content_response)
+"""
+===============================================================================
+{'search_id': 4317875391774580556, 'search_time': 0.217695743, 'results': [
+    {'result_id': 1, 'id': '128b90d9-9bad-497b-8e8b-d75c2e502385',
+     'url': 'https://www.camel-ai.org/',
+     'content': 'HuggingFace-like Community for Multi-agent systems\n\npip
+     install camel-ai...', 'status': 'success',
+     'title': 'Build Multi-Agent System for Task Automation',
+     'publish_time': '2026-07-29 08:06:25', 'site_name': 'CAMEL-AI',
+     'site_icon': 'https://www.camel-ai.org/favicon.ico'},
+], 'statuses': [{'id': '128b90d9-9bad-497b-8e8b-d75c2e502385',
+                 'status': 'success'}]}
+===============================================================================
+"""
+
+# Example with ChatAgent using Querit search plus content
+querit_research_agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use Querit search
+        to find pages and Querit content to read their full text before
+        answering.""",
+    tools=[
+        FunctionTool(SearchToolkit().search_querit),
+        FunctionTool(SearchToolkit().fetch_querit_content),
+    ],
+)
+
+usr_msg = "Summarize what CAMEL-AI is, based on its official website."
+response = querit_research_agent.step(
+    input_message=usr_msg, response_format=None
+)
+print(response.msgs[0].content)
+
 # Example with ChatAgent using Perplexity search
 perplexity_agent = ChatAgent(
     system_message="""You are a helpful assistant that can use Perplexity
