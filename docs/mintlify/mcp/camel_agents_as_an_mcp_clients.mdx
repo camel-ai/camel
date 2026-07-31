@@ -3,7 +3,6 @@ title: "CAMEL Agents as an MCP Client"
 icon: plug
 
 doc_code_map:
-  - "camel/agents/mcp_agent.py"
   - "camel/toolkits/mcp_toolkit.py"
   - "camel/utils/mcp_client.py"
 ---
@@ -133,33 +132,6 @@ This guide walks you through turning your CAMEL AI agent into an MCP client, let
   Gmail, Notion, and more.
 </Card>
 
-<Card title="Connect your agent to an MCP registry" icon="link">
-Want your MCP agent discoverable by thousands of clients?
-Register it with a hub like <a href="https://aci.dev/" target="_blank">ACI.dev</a> or similar.
-```python title="register_with_aci.py"
-import os
-
-from camel.agents import MCPAgent
-from camel.models import ModelFactory
-from camel.types import ACIRegistryConfig, ModelPlatformType, ModelType
-
-aci_config = ACIRegistryConfig(
-    api_key=os.getenv("ACI_API_KEY"),
-    linked_account_owner_id=os.getenv("ACI_LINKED_ACCOUNT_OWNER_ID"),
-)
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
-)
-
-agent = MCPAgent(
-    model=model,
-    registry_configs=[aci_config],
-)
-```
-Your agent is now connected to the <a href="https://aci.dev/" target="_blank">ACI.dev</a> registry and visible in the ecosystem.
-</Card>
-
 <Card title="Discover MCP Servers Easily with PulseMCP" icon="wave-pulse">
 Finding MCP servers is now a breeze with PulseMCP integration.
 You don’t have to guess which MCP servers are available, just search, browse, and connect.
@@ -178,11 +150,6 @@ print(results)
 </CodeBlock>
 
 PulseMCP does the heavy lifting of finding, categorizing, and keeping MCP servers fresh—your agents just connect and go.
-</Card>
-
-<Card title="Minimal agent without function-calling" icon="function">
-Don’t need advanced tool-calling?
-See <a href="https://github.com/camel-ai/camel/blob/master/examples/agents/mcp_agent/mcp_agent_without_function_calling.py" target="_blank">this example</a> for a super-lightweight setup.
 </Card>
 
 ## Using Transport Methods

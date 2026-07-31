@@ -5,7 +5,6 @@ description: "Turn your CAMEL ChatAgent into an MCP server—let any client (Cla
 
 doc_code_map:
   - "services/agent_mcp/agent_mcp_server.py"
-  - "camel/agents/mcp_agent.py"
 ---
 
 <Card title="Why export a ChatAgent as an MCP server?" icon="server">
