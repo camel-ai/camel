@@ -203,6 +203,7 @@
               "reference/camel.agents.chat_agent",
               "reference/camel.agents.critic_agent",
               "reference/camel.agents.knowledge_graph_agent",
+              "reference/camel.agents.mcp_agent",
               "reference/camel.agents.programmed_agent_instruction",
               "reference/camel.agents.repo_agent",
               "reference/camel.agents.role_assignment_agent",
@@ -746,6 +747,12 @@
               "reference/camel.loaders.pandas_reader",
               "reference/camel.loaders.scrapegraph_reader",
               "reference/camel.loaders.unstructured_io"
+            ]
+          },
+          {
+            "group": "Parsers",
+            "pages": [
+              "reference/camel.parsers.mcp_tool_call_parser"
             ]
           },
           {

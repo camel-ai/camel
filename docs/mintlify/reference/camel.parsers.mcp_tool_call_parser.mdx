@@ -1,0 +1,53 @@
+<a id="camel.parsers.mcp_tool_call_parser"></a>
+
+Utility functions for parsing MCP tool calls from model output.
+
+<a id="camel.parsers.mcp_tool_call_parser.extract_tool_calls_from_text"></a>
+
+## extract_tool_calls_from_text
+
+```python
+def extract_tool_calls_from_text(content: str):
+```
+
+Extract tool call dictionaries from raw text output.
+
+<a id="camel.parsers.mcp_tool_call_parser._collect_tool_calls"></a>
+
+## _collect_tool_calls
+
+```python
+def _collect_tool_calls(payload: Any, accumulator: List[Dict[str, Any]]):
+```
+
+Collect valid tool call dictionaries from parsed payloads.
+
+<a id="camel.parsers.mcp_tool_call_parser._try_parse_json_like"></a>
+
+## _try_parse_json_like
+
+```python
+def _try_parse_json_like(snippet: str):
+```
+
+Parse a JSON or JSON-like snippet into Python data.
+
+<a id="camel.parsers.mcp_tool_call_parser._find_json_candidate"></a>
+
+## _find_json_candidate
+
+```python
+def _find_json_candidate(content: str, start_idx: int):
+```
+
+Locate a balanced JSON-like segment starting at `__INLINE_CODE_0__`.
+
+<a id="camel.parsers.mcp_tool_call_parser._truncate_snippet"></a>
+
+## _truncate_snippet
+
+```python
+def _truncate_snippet(snippet: str, limit: int = 120):
+```
+
+Return a truncated representation suitable for logging.
