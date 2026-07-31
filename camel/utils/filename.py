@@ -16,6 +16,9 @@ import re
 import unicodedata
 
 MAX_FILENAME_LENGTH = 255
+# The full set Windows reserves, per the naming rules for files and
+# directories. COM5-COM9 and LPT4-LPT9 were missing, so `sanitize_filename`
+# handed them back unchanged.
 WINDOWS_RESERVED = {
     'CON',
     'PRN',
@@ -25,9 +28,20 @@ WINDOWS_RESERVED = {
     'COM2',
     'COM3',
     'COM4',
+    'COM5',
+    'COM6',
+    'COM7',
+    'COM8',
+    'COM9',
     'LPT1',
     'LPT2',
     'LPT3',
+    'LPT4',
+    'LPT5',
+    'LPT6',
+    'LPT7',
+    'LPT8',
+    'LPT9',
 }
 
 
@@ -73,8 +87,22 @@ def sanitize_filename(
     if not url_name:
         return default
 
-    # Handle Windows reserved names
-    if platform.system() == "Windows" and url_name.upper() in WINDOWS_RESERVED:
-        url_name = f"_{url_name}"
+    # Truncate first. Checking reserved names before truncating let the cut
+    # itself produce one: `sanitize_filename("nullify", max_length=3)` returned
+    # "nul", and writing to that path silently goes to the null device -- the
+    # open succeeds, `os.path.exists` reports True, and no file appears.
+    url_name = url_name[:max_length]
 
-    return url_name[:max_length]
+    # Trailing spaces are stripped by the filesystem, so the caller's returned
+    # name would not be the name on disk. `_` above already covers the dot.
+    url_name = url_name.rstrip(' ')
+
+    if not url_name:
+        return default
+
+    # Handle Windows reserved names. Prefixing grows the name by one, so
+    # truncate again to honour max_length.
+    if platform.system() == "Windows" and url_name.upper() in WINDOWS_RESERVED:
+        url_name = f"_{url_name}"[:max_length]
+
+    return url_name
