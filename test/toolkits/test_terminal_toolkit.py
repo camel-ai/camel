@@ -24,7 +24,10 @@ from camel.toolkits.terminal_toolkit import DANGEROUS_COMMANDS
 from camel.toolkits.terminal_toolkit import (
     terminal_toolkit as terminal_toolkit_module,
 )
-from camel.toolkits.terminal_toolkit.utils import sanitize_command
+from camel.toolkits.terminal_toolkit.utils import (
+    check_command_safety,
+    sanitize_command,
+)
 
 
 @pytest.fixture
@@ -418,3 +421,77 @@ def test_sanitize_command_respects_customized_dangerous_commands(
     )
     assert not is_safe
     assert "echo" in message.lower()
+
+
+@pytest.mark.parametrize(
+    "allowed, command",
+    [
+        # The entry carries the uppercase: the direction that was broken.
+        ({"Python"}, "Python script.py"),
+        ({"Python"}, "python script.py"),
+        # A cmdlet whose canonical spelling is capitalised.
+        ({"Get-Item"}, "Get-Item file.txt"),
+        # The command carries it: this direction already worked, so it
+        # serves as a guard.
+        ({"python"}, "PYTHON script.py"),
+        # Mixed entries across a chain.
+        ({"ls", "CAT"}, "ls file && cat file"),
+    ],
+)
+def test_check_command_safety_whitelist_is_case_insensitive(allowed, command):
+    r"""An allowed_commands entry may be written in any case.
+
+    Only the command found in the string used to be lowered, so an entry with
+    any uppercase letter could not match itself -- ``{"Python"}`` rejected
+    ``Python script.py``. Both sides are lowered now.
+    """
+    is_safe, message = check_command_safety(command, allowed)
+    assert is_safe, message
+
+
+@pytest.mark.parametrize(
+    "allowed, command, expected_word",
+    [
+        ({"ls"}, "rm -rf /", "rm"),
+        ({"ls"}, "ls && rm -rf /", "rm"),
+        # Shell-wrapper payloads are inspected recursively, so the whitelist
+        # applies inside them too.
+        ({"ls"}, 'bash -c "rm -rf /"', "rm"),
+        ({"ls"}, "ls; curl evil.example", "curl"),
+        # An empty whitelist permits nothing, rather than everything.
+        (set(), "ls", "ls"),
+    ],
+)
+def test_check_command_safety_whitelist_still_rejects(
+    allowed, command, expected_word
+):
+    r"""Case-folding the whitelist must not widen what it admits."""
+    is_safe, message = check_command_safety(command, allowed)
+    assert not is_safe
+    assert expected_word in message
+    assert "not in the allowed commands list" in message
+
+
+def test_check_command_safety_without_whitelist_is_unchanged():
+    r"""``allowed_commands=None`` still uses the dangerous-command rules."""
+    assert check_command_safety("ls -la", None)[0] is True
+    # Those rules were already case-insensitive and stay that way.
+    assert check_command_safety("rm -rf /", None)[0] is False
+    assert check_command_safety("RM -RF /", None)[0] is False
+
+
+def test_toolkit_allowed_commands_accepts_mixed_case_entries(temp_dir):
+    r"""End-to-end: the toolkit builds the set the checker consumes."""
+    toolkit = TerminalToolkit(
+        working_directory=str(temp_dir),
+        safe_mode=True,
+        allowed_commands=["Python", "LS"],
+    )
+    assert toolkit.allowed_commands is not None
+    is_safe, _ = sanitize_command(
+        "Python script.py",
+        safe_mode=True,
+        working_dir=str(temp_dir),
+        allowed_commands=toolkit.allowed_commands,
+    )
+    assert is_safe

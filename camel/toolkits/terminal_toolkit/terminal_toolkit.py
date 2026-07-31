@@ -90,7 +90,8 @@ class TerminalToolkit(BaseToolkit):
         safe_mode (bool): Whether to apply security checks to commands.
             Defaults to True.
         allowed_commands (Optional[List[str]]): List of allowed commands
-            when safe_mode is True. If None, uses default safety rules.
+            when safe_mode is True. Matched case-insensitively, so an entry
+            may be written in any case. If None, uses default safety rules.
         clone_current_env (bool): Whether to clone the current Python
             environment for local execution. Defaults to False.
         install_dependencies (List): A list of user specified libraries

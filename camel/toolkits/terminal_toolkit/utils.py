@@ -182,7 +182,7 @@ def check_command_safety(
     Args:
         command (str): The command string to check
         allowed_commands (Optional[Set[str]]): Set of allowed commands
-            (whitelist mode)
+            (whitelist mode). Matched case-insensitively.
 
     Returns:
         Tuple[bool, str]: (is_safe, reason)
@@ -202,10 +202,16 @@ def check_command_safety(
 
     # If whitelist mode, check ALL commands against the whitelist
     if allowed_commands is not None:
+        # Both sides are lowered, so the comparison is case-insensitive in the
+        # direction the caller writes the entry as well. Lowering only the
+        # command found in the string made any entry carrying an uppercase
+        # letter unmatchable by itself -- `allowed_commands={"Python"}`
+        # rejected `Python script.py` -- while the reverse already worked.
+        allowed_lowered = {entry.lower() for entry in allowed_commands}
         # Extract all command words (at start or after operators)
         found_commands = _CMD_PATTERN.findall(clean_command)
         for cmd in found_commands:
-            if cmd.lower() not in allowed_commands:
+            if cmd.lower() not in allowed_lowered:
                 return (
                     False,
                     f"Command '{cmd}' is not in the allowed commands list.",
