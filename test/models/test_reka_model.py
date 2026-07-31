@@ -80,6 +80,13 @@ def test_convert_reka_to_openai_response_maps_finish_reason(
     assert result.choices[0].finish_reason == expected
 
 
-def test_map_finish_reason_unknown_value_raises():
-    with pytest.raises(ValueError, match="Unknown Reka finish reason"):
-        RekaModel._map_finish_reason("some_new_reason")
+def test_map_finish_reason_unknown_value_falls_back_to_stop(caplog):
+    r"""An unrecognized Reka finish reason is a forward-compat value, not
+    an error: it must not raise, and should fall back to "stop" with the
+    raw value logged.
+    """
+    with caplog.at_level("WARNING"):
+        result = RekaModel._map_finish_reason("some_new_reason")
+
+    assert result == "stop"
+    assert "some_new_reason" in caplog.text

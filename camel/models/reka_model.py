@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 from pydantic import BaseModel
 
 from camel.configs import RekaConfig
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -49,6 +50,7 @@ try:
 except (ImportError, AttributeError):
     LLMEvent = None
 
+logger = get_logger(__name__)
 
 _FINISH_REASON_MAP = {
     "stop": "stop",
@@ -130,13 +132,23 @@ class RekaModel(BaseModelBackend):
 
     @staticmethod
     def _map_finish_reason(reka_reason: str) -> str:
-        r"""Map a Reka finish reason to its OpenAI equivalent."""
+        r"""Map a Reka finish reason to its OpenAI equivalent.
+
+        Reka's SDK types finish_reason as
+        ``Union[Literal["stop", "length", "context"], Any]``, so a future
+        provider value is a normal, successful response rather than a
+        malformed one. An unrecognized reason falls back to "stop" (the
+        OpenAI default for a completed response) instead of raising, and
+        the raw value is logged so the mapping can be extended.
+        """
         try:
             return _FINISH_REASON_MAP[reka_reason]
-        except KeyError as exc:
-            raise ValueError(
-                f"Unknown Reka finish reason: {reka_reason!r}"
-            ) from exc
+        except KeyError:
+            logger.warning(
+                f"Unknown Reka finish reason {reka_reason!r}, "
+                "falling back to 'stop'."
+            )
+            return "stop"
 
     def _convert_reka_to_openai_response(
         self, response: 'ChatResponse'
