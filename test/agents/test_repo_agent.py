@@ -338,3 +338,24 @@ def test_add_repositories(mock_vector_retriever):
     assert len(agent.repos) == 1
     assert agent.repos[0].repo_name == "test/repo2"
     assert "another_function" in agent.full_text
+
+
+def test_step_preserves_zero_top_k_and_similarity(mock_vector_retriever):
+    r"""Explicit top_k=0 and similarity=0 must not be replaced by defaults."""
+    agent = RepoAgent(
+        vector_retriever=mock_vector_retriever,
+        top_k=0,
+        similarity=0.0,
+    )
+    agent.processing_mode = ProcessingMode.RAG
+    agent.vector_retriever.query.return_value = []
+    agent.search_by_file_path = MagicMock(return_value="")
+
+    with patch('camel.agents.repo_agent.ChatAgent.step') as mock_step:
+        mock_step.return_value = MagicMock(spec=ChatAgentResponse)
+        agent.step("query")
+
+        # The retriever must receive the explicit zeros, not 5 / 0.6
+        call_kwargs = agent.vector_retriever.query.call_args
+        assert call_kwargs[1]["top_k"] == 0
+        assert call_kwargs[1]["similarity_threshold"] == 0.0
