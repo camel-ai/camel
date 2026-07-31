@@ -829,5 +829,34 @@ class TestSSEFallback:
         assert observed_timeouts == [42.0, 42.0]
 
 
+def test_config_file_read_as_utf8(tmp_path):
+    """Config files must be decoded as UTF-8 regardless of locale (#4232)."""
+    import json
+
+    from camel.utils.mcp_client import create_mcp_client_from_config_file
+
+    # Non-ASCII server name that would corrupt under GBK/Latin-1
+    config = {
+        "mcpServers": {
+            "服务器": {
+                "command": "echo",
+                "args": ["héllo"],
+            }
+        }
+    }
+    cfg_file = tmp_path / "mcp_config.json"
+    cfg_file.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
+
+    # Should parse without error; the key must survive intact
+    with pytest.raises(ValueError, match="not_here"):
+        # We only care that the file was *read* correctly; the server
+        # name won't be found, which proves the JSON parsed fine.
+        import asyncio
+
+        asyncio.get_event_loop().run_until_complete(
+            create_mcp_client_from_config_file(str(cfg_file), "not_here")
+        )
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

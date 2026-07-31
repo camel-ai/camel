@@ -153,7 +153,7 @@ class MCPAgent(ChatAgent):
             self.registry_configs = registry_configs or []
 
         if local_config_path:
-            with open(local_config_path, 'r') as f:
+            with open(local_config_path, 'r', encoding='utf-8') as f:
                 local_config = json.load(f)
 
         self.local_config = local_config
@@ -269,7 +269,7 @@ class MCPAgent(ChatAgent):
         # Load additional configs from file if provided
         if config_path:
             try:
-                with open(config_path, 'r') as f:
+                with open(config_path, 'r', encoding='utf-8') as f:
                     config_data = json.load(f)
 
                 # Create registry configs from the loaded data
