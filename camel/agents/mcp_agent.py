@@ -430,11 +430,17 @@ class MCPAgent(ChatAgent):
             loop = None
 
         if loop and loop.is_running():
-            # Running inside an existing loop (e.g., Jupyter/FastAPI)
-            # Use create_task and run with a future
-            coro = self.astep(input_message, *args, **kwargs)
-            future = asyncio.ensure_future(coro)
-            return asyncio.run_coroutine_threadsafe(future, loop).result()  # type: ignore [arg-type]
+            # Running inside an existing loop (e.g., Jupyter/FastAPI).
+            # asyncio.run() would raise "cannot be called from a running
+            # event loop", and run_coroutine_threadsafe + .result() on the
+            # *same* thread deadlocks.  Run in a helper thread instead.
+            import concurrent.futures
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                return pool.submit(
+                    asyncio.run,
+                    self.astep(input_message, *args, **kwargs),
+                ).result()
         else:
             # Safe to run normally
             return asyncio.run(self.astep(input_message, *args, **kwargs))

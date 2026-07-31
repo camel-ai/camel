@@ -115,3 +115,26 @@ def test_extract_tool_calls_from_yaml_block() -> None:
 
     assert len(tool_calls) == 1
     assert tool_calls[0] == expected
+
+
+def test_step_inside_running_loop():
+    """step() must not raise TypeError when called from a running loop (#4239)."""
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    from camel.agents.mcp_agent import MCPAgent
+
+    agent = MCPAgent.__new__(MCPAgent)
+    # Bypass __init__; only the step() code path matters here.
+    expected = MagicMock()
+    agent.astep = AsyncMock(return_value=expected)
+
+    async def caller():
+        # We are inside a running event loop — the old code raised
+        # TypeError because run_coroutine_threadsafe received a Task
+        # instead of a coroutine.
+        return agent.step("hello")
+
+    result = asyncio.run(caller())
+    assert result is expected
+    agent.astep.assert_awaited_once_with("hello")
