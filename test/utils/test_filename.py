@@ -116,3 +116,34 @@ def test_sanitize_filename_invalid_max_length():
         sanitize_filename("test.txt", max_length=0)
     with pytest.raises(ValueError):
         sanitize_filename("test.txt", max_length=-1)
+
+
+def test_sanitize_filename_windows_reserved_full_range():
+    """COM1-9 and LPT1-9 must all be guarded, not just 1-4/1-3."""
+    from unittest.mock import patch as _patch
+
+    with _patch("camel.utils.filename.platform") as mock_plat:
+        mock_plat.system.return_value = "Windows"
+        for i in range(1, 10):
+            assert sanitize_filename(f"com{i}") == f"_com{i}"
+            assert sanitize_filename(f"COM{i}") == f"_COM{i}"
+            assert sanitize_filename(f"lpt{i}") == f"_lpt{i}"
+            assert sanitize_filename(f"LPT{i}") == f"_LPT{i}"
+        # Non-reserved names pass through
+        assert sanitize_filename("com0") == "com0"
+        assert sanitize_filename("lpt0") == "lpt0"
+        assert sanitize_filename("console") == "console"
+
+
+def test_sanitize_filename_truncation_produces_reserved():
+    """Truncation must not yield a Windows reserved device name."""
+    from unittest.mock import patch as _patch
+
+    with _patch("camel.utils.filename.platform") as mock_plat:
+        mock_plat.system.return_value = "Windows"
+        # "COM5_extra_stuff" truncated to 4 chars -> "COM5"
+        result = sanitize_filename("COM5_extra_stuff", max_length=4)
+        assert result == "_COM5"
+        # "LPT9abc" truncated to 4 -> "LPT9"
+        result = sanitize_filename("LPT9abc", max_length=4)
+        assert result == "_LPT9"
