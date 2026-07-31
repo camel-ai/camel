@@ -36,3 +36,12 @@ def test_reka_model(model_type: ModelType):
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
+
+
+def test_reka_normalize_finish_reason():
+    """Reka 'context' must map to OpenAI 'length'; others pass through."""
+    norm = RekaModel._normalize_finish_reason
+    assert norm("context") == "length"
+    assert norm("stop") == "stop"
+    assert norm("length") == "length"
+    assert norm(None) is None
