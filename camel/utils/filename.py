@@ -21,13 +21,8 @@ WINDOWS_RESERVED = {
     'PRN',
     'AUX',
     'NUL',
-    'COM1',
-    'COM2',
-    'COM3',
-    'COM4',
-    'LPT1',
-    'LPT2',
-    'LPT3',
+    *(f'COM{i}' for i in range(1, 10)),
+    *(f'LPT{i}' for i in range(1, 10)),
 }
 
 
@@ -73,8 +68,11 @@ def sanitize_filename(
     if not url_name:
         return default
 
-    # Handle Windows reserved names
+    # Truncate first, then check for Windows reserved names — truncation
+    # can produce a reserved name (e.g. "COM5_long_name"[:4] == "COM5").
+    url_name = url_name[:max_length]
+
     if platform.system() == "Windows" and url_name.upper() in WINDOWS_RESERVED:
         url_name = f"_{url_name}"
 
-    return url_name[:max_length]
+    return url_name
