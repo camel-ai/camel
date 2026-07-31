@@ -81,9 +81,19 @@ def test___setitem__(persona_generator: PersonaHub):
         name="Test Persona",
         description="Test Description",
     )
-    persona_generator.__setitem__(persona)
+    # Mapping protocol: hub[key] = value
+    persona_generator[persona.id] = persona
     assert persona_generator.__len__() == 1
     assert persona_generator.personas[persona.id] == persona
+
+    # Legacy single-argument call still works
+    persona2 = Persona(
+        name="Test Persona 2",
+        description="Test Description 2",
+    )
+    persona_generator.__setitem__(persona2)
+    assert persona_generator.__len__() == 2
+    assert persona_generator.personas[persona2.id] == persona2
 
 
 def test_remove_persona(persona_generator: PersonaHub):

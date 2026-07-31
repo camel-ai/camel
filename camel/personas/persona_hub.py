@@ -63,13 +63,23 @@ class PersonaHub:
         self.model = model
         self.personas: Dict[uuid.UUID, Persona] = {}
 
-    def __setitem__(self, persona: Persona):
+    def __setitem__(self, key, value=None):
         r"""Add a persona to the group.
 
+        Supports both the mapping protocol (``hub[persona.id] = persona``)
+        and the legacy single-argument call (``hub.__setitem__(persona)``).
+
         Args:
-            persona (Persona): The persona to add.
+            key: A :class:`uuid.UUID` key, or a :class:`Persona` when called
+                with a single argument.
+            value (Persona, optional): The persona to store.  Omitted when
+                *key* is already a :class:`Persona`.
         """
-        self.personas[persona.id] = persona
+        if value is None and isinstance(key, Persona):
+            # Legacy call: __setitem__(persona)
+            self.personas[key.id] = key
+        else:
+            self.personas[key] = value
 
     def __delitem__(self, persona_id: uuid.UUID):
         r"""Remove a persona from the group by ID.
