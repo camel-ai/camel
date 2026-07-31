@@ -561,6 +561,8 @@ def test_convert_anthropic_response_stop_reasons():
         "max_tokens": "length",
         "stop_sequence": "stop",
         "tool_use": "tool_calls",
+        # A safety refusal must map to the OpenAI vocabulary, not leak raw.
+        "refusal": "content_filter",
     }
 
     for anthropic_reason, openai_reason in stop_reason_mapping.items():
@@ -993,6 +995,31 @@ def test_convert_stream_chunk_message_delta_stop():
     )
 
     assert result.choices[0].finish_reason == "stop"
+
+
+def test_convert_stream_chunk_message_delta_refusal():
+    """A streaming safety refusal must surface as content_filter.
+
+    Without the mapping the message_delta chunk carries finish_reason=None
+    and message_stop coerces it to "stop", so the refusal reads as a normal
+    completion.
+    """
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        api_key="dummy_api_key",
+    )
+
+    mock_chunk = MagicMock()
+    mock_chunk.type = "message_delta"
+    mock_chunk.delta = MagicMock()
+    mock_chunk.delta.stop_reason = "refusal"
+
+    tool_call_index = {}
+    result = model._convert_anthropic_stream_to_openai_chunk(
+        mock_chunk, "claude-haiku-4-5", tool_call_index
+    )
+
+    assert result.choices[0].finish_reason == "content_filter"
 
 
 def test_convert_stream_chunk_message_stop():
