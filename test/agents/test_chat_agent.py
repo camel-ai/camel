@@ -926,6 +926,82 @@ def test_chat_agent_stream_step_on_request_usage_callback():
 
 
 @pytest.mark.model_backend
+def test_chat_agent_stream_multiple_usage_chunks_no_double_count():
+    """When multiple chunks carry usage, the last one wins — no += (#4217)."""
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+
+    chunks = [
+        ChatCompletionChunk(
+            id="mock_multi_usage",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="Hi", role="assistant"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "prompt_tokens": 5,
+                "completion_tokens": 1,
+                "total_tokens": 6,
+            },
+        ),
+        ChatCompletionChunk(
+            id="mock_multi_usage",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content=" there"),
+                    index=0,
+                    finish_reason="stop",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            # Cumulative: includes the first chunk's tokens
+            usage={
+                "prompt_tokens": 5,
+                "completion_tokens": 3,
+                "total_tokens": 8,
+            },
+        ),
+    ]
+
+    def mock_stream():
+        for chunk in chunks:
+            yield chunk
+
+    model.run = MagicMock(return_value=mock_stream())
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+    )
+
+    responses = list(agent.step("Say hi"))
+    assert len(responses) > 0
+    # Must be 8 (the last cumulative value), NOT 14 (6 + 8 double-counted)
+    assert responses[-1].info["usage"]["total_tokens"] == 8
+    assert responses[-1].info["usage"]["prompt_tokens"] == 5
+    assert responses[-1].info["usage"]["completion_tokens"] == 3
+
+
+@pytest.mark.model_backend
 @pytest.mark.asyncio
 async def test_chat_agent_async_stream_on_request_usage_callback():
     from typing import AsyncGenerator

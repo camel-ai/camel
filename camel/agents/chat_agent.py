@@ -4803,14 +4803,21 @@ class ChatAgent(BaseAgent):
                         self.record_message(final_message)
             if chunk.usage:
                 # Handle final usage chunk, whether or not choices are present.
-                # This happens when stream_options={"include_usage": True}
-                # Update the final usage from this chunk
-                self._update_token_usage_tracker(
-                    request_token_usage, safe_model_dump(chunk.usage)
-                )
-                self._update_token_usage_tracker(
-                    step_token_usage, safe_model_dump(chunk.usage)
-                )
+                # This happens when stream_options={"include_usage": True}.
+                # Each usage chunk carries the *cumulative* total for this
+                # stream, not a delta — assign instead of accumulate to avoid
+                # double-counting when multiple chunks carry usage (#4217).
+                usage_dump = safe_model_dump(chunk.usage)
+                for _tracker in (request_token_usage, step_token_usage):
+                    _tracker["prompt_tokens"] = (
+                        usage_dump.get("prompt_tokens") or 0
+                    )
+                    _tracker["completion_tokens"] = (
+                        usage_dump.get("completion_tokens") or 0
+                    )
+                    _tracker["total_tokens"] = (
+                        usage_dump.get("total_tokens") or 0
+                    )
 
                 # Create final response with final usage
                 should_finalize = stream_completed or not has_choices
@@ -5933,14 +5940,21 @@ class ChatAgent(BaseAgent):
                         self.record_message(final_message)
             if chunk.usage:
                 # Handle final usage chunk, whether or not choices are present.
-                # This happens when stream_options={"include_usage": True}
-                # Update the final usage from this chunk
-                self._update_token_usage_tracker(
-                    request_token_usage, safe_model_dump(chunk.usage)
-                )
-                self._update_token_usage_tracker(
-                    step_token_usage, safe_model_dump(chunk.usage)
-                )
+                # This happens when stream_options={"include_usage": True}.
+                # Each usage chunk carries the *cumulative* total for this
+                # stream, not a delta — assign instead of accumulate to avoid
+                # double-counting when multiple chunks carry usage (#4217).
+                usage_dump = safe_model_dump(chunk.usage)
+                for _tracker in (request_token_usage, step_token_usage):
+                    _tracker["prompt_tokens"] = (
+                        usage_dump.get("prompt_tokens") or 0
+                    )
+                    _tracker["completion_tokens"] = (
+                        usage_dump.get("completion_tokens") or 0
+                    )
+                    _tracker["total_tokens"] = (
+                        usage_dump.get("total_tokens") or 0
+                    )
 
                 # Create final response with final usage
                 should_finalize = stream_completed or not has_choices
