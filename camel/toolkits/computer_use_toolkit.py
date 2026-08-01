@@ -42,7 +42,7 @@ import logging
 import os
 import shlex
 import time
-from typing import TYPE_CHECKING, Any, List, Tuple
+from typing import Any
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -53,8 +53,6 @@ except ImportError:
     APIError = None  # type: ignore[assignment]
     NotFound = None  # type: ignore[assignment]
 
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +93,7 @@ class ComputerUseToolkit(BaseToolkit):
             sandbox_container_name or f"camel-cu-{os.getpid()}"
         )
         self.use_docker = use_docker
-        self._cursor_position: Tuple[int, int] = (0, 0)
+        self._cursor_position: tuple[int, int] = (0, 0)
         self._container_id: str | None = None
         self._docker_client: Any = None
         self._docker_api_client: Any = None
@@ -165,7 +163,7 @@ class ComputerUseToolkit(BaseToolkit):
 
     def _docker_exec(
         self, command: str, check_exit_code: bool = True
-    ) -> Tuple[int, str]:
+    ) -> tuple[int, str]:
         r"""Execute a command inside the Docker sandbox.
 
         Args:
@@ -338,7 +336,7 @@ class ComputerUseToolkit(BaseToolkit):
         preview = text[:50] + ("..." if len(text) > 50 else "")
         return f"Typed: {preview}"
 
-    def key_combination(self, keys: List[str]) -> str:
+    def key_combination(self, keys: list[str]) -> str:
         r"""Press a key combination (e.g., ['ctrl', 'c'] for Ctrl+C).
 
         Args:
@@ -422,7 +420,7 @@ class ComputerUseToolkit(BaseToolkit):
                 check=False,
             )
 
-    def get_tools(self) -> List[FunctionTool]:
+    def get_tools(self) -> list[FunctionTool]:
         r"""Return the list of computer use tools for agent registration.
 
         Returns:
@@ -459,4 +457,3 @@ class ComputerUseToolkit(BaseToolkit):
                 )
             except Exception as e:
                 logger.warning("Failed to clean up sandbox container: %s", e)
-
