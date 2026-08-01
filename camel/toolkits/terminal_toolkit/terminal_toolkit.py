@@ -236,10 +236,7 @@ class TerminalToolkit(BaseToolkit):
                     try:
                         quoted_dir = shlex.quote(self.docker_workdir)
                         mkdir_cmd = f'sh -lc "mkdir -p -- {quoted_dir}"'
-                        _init = self.docker_api_client.exec_create(
-                            self.container.id, mkdir_cmd
-                        )
-                        self.docker_api_client.exec_start(_init['Id'])
+                        self._docker_exec(mkdir_cmd, check_exit_code=False)
                     except Exception as e:
                         logger.warning(
                             f"[Docker] Failed to ensure workdir "
@@ -314,32 +311,23 @@ class TerminalToolkit(BaseToolkit):
             install_cmd = f'sh -lc "pip install {pkg_str}"'
 
             try:
-                exec_id = self.docker_api_client.exec_create(
-                    self.container.id, install_cmd
-                )["Id"]
-                log = self.docker_api_client.exec_start(exec_id)
-                logger.info(f"Package installation output:\n{log}")
-
-                # Check exit code to ensure installation succeeded
-                exec_info = self.docker_api_client.exec_inspect(exec_id)
-                if exec_info['ExitCode'] != 0:
-                    error_msg = (
-                        f"Failed to install dependencies in Docker: "
-                        f"{log.decode('utf-8', errors='ignore')}"
-                    )
-                    logger.error(error_msg)
-                    raise RuntimeError(error_msg)
-
+                exit_code, output = self._docker_exec(
+                    install_cmd, check_exit_code=True
+                )
+                logger.info(
+                    "Package installation output:\n%s",
+                    output.decode("utf-8", errors="ignore"),
+                )
                 logger.info(
                     "Successfully installed all dependencies in Docker."
                 )
-            except Exception as e:
-                if not isinstance(e, RuntimeError):
-                    logger.error(f"Docker dependency installation error: {e}")
-                    raise RuntimeError(
-                        f"Docker dependency installation error: {e}"
-                    ) from e
+            except RuntimeError:
                 raise
+            except Exception as e:
+                logger.error(f"Docker dependency installation error: {e}")
+                raise RuntimeError(
+                    f"Docker dependency installation error: {e}"
+                ) from e
 
         else:
             pip_cmd = [
@@ -485,6 +473,62 @@ class TerminalToolkit(BaseToolkit):
         # Convert ANSI escape sequences to plain text
         with open(log_file, "a", encoding="utf-8") as f:
             f.write(_to_plain(content) + "\n")
+
+    def _docker_exec(
+        self,
+        command: str,
+        *,
+        check_exit_code: bool = True,
+    ) -> tuple[Optional[int], bytes]:
+        r"""Execute a command in the Docker container and return the result.
+
+        Consolidates the repeated ``exec_create → exec_start → exec_inspect``
+        pattern into a single helper, reducing code duplication and improving
+        error handling consistency.
+
+        Args:
+            command: The shell command to execute inside the container.
+            check_exit_code: If True, raises RuntimeError on non-zero exit.
+
+        Returns:
+            A tuple of (exit_code, output_bytes). The exit code is ``None``
+            when ``check_exit_code`` is False.
+
+        Raises:
+            RuntimeError: If the Docker API call fails or the command exits
+                          with a non-zero code and ``check_exit_code`` is True.
+        """
+        if not self.use_docker_backend:
+            raise RuntimeError(
+                "_docker_exec called but Docker backend is not enabled."
+            )
+        try:
+            exec_id = self.docker_api_client.exec_create(
+                self.container.id, cmd=command
+            )["Id"]
+            output = self.docker_api_client.exec_start(exec_id)
+            exit_code = None
+            if check_exit_code:
+                exec_info = self.docker_api_client.exec_inspect(exec_id)
+                exit_code = exec_info["ExitCode"]
+            if check_exit_code and exit_code != 0:
+                error_text = (
+                    output.decode("utf-8", errors="ignore")
+                    if isinstance(output, bytes)
+                    else str(output)
+                )
+                logger.error(
+                    "Docker command failed with exit code %s. Output:\n%s",
+                    exit_code,
+                    error_text,
+                )
+                raise RuntimeError(
+                    f"Docker command exited with code {exit_code}: "
+                    f"{error_text}"
+                )
+            return exit_code, output
+        except (APIError, NotFound) as e:
+            raise RuntimeError(f"Docker API error: {e}") from e
 
     def _sanitize_command(self, command: str) -> tuple[bool, str]:
         r"""A comprehensive command sanitizer for both local and
@@ -1217,10 +1261,7 @@ class TerminalToolkit(BaseToolkit):
                         if pid and exec_info.get('Running', False):
                             # Kill the process inside the container
                             kill_cmd = f'kill -9 {pid}'
-                            kill_exec = self.docker_api_client.exec_create(
-                                self.container.id, kill_cmd
-                            )
-                            self.docker_api_client.exec_start(kill_exec['Id'])
+                            self._docker_exec(kill_cmd, check_exit_code=False)
                     except Exception as kill_err:
                         logger.warning(
                             f"[SESSION {id}] Failed to kill Docker exec "
@@ -1356,10 +1397,7 @@ class TerminalToolkit(BaseToolkit):
                 if parent_dir:
                     quoted_dir = shlex.quote(parent_dir)
                     mkdir_cmd = f'sh -lc "mkdir -p {quoted_dir}"'
-                    mkdir_exec = self.docker_api_client.exec_create(
-                        self.container.id, mkdir_cmd
-                    )
-                    self.docker_api_client.exec_start(mkdir_exec['Id'])
+                    self._docker_exec(mkdir_cmd, check_exit_code=False)
 
                 # Write content to a temporary file on the host inside log_dir
                 temp_file_name = f"temp_{uuid.uuid4().hex}.txt"

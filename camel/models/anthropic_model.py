@@ -705,6 +705,10 @@ class AnthropicModel(BaseModelBackend):
                 finish_reason = "stop"
             elif stop_reason == "tool_use":
                 finish_reason = "tool_calls"
+            elif stop_reason == "refusal":
+                # Anthropic's safety refusal; the OpenAI vocabulary term for
+                # a generation the provider declined on safety grounds.
+                finish_reason = "content_filter"
             else:
                 finish_reason = stop_reason
 
@@ -937,6 +941,11 @@ class AnthropicModel(BaseModelBackend):
                         finish_reason = "stop"
                     elif stop_reason == "tool_use":
                         finish_reason = "tool_calls"
+                    elif stop_reason == "refusal":
+                        # Anthropic's safety refusal; without this branch the
+                        # chunk carries finish_reason=None and message_stop
+                        # coerces it to "stop", hiding the refusal.
+                        finish_reason = "content_filter"
                 # Extract usage info from message_delta
                 if hasattr(chunk, "usage") and chunk.usage:
                     usage = self._extract_usage(chunk.usage)
