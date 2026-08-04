@@ -627,11 +627,29 @@ class FunctionGemmaModel(BaseModelBackend):
         # return as string
         return value
 
+    @staticmethod
+    def _map_done_reason(done_reason: Optional[str]) -> str:
+        r"""Map Ollama's done_reason to the OpenAI finish_reason vocabulary.
+
+        Args:
+            done_reason (Optional[str]): The ``done_reason`` field from
+                Ollama's ``/api/generate`` response.
+
+        Returns:
+            str: ``"length"`` when Ollama reports truncation, ``"stop"``
+                otherwise (including when ``done_reason`` is absent, which
+                preserves the prior default).
+        """
+        if done_reason == "length":
+            return "length"
+        return "stop"
+
     def _to_chat_completion(  # type: ignore[override]
         self,
         response_text: str,
         model: str,
         tools: Optional[List[Dict[str, Any]]] = None,
+        ollama_result: Optional[Dict[str, Any]] = None,
     ) -> ChatCompletion:
         r"""Convert parsed response to OpenAI ChatCompletion format.
 
@@ -640,6 +658,10 @@ class FunctionGemmaModel(BaseModelBackend):
             model (str): The model name.
             tools (Optional[List[Dict[str, Any]]]): Available tools for
                 function name inference.
+            ollama_result (Optional[Dict[str, Any]]): The raw JSON body of
+                Ollama's ``/api/generate`` response, used to surface real
+                token usage (``prompt_eval_count``/``eval_count``) and the
+                truncation signal (``done_reason``). (default: :obj:`None`)
 
         Returns:
             ChatCompletion: OpenAI-compatible ChatCompletion object.
@@ -656,13 +678,23 @@ class FunctionGemmaModel(BaseModelBackend):
         if tool_calls:
             message["tool_calls"] = tool_calls
 
-        finish_reason = "tool_calls" if tool_calls else "stop"
+        ollama_result = ollama_result or {}
+
+        if tool_calls:
+            finish_reason = "tool_calls"
+        else:
+            finish_reason = self._map_done_reason(
+                ollama_result.get("done_reason")
+            )
 
         choice = dict(
             index=0,
             message=message,
             finish_reason=finish_reason,
         )
+
+        prompt_tokens = ollama_result.get("prompt_eval_count") or 0
+        completion_tokens = ollama_result.get("eval_count") or 0
 
         obj = ChatCompletion.construct(
             id=f"chatcmpl-{uuid.uuid4().hex}",
@@ -671,22 +703,24 @@ class FunctionGemmaModel(BaseModelBackend):
             model=model,
             object="chat.completion",
             usage=CompletionUsage(
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=prompt_tokens + completion_tokens,
             ),
         )
 
         return obj
 
-    def _call_ollama_generate(self, prompt: str) -> str:
+    def _call_ollama_generate(self, prompt: str) -> Dict[str, Any]:
         r"""Call Ollama's /api/generate endpoint with raw prompt.
 
         Args:
             prompt (str): The formatted prompt string.
 
         Returns:
-            str: The model response text.
+            Dict[str, Any]: The parsed JSON body of Ollama's response,
+                including ``response``, ``done_reason``,
+                ``prompt_eval_count``, and ``eval_count``.
 
         Raises:
             RuntimeError: If the API request fails.
@@ -730,19 +764,20 @@ class FunctionGemmaModel(BaseModelBackend):
         try:
             response = self._call_client(self._client.post, url, json=data)
             response.raise_for_status()
-            result = response.json()
-            return result.get("response", "")
+            return response.json()
         except httpx.HTTPStatusError as e:
             raise RuntimeError(f"Ollama API request failed: {e}")
 
-    async def _acall_ollama_generate(self, prompt: str) -> str:
+    async def _acall_ollama_generate(self, prompt: str) -> Dict[str, Any]:
         r"""Async call Ollama's /api/generate endpoint with raw prompt.
 
         Args:
             prompt (str): The formatted prompt string.
 
         Returns:
-            str: The model response text.
+            Dict[str, Any]: The parsed JSON body of Ollama's response,
+                including ``response``, ``done_reason``,
+                ``prompt_eval_count``, and ``eval_count``.
 
         Raises:
             RuntimeError: If the API request fails.
@@ -788,8 +823,7 @@ class FunctionGemmaModel(BaseModelBackend):
                 self._async_client.post, url, json=data
             )
             response.raise_for_status()
-            result = response.json()
-            return result.get("response", "")
+            return response.json()
         except httpx.HTTPStatusError as e:
             raise RuntimeError(f"Ollama API request failed: {e}")
 
@@ -827,11 +861,12 @@ class FunctionGemmaModel(BaseModelBackend):
         prompt = self._format_messages(messages, tools)
         logger.debug(f"FunctionGemma prompt:\n{prompt}")
 
-        response_text = self._call_ollama_generate(prompt)
+        ollama_result = self._call_ollama_generate(prompt)
+        response_text = ollama_result.get("response", "")
         logger.debug(f"FunctionGemma response:\n{response_text}")
 
         response = self._to_chat_completion(
-            response_text, str(self.model_type), tools
+            response_text, str(self.model_type), tools, ollama_result
         )
         update_current_observation(usage=response.usage)
         return response
@@ -870,11 +905,12 @@ class FunctionGemmaModel(BaseModelBackend):
         prompt = self._format_messages(messages, tools)
         logger.debug(f"FunctionGemma prompt:\n{prompt}")
 
-        response_text = await self._acall_ollama_generate(prompt)
+        ollama_result = await self._acall_ollama_generate(prompt)
+        response_text = ollama_result.get("response", "")
         logger.debug(f"FunctionGemma response:\n{response_text}")
 
         response = self._to_chat_completion(
-            response_text, str(self.model_type), tools
+            response_text, str(self.model_type), tools, ollama_result
         )
         update_current_observation(usage=response.usage)
         return response
