@@ -601,6 +601,53 @@ such as site names, favicons, and page ages.
 - 'took': The server-side response time.
 - or 'error': An error message if something went wrong.
 
+<a id="camel.toolkits.search_toolkit.SearchToolkit.fetch_querit_content"></a>
+
+### fetch_querit_content
+
+```python
+def fetch_querit_content(
+    self,
+    urls: List[str],
+    content_format: Literal['text', 'markdown', 'html'] = 'markdown',
+    crawl_timeout: int = 10,
+    extras_meta: bool = False,
+) -> Dict[str, Any]:
+```
+
+Use Querit contents API to crawl web pages and return their full
+content.
+
+Querit (https://www.querit.ai) crawls the given URLs and returns the
+page body as text, markdown or HTML. This is typically used after
+`search_querit` to read the full text behind the result URLs, since
+search results only contain short snippets.
+
+**Parameters:**
+
+- **urls** (List[str]): URLs of the pages to crawl. At least 1 and at most 10 URLs per call.
+- **content_format** (Literal['text', 'markdown', 'html']): The format of the returned page content. Prefer "markdown" or "text"; "html" returns the raw page and can be tens of times larger. (default: :obj:`"markdown"`)
+- **crawl_timeout** (int): The per-page crawl timeout in seconds, from 1 to 60. (default: :obj:`10`)
+- **extras_meta** (bool): Whether to also return page metadata such as title, publish time and site name. (default: :obj:`False`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing either:
+
+- 'results': A list of dictionaries, each with:
+
+- 'result_id': The index of the result (starting from 1).
+- 'id': The fetch id, matching the id in 'statuses'.
+- 'url': The URL of the crawled page.
+- 'content': The page content in the requested format. A URL that could not be crawled is still returned here with an empty 'content', so check 'status' before treating the page as empty.
+- 'status': "success" or "failed" for this URL.
+- 'title', 'publish_time', 'site_name', 'site_icon': Page metadata, only present when `extras_meta` is True.
+
+- 'statuses': The raw per-URL status list from the API.
+- 'search_id': A unique request reference ID.
+- 'search_time': The server-side crawl time in seconds.
+- or 'error': An error message if something went wrong.
+
 <a id="camel.toolkits.search_toolkit.SearchToolkit.search_perplexity"></a>
 
 ### search_perplexity

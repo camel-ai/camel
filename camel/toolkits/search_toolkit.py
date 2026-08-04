@@ -1666,6 +1666,173 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Unexpected error during Querit search: {e!s}"}
 
+    @api_keys_required([(None, 'QUERIT_API_KEY')])
+    def fetch_querit_content(
+        self,
+        urls: List[str],
+        content_format: Literal["text", "markdown", "html"] = "markdown",
+        crawl_timeout: int = 10,
+        extras_meta: bool = False,
+    ) -> Dict[str, Any]:
+        r"""Use Querit contents API to crawl web pages and return their full
+        content.
+
+        Querit (https://www.querit.ai) crawls the given URLs and returns the
+        page body as text, markdown or HTML. This is typically used after
+        `search_querit` to read the full text behind the result URLs, since
+        search results only contain short snippets.
+
+        Args:
+            urls (List[str]): URLs of the pages to crawl. At least 1 and at
+                most 10 URLs per call.
+            content_format (Literal["text", "markdown", "html"]): The format
+                of the returned page content. Prefer "markdown" or "text";
+                "html" returns the raw page and can be tens of times larger.
+                (default: :obj:`"markdown"`)
+            crawl_timeout (int): The per-page crawl timeout in seconds, from
+                1 to 60. (default: :obj:`10`)
+            extras_meta (bool): Whether to also return page metadata such as
+                title, publish time and site name. (default: :obj:`False`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing either:
+
+                - 'results': A list of dictionaries, each with:
+
+                    - 'result_id': The index of the result (starting from 1).
+                    - 'id': The fetch id, matching the id in 'statuses'.
+                    - 'url': The URL of the crawled page.
+                    - 'content': The page content in the requested format.
+                      A URL that could not be crawled is still returned here
+                      with an empty 'content', so check 'status' before
+                      treating the page as empty.
+                    - 'status': "success" or "failed" for this URL.
+                    - 'title', 'publish_time', 'site_name', 'site_icon': Page
+                      metadata, only present when `extras_meta` is True.
+
+                - 'statuses': The raw per-URL status list from the API.
+                - 'search_id': A unique request reference ID.
+                - 'search_time': The server-side crawl time in seconds.
+                - or 'error': An error message if something went wrong.
+        """
+        import json
+
+        if not 1 <= len(urls) <= 10:
+            return {
+                "error": (
+                    f"urls must contain between 1 and 10 URLs, "
+                    f"got {len(urls)}."
+                )
+            }
+
+        if not 1 <= crawl_timeout <= 60:
+            return {
+                "error": (
+                    f"crawl_timeout must be between 1 and 60 seconds, "
+                    f"got {crawl_timeout}."
+                )
+            }
+
+        QUERIT_API_KEY = os.getenv("QUERIT_API_KEY")
+
+        url = "https://api.querit.ai/v1/contents"
+        headers = {
+            "Authorization": f"Bearer {QUERIT_API_KEY}",
+            "Content-Type": "application/json",
+        }
+
+        payload: Dict[str, Any] = {
+            "urls": urls,
+            "format": content_format,
+            "crawlTimeout": crawl_timeout,
+            "extrasMeta": extras_meta,
+        }
+
+        try:
+            response = requests.post(
+                url,
+                headers=headers,
+                data=json.dumps(payload, ensure_ascii=False),
+                timeout=self.timeout,
+            )
+
+            # The API reports parameter errors as HTTP 4xx with a JSON body
+            # carrying a human readable `error_msg`; surface that instead of
+            # the raw body when it is available.
+            if response.status_code != 200:
+                detail = response.text
+                try:
+                    body = response.json()
+                except ValueError:
+                    body = None
+                if isinstance(body, dict) and body.get("error_msg"):
+                    detail = str(body["error_msg"])
+                return {
+                    "error": (
+                        f"Querit API failed with status "
+                        f"{response.status_code}: {detail}"
+                    )
+                }
+
+            data = response.json()
+
+            # Check for API-level errors. `error_code` is an int on success
+            # but a string on failure, so normalize before comparing.
+            error_code = data.get("error_code", 200)
+            try:
+                error_code = int(error_code)
+            except (TypeError, ValueError):
+                pass
+            if error_code != 200:
+                return {
+                    "error": (
+                        f"Querit API error {error_code}: "
+                        f"{data.get('error_msg', 'Unknown error')}"
+                    )
+                }
+
+            # Parse results into CAMEL-consistent format
+            statuses = data.get("statuses", [])
+            status_by_id = {
+                entry.get("id"): entry.get("status", "")
+                for entry in statuses
+                if isinstance(entry, dict)
+            }
+            results = []
+            for idx, item in enumerate(data.get("results", []), 1):
+                result: Dict[str, Any] = {
+                    "result_id": idx,
+                    "id": item.get("id", ""),
+                    "url": item.get("url", ""),
+                    "content": item.get("content", ""),
+                    "status": status_by_id.get(item.get("id"), ""),
+                }
+                meta = item.get("extrasMeta") or {}
+                if meta:
+                    result.update(
+                        {
+                            "title": meta.get("title", ""),
+                            "publish_time": meta.get("publishTime", ""),
+                            "site_name": meta.get("siteName", ""),
+                            "site_icon": meta.get("siteIcon", ""),
+                        }
+                    )
+                results.append(result)
+
+            return {
+                "search_id": data.get("search_id", 0),
+                "search_time": data.get("searchTime", 0),
+                "results": results,
+                "statuses": statuses,
+            }
+
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Querit content request failed: {e!s}"}
+        except Exception as e:
+            return {
+                "error": f"Unexpected error during Querit content fetch: {e!s}"
+            }
+
     @api_keys_required([(None, 'PERPLEXITY_API_KEY')])
     def search_perplexity(
         self,
@@ -1789,6 +1956,7 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_metaso),
             FunctionTool(self.search_serpapi),
             FunctionTool(self.search_querit),
+            FunctionTool(self.fetch_querit_content),
             FunctionTool(self.search_perplexity),
         ]
 

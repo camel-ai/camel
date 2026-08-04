@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 """
-Querit Search - Real API Call Examples
+Querit Search & Content - Real API Call Examples
 
 Before running, set your API key:
     export QUERIT_API_KEY="your_api_key_here"
@@ -90,9 +90,46 @@ for item in result_geo.get("results", []):
     print(f"\n[{item['result_id']}] {item['title']}")
     print(f"    URL : {item['url']}")
 
-# ── 4. ChatAgent with Querit tool ────────────────────────────────────────────
+# ── 4. Fetch full page content ───────────────────────────────────────────────
 print("\n" + "=" * 60)
-print("Example 4: ChatAgent using Querit as a tool")
+print("Example 4: Fetch full page content with metadata")
+print("=" * 60)
+
+content_result = toolkit.fetch_querit_content(
+    urls=["https://www.camel-ai.org/"],
+    content_format="markdown",
+    extras_meta=True,
+)
+print(f"Search ID   : {content_result.get('search_id')}")
+print(f"Crawl time  : {content_result.get('search_time')}s")
+print(f"Statuses    : {content_result.get('statuses')}")
+for item in content_result.get("results", []):
+    print(f"\n[{item['result_id']}] {item.get('title', item['url'])}")
+    print(f"    Site    : {item.get('site_name')}")
+    print(f"    Content : {item['content'][:200]}...")
+
+# ── 5. Search, then read the full text behind the results ────────────────────
+print("\n" + "=" * 60)
+print("Example 5: Search then fetch content of the top results")
+print("=" * 60)
+
+search_result = toolkit.search_querit(
+    query="CAMEL-AI multi-agent framework",
+    number_of_result_pages=3,
+)
+top_urls = [item["url"] for item in search_result.get("results", [])[:3]]
+print(f"Fetching content for: {top_urls}")
+
+if top_urls:
+    pages = toolkit.fetch_querit_content(urls=top_urls, content_format="text")
+    for item in pages.get("results", []):
+        print(f"\n[{item['result_id']}] {item['url']}")
+        print(f"    Chars   : {len(item['content'])}")
+        print(f"    Preview : {item['content'][:150]}...")
+
+# ── 6. ChatAgent with Querit search + content tools ──────────────────────────
+print("\n" + "=" * 60)
+print("Example 6: ChatAgent using Querit search and content as tools")
 print("=" * 60)
 
 model = ModelFactory.create(
@@ -103,11 +140,15 @@ model = ModelFactory.create(
 agent = ChatAgent(
     system_message=(
         "You are a helpful research assistant. "
-        "Use the Querit search tool to find up-to-date information "
-        "and summarize the results concisely."
+        "Use the Querit search tool to find up-to-date information, then "
+        "use the Querit content tool to read the full text of the most "
+        "relevant pages before answering."
     ),
     model=model,
-    tools=[FunctionTool(toolkit.search_querit)],
+    tools=[
+        FunctionTool(toolkit.search_querit),
+        FunctionTool(toolkit.fetch_querit_content),
+    ],
 )
 
 response = agent.step(
