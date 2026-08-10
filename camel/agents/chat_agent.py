@@ -4820,12 +4820,13 @@ class ChatAgent(BaseAgent):
                 should_finalize = stream_completed or not has_choices
                 if should_finalize:
                     final_content = content_accumulator.get_full_content()
-                    if final_content.strip():
-                        final_reasoning = (
-                            content_accumulator.get_full_reasoning_content()
-                            or None
-                        )
+                    final_reasoning = (
+                        content_accumulator.get_full_reasoning_content()
+                        or None
+                    )
+                    has_final_content = bool(final_content.strip())
 
+                    if has_final_content:
                         # Extract <think> tags from accumulated
                         # streaming content when reasoning_content
                         # is not already set by the model.
@@ -4835,48 +4836,49 @@ class ChatAgent(BaseAgent):
                             )
                         )
 
-                        # In delta mode, final response content should be empty
-                        # since all content was already yielded incrementally
-                        display_content = (
-                            final_content if self.stream_accumulate else ""
-                        )
-                        display_reasoning = (
-                            final_reasoning if self.stream_accumulate else None
-                        )
-                        final_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=display_content,
-                            reasoning_content=display_reasoning,
+                    # In delta mode, final response content should be empty
+                    # since all content was already yielded incrementally
+                    display_content = (
+                        final_content if self.stream_accumulate else ""
+                    )
+                    display_reasoning = (
+                        final_reasoning if self.stream_accumulate else None
+                    )
+                    final_message = BaseMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict={},
+                        content=display_content,
+                        reasoning_content=display_reasoning,
+                    )
+
+                    if response_format and has_final_content:
+                        self._try_format_message(
+                            final_message, response_format
                         )
 
-                        if response_format:
-                            self._try_format_message(
-                                final_message, response_format
-                            )
-
-                        # Create final response with final usage (not partial)
-                        final_response = ChatAgentResponse(
-                            msgs=[final_message],
-                            terminated=False,
-                            info={
-                                "id": getattr(chunk, 'id', ''),
-                                "usage": step_token_usage.copy(),
-                                "finish_reasons": [terminal_finish_reason],
-                                "num_tokens": self._get_token_count(
-                                    final_content
-                                ),
-                                "tool_calls": tool_call_records or [],
-                                "external_tool_requests": None,
-                                "streaming": False,
-                                "partial": False,
-                                "stream_accumulate_mode": "accumulate"
-                                if self.stream_accumulate
-                                else "delta",
-                            },
-                        )
-                        yield final_response
+                    # Create final response with final usage (not partial).
+                    # Always yield so a truncated/filtered terminal outcome
+                    # with no text content still surfaces its
+                    # finish_reasons (see #4250).
+                    final_response = ChatAgentResponse(
+                        msgs=[final_message],
+                        terminated=False,
+                        info={
+                            "id": getattr(chunk, 'id', ''),
+                            "usage": step_token_usage.copy(),
+                            "finish_reasons": [terminal_finish_reason],
+                            "num_tokens": self._get_token_count(final_content),
+                            "tool_calls": tool_call_records or [],
+                            "external_tool_requests": None,
+                            "streaming": False,
+                            "partial": False,
+                            "stream_accumulate_mode": "accumulate"
+                            if self.stream_accumulate
+                            else "delta",
+                        },
+                    )
+                    yield final_response
                     break
             elif stream_completed:
                 # We've seen finish_reason but no usage chunk yet; keep
@@ -5954,12 +5956,13 @@ class ChatAgent(BaseAgent):
                 should_finalize = stream_completed or not has_choices
                 if should_finalize:
                     final_content = content_accumulator.get_full_content()
-                    if final_content.strip():
-                        final_reasoning = (
-                            content_accumulator.get_full_reasoning_content()
-                            or None
-                        )
+                    final_reasoning = (
+                        content_accumulator.get_full_reasoning_content()
+                        or None
+                    )
+                    has_final_content = bool(final_content.strip())
 
+                    if has_final_content:
                         # Extract <think> tags from accumulated
                         # streaming content when reasoning_content
                         # is not already set by the model.
@@ -5969,48 +5972,49 @@ class ChatAgent(BaseAgent):
                             )
                         )
 
-                        # In delta mode, final response content should be empty
-                        # since all content was already yielded incrementally
-                        display_content = (
-                            final_content if self.stream_accumulate else ""
-                        )
-                        display_reasoning = (
-                            final_reasoning if self.stream_accumulate else None
-                        )
-                        final_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=display_content,
-                            reasoning_content=display_reasoning,
+                    # In delta mode, final response content should be empty
+                    # since all content was already yielded incrementally
+                    display_content = (
+                        final_content if self.stream_accumulate else ""
+                    )
+                    display_reasoning = (
+                        final_reasoning if self.stream_accumulate else None
+                    )
+                    final_message = BaseMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict={},
+                        content=display_content,
+                        reasoning_content=display_reasoning,
+                    )
+
+                    if response_format and has_final_content:
+                        self._try_format_message(
+                            final_message, response_format
                         )
 
-                        if response_format:
-                            self._try_format_message(
-                                final_message, response_format
-                            )
-
-                        # Create final response with final usage (not partial)
-                        final_response = ChatAgentResponse(
-                            msgs=[final_message],
-                            terminated=False,
-                            info={
-                                "id": getattr(chunk, 'id', ''),
-                                "usage": step_token_usage.copy(),
-                                "finish_reasons": [terminal_finish_reason],
-                                "num_tokens": self._get_token_count(
-                                    final_content
-                                ),
-                                "tool_calls": tool_call_records or [],
-                                "external_tool_requests": None,
-                                "streaming": False,
-                                "partial": False,
-                                "stream_accumulate_mode": "accumulate"
-                                if self.stream_accumulate
-                                else "delta",
-                            },
-                        )
-                        yield final_response
+                    # Create final response with final usage (not partial).
+                    # Always yield so a truncated/filtered terminal outcome
+                    # with no text content still surfaces its
+                    # finish_reasons (see #4250).
+                    final_response = ChatAgentResponse(
+                        msgs=[final_message],
+                        terminated=False,
+                        info={
+                            "id": getattr(chunk, 'id', ''),
+                            "usage": step_token_usage.copy(),
+                            "finish_reasons": [terminal_finish_reason],
+                            "num_tokens": self._get_token_count(final_content),
+                            "tool_calls": tool_call_records or [],
+                            "external_tool_requests": None,
+                            "streaming": False,
+                            "partial": False,
+                            "stream_accumulate_mode": "accumulate"
+                            if self.stream_accumulate
+                            else "delta",
+                        },
+                    )
+                    yield final_response
                     break
             elif stream_completed:
                 continue
