@@ -718,6 +718,13 @@ class OpenAIModel(BaseModelBackend):
             model=self.model_type,
             **request_config,
         )
+        # Convert first so a failed Responses call raises before any
+        # previous_response_id chaining state is recorded.
+        completion = response_to_chat_completion(
+            response=response,
+            model=str(self.model_type),
+            response_format=response_format,
+        )
         if chain_enabled:
             self._save_response_chain_state(
                 session_key=chain_state["session_key"],
@@ -726,11 +733,7 @@ class OpenAIModel(BaseModelBackend):
                 else response.get("id"),
                 message_count=chain_state["message_count"],
             )
-        return response_to_chat_completion(
-            response=response,
-            model=str(self.model_type),
-            response_format=response_format,
-        )
+        return completion
 
     async def _arequest_responses(
         self,
@@ -758,6 +761,13 @@ class OpenAIModel(BaseModelBackend):
             model=self.model_type,
             **request_config,
         )
+        # Convert first so a failed Responses call raises before any
+        # previous_response_id chaining state is recorded.
+        completion = response_to_chat_completion(
+            response=response,
+            model=str(self.model_type),
+            response_format=response_format,
+        )
         if chain_enabled:
             self._save_response_chain_state(
                 session_key=chain_state["session_key"],
@@ -766,11 +776,7 @@ class OpenAIModel(BaseModelBackend):
                 else response.get("id"),
                 message_count=chain_state["message_count"],
             )
-        return response_to_chat_completion(
-            response=response,
-            model=str(self.model_type),
-            response_format=response_format,
-        )
+        return completion
 
     def _request_responses_stream(
         self,

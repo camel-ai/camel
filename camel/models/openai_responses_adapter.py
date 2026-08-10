@@ -58,6 +58,31 @@ _INCOMPLETE_REASON_TO_FINISH_REASON = {
 }
 
 
+def _failed_response_error_message(response: Any) -> str:
+    error = _get(response, "error")
+    error_code = _get(error, "code")
+    error_message = _get(error, "message") or "Unknown error"
+    if error_code:
+        error_message = f"{error_code}: {error_message}"
+    return error_message
+
+
+def _raise_for_failed_response(response: Any) -> None:
+    r"""Raise when a Responses API call terminated with ``status ==
+    "failed"``.
+
+    Streaming already surfaces ``response.failed`` as ``RuntimeError``.
+    Non-streaming must do the same so a failed call is not converted into
+    a normal Chat Completions result with ``finish_reason='stop'``.
+    """
+    if _get(response, "status") != "failed":
+        return
+    raise RuntimeError(
+        "Responses API response failed: "
+        f"{_failed_response_error_message(response)}"
+    )
+
+
 def _finish_reason_from_response(
     response: Any, *, has_tool_calls: bool
 ) -> str:
@@ -69,6 +94,9 @@ def _finish_reason_from_response(
     "max_output_tokens"``, which the Chat Completions contract reports as
     ``"length"``. Any other terminal response is ``"tool_calls"`` when it
     emitted tool calls, otherwise ``"stop"`` (the prior behavior).
+
+    Failed responses are not mapped here; callers must raise via
+    :func:`_raise_for_failed_response` before invoking this helper.
     """
     status = _get(response, "status")
     if status == "incomplete":
@@ -265,12 +293,10 @@ def _process_response_stream_event(
 
     if event_type == "response.failed":
         resp = _get(event, "response")
-        error = _get(resp, "error")
-        error_code = _get(error, "code")
-        error_message = _get(error, "message") or "Unknown error"
-        if error_code:
-            error_message = f"{error_code}: {error_message}"
-        raise RuntimeError(f"Responses API response failed: {error_message}")
+        raise RuntimeError(
+            "Responses API response failed: "
+            f"{_failed_response_error_message(resp)}"
+        )
 
     if event_type in ("response.completed", "response.incomplete"):
         resp = _get(event, "response")
@@ -301,6 +327,8 @@ def response_to_chat_completion(
     model: str,
     response_format: Optional[Type[BaseModel]] = None,
 ) -> ChatCompletion:
+    _raise_for_failed_response(response)
+
     output_items = _get(response, "output", []) or []
     content = ""
     tool_calls = []

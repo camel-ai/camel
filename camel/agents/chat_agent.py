@@ -4696,6 +4696,9 @@ class ChatAgent(BaseAgent):
         tool_calls_complete = False
         stream_completed = False
         last_response_id = ""
+        # Preserve the model adapter's terminal finish_reason (e.g.
+        # "length" / "content_filter") instead of always reporting "stop".
+        terminal_finish_reason = "stop"
 
         for chunk in stream:
             last_response_id = getattr(chunk, 'id', '') or last_response_id
@@ -4750,6 +4753,7 @@ class ChatAgent(BaseAgent):
                 # Check if stream is complete
                 if choice.finish_reason:
                     stream_completed = True
+                    terminal_finish_reason = choice.finish_reason
 
                     # If we have complete tool calls, execute them with
                     # sync status updates
@@ -4859,7 +4863,7 @@ class ChatAgent(BaseAgent):
                             info={
                                 "id": getattr(chunk, 'id', ''),
                                 "usage": step_token_usage.copy(),
-                                "finish_reasons": ["stop"],
+                                "finish_reasons": [terminal_finish_reason],
                                 "num_tokens": self._get_token_count(
                                     final_content
                                 ),
@@ -5824,6 +5828,9 @@ class ChatAgent(BaseAgent):
         tool_calls_complete = False
         stream_completed = False
         last_response_id = ""
+        # Preserve the model adapter's terminal finish_reason (e.g.
+        # "length" / "content_filter") instead of always reporting "stop".
+        terminal_finish_reason = "stop"
 
         async for chunk in stream:
             last_response_id = getattr(chunk, 'id', '') or last_response_id
@@ -5878,6 +5885,7 @@ class ChatAgent(BaseAgent):
                 # Check if stream is complete
                 if choice.finish_reason:
                     stream_completed = True
+                    terminal_finish_reason = choice.finish_reason
 
                     # If we have complete tool calls, execute them with
                     # async status updates
@@ -5989,7 +5997,7 @@ class ChatAgent(BaseAgent):
                             info={
                                 "id": getattr(chunk, 'id', ''),
                                 "usage": step_token_usage.copy(),
-                                "finish_reasons": ["stop"],
+                                "finish_reasons": [terminal_finish_reason],
                                 "num_tokens": self._get_token_count(
                                     final_content
                                 ),
