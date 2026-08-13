@@ -12,7 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from unittest.mock import MagicMock
+
 import pytest
+from httpx import URL
 
 from camel.configs import NebiusConfig
 from camel.models import NebiusModel
@@ -58,7 +61,7 @@ class TestNebiusModel:
         monkeypatch.setenv("NEBIUS_API_KEY", "test_key")
 
         model = NebiusModel(ModelType.NEBIUS_GPT_OSS_120B)
-        assert model._url == "https://api.studio.nebius.com/v1"
+        assert model._url == URL("https://api.tokenfactory.nebius.com/v1")
 
     def test_nebius_model_custom_url(self, monkeypatch):
         # Test custom URL from environment variable
@@ -81,6 +84,65 @@ class TestNebiusModel:
         # Should use the default OpenAI token counter
         assert model.token_counter is not None
         assert hasattr(model.token_counter, "count_tokens_from_messages")
+
+    @pytest.mark.parametrize("stream", [False, True])
+    def test_nebius_chat_completion_request(self, stream: bool):
+        client = MagicMock()
+        async_client = MagicMock()
+        expected_response = MagicMock()
+        client.chat.completions.create.return_value = expected_response
+        model = NebiusModel(
+            model_type="openai/gpt-oss-120b",
+            model_config_dict=NebiusConfig(stream=stream).as_dict(),
+            api_key="test-key",
+            client=client,
+            async_client=async_client,
+        )
+        messages = [{"role": "user", "content": "Hello"}]
+
+        result = model._run(messages)
+
+        client.chat.completions.create.assert_called_once_with(
+            messages=messages,
+            model="openai/gpt-oss-120b",
+            stream=stream,
+        )
+        assert result is expected_response
+
+    def test_nebius_tool_request(self):
+        client = MagicMock()
+        async_client = MagicMock()
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get the weather",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"city": {"type": "string"}},
+                        "required": ["city"],
+                    },
+                },
+            }
+        ]
+        model = NebiusModel(
+            model_type="openai/gpt-oss-120b",
+            model_config_dict=NebiusConfig(tool_choice="auto").as_dict(),
+            api_key="test-key",
+            client=client,
+            async_client=async_client,
+        )
+        messages = [{"role": "user", "content": "Weather in Paris?"}]
+
+        model._run(messages, tools=tools)
+
+        client.chat.completions.create.assert_called_once_with(
+            messages=messages,
+            model="openai/gpt-oss-120b",
+            tool_choice="auto",
+            tools=tools,
+        )
 
     @pytest.mark.parametrize(
         "model_type",
