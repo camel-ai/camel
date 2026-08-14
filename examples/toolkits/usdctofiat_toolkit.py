@@ -16,7 +16,7 @@
 USDCtoFiat Toolkit — USDC to fiat cash-out on Base
 
 USDCtoFiat by Galleon Labs. Built on the public Peer/ZKP2P protocol.
-Not a Peer Cash product. https://usdctofiat.xyz/developers
+Docs: https://usdctofiat.xyz/developers
 
 UsdctoFiatToolkit is a CAMEL BaseToolkit. mode is required on cashout
 and estimate: "fast" (0% / TOFIAT) or "best" (Delegate, 10 bps).
@@ -53,8 +53,8 @@ toolkit = UsdctoFiatToolkit(signer=signer)
 # agent = ChatAgent(
 #     system_message=(
 #         "You help users cash out Base USDC to fiat via USDCtoFiat by "
-#         "Galleon Labs. Built on the public Peer/ZKP2P protocol. Not a "
-#         "Peer Cash product. Always ask the user to choose mode=fast "
+#         "Galleon Labs. Built on the public Peer/ZKP2P protocol. "
+#         "Always ask the user to choose mode=fast "
 #         "(0% / TOFIAT) or mode=best (Delegate, 10 bps). Never invent a "
 #         "mode default. Never ask for a wallet private key."
 #     ),

@@ -15,7 +15,7 @@
 """UsdctoFiatToolkit — CAMEL toolkit.
 
 USDCtoFiat by Galleon Labs. Built on the public Peer/ZKP2P protocol.
-Not a Peer Cash product. https://usdctofiat.xyz/developers
+Docs: https://usdctofiat.xyz/developers
 
 Wraps ``usdctofiat.cashout(mode="fast"|"best")``, ``watch``,
 ``withdraw``/``close``, ``deposits``, and ``estimate``. Mode is required
@@ -31,7 +31,8 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Callable, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -64,9 +65,9 @@ _OFFRAMP_KWARGS = (
 
 @MCPServer()
 class UsdctoFiatToolkit(BaseToolkit):
-    r"""USDCtoFiat toolkit for CAMEL agents. Galleon Labs. Not Peer Cash.
+    r"""USDCtoFiat toolkit for CAMEL agents by Galleon Labs.
 
-    Built on the public Peer/ZKP2P protocol. Not a Peer Cash product.
+    Built on the public Peer/ZKP2P protocol.
     Docs: https://usdctofiat.xyz/developers
 
     Args:
@@ -80,9 +81,9 @@ class UsdctoFiatToolkit(BaseToolkit):
     @dependencies_required("usdctofiat")
     def __init__(
         self,
-        signer: Optional[Callable[[Any], Any]] = None,
-        timeout: Optional[float] = None,
-        mode: Optional[str] = None,
+        signer: Callable[[Any], Any] | None = None,
+        timeout: float | None = None,
+        mode: str | None = None,
         **kwargs: Any,
     ) -> None:
         r"""Initialize UsdctoFiatToolkit.
@@ -120,8 +121,7 @@ class UsdctoFiatToolkit(BaseToolkit):
             }
         )
         logger.info(
-            "UsdctoFiatToolkit ready (Galleon Labs; not Peer Cash). "
-            "signer_injected=%s",
+            "UsdctoFiatToolkit ready. signer_injected=%s",
             self.signer is not None,
         )
 
@@ -136,7 +136,7 @@ class UsdctoFiatToolkit(BaseToolkit):
         r"""Cash out Base USDC to fiat via USDCtoFiat by Galleon Labs.
 
         mode is required. There is no default.
-        - fast: 0% spread / 0 bps. We earn TOFIAT.
+        - fast: Live market pricing with 0% spread / 0 bps.
         - best: Delegate, 10 bps.
 
         If a signer was injected, unsigned txs are submitted and the
@@ -279,7 +279,7 @@ class UsdctoFiatToolkit(BaseToolkit):
             logger.error("usdctofiat_estimate failed: %s", exc)
             return _error(exc)
 
-    def get_tools(self) -> List[FunctionTool]:
+    def get_tools(self) -> list[FunctionTool]:
         r"""Return FunctionTool wrappers for the USDCtoFiat actions.
 
         Returns:

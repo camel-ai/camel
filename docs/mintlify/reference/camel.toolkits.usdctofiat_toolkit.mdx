@@ -8,9 +8,9 @@
 class UsdctoFiatToolkit(BaseToolkit):
 ```
 
-USDCtoFiat toolkit for CAMEL agents. Galleon Labs. Not Peer Cash.
+USDCtoFiat toolkit for CAMEL agents by Galleon Labs.
 
-Built on the public Peer/ZKP2P protocol. Not a Peer Cash product.
+Built on the public Peer/ZKP2P protocol.
 Docs: https://usdctofiat.xyz/developers
 
 **Parameters:**
@@ -40,7 +40,7 @@ Cash out Base USDC to fiat via USDCtoFiat by Galleon Labs.
 
 mode is required. There is no default.
 
-- fast: 0% spread / 0 bps. We earn TOFIAT.
+- fast: Live market pricing with 0% spread / 0 bps.
 - best: Delegate, 10 bps.
 
 If a signer was injected, unsigned txs are submitted and the deposit id / tx hash are returned. Otherwise this returns unsigned `{to, data, value, chainId}` txs for the host to sign. Never pass a wallet private key to this toolkit.

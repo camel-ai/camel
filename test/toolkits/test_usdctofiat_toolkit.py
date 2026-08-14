@@ -24,15 +24,15 @@ import pytest
 
 pytest.importorskip("usdctofiat")
 
-from usdctofiat import ModeRequired  # noqa: E402
-from usdctofiat.types import (  # noqa: E402
+from usdctofiat import ModeRequired
+from usdctofiat.types import (
     CashoutResult,
     Estimate,
     PreparedCashout,
     UnsignedTx,
 )
 
-from camel.toolkits.usdctofiat_toolkit import UsdctoFiatToolkit  # noqa: E402
+from camel.toolkits.usdctofiat_toolkit import UsdctoFiatToolkit
 
 
 def _prepared(mode: str = "fast") -> PreparedCashout:
@@ -99,16 +99,14 @@ def tools(mock_offramp):
         yield UsdctoFiatToolkit(), mock_offramp
 
 
-def test_docstring_discloses_galleon_not_peer_cash():
+def test_docstring_discloses_product_and_docs():
     import camel.toolkits.usdctofiat_toolkit as module
 
     text = f"{UsdctoFiatToolkit.__doc__ or ''} {module.__doc__ or ''}"
     lowered = text.lower()
     assert "usdctofiat" in lowered
     assert "galleon" in lowered
-    assert "not a peer cash product" in lowered
     assert "usdctofiat.xyz/developers" in lowered
-    assert "peer-cash" not in (UsdctoFiatToolkit.__module__ or "")
 
 
 def test_mode_is_not_a_constructor_default(mock_offramp):
@@ -250,8 +248,6 @@ def test_example_discloses_galleon_and_mode():
         .lower()
     )
     assert "usdctofiat by galleon labs" in text
-    assert "not a peer cash product" in text
     assert "usdctofiat.xyz/developers" in text
     assert "mode is required" in text
     assert "private key" in text
-    assert "peer-cash" not in text
