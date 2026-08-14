@@ -1,0 +1,158 @@
+<a id="camel.toolkits.usdctofiat_toolkit"></a>
+
+<a id="camel.toolkits.usdctofiat_toolkit.UsdctoFiatToolkit"></a>
+
+## UsdctoFiatToolkit
+
+```python
+class UsdctoFiatToolkit(BaseToolkit):
+```
+
+USDCtoFiat toolkit for CAMEL agents. Galleon Labs. Not Peer Cash.
+
+Built on the public Peer/ZKP2P protocol. Not a Peer Cash product.
+Docs: https://usdctofiat.xyz/developers
+
+**Parameters:**
+
+- **signer** (Callable, optional): Callback `(unsigned_tx) -> hash | {hash, deposit_id}`. Kept in the host runtime. Never a private key. (default: :obj:`None`)
+- **timeout** (float, optional): Optional per-call timeout forwarded to BaseToolkit. (default: :obj:`None`)
+
+<a id="camel.toolkits.usdctofiat_toolkit.UsdctoFiatToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, signer: Optional[Callable[[Any], Any]] = None, timeout: Optional[float] = None, mode: Optional[str] = None, **kwargs: Any):
+```
+
+Initialize UsdctoFiatToolkit. Mode is not a constructor default. A private key is rejected.
+
+<a id="camel.toolkits.usdctofiat_toolkit.UsdctoFiatToolkit.usdctofiat_cashout"></a>
+
+### usdctofiat_cashout
+
+```python
+def usdctofiat_cashout(self, mode: str, amount: str, currency: str, platform: str, payee: str):
+```
+
+Cash out Base USDC to fiat via USDCtoFiat by Galleon Labs.
+
+mode is required. There is no default.
+
+- fast: 0% spread / 0 bps. We earn TOFIAT.
+- best: Delegate, 10 bps.
+
+If a signer was injected, unsigned txs are submitted and the deposit id / tx hash are returned. Otherwise this returns unsigned `{to, data, value, chainId}` txs for the host to sign. Never pass a wallet private key to this toolkit.
+
+**Parameters:**
+
+- **mode** (str): `"fast"` or `"best"`. Required.
+- **amount** (str): Human USDC amount (string or number). An int is six-decimal units.
+- **currency** (str): Fiat ISO code, e.g. EUR, USD, GBP.
+- **platform** (str): Payment rail, e.g. revolut, venmo, monzo.
+- **payee** (str): Handle on that platform.
+
+**Returns:**
+
+  str: JSON string with the cash-out result or unsigned prepare payload.
+
+<a id="camel.toolkits.usdctofiat_toolkit.UsdctoFiatToolkit.usdctofiat_estimate"></a>
+
+### usdctofiat_estimate
+
+```python
+def usdctofiat_estimate(self, mode: str, amount: str, currency: str):
+```
+
+Estimate a USDCtoFiat cash-out. Not a locked quote.
+
+mode is required. fast = 0 bps seller spread. best = 10 bps manager fee.
+
+**Parameters:**
+
+- **mode** (str): `"fast"` or `"best"`. Required.
+- **amount** (str): Human USDC amount.
+- **currency** (str): Fiat ISO code.
+
+**Returns:**
+
+  str: JSON estimate payload.
+
+<a id="camel.toolkits.usdctofiat_toolkit.UsdctoFiatToolkit.usdctofiat_watch"></a>
+
+### usdctofiat_watch
+
+```python
+def usdctofiat_watch(self, deposit_id: str):
+```
+
+Watch a USDCtoFiat deposit by id (indexer snapshot).
+
+**Parameters:**
+
+- **deposit_id** (str): Fast composite resume key or Best numeric EscrowV2 id.
+
+**Returns:**
+
+  str: JSON list of deposit snapshots.
+
+<a id="camel.toolkits.usdctofiat_toolkit.UsdctoFiatToolkit.usdctofiat_withdraw"></a>
+
+### usdctofiat_withdraw
+
+```python
+def usdctofiat_withdraw(self, deposit_id: str):
+```
+
+Withdraw / close a USDCtoFiat deposit.
+
+**Parameters:**
+
+- **deposit_id** (str): EscrowV2 deposit id.
+
+**Returns:**
+
+  str: JSON signed result or unsigned withdraw tx.
+
+<a id="camel.toolkits.usdctofiat_toolkit.UsdctoFiatToolkit.usdctofiat_close"></a>
+
+### usdctofiat_close
+
+```python
+def usdctofiat_close(self, deposit_id: str):
+```
+
+Alias of usdctofiat_withdraw. Unwind a Best or Fast deposit.
+
+<a id="camel.toolkits.usdctofiat_toolkit.UsdctoFiatToolkit.usdctofiat_deposits"></a>
+
+### usdctofiat_deposits
+
+```python
+def usdctofiat_deposits(self, owner: str):
+```
+
+List USDCtoFiat deposits for an owner address.
+
+**Parameters:**
+
+- **owner** (str): 0x depositor on Base.
+
+**Returns:**
+
+  str: JSON list of deposits for the owner.
+
+<a id="camel.toolkits.usdctofiat_toolkit.UsdctoFiatToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+Return FunctionTool wrappers for the USDCtoFiat actions.
+
+**Returns:**
+
+  List[FunctionTool]: cashout, estimate, watch, withdraw, close, deposits.
