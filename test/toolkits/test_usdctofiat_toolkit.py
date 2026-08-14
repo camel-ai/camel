@@ -24,15 +24,15 @@ import pytest
 
 pytest.importorskip("usdctofiat")
 
-from usdctofiat import ModeRequired
-from usdctofiat.types import (
+from usdctofiat import ModeRequired  # noqa: E402
+from usdctofiat.types import (  # noqa: E402
     CashoutResult,
     Estimate,
     PreparedCashout,
     UnsignedTx,
 )
 
-from camel.toolkits.usdctofiat_toolkit import UsdctoFiatToolkit
+from camel.toolkits.usdctofiat_toolkit import UsdctoFiatToolkit  # noqa: E402
 
 
 def _prepared(mode: str = "fast") -> PreparedCashout:

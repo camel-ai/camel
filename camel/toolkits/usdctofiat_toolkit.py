@@ -51,15 +51,18 @@ _BANNED_KEY_KWARGS = (
     "EVM_PRIVATE_KEY",
 )
 
+_BANNED_ATTRIBUTION_KWARGS = (
+    "referrer",
+    "referrers",
+    "extra_referrers",
+    "referral_code",
+)
+
 _OFFRAMP_KWARGS = (
     "curator_url",
     "indexer_url",
     "curator",
     "indexer",
-    "referrer",
-    "referrers",
-    "extra_referrers",
-    "referral_code",
 )
 
 
@@ -102,6 +105,13 @@ class UsdctoFiatToolkit(BaseToolkit):
                     "UsdctoFiatToolkit does not accept a private key. "
                     "Inject a signer callback or call cashout without "
                     "a signer to receive unsigned txs."
+                )
+        for banned in _BANNED_ATTRIBUTION_KWARGS:
+            if banned in kwargs:
+                raise TypeError(
+                    "UsdctoFiatToolkit does not accept attribution "
+                    "overrides. The usdctofiat client locks "
+                    "peer-ref-TOFIAT then galleonlabs."
                 )
         if mode is not None:
             raise TypeError(
