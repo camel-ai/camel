@@ -24,15 +24,15 @@ import pytest
 
 pytest.importorskip("usdctofiat")
 
-from usdctofiat import ModeRequired  # noqa: E402
-from usdctofiat.types import (  # noqa: E402
+from usdctofiat import ModeRequired
+from usdctofiat.types import (
     CashoutResult,
     Estimate,
     PreparedCashout,
     UnsignedTx,
 )
 
-from camel.toolkits.usdctofiat_toolkit import UsdctoFiatToolkit  # noqa: E402
+from camel.toolkits.usdctofiat_toolkit import UsdctoFiatToolkit
 
 
 def _prepared(mode: str = "fast") -> PreparedCashout:
@@ -205,7 +205,7 @@ def test_cashout_mode_required_is_returned_as_json(tools):
 
 
 def test_estimate_watch_withdraw_deposits(tools):
-    kit, offramp = tools
+    kit, _offramp = tools
     estimate = json.loads(
         kit.usdctofiat_estimate(mode="fast", amount="100", currency="EUR")
     )
