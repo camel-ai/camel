@@ -33,7 +33,9 @@ from openai.types.chat.chat_completion_user_message_param import (
 from openai.types.completion_usage import CompletionUsage
 from openai.types.chat import ParsedChatCompletion
 from openai._types import NOT_GIVEN, NotGiven
-from openai.types.chat import ChatCompletionMessageFunctionToolCall
+from openai.types.chat import (
+    ChatCompletionMessageToolCall as ChatCompletionMessageFunctionToolCall,
+)
 
 __all__ = [
     "Choice",
