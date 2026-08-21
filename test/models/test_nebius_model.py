@@ -85,6 +85,8 @@ class TestNebiusModel:
         assert model.token_counter is not None
         assert hasattr(model.token_counter, "count_tokens_from_messages")
 
+
+class TestNebiusModelRequests:
     @pytest.mark.parametrize("stream", [False, True])
     def test_nebius_chat_completion_request(self, stream: bool):
         client = MagicMock()
@@ -92,7 +94,7 @@ class TestNebiusModel:
         expected_response = MagicMock()
         client.chat.completions.create.return_value = expected_response
         model = NebiusModel(
-            model_type="openai/gpt-oss-120b",
+            model_type=ModelType.NEBIUS_GPT_OSS_120B,
             model_config_dict=NebiusConfig(stream=stream).as_dict(),
             api_key="test-key",
             client=client,
@@ -127,7 +129,7 @@ class TestNebiusModel:
             }
         ]
         model = NebiusModel(
-            model_type="openai/gpt-oss-120b",
+            model_type=ModelType.NEBIUS_GPT_OSS_120B,
             model_config_dict=NebiusConfig(tool_choice="auto").as_dict(),
             api_key="test-key",
             client=client,
@@ -144,6 +146,9 @@ class TestNebiusModel:
             tools=tools,
         )
 
+
+@pytest.mark.model_backend
+class TestNebiusModelTypes:
     @pytest.mark.parametrize(
         "model_type",
         [
