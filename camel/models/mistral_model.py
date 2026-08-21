@@ -57,6 +57,11 @@ else:
     from camel.utils import observe
 
 
+# "model_length" is Mistral's own length stop, which OpenAI expresses as
+# "length".
+_FINISH_REASON_MAP = {"model_length": "length"}
+
+
 class MistralModel(BaseModelBackend):
     r"""Mistral API in a unified BaseModelBackend interface.
 
@@ -128,6 +133,18 @@ class MistralModel(BaseModelBackend):
             **kwargs,
         )
 
+    @staticmethod
+    def _map_finish_reason(mistral_reason: str) -> str:
+        r"""Map a Mistral finish reason to its OpenAI equivalent."""
+        if mistral_reason == "error":
+            raise RuntimeError(
+                "Mistral generation failed with finish reason "
+                f"{mistral_reason!r}"
+            )
+        # mistralai types FinishReason as a Literal plus UnrecognizedStr, so
+        # an unknown value is a later API addition, not a failure.
+        return _FINISH_REASON_MAP.get(mistral_reason, mistral_reason)
+
     def _to_openai_response(
         self, response: 'ChatCompletionResponse'
     ) -> ChatCompletion:
@@ -159,7 +176,9 @@ class MistralModel(BaseModelBackend):
                         "content": response.choices[0].message.content,  # type: ignore[index,union-attr]
                         "tool_calls": tool_calls,
                     },
-                    finish_reason=response.choices[0].finish_reason  # type: ignore[index]
+                    finish_reason=self._map_finish_reason(
+                        response.choices[0].finish_reason  # type: ignore[index]
+                    )
                     if response.choices[0].finish_reason  # type: ignore[index]
                     else None,
                 )
