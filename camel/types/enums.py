@@ -124,7 +124,7 @@ class ModelType(UnifiedModelType, Enum):
     CEREBRAS_QWEN_3_32B = "qwen-3-32b"
 
     # Nebius AI Studio platform models
-    NEBIUS_GPT_OSS_120B = "gpt-oss-120b"
+    NEBIUS_GPT_OSS_120B = "openai/gpt-oss-120b"
     NEBIUS_GPT_OSS_20B = "gpt-oss-20b"
     NEBIUS_GLM_4_5 = "GLM-4.5"
     NEBIUS_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
