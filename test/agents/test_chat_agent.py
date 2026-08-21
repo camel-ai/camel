@@ -2329,3 +2329,226 @@ async def test_chat_agent_async_stream_with_structured_output():
     assert len(responses) > 1, "Should receive multiple streaming chunks"
     assert responses[-1].msg.parsed.answer == 6
     assert responses[-1].msg.parsed.explanation
+
+
+def _length_finish_reason_chunks():
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    return [
+        ChatCompletionChunk(
+            id="mock_stream_length_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="partial", role="assistant"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-4o-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="mock_stream_length_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content=""),
+                    index=0,
+                    finish_reason="length",
+                )
+            ],
+            created=1234567890,
+            model="gpt-4o-mini",
+            object="chat.completion.chunk",
+            usage={
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+            },
+        ),
+    ]
+
+
+def test_chat_agent_stream_preserves_length_finish_reason():
+    r"""ChatAgent must keep the adapter's terminal finish_reason.
+
+    Regression for #4250: `_process_stream_chunks_with_accumulator` used to
+    hardcode ``finish_reasons: ["stop"]`` even when the model stream ended
+    with ``finish_reason="length"`` (e.g. Responses ``response.incomplete``).
+    """
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    model = OpenAIModel(
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict={"stream": True},
+        api_key="dummy",
+    )
+    agent = ChatAgent(
+        system_message=system_message,
+        model=model,
+        stream_accumulate=False,
+    )
+
+    chunks = _length_finish_reason_chunks()
+
+    def mock_stream():
+        for chunk in chunks:
+            yield chunk
+
+    agent.model_backend.run = MagicMock(return_value=mock_stream())
+
+    responses = list(agent.step("Continue until truncated"))
+    assert responses
+    assert responses[-1].info["finish_reasons"] == ["length"]
+
+
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_preserves_length_finish_reason():
+    r"""Async mirror of the #4250 ChatAgent finish_reason regression."""
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    model = OpenAIModel(
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict={"stream": True},
+        api_key="dummy",
+    )
+    agent = ChatAgent(
+        system_message=system_message,
+        model=model,
+        stream_accumulate=False,
+    )
+
+    chunks = _length_finish_reason_chunks()
+
+    async def mock_async_stream():
+        for chunk in chunks:
+            yield chunk
+
+    agent.model_backend.arun = AsyncMock(return_value=mock_async_stream())
+
+    responses = []
+    async for response in await agent.astep("Continue until truncated"):
+        responses.append(response)
+
+    assert responses
+    assert responses[-1].info["finish_reasons"] == ["length"]
+
+
+def _empty_content_filter_chunks():
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    return [
+        ChatCompletionChunk(
+            id="mock_stream_content_filter_1",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="", role="assistant"),
+                    index=0,
+                    finish_reason="content_filter",
+                )
+            ],
+            created=1234567890,
+            model="gpt-4o-mini",
+            object="chat.completion.chunk",
+            usage={
+                "prompt_tokens": 10,
+                "completion_tokens": 0,
+                "total_tokens": 10,
+            },
+        ),
+    ]
+
+
+def test_chat_agent_stream_preserves_finish_reason_with_empty_content():
+    r"""ChatAgent must still surface the terminal finish_reason even when
+    the model produced no text content.
+
+    Regression for #4250: the final response was only yielded when
+    ``final_content.strip()`` was truthy, so a terminal outcome like
+    ``content_filter`` with empty content silently dropped its
+    finish_reason instead of surfacing it to the caller.
+    """
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    model = OpenAIModel(
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict={"stream": True},
+        api_key="dummy",
+    )
+    agent = ChatAgent(
+        system_message=system_message,
+        model=model,
+        stream_accumulate=False,
+    )
+
+    chunks = _empty_content_filter_chunks()
+
+    def mock_stream():
+        for chunk in chunks:
+            yield chunk
+
+    agent.model_backend.run = MagicMock(return_value=mock_stream())
+
+    responses = list(agent.step("Say something unsafe"))
+    assert responses
+    assert responses[-1].info["finish_reasons"] == ["content_filter"]
+
+
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_preserves_finish_reason_with_empty_content():  # noqa: E501
+    r"""Async mirror of the empty-content finish_reason regression."""
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    model = OpenAIModel(
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict={"stream": True},
+        api_key="dummy",
+    )
+    agent = ChatAgent(
+        system_message=system_message,
+        model=model,
+        stream_accumulate=False,
+    )
+
+    chunks = _empty_content_filter_chunks()
+
+    async def mock_async_stream():
+        for chunk in chunks:
+            yield chunk
+
+    agent.model_backend.arun = AsyncMock(return_value=mock_async_stream())
+
+    responses = []
+    async for response in await agent.astep("Say something unsafe"):
+        responses.append(response)
+
+    assert responses
+    assert responses[-1].info["finish_reasons"] == ["content_filter"]
