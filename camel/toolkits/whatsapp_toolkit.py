@@ -53,7 +53,6 @@ class WhatsAppToolkit(BaseToolkit):
                 "WHATSAPP_PHONE_NUMBER_ID environment variables."
             )
 
-    @retry_on_error()
     def send_message(
         self, to: str, message: str
     ) -> Union[Dict[str, Any], str]:
@@ -81,11 +80,11 @@ class WhatsAppToolkit(BaseToolkit):
         }
 
         try:
-            response = requests.post(url=url, headers=headers, json=data)
+            response = requests.post(
+                url=url, headers=headers, json=data, timeout=self.timeout
+            )
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException as e:
-            raise e
         except Exception as e:
             return f"Failed to send message: {e!s}"
 
