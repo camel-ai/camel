@@ -4,9 +4,9 @@ repos:
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --show-fixes]
-        exclude: ^(docs/|examples/usecases/|examples/custom_client_usage\.py)  # Ignore files under docs and examples/usecases
+        exclude: ^(\.camel/skills/skill-creator/|docs/|examples/usecases/|examples/custom_client_usage\.py)  # Ignore vendored skill and selected docs/examples
       - id: ruff-format
-        exclude: ^(docs/|examples/usecases/)  # Ignore files under docs and examples/usecases
+        exclude: ^(\.camel/skills/skill-creator/|docs/|examples/usecases/)  # Ignore vendored skill and selected docs/examples
 
   - repo: local
     hooks:

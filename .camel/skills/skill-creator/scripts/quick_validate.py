@@ -1,4 +1,4 @@
-# Based on https://github.com/anthropics/skills
+#!/usr/bin/env python3
 """
 Quick validation script for skills - minimal version
 """
@@ -7,55 +7,11 @@ import re
 import sys
 from pathlib import Path
 
-try:
-    import yaml
-except ImportError:
-    print(
-        "❌ Error: PyYAML is required but not installed.\n"
-        "   Install it with: pip install pyyaml"
-    )
-    sys.exit(1)
-
-
-def validate_skill_name(name):
-    r"""Validate skill name format.
-
-    Args:
-        name: Name of the skill to validate (should already be stripped)
-
-    Returns:
-        Tuple of (is_valid, error_message). error_message is None if valid.
-    """
-    if not name:
-        return False, "Name cannot be empty"
-
-    # Check naming convention (kebab-case: lowercase with hyphens)
-    if not re.match(r'^[a-z0-9-]+$', name):
-        return (
-            False,
-            f"Name '{name}' should be kebab-case (lowercase "
-            f"letters, digits, and hyphens only)",
-        )
-
-    if name.startswith('-') or name.endswith('-'):
-        return False, f"Name '{name}' cannot start or end with hyphen"
-
-    if '--' in name:
-        return False, f"Name '{name}' cannot contain consecutive hyphens"
-
-    # Check name length (max 64 characters per spec)
-    if len(name) > 64:
-        return (
-            False,
-            f"Name is too long ({len(name)} characters). Maximum is "
-            f"64 characters.",
-        )
-
-    return True, None
+import yaml
 
 
 def validate_skill(skill_path):
-    r"""Basic validation of a skill"""
+    """Basic validation of a skill"""
     skill_path = Path(skill_path)
 
     # Check SKILL.md exists
@@ -84,21 +40,13 @@ def validate_skill(skill_path):
         return False, f"Invalid YAML in frontmatter: {e}"
 
     # Define allowed properties
-    ALLOWED_PROPERTIES = {
-        'name',
-        'description',
-        'license',
-        'allowed-tools',
-        'metadata',
-        'compatibility',
-    }
+    ALLOWED_PROPERTIES = {'name', 'description', 'license', 'allowed-tools', 'metadata', 'compatibility'}
 
     # Check for unexpected properties (excluding nested keys under metadata)
     unexpected_keys = set(frontmatter.keys()) - ALLOWED_PROPERTIES
     if unexpected_keys:
         return False, (
-            f"Unexpected key(s) in SKILL.md frontmatter: "
-            f"{', '.join(sorted(unexpected_keys))}. "
+            f"Unexpected key(s) in SKILL.md frontmatter: {', '.join(sorted(unexpected_keys))}. "
             f"Allowed properties are: {', '.join(sorted(ALLOWED_PROPERTIES))}"
         )
 
@@ -113,59 +61,40 @@ def validate_skill(skill_path):
     if not isinstance(name, str):
         return False, f"Name must be a string, got {type(name).__name__}"
     name = name.strip()
-
-    # Use shared validation function
-    is_valid, error_msg = validate_skill_name(name)
-    if not is_valid:
-        return False, error_msg
+    if not name:
+        return False, "Name cannot be empty"
+    # Check naming convention (kebab-case: lowercase with hyphens)
+    if not re.match(r'^[a-z0-9-]+$', name):
+        return False, f"Name '{name}' should be kebab-case (lowercase letters, digits, and hyphens only)"
+    if name.startswith('-') or name.endswith('-') or '--' in name:
+        return False, f"Name '{name}' cannot start/end with hyphen or contain consecutive hyphens"
+    # Check name length (max 64 characters per spec)
+    if len(name) > 64:
+        return False, f"Name is too long ({len(name)} characters). Maximum is 64 characters."
 
     # Extract and validate description
     description = frontmatter.get('description', '')
     if not isinstance(description, str):
-        return (
-            False,
-            f"Description must be a string, got {type(description).__name__}",
-        )
+        return False, f"Description must be a string, got {type(description).__name__}"
     description = description.strip()
     if not description:
         return False, "Description cannot be empty"
-    else:
-        # Check for placeholder/TODO description
-        if description.upper().startswith('TODO'):
-            return (
-                False,
-                "Description appears to be a placeholder "
-                "(starts with 'TODO'). Please provide a real description.",
-            )
-        # Check for angle brackets
-        if '<' in description or '>' in description:
-            return False, "Description cannot contain angle brackets (< or >)"
-        # Check description length (max 1024 characters per spec)
-        if len(description) > 1024:
-            return (
-                False,
-                f"Description is too long ({len(description)} "
-                f"characters). Maximum is 1024 characters.",
-            )
+    # Check for angle brackets
+    if '<' in description or '>' in description:
+        return False, "Description cannot contain angle brackets (< or >)"
+    # Check description length (max 1024 characters per spec)
+    if len(description) > 1024:
+        return False, f"Description is too long ({len(description)} characters). Maximum is 1024 characters."
 
     # Validate compatibility field if present (optional)
     compatibility = frontmatter.get('compatibility', '')
     if compatibility:
         if not isinstance(compatibility, str):
-            return (
-                False,
-                f"Compatibility must be a string, got "
-                f"{type(compatibility).__name__}",
-            )
+            return False, f"Compatibility must be a string, got {type(compatibility).__name__}"
         if len(compatibility) > 500:
-            return (
-                False,
-                f"Compatibility is too long ({len(compatibility)} "
-                f"characters). Maximum is 500 characters.",
-            )
+            return False, f"Compatibility is too long ({len(compatibility)} characters). Maximum is 500 characters."
 
     return True, "Skill is valid!"
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
