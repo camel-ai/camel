@@ -673,3 +673,18 @@ def test_analyze_task_quality_eval_fallback():
     assert isinstance(result, TaskAnalysisResult)
     assert result.quality_score == 80
     assert result.recovery_strategy is None
+
+
+def test_is_generic_role_name():
+    r"""Test that is_generic_role_name handles standard names, case insensitivity,
+    whitespace-padded strings, and empty/None values."""
+    from camel.societies.workforce.utils import is_generic_role_name
+
+    assert is_generic_role_name("assistant") is True
+    assert is_generic_role_name("Agent") is True
+    assert is_generic_role_name("  WORKER  ") is True
+    assert is_generic_role_name("") is True
+    assert is_generic_role_name("   ") is True
+    assert is_generic_role_name("software_engineer") is False
+    assert is_generic_role_name("data_analyst") is False
+
