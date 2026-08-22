@@ -82,18 +82,7 @@ class FaissStorage(BaseVectorStorage):
         m: int = 16,
         **kwargs: Any,
     ) -> None:
-        r"""Initialize the FAISS vector storage.
-
-        Args:
-            vector_dim: Dimension of vectors to be stored
-            index_type: FAISS index type ('Flat', 'IVF', 'HNSW', etc.)
-            collection_name: Name of the collection (defaults to timestamp)
-            storage_path: Directory to save the index (None for in-memory only)
-            distance: Vector distance metric
-            nlist: Number of clusters for IVF indexes
-            m: HNSW parameter for connections per node
-            **kwargs: Additional parameters
-        """
+        r"""Initialize the FAISS vector storage."""
         import faiss
         import numpy as np
 
@@ -126,17 +115,35 @@ class FaissStorage(BaseVectorStorage):
             self._load_from_disk()
 
     def _generate_collection_name(self) -> str:
-        r"""Generates a collection name if user doesn't provide"""
+        r"""Generates a collection name if user doesn't provide.
+
+        Returns:
+            str: Generated collection name.
+        """
         return f"faiss_index_{datetime.now().isoformat()}"
 
     def _get_index_path(self) -> str:
-        r"""Returns the path to the index file"""
+        r"""Returns the path to the index file.
+
+        Returns:
+            str: The path to the index file.
+
+        Raises:
+            ValueError: If storage path is not set.
+        """
         if self.storage_path is None:
             raise ValueError("Storage path is not set.")
         return os.path.join(self.storage_path, f"{self.collection_name}.index")
 
     def _get_metadata_path(self) -> str:
-        r"""Returns the path to the metadata file"""
+        r"""Returns the path to the metadata file.
+
+        Returns:
+            str: The path to the metadata file.
+
+        Raises:
+            ValueError: If storage path is not set.
+        """
         if self.storage_path is None:
             raise ValueError("Storage path is not set.")
         return os.path.join(
@@ -147,7 +154,11 @@ class FaissStorage(BaseVectorStorage):
         r"""Creates a new FAISS index based on specified parameters.
 
         Returns:
-            A FAISS index object configured according to the parameters.
+            Any: A FAISS index object configured according to the parameters.
+
+        Raises:
+            ValueError: If an unsupported distance metric or index type is
+                specified.
         """
         import faiss
 
@@ -225,7 +236,11 @@ class FaissStorage(BaseVectorStorage):
         logger.info(f"Saved FAISS index and metadata to {self.storage_path}")
 
     def _load_from_disk(self) -> None:
-        r"""Loads the index and metadata from disk if they exist."""
+        r"""Loads the index and metadata from disk if they exist.
+
+        Raises:
+            ValueError: If the metadata is missing required keys.
+        """
         if self.storage_path is None:
             return
 
@@ -684,7 +699,11 @@ class FaissStorage(BaseVectorStorage):
 
     @property
     def client(self) -> Any:
-        r"""Provides access to the underlying FAISS client."""
+        r"""Provides access to the underlying FAISS client.
+
+        Returns:
+            Any: The FAISS client module or instance.
+        """
         return self._faiss_client
 
     def _matches_filter(
