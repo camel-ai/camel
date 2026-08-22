@@ -16,7 +16,7 @@ from typing import List, Literal, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 
 @MCPServer()
@@ -60,6 +60,7 @@ class WeatherToolkit(BaseToolkit):
             )
         return OPENWEATHERMAP_API_KEY
 
+    @dependencies_required('pyowm')
     def get_weather_data(
         self,
         city: str,
