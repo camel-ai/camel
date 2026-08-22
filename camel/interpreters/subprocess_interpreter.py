@@ -17,7 +17,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List
+from typing import Any, ClassVar, Dict, List, Optional
 
 from colorama import Fore
 
@@ -47,6 +47,10 @@ class SubprocessInterpreter(BaseInterpreter):
             executed code. (default: :obj:`True`)
         execution_timeout (int, optional): Maximum time in seconds to wait for
             code execution to complete. (default: :obj:`60`)
+        python_exec (Optional[str], optional): Path to the Python executable to
+            use for Python code execution. When ``None``, defaults to the
+            system ``python`` command. Useful for targeting a specific Python
+            binary, e.g. from a virtual environment. (default: :obj:`None`)
     """
 
     _CODE_EXECUTE_CMD_MAPPING: ClassVar[Dict[str, Dict[str, str]]] = {
@@ -79,11 +83,13 @@ class SubprocessInterpreter(BaseInterpreter):
         print_stdout: bool = False,
         print_stderr: bool = True,
         execution_timeout: int = 60,
+        python_exec: Optional[str] = None,
     ) -> None:
         self.require_confirm = require_confirm
         self.print_stdout = print_stdout
         self.print_stderr = print_stderr
         self.execution_timeout = execution_timeout
+        self.python_exec = python_exec
 
     def run_file(
         self,
@@ -108,13 +114,13 @@ class SubprocessInterpreter(BaseInterpreter):
             # For Python code, use ast to analyze and modify the code
             import ast
 
-            import astor
-
             with open(file, 'r', encoding='utf-8') as f:
                 source = f.read()
 
             # Parse the source code
             try:
+                import astor
+
                 tree = ast.parse(source)
                 # Get the last node
                 if tree.body:
@@ -160,14 +166,30 @@ class SubprocessInterpreter(BaseInterpreter):
                     modified_source = astor.to_source(tree)
                     # Create a temporary file with the modified source
                     temp_file = self._create_temp_file(modified_source, "py")
-                    cmd = ["python", str(temp_file)]
-            except (SyntaxError, TypeError, ValueError) as e:
+                    python_bin = self.python_exec or "python"
+
+                    if not self._is_command_available(python_bin):
+                        raise InterpreterError(
+                            f"Command '{python_bin}' not found. "
+                            f"Please ensure it is installed and "
+                            f"available in your PATH."
+                        )
+
+                    cmd = [python_bin, str(temp_file)]
+            except (SyntaxError, TypeError, ValueError, ImportError) as e:
                 logger.warning(f"Failed to parse Python code with AST: {e}")
                 platform_type = 'posix' if os.name != 'nt' else 'nt'
                 cmd_template = self._CODE_EXECUTE_CMD_MAPPING[code_type][
                     platform_type
                 ]
                 base_cmd = cmd_template.split()[0]
+
+                # Use custom python_exec for Python when provided
+                if (
+                    self._CODE_TYPE_MAPPING.get(code_type) == "python"
+                    and self.python_exec
+                ):
+                    base_cmd = self.python_exec
 
                 # Check if command is available
                 if not self._is_command_available(base_cmd):
@@ -396,7 +418,7 @@ class SubprocessInterpreter(BaseInterpreter):
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
         raise RuntimeError(
-            "SubprocessInterpreter doesn't support " "`action_space`."
+            "SubprocessInterpreter doesn't support `action_space`."
         )
 
     def _is_command_available(self, command: str) -> bool:
