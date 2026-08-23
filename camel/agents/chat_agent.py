@@ -3932,8 +3932,8 @@ class ChatAgent(BaseAgent):
             tool_calls (List[ToolCallingRecord]): Records of function calls
                 made during this step.
             num_tokens (int): The number of tokens used in this step.
-            external_tool_call_request (Optional[ToolCallRequest]): The
-                request for external tool call.
+            external_tool_call_requests (Optional[List[ToolCallRequest]]): The
+                requests for external tool calls.
 
         Returns:
             Dict[str, Any]: A dictionary containing information about the chat

@@ -211,7 +211,7 @@ class QdrantStorage(BaseVectorStorage):
         r"""Deletes an existing collection from the database.
 
         Args:
-            collection (str): Name of the collection to be deleted.
+            collection_name (str): Name of the collection to be deleted.
             **kwargs (Any): Additional keyword arguments.
         """
         self._client.delete_collection(
@@ -267,7 +267,7 @@ class QdrantStorage(BaseVectorStorage):
         r"""Adds a list of vectors to the specified collection.
 
         Args:
-            vectors (List[VectorRecord]): List of vectors to be added.
+            records (List[VectorRecord]): List of vectors to be added.
             **kwargs (Any): Additional keyword arguments.
 
         Raises:

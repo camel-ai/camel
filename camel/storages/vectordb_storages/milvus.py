@@ -184,7 +184,7 @@ class MilvusStorage(BaseVectorStorage):
         r"""Deletes an existing collection from the database.
 
         Args:
-            collection (str): Name of the collection to be deleted.
+            collection_name (str): Name of the collection to be deleted.
         """
         self._client.drop_collection(collection_name=collection_name)
 
