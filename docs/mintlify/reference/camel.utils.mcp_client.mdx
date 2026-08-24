@@ -139,6 +139,24 @@ def list_mcp_tools_sync(self):
 
   ListToolsResult: Result containing available MCP tools.
 
+<a id="camel.utils.mcp_client.MCPClient._convert_mcp_content_to_string"></a>
+
+### _convert_mcp_content_to_string
+
+```python
+def _convert_mcp_content_to_string(self, content: Any):
+```
+
+Convert a single MCP content block to its string representation.
+
+**Parameters:**
+
+- **content** (Any): An MCP content block from CallToolResult.content.
+
+**Returns:**
+
+  str: Textual representation of the content block.
+
 <a id="camel.utils.mcp_client.MCPClient.generate_function_from_mcp_tool"></a>
 
 ### generate_function_from_mcp_tool
