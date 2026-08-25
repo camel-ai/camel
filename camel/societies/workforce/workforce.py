@@ -131,6 +131,45 @@ TASK_TIMEOUT_SECONDS = 600.0
 DEFAULT_WORKER_POOL_SIZE = 10
 
 
+def _seed_task_media_copy_memo(
+    task: Optional[Task],
+    memo: Dict[int, Any],
+    visited_task_ids: Optional[Set[int]] = None,
+) -> None:
+    r"""Seed deepcopy memo with media payloads that snapshots can share."""
+    if task is None:
+        return
+    if visited_task_ids is None:
+        visited_task_ids = set()
+
+    task_id = id(task)
+    if task_id in visited_task_ids:
+        return
+    visited_task_ids.add(task_id)
+
+    if task.image_list:
+        for image in task.image_list:
+            memo[id(image)] = image
+
+    _seed_task_media_copy_memo(task.parent, memo, visited_task_ids)
+    for subtask in task.subtasks:
+        _seed_task_media_copy_memo(subtask, memo, visited_task_ids)
+    for dependency in task.dependencies:
+        _seed_task_media_copy_memo(dependency, memo, visited_task_ids)
+
+
+def _seed_tasks_media_copy_memo(
+    tasks: Optional[List[Task] | Deque[Task]],
+    memo: Dict[int, Any],
+    visited_task_ids: Set[int],
+) -> None:
+    r"""Seed deepcopy memo from a task container."""
+    if not tasks:
+        return
+    for task in tasks:
+        _seed_task_media_copy_memo(task, memo, visited_task_ids)
+
+
 class WorkforceState(Enum):
     r"""Workforce execution state for human intervention support."""
 
@@ -161,6 +200,10 @@ class WorkforceSnapshot:
         description: str = "",
     ):
         memo: Dict[int, Any] = {}
+        visited_task_ids: Set[int] = set()
+        _seed_task_media_copy_memo(main_task, memo, visited_task_ids)
+        _seed_tasks_media_copy_memo(pending_tasks, memo, visited_task_ids)
+        _seed_tasks_media_copy_memo(completed_tasks, memo, visited_task_ids)
         self.main_task = copy.deepcopy(main_task, memo)
         self.pending_tasks = (
             copy.deepcopy(pending_tasks, memo) if pending_tasks else deque()
@@ -2567,6 +2610,14 @@ class Workforce(BaseNode):
 
         snapshot = self._snapshots[snapshot_index]
         memo: Dict[int, Any] = {}
+        visited_task_ids: Set[int] = set()
+        _seed_task_media_copy_memo(snapshot.main_task, memo, visited_task_ids)
+        _seed_tasks_media_copy_memo(
+            snapshot.pending_tasks, memo, visited_task_ids
+        )
+        _seed_tasks_media_copy_memo(
+            snapshot.completed_tasks, memo, visited_task_ids
+        )
         self._task = copy.deepcopy(snapshot.main_task, memo)
         self._pending_tasks = copy.deepcopy(snapshot.pending_tasks, memo)
         self._completed_tasks = copy.deepcopy(snapshot.completed_tasks, memo)
