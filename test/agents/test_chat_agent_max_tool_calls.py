@@ -1,16 +1,32 @@
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """Tests for ChatAgent max_tool_calls behavior."""
 
 import asyncio
-
-import pytest
+from typing import Literal
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from openai.types.chat import (
     ChatCompletion,
     ChatCompletionMessage,
     ChatCompletionMessageFunctionToolCall,
 )
-from openai.types.chat.chat_completion_message_function_tool_call import Function
+from openai.types.chat.chat_completion import Choice
+from openai.types.chat.chat_completion_message_function_tool_call import (
+    Function,
+)
 from openai.types.completion_usage import CompletionUsage
 
 from camel.agents import ChatAgent
@@ -46,17 +62,23 @@ class DummyToolModel(BaseModelBackend):
 def _make_chat_completion(
     response_id: str,
     message: ChatCompletionMessage,
-    finish_reason: str,
+    finish_reason: Literal[
+        "stop",
+        "length",
+        "tool_calls",
+        "content_filter",
+        "function_call",
+    ],
 ) -> ChatCompletion:
     """Create a deterministic chat completion for tool-call tests."""
     return ChatCompletion(
         id=response_id,
         choices=[
-            {
-                "finish_reason": finish_reason,
-                "index": 0,
-                "message": message,
-            }
+            Choice(
+                finish_reason=finish_reason,
+                index=0,
+                message=message,
+            )
         ],
         created=1730753000,
         model="test-model",
@@ -156,9 +178,7 @@ def test_chat_agent_max_tool_calls_limits_tool_execution():
         "stop",
     )
 
-    model.run = MagicMock(
-        side_effect=[tool_call_response, final_response]
-    )
+    model.run = MagicMock(side_effect=[tool_call_response, final_response])
 
     agent = ChatAgent(
         system_message="You are a helpful assistant.",
