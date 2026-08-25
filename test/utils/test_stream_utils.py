@@ -255,3 +255,97 @@ async def test_consume_response_content_async_callback_exception_is_swallowed(
     assert (
         "stream_callback failed while processing a stream chunk" in caplog.text
     )
+
+
+def test_consume_response_content_cumulative_stream_with_repeated_last_piece():
+    # Regression test: an accumulating agent emits its full content twice
+    # when the provider sends a trailing usage-only chunk -- once in the
+    # last content chunk, once in the finalized response. The old strict
+    # ">" length check classified that sequence as delta streaming and
+    # concatenated every piece, tripling the answer.
+    chunks = [
+        _make_chunk("Hello"),
+        _make_chunk("Hello world"),
+        _make_chunk("Hello world"),
+    ]
+
+    final_response, content = consume_response_content(_sync_stream(chunks))
+
+    assert final_response.msg.content == "Hello world"
+    assert content == "Hello world"
+
+
+def test_consume_response_content_accumulating_chat_agent_end_to_end():
+    # Same defect, driven only through public API: a real ChatAgent with
+    # stream_accumulate=True, fed the standard OpenAI chunk sequence for
+    # stream_options={"include_usage": True}, and consumed through the
+    # public consume_response_content() that Workforce uses.
+    from unittest.mock import MagicMock
+
+    from openai.types.chat import ChatCompletionChunk
+    from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+    from openai.types.completion_usage import CompletionUsage
+
+    from camel.agents import ChatAgent
+    from camel.models import ModelFactory
+    from camel.types import ModelPlatformType, ModelType, RoleType
+
+    def _openai_chunk(content=None, finish_reason=None, usage=None):
+        choices = []
+        if content is not None or finish_reason is not None:
+            choices = [
+                Choice(
+                    index=0,
+                    delta=ChoiceDelta(content=content, role="assistant"),
+                    finish_reason=finish_reason,
+                )
+            ]
+        return ChatCompletionChunk(
+            id="chatcmpl-test",
+            object="chat.completion.chunk",
+            created=0,
+            model="gpt-4o-mini",
+            choices=choices,
+            usage=usage,
+        )
+
+    def _stream():
+        yield _openai_chunk(content="Hello")
+        yield _openai_chunk(content=" world")
+        yield _openai_chunk(content="", finish_reason="stop")
+        yield _openai_chunk(
+            usage=CompletionUsage(
+                completion_tokens=2, prompt_tokens=5, total_tokens=7
+            )
+        )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict={
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        },
+    )
+    model.run = MagicMock(side_effect=lambda *a, **k: _stream())
+
+    agent = ChatAgent(
+        BaseMessage(
+            "Assistant",
+            RoleType.ASSISTANT,
+            meta_dict=None,
+            content="You are a helpful assistant.",
+        ),
+        model=model,
+        stream_accumulate=True,
+    )
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict={},
+        content="Say hello.",
+    )
+
+    _, content = consume_response_content(agent.step(user_msg))
+
+    assert content == "Hello world"

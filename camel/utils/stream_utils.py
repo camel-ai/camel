@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import asyncio
+from itertools import pairwise
 from types import GeneratorType
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Tuple
 
@@ -32,17 +33,29 @@ def _is_cumulative(contents: list[str]) -> bool:
 
     Streaming heuristic:
     - Gather non-empty ``chunk.msg.content`` pieces.
-    - If each later piece strictly grows in length and starts with the
-      previous, treat as cumulative (covers ``stream_accumulate=True``) and
-      use the last piece.
+    - If each later piece starts with the previous one and the sequence
+      grows at least once, treat as cumulative (covers
+      ``stream_accumulate=True``) and use the last piece.
     - Otherwise concatenate pieces in order (covers delta streaming).
+
+    A repeated final piece is tolerated because an accumulating agent
+    emits the full content twice when the provider sends a trailing
+    usage-only chunk (``stream_options={"include_usage": True}``): once
+    in the last content chunk and once in the finalized response. A
+    sequence that never grows (e.g. the same delta token repeated) is
+    still treated as delta streaming, since there is no accumulation to
+    infer.
     """
 
-    return all(
-        len(contents[i + 1]) > len(contents[i])
-        and contents[i + 1].startswith(contents[i])
-        for i in range(len(contents) - 1)
-    )
+    grew = False
+    for previous, current in pairwise(contents):
+        if not current.startswith(previous):
+            return False
+        if len(current) > len(previous):
+            grew = True
+        elif len(current) < len(previous):
+            return False
+    return grew
 
 
 def _finalize_stream(
