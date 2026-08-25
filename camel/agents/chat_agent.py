@@ -660,6 +660,10 @@ class ChatAgent(BaseAgent):
         # Snapshot-clean cache is per-conversation state and must not survive
         # agent reuse (e.g. pooled workers across different tasks).
         self._tool_output_history.clear()
+        if hasattr(self, "model_backend"):
+            for model in getattr(self.model_backend, "models", []):
+                if hasattr(model, "clear_reasoning_cache"):
+                    model.clear_reasoning_cache(self.agent_id)
         for terminator in self.response_terminators:
             terminator.reset()
 
