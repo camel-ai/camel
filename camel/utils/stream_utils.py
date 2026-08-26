@@ -44,22 +44,28 @@ def _declared_stream_mode(final_response: Any) -> Optional[str]:
 
 
 def _is_cumulative(contents: list[str]) -> bool:
-    """Return True if each string is a prefix of the next one.
+    """Guess whether the pieces accumulate, for streams that declare nothing.
 
-    Streaming heuristic:
-    - Gather non-empty ``chunk.msg.content`` pieces.
-    - If each later piece starts with the previous one and the sequence
-      grows at least once, treat as cumulative (covers
-      ``stream_accumulate=True``) and use the last piece.
-    - Otherwise concatenate pieces in order (covers delta streaming).
+    Only reached when the chunks carry no ``stream_accumulate_mode``. camel's
+    own producers always set it, so this decides for third-party streams
+    alone. Returns True when each piece is a prefix of the next, the run never
+    shrinks, and it grows at least once.
 
-    A repeated final piece is tolerated because an accumulating agent
-    emits the full content twice when the provider sends a trailing
-    usage-only chunk (``stream_options={"include_usage": True}``): once
-    in the last content chunk and once in the finalized response. A
-    sequence that never grows (e.g. the same delta token repeated) is
-    still treated as delta streaming, since there is no accumulation to
-    infer.
+    This is a trade, not a strict improvement over requiring every step to
+    grow. Driving the function directly on undeclared inputs::
+
+        contents                  true shape   here      requiring ">"
+        ['He', 'Hello', 'Hello']  accumulate   'Hello'   'HeHelloHello'
+        ['x', 'x', 'xy']          delta        'xy'      'xxxy'
+
+    The first row is what this exists for: an accumulating producer repeats
+    its full content on a trailing usage-only chunk
+    (``stream_options={"include_usage": True}``), and requiring strict growth
+    reads that as delta streaming and doubles the answer. The second row is
+    what it costs: a delta stream that repeats a piece and then extends it
+    satisfies the growth check, so the earlier pieces are dropped. Repeating a
+    piece and then extending it is the rarer of the two shapes, but it is a
+    real case rather than a theoretical one.
     """
 
     grew = False

@@ -418,6 +418,21 @@ def test_consume_response_content_declared_mode_beats_the_heuristic():
     assert content == "aab"
 
 
+def test_consume_response_content_heuristic_trade_on_repeat_then_extend():
+    # Characterisation test, not an endorsement. An undeclared delta stream
+    # that repeats a piece and then extends it satisfies the growth check and
+    # loses its earlier pieces. Requiring strict growth instead would get this
+    # right and get the undeclared-accumulate case above wrong; the trade is
+    # spelled out in _is_cumulative's docstring. camel's own streams never
+    # reach here because they declare their mode.
+    chunks = [_make_chunk("x"), _make_chunk("x"), _make_chunk("xy")]
+
+    _, content = consume_response_content(_sync_stream(chunks))
+
+    # The true delta answer would be "xxxy".
+    assert content == "xy"
+
+
 def test_consume_response_content_unknown_mode_falls_back_to_heuristic():
     # An unrecognised value must not be trusted; the length heuristic decides.
     chunks = [_make_chunk("a"), _make_chunk("ab")]
