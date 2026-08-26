@@ -275,12 +275,14 @@ def test_consume_response_content_cumulative_stream_with_repeated_last_piece():
     assert content == "Hello world"
 
 
-def test_consume_response_content_accumulating_chat_agent_end_to_end():
-    # Same defect, driven only through public API: a real ChatAgent with
-    # stream_accumulate=True, fed the standard OpenAI chunk sequence for
-    # stream_options={"include_usage": True}, and consumed through the
-    # public consume_response_content() that Workforce uses.
-    from unittest.mock import MagicMock
+def _streaming_agent(deltas: list[str], *, accumulate: bool):
+    """Build a real ChatAgent whose backend replays an OpenAI chunk stream.
+
+    Only the model backend's wire response is mocked. The ChatAgentResponse
+    sequence the agent emits — including the duplicated final piece in
+    accumulate mode — is produced by camel's own _stream_response.
+    """
+    from unittest.mock import AsyncMock, MagicMock
 
     from openai.types.chat import ChatCompletionChunk
     from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
@@ -310,8 +312,11 @@ def test_consume_response_content_accumulating_chat_agent_end_to_end():
         )
 
     def _stream():
-        yield _openai_chunk(content="Hello")
-        yield _openai_chunk(content=" world")
+        # The standard OpenAI wire order for
+        # stream_options={"include_usage": True}: content deltas, then an
+        # empty delta carrying finish_reason, then a usage-only chunk.
+        for delta in deltas:
+            yield _openai_chunk(content=delta)
         yield _openai_chunk(content="", finish_reason="stop")
         yield _openai_chunk(
             usage=CompletionUsage(
@@ -327,7 +332,15 @@ def test_consume_response_content_accumulating_chat_agent_end_to_end():
             "stream_options": {"include_usage": True},
         },
     )
+
+    async def _astream():
+        for chunk in _stream():
+            yield chunk
+
     model.run = MagicMock(side_effect=lambda *a, **k: _stream())
+    # astep goes through arun, which must be mocked separately; an async
+    # generator matches what a streaming backend hands back.
+    model.arun = AsyncMock(side_effect=lambda *a, **k: _astream())
 
     agent = ChatAgent(
         BaseMessage(
@@ -337,7 +350,7 @@ def test_consume_response_content_accumulating_chat_agent_end_to_end():
             content="You are a helpful assistant.",
         ),
         model=model,
-        stream_accumulate=True,
+        stream_accumulate=accumulate,
     )
     user_msg = BaseMessage(
         role_name="User",
@@ -345,7 +358,72 @@ def test_consume_response_content_accumulating_chat_agent_end_to_end():
         meta_dict={},
         content="Say hello.",
     )
+    return agent, user_msg
+
+
+@pytest.mark.parametrize(
+    "deltas",
+    [
+        # Provider streams the answer in pieces: the agent emits
+        # ["Hello", "Hello world", "Hello world"].
+        ["Hello", " world"],
+        # Provider sends the whole answer in one content chunk: the agent
+        # emits ["Hello world", "Hello world"], which no length-based
+        # heuristic can tell apart from a delta stream repeating a token.
+        ["Hello world"],
+    ],
+)
+def test_consume_response_content_accumulating_chat_agent_end_to_end(deltas):
+    agent, user_msg = _streaming_agent(deltas, accumulate=True)
 
     _, content = consume_response_content(agent.step(user_msg))
 
     assert content == "Hello world"
+
+
+@pytest.mark.parametrize("deltas", [["Hello", " world"], ["Hello world"]])
+def test_consume_response_content_delta_chat_agent_end_to_end(deltas):
+    # The current default must keep concatenating; this is the direction the
+    # fix must not break.
+    agent, user_msg = _streaming_agent(deltas, accumulate=False)
+
+    _, content = consume_response_content(agent.step(user_msg))
+
+    assert content == "Hello world"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("deltas", [["Hello", " world"], ["Hello world"]])
+async def test_consume_response_content_async_accumulating_agent(deltas):
+    # _finalize_stream is shared by both paths, but the async collector is a
+    # separate function, so assert it rather than assume it.
+    agent, user_msg = _streaming_agent(deltas, accumulate=True)
+
+    _, content = await consume_response_content_async(
+        await agent.astep(user_msg)
+    )
+
+    assert content == "Hello world"
+
+
+def test_consume_response_content_declared_mode_beats_the_heuristic():
+    # A declared "delta" stream whose pieces happen to look cumulative must
+    # still be concatenated: the flag is authoritative, the shape is not.
+    chunks = [_make_chunk("a"), _make_chunk("ab")]
+    for chunk in chunks:
+        chunk.info["stream_accumulate_mode"] = "delta"
+
+    _, content = consume_response_content(_sync_stream(chunks))
+
+    assert content == "aab"
+
+
+def test_consume_response_content_unknown_mode_falls_back_to_heuristic():
+    # An unrecognised value must not be trusted; the length heuristic decides.
+    chunks = [_make_chunk("a"), _make_chunk("ab")]
+    for chunk in chunks:
+        chunk.info["stream_accumulate_mode"] = "something-else"
+
+    _, content = consume_response_content(_sync_stream(chunks))
+
+    assert content == "ab"
