@@ -257,24 +257,6 @@ async def test_consume_response_content_async_callback_exception_is_swallowed(
     )
 
 
-def test_consume_response_content_cumulative_stream_with_repeated_last_piece():
-    # Regression test: an accumulating agent emits its full content twice
-    # when the provider sends a trailing usage-only chunk -- once in the
-    # last content chunk, once in the finalized response. The old strict
-    # ">" length check classified that sequence as delta streaming and
-    # concatenated every piece, tripling the answer.
-    chunks = [
-        _make_chunk("Hello"),
-        _make_chunk("Hello world"),
-        _make_chunk("Hello world"),
-    ]
-
-    final_response, content = consume_response_content(_sync_stream(chunks))
-
-    assert final_response.msg.content == "Hello world"
-    assert content == "Hello world"
-
-
 def _streaming_agent(deltas: list[str], *, accumulate: bool):
     """Build a real ChatAgent whose backend replays an OpenAI chunk stream.
 
@@ -418,19 +400,34 @@ def test_consume_response_content_declared_mode_beats_the_heuristic():
     assert content == "aab"
 
 
-def test_consume_response_content_heuristic_trade_on_repeat_then_extend():
-    # Characterisation test, not an endorsement. An undeclared delta stream
-    # that repeats a piece and then extends it satisfies the growth check and
-    # loses its earlier pieces. Requiring strict growth instead would get this
-    # right and get the undeclared-accumulate case above wrong; the trade is
-    # spelled out in _is_cumulative's docstring. camel's own streams never
-    # reach here because they declare their mode.
-    chunks = [_make_chunk("x"), _make_chunk("x"), _make_chunk("xy")]
+@pytest.mark.parametrize(
+    "contents,expected",
+    [
+        # Strict growth reads a repeated final piece as delta and joins
+        # everything. That is wrong for a third-party producer that repeats
+        # its full content on a trailing chunk, and it is kept deliberately:
+        # camel's own streams declare their mode, so relaxing the guess here
+        # would only change behaviour for producers nobody can test.
+        (
+            ["Hello", "Hello world", "Hello world"],
+            "HelloHello worldHello world",
+        ),
+        # The other side of that choice, and why it is the safer default: a
+        # delta stream that repeats a piece and then extends it keeps all of
+        # its pieces.
+        (["x", "x", "xy"], "xxxy"),
+        # Plain strictly-growing run is still read as cumulative.
+        (["a", "ab"], "ab"),
+    ],
+)
+def test_consume_response_content_undeclared_stream_keeps_strict_heuristic(
+    contents, expected
+):
+    chunks = [_make_chunk(content) for content in contents]
 
     _, content = consume_response_content(_sync_stream(chunks))
 
-    # The true delta answer would be "xxxy".
-    assert content == "xy"
+    assert content == expected
 
 
 def test_consume_response_content_unknown_mode_falls_back_to_heuristic():

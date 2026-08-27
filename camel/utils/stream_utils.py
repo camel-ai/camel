@@ -16,7 +16,6 @@
 from __future__ import annotations
 
 import asyncio
-from itertools import pairwise
 from types import GeneratorType
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Tuple
 
@@ -44,39 +43,25 @@ def _declared_stream_mode(final_response: Any) -> Optional[str]:
 
 
 def _is_cumulative(contents: list[str]) -> bool:
-    """Guess whether the pieces accumulate, for streams that declare nothing.
+    """Return True if each string is a prefix of the next one.
 
-    Only reached when the chunks carry no ``stream_accumulate_mode``. camel's
-    own producers always set it, so this decides for third-party streams
-    alone. Returns True when each piece is a prefix of the next, the run never
-    shrinks, and it grows at least once.
+    Streaming heuristic:
+    - Gather non-empty ``chunk.msg.content`` pieces.
+    - If each later piece strictly grows in length and starts with the
+      previous, treat as cumulative (covers ``stream_accumulate=True``) and
+      use the last piece.
+    - Otherwise concatenate pieces in order (covers delta streaming).
 
-    This is a trade, not a strict improvement over requiring every step to
-    grow. Driving the function directly on undeclared inputs::
-
-        contents                  true shape   here      requiring ">"
-        ['He', 'Hello', 'Hello']  accumulate   'Hello'   'HeHelloHello'
-        ['x', 'x', 'xy']          delta        'xy'      'xxxy'
-
-    The first row is what this exists for: an accumulating producer repeats
-    its full content on a trailing usage-only chunk
-    (``stream_options={"include_usage": True}``), and requiring strict growth
-    reads that as delta streaming and doubles the answer. The second row is
-    what it costs: a delta stream that repeats a piece and then extends it
-    satisfies the growth check, so the earlier pieces are dropped. Repeating a
-    piece and then extending it is the rarer of the two shapes, but it is a
-    real case rather than a theoretical one.
+    Only reached for streams that declare no ``stream_accumulate_mode``;
+    camel's own producers always set it, so ``_finalize_stream`` reads the
+    declared mode first and this decides for third-party streams alone.
     """
 
-    grew = False
-    for previous, current in pairwise(contents):
-        if not current.startswith(previous):
-            return False
-        if len(current) > len(previous):
-            grew = True
-        elif len(current) < len(previous):
-            return False
-    return grew
+    return all(
+        len(contents[i + 1]) > len(contents[i])
+        and contents[i + 1].startswith(contents[i])
+        for i in range(len(contents) - 1)
+    )
 
 
 def _finalize_stream(
