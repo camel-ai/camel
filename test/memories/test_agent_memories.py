@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import warnings
 from datetime import datetime
 from unittest.mock import MagicMock
 
@@ -123,6 +124,79 @@ class TestLongtermAgentMemory:
         memory.clear()
         mock_chat_history_block.clear.assert_called_once()
         mock_vector_db_block.clear.assert_called_once()
+
+
+class TestChatHistoryMemoryWindowWarnings:
+    @pytest.fixture
+    def mock_context_creator(self):
+        creator = MagicMock(spec=BaseContextCreator)
+        creator.create_context.return_value = ([], 0)
+        return creator
+
+    @staticmethod
+    def _record(
+        role_at_backend: OpenAIBackendRole,
+        role_type: RoleType,
+        content: str,
+    ) -> MemoryRecord:
+        return MemoryRecord(
+            message=BaseMessage(
+                role_at_backend.value, role_type, None, content
+            ),
+            role_at_backend=role_at_backend,
+        )
+
+    def test_retrieve_warns_when_window_truncates_preserved_system_message(
+        self, mock_context_creator
+    ):
+        memory = ChatHistoryMemory(mock_context_creator, window_size=2)
+        records = [
+            self._record(
+                OpenAIBackendRole.SYSTEM, RoleType.DEFAULT, "System prompt"
+            ),
+            *[
+                self._record(
+                    OpenAIBackendRole.USER, RoleType.USER, f"User {i}"
+                )
+                for i in range(3)
+            ],
+        ]
+        memory.write_records(records)
+
+        with pytest.warns(
+            UserWarning, match="Chat history window size limit"
+        ):
+            retrieved = memory.retrieve()
+
+        assert [r.memory_record.message.content for r in retrieved] == [
+            "System prompt",
+            "User 1",
+            "User 2",
+        ]
+
+    def test_retrieve_does_not_warn_when_window_exactly_fits_preserved_system(
+        self, mock_context_creator
+    ):
+        memory = ChatHistoryMemory(mock_context_creator, window_size=2)
+        records = [
+            self._record(
+                OpenAIBackendRole.SYSTEM, RoleType.DEFAULT, "System prompt"
+            ),
+            self._record(OpenAIBackendRole.USER, RoleType.USER, "User 0"),
+            self._record(OpenAIBackendRole.USER, RoleType.USER, "User 1"),
+        ]
+        memory.write_records(records)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            retrieved = memory.retrieve()
+
+        assert len(caught) == 0
+        assert [r.memory_record.message.content for r in retrieved] == [
+            "System prompt",
+            "User 0",
+            "User 1",
+        ]
 
 
 class TestChatHistoryMemoryCleanToolCalls:
