@@ -88,6 +88,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **Qianfan**      | [supported models](https://cloud.baidu.com/doc/qianfan/s/rmh4stp0j) |
 | **AIHubMix**     | [supported models](https://aihubmix.com/) |
 | **AtlasCloud**   | openai/gpt-oss-120b, zai-org/glm-4-7 |
+| **Synthorai**    | [supported models](https://synthorai.io/models/) |
 
 ## How to Use Models via API Calls
 

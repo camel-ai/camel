@@ -51,6 +51,7 @@ from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
 from .openrouter_model import OpenRouterModel
 from .orcarouter_model import OrcaRouterModel
+from .synthorai_model import SynthoraiModel
 from .ppio_model import PPIOModel
 from .qianfan_model import QianfanModel
 from .qwen_model import QwenModel
@@ -109,6 +110,7 @@ __all__ = [
     'OpenAIModel',
     'OpenRouterModel',
     'OrcaRouterModel',
+    'SynthoraiModel',
     'PPIOModel',
     'QianfanModel',
     'QwenModel',

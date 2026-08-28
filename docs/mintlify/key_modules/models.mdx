@@ -88,6 +88,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **Qianfan**      | [supported models](https://cloud.baidu.com/doc/qianfan/s/rmh4stp0j) |
 | **AIHubMix**     | [supported models](https://aihubmix.com/) |
 | **AtlasCloud**   | openai/gpt-oss-120b, zai-org/glm-4-7 |
+| **Synthorai**    | [supported models](https://synthorai.io/models/) |
 
 ## How to Use Models via API Calls
 
@@ -457,6 +458,38 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
   ```
 
   </Tab>
+
+  <Tab title="Synthorai">
+
+  [Synthorai](https://synthorai.io) is an OpenAI-compatible LLM gateway that routes to models from several upstream providers behind one base URL and key:
+
+ - **Synthorai Platform** ([synthorai.io](https://synthorai.io)): One key and base URL across several upstream providers.
+ - **API Key Setup**: Create a key by following the [quickstart](https://synthorai.io/docs/quickstart/).
+ - **Model Catalog** ([synthorai.io/models](https://synthorai.io/models/)): Full list of available models. Note that `/v1/models` returns the models a given key is permitted to use, which is narrower than the catalog.
+ - **Synthorai Docs** ([synthorai.io/docs](https://synthorai.io/docs/)): API reference.
+
+  ```python
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType, ModelType
+  from camel.configs import SynthoraiConfig
+  from camel.agents import ChatAgent
+
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.SYNTHORAI,
+      model_type=ModelType.SYNTHORAI_CLAUDE_OPUS_5,
+      model_config_dict=SynthoraiConfig(temperature=0.2).as_dict(),
+  )
+
+  agent = ChatAgent(system_message="You are a helpful assistant.", model=model)
+  print(agent.step("Hello!").msgs[0].content)
+  ```
+
+  Model ids carry no vendor prefix, so any catalog id also works as a free-form
+  string. Prefer a predefined `ModelType.SYNTHORAI_*` enum where one exists: an id
+  CAMEL does not know falls back to a 999_999_999 token limit with a warning.
+
+  </Tab>
+
 
 </Tabs>
 

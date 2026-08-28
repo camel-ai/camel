@@ -183,6 +183,12 @@ class ModelType(UnifiedModelType, Enum):
     ORCAROUTER_CLAUDE_OPUS_4_7 = "anthropic/claude-opus-4.7"
     ORCAROUTER_GEMINI_3_FLASH_PREVIEW = "google/gemini-3-flash-preview"
     ORCAROUTER_GROK_4_3 = "grok/grok-4.3"
+    SYNTHORAI_CLAUDE_OPUS_5 = "claude-opus-5"
+    SYNTHORAI_CLAUDE_SONNET_5 = "claude-sonnet-5"
+    SYNTHORAI_DEEPSEEK_V4_PRO = "deepseek-v4-pro"
+    SYNTHORAI_GLM_5_2 = "glm-5.2"
+    SYNTHORAI_KIMI_K3 = "kimi-k3"
+    SYNTHORAI_GPT_5_6_SOL = "gpt-5.6-sol"
 
     # LMStudio models
     LMSTUDIO_GEMMA_3_1B = "gemma-3-1b"
@@ -620,6 +626,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_cerebras,
                 self.is_openrouter,
                 self.is_orcarouter,
+                self.is_synthorai,
                 self.is_lmstudio,
                 self.is_sglang,
                 self.is_moonshot,
@@ -873,6 +880,18 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.ORCAROUTER_CLAUDE_OPUS_4_7,
             ModelType.ORCAROUTER_GEMINI_3_FLASH_PREVIEW,
             ModelType.ORCAROUTER_GROK_4_3,
+        }
+
+    @property
+    def is_synthorai(self) -> bool:
+        r"""Returns whether this type of models is served by Synthorai."""
+        return self in {
+            ModelType.SYNTHORAI_CLAUDE_OPUS_5,
+            ModelType.SYNTHORAI_CLAUDE_SONNET_5,
+            ModelType.SYNTHORAI_DEEPSEEK_V4_PRO,
+            ModelType.SYNTHORAI_GLM_5_2,
+            ModelType.SYNTHORAI_KIMI_K3,
+            ModelType.SYNTHORAI_GPT_5_6_SOL,
         }
 
     @property
@@ -1745,6 +1764,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
             ModelType.AVIAN_MINIMAX_M2_5,
             ModelType.ORCAROUTER_GEMINI_3_FLASH_PREVIEW,
+            ModelType.SYNTHORAI_GLM_5_2,
         }:
             return 1_048_576
         elif self in {
@@ -1763,8 +1783,16 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MINIMAX_M3,
             ModelType.ORCAROUTER_CLAUDE_OPUS_4_7,
             ModelType.ORCAROUTER_GROK_4_3,
+            ModelType.SYNTHORAI_CLAUDE_OPUS_5,
+            ModelType.SYNTHORAI_CLAUDE_SONNET_5,
+            ModelType.SYNTHORAI_DEEPSEEK_V4_PRO,
+            ModelType.SYNTHORAI_KIMI_K3,
         }:
             return 1_000_000
+        elif self in {
+            ModelType.SYNTHORAI_GPT_5_6_SOL,
+        }:
+            return 1_050_000
         elif self in {
             ModelType.QWEN_LONG,
             ModelType.TOGETHER_LLAMA_4_SCOUT,
@@ -1982,6 +2010,7 @@ class ModelPlatformType(Enum):
     COMETAPI = "cometapi"
     OPENROUTER = "openrouter"
     ORCAROUTER = "orcarouter"
+    SYNTHORAI = "synthorai"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     LMSTUDIO = "lmstudio"
@@ -2066,6 +2095,11 @@ class ModelPlatformType(Enum):
     def is_orcarouter(self) -> bool:
         r"""Returns whether this platform is orcarouter."""
         return self is ModelPlatformType.ORCAROUTER
+
+    @property
+    def is_synthorai(self) -> bool:
+        r"""Returns whether this platform is synthorai."""
+        return self is ModelPlatformType.SYNTHORAI
 
     @property
     def is_lmstudio(self) -> bool:

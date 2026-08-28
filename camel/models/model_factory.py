@@ -57,6 +57,7 @@ from camel.models.samba_model import SambaModel
 from camel.models.sglang_model import SGLangModel
 from camel.models.siliconflow_model import SiliconFlowModel
 from camel.models.stub_model import StubModel
+from camel.models.synthorai_model import SynthoraiModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.volcano_model import VolcanoModel
@@ -104,6 +105,7 @@ class ModelFactory:
         ModelPlatformType.MINIMAX: MinimaxModel,
         ModelPlatformType.OPENROUTER: OpenRouterModel,
         ModelPlatformType.ORCAROUTER: OrcaRouterModel,
+        ModelPlatformType.SYNTHORAI: SynthoraiModel,
         ModelPlatformType.ATLASCLOUD: AtlasCloudModel,
         ModelPlatformType.ZHIPU: ZhipuAIModel,
         ModelPlatformType.GEMINI: GeminiModel,
