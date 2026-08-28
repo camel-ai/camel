@@ -145,3 +145,75 @@ def test_clearing_clone_memory_clears_only_its_model_session():
         == "second-response"
     )
     assert model._responses_last_message_count_by_session[second.agent_id] == 2
+
+
+def test_streaming_clones_use_independent_model_sessions():
+    def response_events(response_id: str):
+        return [
+            {
+                "type": "response.created",
+                "response": {"id": response_id},
+            },
+            {
+                "type": "response.output_text.delta",
+                "item_id": "msg_1",
+                "delta": "Done",
+            },
+            {
+                "type": "response.completed",
+                "response": {
+                    "id": response_id,
+                    "usage": {
+                        "input_tokens": 2,
+                        "output_tokens": 1,
+                        "total_tokens": 3,
+                    },
+                },
+            },
+        ]
+
+    client = MagicMock()
+    client.responses.create.side_effect = [
+        response_events("first-response"),
+        response_events("second-response"),
+        response_events("reset-response"),
+    ]
+    model = OpenAIModel(
+        model_type=ModelType.GPT_4O_MINI,
+        api_key="dummy",
+        client=client,
+        async_client=MagicMock(),
+        model_config_dict={"stream": True},
+        api_mode="responses",
+    )
+    source = ChatAgent(
+        system_message="system", model=model, stream_accumulate=False
+    )
+    first = source.clone()
+    second = source.clone()
+
+    list(first.step("first task"))
+    list(second.step("second task"))
+
+    assert "previous_response_id" not in (
+        client.responses.create.call_args_list[1].kwargs
+    )
+    assert set(model._responses_previous_response_id_by_session) == {
+        first.agent_id,
+        second.agent_id,
+    }
+
+    first.reset()
+    list(first.step("new task"))
+
+    assert "previous_response_id" not in (
+        client.responses.create.call_args_list[2].kwargs
+    )
+    assert (
+        model._responses_previous_response_id_by_session[first.agent_id]
+        == "reset-response"
+    )
+    assert (
+        model._responses_previous_response_id_by_session[second.agent_id]
+        == "second-response"
+    )
