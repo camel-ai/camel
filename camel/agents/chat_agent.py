@@ -657,8 +657,6 @@ class ChatAgent(BaseAgent):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
-        for model in self.model_backend.models:
-            model.reset(self.agent_id)
         # Snapshot-clean cache is per-conversation state and must not survive
         # agent reuse (e.g. pooled workers across different tasks).
         self._tool_output_history.clear()
@@ -2478,6 +2476,8 @@ class ChatAgent(BaseAgent):
                 summarization. Defaults to True for full memory clearing.
         """
         self.memory.clear()
+        for model in self.model_backend.models:
+            model.reset(self.agent_id)
 
         if reset_summary_state:
             self._reset_summary_state()

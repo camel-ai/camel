@@ -118,3 +118,30 @@ def test_resetting_clone_clears_only_its_model_session():
         == "second-response"
     )
     assert model._responses_last_message_count_by_session[second.agent_id] == 2
+
+
+def test_clearing_clone_memory_clears_only_its_model_session():
+    model = OpenAIModel(
+        model_type=ModelType.GPT_4O_MINI,
+        api_key="dummy",
+        client=MagicMock(),
+        async_client=MagicMock(),
+        api_mode="responses",
+    )
+    source = ChatAgent(model=model)
+    first = source.clone()
+    second = source.clone()
+    model._save_response_chain_state(first.agent_id, "first-response", 2)
+    model._save_response_chain_state(second.agent_id, "second-response", 2)
+
+    first.clear_memory()
+
+    assert first.agent_id not in (
+        model._responses_previous_response_id_by_session
+    )
+    assert first.agent_id not in model._responses_last_message_count_by_session
+    assert (
+        model._responses_previous_response_id_by_session[second.agent_id]
+        == "second-response"
+    )
+    assert model._responses_last_message_count_by_session[second.agent_id] == 2
