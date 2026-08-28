@@ -11,11 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+from unittest.mock import MagicMock
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from camel.models import StubModel
+from camel.models import OpenAIModel, StubModel
 from camel.terminators import ResponseWordsTerminator
 from camel.types import ModelType
+from camel.utils.langfuse import set_current_agent_session_id
 
 
 def _make_agent() -> ChatAgent:
@@ -78,3 +81,40 @@ def test_resetting_clone_does_not_reset_another_clone_terminator():
     )
     assert terminated
     assert reason is not None
+
+
+def test_resetting_clone_clears_only_its_model_session():
+    model = OpenAIModel(
+        model_type=ModelType.GPT_4O_MINI,
+        api_key="dummy",
+        client=MagicMock(),
+        async_client=MagicMock(),
+        api_mode="responses",
+    )
+    source = ChatAgent(model=model)
+    first = source.clone()
+    second = source.clone()
+    model._save_response_chain_state(first.agent_id, "first-response", 2)
+    model._save_response_chain_state(second.agent_id, "second-response", 2)
+
+    first.reset()
+
+    set_current_agent_session_id(first.agent_id)
+    chain_state = model._prepare_responses_input_and_chain(
+        [
+            {"role": "system", "content": "new system prompt"},
+            {"role": "user", "content": "new task"},
+        ]
+    )
+
+    assert chain_state["previous_response_id"] is None
+    assert chain_state["input_messages"][0]["role"] == "system"
+    assert first.agent_id not in (
+        model._responses_previous_response_id_by_session
+    )
+    assert first.agent_id not in model._responses_last_message_count_by_session
+    assert (
+        model._responses_previous_response_id_by_session[second.agent_id]
+        == "second-response"
+    )
+    assert model._responses_last_message_count_by_session[second.agent_id] == 2
