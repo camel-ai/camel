@@ -6,8 +6,8 @@ TraceRoot is an open-source LLM debugging platform that correlates logging and t
 ## Table of Contents
 
 - [Quick Start](#quick-start)
-- [Environment Configuration](#environment-configuration)
-- [Self-Hosted Deployment](#self-hosted-deployment)
+- [Environment Variables Configuration](#2-environment-variables-configuration)
+- [Self-Hosted Deployment](#3-self-hosted-deployment)
 - [Related Links](#related-links)
 
 ## Quick Start
