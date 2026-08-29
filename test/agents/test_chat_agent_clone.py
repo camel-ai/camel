@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from camel.models import StubModel
+from camel.models import OpenAIModel, StubModel
 from camel.terminators import ResponseWordsTerminator
 from camel.types import ModelType
 
@@ -78,3 +78,19 @@ def test_resetting_clone_does_not_reset_another_clone_terminator():
     )
     assert terminated
     assert reason is not None
+
+
+def test_reset_clears_response_chain_state_for_shared_models():
+    model = OpenAIModel(
+        model_type=ModelType.GPT_4O_MINI,
+        api_mode="responses",
+        api_key="test-key",
+    )
+    agent = ChatAgent(model=model)
+    session_key = model._get_response_chain_session_key()
+    model._save_response_chain_state(session_key, "resp_previous", 3)
+
+    agent.reset()
+
+    assert session_key not in model._responses_previous_response_id_by_session
+    assert session_key not in model._responses_last_message_count_by_session

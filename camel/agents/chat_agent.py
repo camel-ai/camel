@@ -657,6 +657,15 @@ class ChatAgent(BaseAgent):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
+        from camel.utils.langfuse import get_current_agent_session_id
+
+        session_key = get_current_agent_session_id() or "__default__"
+        for model in self.model_backend.models:
+            clear_response_chain_state = getattr(
+                model, "_clear_response_chain_state", None
+            )
+            if clear_response_chain_state is not None:
+                clear_response_chain_state(session_key)
         # Snapshot-clean cache is per-conversation state and must not survive
         # agent reuse (e.g. pooled workers across different tasks).
         self._tool_output_history.clear()
