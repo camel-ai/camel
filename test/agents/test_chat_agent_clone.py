@@ -11,9 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import pytest
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from camel.models import OpenAIModel, StubModel
+from camel.models import OpenAICompatibleModel, OpenAIModel, StubModel
 from camel.terminators import ResponseWordsTerminator
 from camel.types import ModelType
 
@@ -80,8 +82,9 @@ def test_resetting_clone_does_not_reset_another_clone_terminator():
     assert reason is not None
 
 
-def test_reset_clears_response_chain_state_for_shared_models():
-    model = OpenAIModel(
+@pytest.mark.parametrize("model_class", [OpenAIModel, OpenAICompatibleModel])
+def test_reset_clears_response_chain_state_for_shared_models(model_class):
+    model = model_class(
         model_type=ModelType.GPT_4O_MINI,
         api_mode="responses",
         api_key="test-key",
