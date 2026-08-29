@@ -39,7 +39,18 @@ logger = get_logger(__name__)
 
 
 class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
-    r"""Logs events and metrics for a Workforce instance."""
+    r"""Logs events and metrics for a Workforce instance.
+
+    Args:
+        workforce_id (str): The unique identifier for the workforce.
+        log_stream_chunks (bool): Whether to persist streaming chunk
+            events. Disabled by default to avoid unbounded in-memory logs
+            for high-volume streams.
+        stream_chunk_text_limit (Optional[int]): Maximum number of
+            characters to store for each stream chunk when
+            `log_stream_chunks` is enabled. Set to `None` to store full
+            chunk text.
+    """
 
     def __init__(
         self,
@@ -48,18 +59,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         log_stream_chunks: bool = False,
         stream_chunk_text_limit: Optional[int] = 1000,
     ):
-        """Initializes the WorkforceLogger.
-
-        Args:
-            workforce_id (str): The unique identifier for the workforce.
-            log_stream_chunks (bool): Whether to persist streaming chunk
-                events. Disabled by default to avoid unbounded in-memory logs
-                for high-volume streams.
-            stream_chunk_text_limit (Optional[int]): Maximum number of
-                characters to store for each stream chunk when
-                `log_stream_chunks` is enabled. Set to `None` to store full
-                chunk text.
-        """
+        r"""Initializes the WorkforceLogger."""
         if stream_chunk_text_limit is not None and stream_chunk_text_limit < 0:
             raise ValueError("stream_chunk_text_limit must be non-negative")
 
