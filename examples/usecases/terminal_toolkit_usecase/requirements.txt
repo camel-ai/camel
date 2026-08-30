@@ -1,0 +1,3 @@
+streamlit>=1.32.0
+camel-ai[all]==0.2.59
+python-dotenv>=1.0.0 
