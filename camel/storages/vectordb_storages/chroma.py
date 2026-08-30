@@ -270,7 +270,11 @@ class ChromaStorage(BaseVectorStorage):
         #  and don't require validation
 
     def _get_connection_client(self) -> "ClientAPI":
-        r"""Get ChromaDB client based on client type and user settings."""
+        r"""Get ChromaDB client based on client type and user settings.
+
+        Returns:
+            ClientAPI: The ChromaDB client instance.
+        """
         import chromadb
 
         # Map client types to handler methods
@@ -293,14 +297,28 @@ class ChromaStorage(BaseVectorStorage):
             raise
 
     def _create_ephemeral_client(self, chromadb_module: Any) -> "ClientAPI":
-        r"""Create an ephemeral ChromaDB client (in-memory)."""
+        r"""Create an ephemeral ChromaDB client (in-memory).
+
+        Args:
+            chromadb_module (Any): The imported chromadb module.
+
+        Returns:
+            ClientAPI: The ephemeral ChromaDB client instance.
+        """
         client_kwargs = self._get_common_client_kwargs()
         client = chromadb_module.EphemeralClient(**client_kwargs)
         logger.info("Created ChromaDB EphemeralClient (in-memory)")
         return client
 
     def _create_persistent_client(self, chromadb_module: Any) -> "ClientAPI":
-        r"""Create a persistent ChromaDB client (local file storage)."""
+        r"""Create a persistent ChromaDB client (local file storage).
+
+        Args:
+            chromadb_module (Any): The imported chromadb module.
+
+        Returns:
+            ClientAPI: The persistent ChromaDB client instance.
+        """
         client_kwargs = {'path': self._connection_params['path']}
         client_kwargs.update(self._get_common_client_kwargs())
         client = chromadb_module.PersistentClient(**client_kwargs)
@@ -311,7 +329,14 @@ class ChromaStorage(BaseVectorStorage):
         return client
 
     def _create_http_client(self, chromadb_module: Any) -> "ClientAPI":
-        r"""Create an HTTP ChromaDB client (remote server)."""
+        r"""Create an HTTP ChromaDB client (remote server).
+
+        Args:
+            chromadb_module (Any): The imported chromadb module.
+
+        Returns:
+            ClientAPI: The HTTP ChromaDB client instance.
+        """
         client_kwargs = {
             'host': self._connection_params['host'],
             'port': self._connection_params['port'],
@@ -329,7 +354,14 @@ class ChromaStorage(BaseVectorStorage):
         return client
 
     def _create_cloud_client(self, chromadb_module: Any) -> "ClientAPI":
-        r"""Create a cloud ChromaDB client."""
+        r"""Create a cloud ChromaDB client.
+
+        Args:
+            chromadb_module (Any): The imported chromadb module.
+
+        Returns:
+            ClientAPI: The cloud ChromaDB client instance.
+        """
         try:
             client_kwargs = {
                 'cloud_host': self._connection_params['cloud_host'],
@@ -359,7 +391,12 @@ class ChromaStorage(BaseVectorStorage):
             )
 
     def _get_common_client_kwargs(self) -> Dict[str, Any]:
-        r"""Get common kwargs for all ChromaDB clients."""
+        r"""Get common kwargs for all ChromaDB clients.
+
+        Returns:
+            Dict[str, Any]: Common keyword arguments for client
+                initialization.
+        """
         common_kwargs: Dict[str, Any] = {}
 
         # Add truly common parameters that all ChromaDB clients support
@@ -403,7 +440,7 @@ class ChromaStorage(BaseVectorStorage):
         r"""Gets existing collection or creates a new one.
 
         Returns:
-            ChromaDB collection object.
+            Collection: The ChromaDB collection object.
 
         Raises:
             RuntimeError: If collection operations fail.
@@ -726,6 +763,6 @@ class ChromaStorage(BaseVectorStorage):
         r"""Provides access to the underlying ChromaDB collection.
 
         Returns:
-            ChromaDB collection instance.
+            Collection: The ChromaDB collection instance.
         """
         return self._collection
