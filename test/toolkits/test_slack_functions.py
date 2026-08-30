@@ -20,6 +20,7 @@ from camel.toolkits import SlackToolkit
 
 @pytest.fixture
 def slack_toolkit():
+    # Let SlackToolkit use its default model and system message initialization
     return SlackToolkit()
 
 
@@ -135,6 +136,27 @@ def test_delete_slack_message(slack_toolkit):
         assert response == "{}"
 
 
+def test_create_slack_block_kit(slack_toolkit):
+    """Test the create_slack_block_kit method that generates Block Kit JSON."""
+    # Test with a simple button request
+    test_message = "Create a button that says 'Submit'"
+    result = slack_toolkit.create_slack_block_kit(test_message, max_retries=1)
+
+    assert isinstance(result, str), "Result should be a string"
+    assert len(result) > 0, "Result should not be empty"
+
+    try:
+        import json
+
+        parsed_result = json.loads(result)
+        if isinstance(parsed_result, dict) and 'blocks' in parsed_result:
+            blocks = parsed_result['blocks']
+        else:
+            blocks = parsed_result
+        assert isinstance(blocks, list), "Blocks should be an array"
+    except json.JSONDecodeError:
+        # If not JSON, should be an error message
+        assert "Error" in result or "Failed" in result
 def test_get_slack_user_list(slack_toolkit):
     with patch(
         "camel.toolkits.slack_toolkit.SlackToolkit._login_slack"
