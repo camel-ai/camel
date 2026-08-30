@@ -1,0 +1,68 @@
+<a id="camel.toolkits.memanto_toolkit"></a>
+
+<a id="camel.toolkits.memanto_toolkit.MemantoToolkit"></a>
+
+## MemantoToolkit
+
+```python
+class MemantoToolkit(BaseToolkit):
+```
+
+A toolkit for explicit Memanto memory operations via function calling.
+
+**Parameters:**
+
+- **agent_id** (str, optional): Memanto agent identifier.
+- **base_url** (str, optional): Memanto server URL.
+- **timeout** (Optional[float], optional): Toolkit operation timeout.
+
+<a id="camel.toolkits.memanto_toolkit.MemantoToolkit.memanto_remember"></a>
+
+### memanto_remember
+
+```python
+def memanto_remember(
+    self,
+    content: str,
+    memory_type: MemantoMemoryType = "fact",
+    tags: Optional[str] = None,
+    confidence: float = 0.8
+) -> str:
+```
+
+Stores a typed memory in Memanto.
+
+<a id="camel.toolkits.memanto_toolkit.MemantoToolkit.memanto_recall"></a>
+
+### memanto_recall
+
+```python
+def memanto_recall(
+    self,
+    query: str,
+    limit: int = 5,
+    memory_type: Optional[str] = None
+) -> str:
+```
+
+Searches Memanto memories by semantic similarity.
+
+<a id="camel.toolkits.memanto_toolkit.MemantoToolkit.memanto_answer"></a>
+
+### memanto_answer
+
+```python
+def memanto_answer(self, question: str) -> str:
+```
+
+Generates an answer grounded in Memanto memories.
+
+<a id="camel.toolkits.memanto_toolkit.MemantoToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self) -> List[FunctionTool]:
+```
+
+Returns the Memanto function tools for a ChatAgent.
