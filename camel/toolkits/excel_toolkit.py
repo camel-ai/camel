@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 # Import only for type hints (not executed at runtime)
 if TYPE_CHECKING:
@@ -39,6 +39,7 @@ class ExcelToolkit(BaseToolkit):
     Markdown formatted table.
     """
 
+    @dependencies_required('pandas', 'openpyxl')
     def __init__(
         self,
         timeout: Optional[float] = None,
@@ -103,6 +104,7 @@ class ExcelToolkit(BaseToolkit):
         md_table = tabulate(df, headers='keys', tablefmt='pipe')
         return str(md_table)
 
+    @dependencies_required('tabulate', 'xls2xlsx')
     def extract_excel_content(self, document_path: str) -> str:
         r"""Extract and analyze the full content of an Excel file (.xlsx/.xls/.
         csv).
