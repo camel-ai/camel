@@ -117,11 +117,11 @@ def test_step_sets_agent_session_before_streaming(monkeypatch):
     def fake_stream(*args, **kwargs):
         from camel.utils.langfuse import get_current_agent_session_id
 
-        captured['session_id'] = get_current_agent_session_id()
+        captured["session_id"] = get_current_agent_session_id()
         return iter(())
 
     monkeypatch.setattr(agent, '_stream', fake_stream)
 
     agent.step('hello')
 
-    assert captured['session_id'] == agent.agent_id
+    assert captured["session_id"] == agent.agent_id
