@@ -125,3 +125,23 @@ def test_step_sets_agent_session_before_streaming(monkeypatch):
     agent.step('hello')
 
     assert captured["session_id"] == agent.agent_id
+
+@pytest.mark.parametrize("model_class", [OpenAIModel, OpenAICompatibleModel])
+def test_sync_stream_step_sets_agent_session_id(model_class):
+    model = model_class(
+        model_type=ModelType.GPT_4O_MINI,
+        api_mode="responses",
+        api_key="test-key",
+    )
+    model.model_config_dict["stream"] = True
+    agent = ChatAgent(model=model)
+
+    from camel.utils.langfuse import (
+        get_current_agent_session_id,
+        set_current_agent_session_id,
+    )
+
+    set_current_agent_session_id(None)  # type: ignore[arg-type]
+    agent.step("hello")
+
+    assert get_current_agent_session_id() == agent.agent_id
