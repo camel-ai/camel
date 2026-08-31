@@ -657,9 +657,7 @@ class ChatAgent(BaseAgent):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
-        from camel.utils.langfuse import get_current_agent_session_id
-
-        session_key = get_current_agent_session_id() or "__default__"
+        session_key = self.agent_id
         for model in self.model_backend.models:
             clear_response_chain_state = getattr(
                 model, "_clear_response_chain_state", None
