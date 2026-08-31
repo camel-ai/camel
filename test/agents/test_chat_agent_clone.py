@@ -107,10 +107,10 @@ def test_reset_clears_response_chain_state_for_reset_agent(model_class):
 def test_step_sets_agent_session_before_streaming(monkeypatch):
     model = OpenAIModel(
         model_type=ModelType.GPT_4O_MINI,
-        api_mode='responses',
+        api_mode="responses",
         api_key='test-key',
     )
-    model.model_config_dict['stream'] = True
+    model.model_config_dict["stream"] = True
     agent = ChatAgent(model=model)
     captured = {}
 
