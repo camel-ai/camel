@@ -102,3 +102,26 @@ def test_reset_clears_response_chain_state_for_reset_agent(model_class):
     assert agent_key not in model._responses_last_message_count_by_session
     assert other_key in model._responses_previous_response_id_by_session
     assert other_key in model._responses_last_message_count_by_session
+
+
+def test_step_sets_agent_session_before_streaming(monkeypatch):
+    model = OpenAIModel(
+        model_type=ModelType.GPT_4O_MINI,
+        api_mode='responses',
+        api_key='test-key',
+    )
+    model.model_config_dict['stream'] = True
+    agent = ChatAgent(model=model)
+    captured = {}
+
+    def fake_stream(*args, **kwargs):
+        from camel.utils.langfuse import get_current_agent_session_id
+
+        captured['session_id'] = get_current_agent_session_id()
+        return iter(())
+
+    monkeypatch.setattr(agent, '_stream', fake_stream)
+
+    agent.step('hello')
+
+    assert captured['session_id'] == agent.agent_id
