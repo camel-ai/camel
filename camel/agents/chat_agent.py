@@ -2928,11 +2928,13 @@ class ChatAgent(BaseAgent):
             TimeoutError: If the step operation exceeds the configured timeout.
         """
 
-        # Set agent_id in context-local storage for logging
+        # Set agent_id in context-local storage for logging and response
+        # chain state before returning a lazy streaming generator.
         from camel.utils.agent_context import set_current_agent_id
 
         set_current_agent_id(self.agent_id)
-        # Set Langfuse session_id using agent_id for trace grouping
+
+        # Set Langfuse session_id using agent_id for trace grouping.
         try:
             from camel.utils.langfuse import set_current_agent_session_id
 
