@@ -33,6 +33,17 @@ def test_init_missing_credentials(monkeypatch):
         PlivoToolkit()
 
 
+def test_init_passes_timeout_to_client():
+    with patch("plivo.RestClient") as rest_client:
+        PlivoToolkit(
+            auth_id="test-auth-id", auth_token="test-token", timeout=10
+        )
+
+    rest_client.assert_called_once_with(
+        auth_id="test-auth-id", auth_token="test-token", timeout=10
+    )
+
+
 def test_send_sms_success(plivo_toolkit):
     plivo_toolkit.client.messages.create.return_value = SimpleNamespace(
         message="message(s) queued",
@@ -131,14 +142,14 @@ def test_make_call_rejects_bad_method(plivo_toolkit):
 def test_send_otp_success(plivo_toolkit):
     plivo_toolkit.client.verify_session.create.return_value = SimpleNamespace(
         session_uuid="adsdafkjadshf123123",
-        api_request_id="c1a2b3d4-0000-1111-2222-333344445555",
+        api_id="c1a2b3d4-0000-1111-2222-333344445555",
     )
 
     result = plivo_toolkit.send_otp(recipient="+14150000001")
 
     assert result == {
         "session_uuid": "adsdafkjadshf123123",
-        "api_request_id": "c1a2b3d4-0000-1111-2222-333344445555",
+        "api_id": "c1a2b3d4-0000-1111-2222-333344445555",
     }
     plivo_toolkit.client.verify_session.create.assert_called_once_with(
         recipient="+14150000001",

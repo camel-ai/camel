@@ -77,9 +77,11 @@ class PlivoToolkit(BaseToolkit):
                 "Please install the plivo package first. "
                 "You can install it by running `pip install plivo`."
             )
+        timeout_kwargs = {"timeout": timeout} if timeout is not None else {}
         self.client = plivo.RestClient(
             auth_id=auth_id or os.environ.get("PLIVO_AUTH_ID"),
             auth_token=auth_token or os.environ.get("PLIVO_AUTH_TOKEN"),
+            **timeout_kwargs,
         )
 
     def send_sms(
@@ -168,7 +170,7 @@ class PlivoToolkit(BaseToolkit):
 
         Returns:
             Union[Dict[str, Any], str]: A dictionary with the ``session_uuid``
-                (needed to validate the code later) and ``api_request_id`` if
+                (needed to validate the code later) and ``api_id`` if
                 successful, or an error message string if failed.
         """
         try:
@@ -178,7 +180,7 @@ class PlivoToolkit(BaseToolkit):
             )
             return {
                 "session_uuid": response.session_uuid,
-                "api_request_id": getattr(response, "api_request_id", None),
+                "api_id": response.api_id,
             }
         except Exception as e:
             return f"Failed to send OTP: {e!s}"

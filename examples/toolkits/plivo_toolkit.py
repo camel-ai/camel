@@ -74,7 +74,7 @@ def main():
     ===============================================================================
     [ToolCallingRecord(tool_name='send_otp', args={'recipient':
     '+14150000002', 'channel': 'sms'}, result={'session_uuid':
-    '4f2d9b70-8c1a-4d33-9f6e-2a7c1b0e5d84', 'api_request_id':
+    '4f2d9b70-8c1a-4d33-9f6e-2a7c1b0e5d84', 'api_id':
     '1c9e33aa-2f45-4b1d-8a0c-77e2f9d61b52'}, tool_call_id='call_Kp2mVr8Q')]
     ===============================================================================
     '''
