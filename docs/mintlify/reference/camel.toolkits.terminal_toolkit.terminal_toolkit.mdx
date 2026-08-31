@@ -139,6 +139,30 @@ Write content to log file with optional ANSI stripping.
 - **log_file** (str): Path to the log file
 - **content** (str): Content to write
 
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._docker_exec"></a>
+
+### _docker_exec
+
+```python
+def _docker_exec(self, command: str):
+```
+
+Execute a command in the Docker container and return the result.
+
+Consolidates the repeated `__INLINE_CODE_0__`
+pattern into a single helper, reducing code duplication and improving
+error handling consistency.
+
+**Parameters:**
+
+- **command**: The shell command to execute inside the container.
+- **check_exit_code**: If True, raises RuntimeError on non-zero exit.
+
+**Returns:**
+
+  A tuple of (exit_code, output_bytes). The exit code is `__INLINE_CODE_0__`
+when `__INLINE_CODE_1__` is False.
+
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._sanitize_command"></a>
 
 ### _sanitize_command

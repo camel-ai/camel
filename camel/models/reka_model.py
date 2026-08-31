@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 from pydantic import BaseModel
 
 from camel.configs import RekaConfig
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -48,6 +49,16 @@ try:
         raise ImportError
 except (ImportError, AttributeError):
     LLMEvent = None
+
+logger = get_logger(__name__)
+
+_FINISH_REASON_MAP = {
+    "stop": "stop",
+    "length": "length",
+    # Reka's "context" means the context window was exhausted before a
+    # natural stop, the same class of event OpenAI reports as "length".
+    "context": "length",
+}
 
 
 class RekaModel(BaseModelBackend):
@@ -119,6 +130,26 @@ class RekaModel(BaseModelBackend):
             **kwargs,
         )
 
+    @staticmethod
+    def _map_finish_reason(reka_reason: str) -> str:
+        r"""Map a Reka finish reason to its OpenAI equivalent.
+
+        Reka's SDK types finish_reason as
+        ``Union[Literal["stop", "length", "context"], Any]``, so a future
+        provider value is a normal, successful response rather than a
+        malformed one. An unrecognized reason falls back to "stop" (the
+        OpenAI default for a completed response) instead of raising, and
+        the raw value is logged so the mapping can be extended.
+        """
+        try:
+            return _FINISH_REASON_MAP[reka_reason]
+        except KeyError:
+            logger.warning(
+                f"Unknown Reka finish reason {reka_reason!r}, "
+                "falling back to 'stop'."
+            )
+            return "stop"
+
     def _convert_reka_to_openai_response(
         self, response: 'ChatResponse'
     ) -> ChatCompletion:
@@ -131,6 +162,7 @@ class RekaModel(BaseModelBackend):
         Returns:
             ChatCompletion: An OpenAI-compatible chat completion response.
         """
+        reka_finish_reason = response.responses[0].finish_reason
         openai_response = ChatCompletion.construct(
             id=response.id,
             choices=[
@@ -139,8 +171,8 @@ class RekaModel(BaseModelBackend):
                         "role": response.responses[0].message.role,
                         "content": response.responses[0].message.content,
                     },
-                    finish_reason=response.responses[0].finish_reason
-                    if response.responses[0].finish_reason
+                    finish_reason=self._map_finish_reason(reka_finish_reason)
+                    if reka_finish_reason
                     else None,
                 )
             ],

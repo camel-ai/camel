@@ -8,6 +8,23 @@
 def _get(value: Any, key: str, default: Any = None):
 ```
 
+<a id="camel.models.openai_responses_adapter._finish_reason_from_response"></a>
+
+## _finish_reason_from_response
+
+```python
+def _finish_reason_from_response(response: Any):
+```
+
+Map a Responses API response's terminal status to an OpenAI Chat
+Completions `__INLINE_CODE_0__`.
+
+A response truncated at `__INLINE_CODE_1__` carries
+`__INLINE_CODE_2____INLINE_CODE_3__`incomplete_details.reason ==
+"max_output_tokens"``, which the Chat Completions contract reports as
+`__INLINE_CODE_4____INLINE_CODE_5____INLINE_CODE_6__` when it
+emitted tool calls, otherwise `__INLINE_CODE_7__` (the prior behavior).
+
 <a id="camel.models.openai_responses_adapter._usage_to_openai"></a>
 
 ## _usage_to_openai

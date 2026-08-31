@@ -1214,6 +1214,290 @@ def test_search_querit_empty_results(mock_post, search_toolkit):
     assert result["search_id"] == 12348
 
 
+# ==================== Querit Content Tests ====================
+
+
+@patch('requests.post')
+def test_fetch_querit_content_success(mock_post, search_toolkit):
+    """Test successful Querit content fetch with metadata."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "error_code": 200,
+        "error_msg": "",
+        "search_id": 22345,
+        "results": [
+            {
+                "id": "fetch-1",
+                "url": "https://www.camel-ai.org/",
+                "content": "# CAMEL-AI\n\nMulti-agent framework...",
+                "extrasMeta": {
+                    "title": "CAMEL-AI",
+                    "url": "https://www.camel-ai.org/",
+                    "publishTime": "2025-01-15T10:30:00Z",
+                    "siteName": "camel-ai.org",
+                    "siteIcon": "https://www.camel-ai.org/favicon.ico",
+                },
+            }
+        ],
+        "statuses": [{"id": "fetch-1", "status": "success"}],
+        "searchTime": 0.217695743,
+    }
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_api_key'}):
+        result = search_toolkit.fetch_querit_content(
+            urls=["https://www.camel-ai.org/"],
+            content_format="markdown",
+            crawl_timeout=20,
+            extras_meta=True,
+        )
+
+    assert result["search_id"] == 22345
+    assert result["search_time"] == 0.217695743
+    assert result["statuses"] == [{"id": "fetch-1", "status": "success"}]
+    assert result["results"][0] == {
+        "result_id": 1,
+        "id": "fetch-1",
+        "url": "https://www.camel-ai.org/",
+        "content": "# CAMEL-AI\n\nMulti-agent framework...",
+        "status": "success",
+        "title": "CAMEL-AI",
+        "publish_time": "2025-01-15T10:30:00Z",
+        "site_name": "camel-ai.org",
+        "site_icon": "https://www.camel-ai.org/favicon.ico",
+    }
+
+    args, kwargs = mock_post.call_args
+    assert args[0] == "https://api.querit.ai/v1/contents"
+    assert kwargs['headers']['Authorization'] == 'Bearer fake_api_key'
+
+    import json
+
+    payload = json.loads(kwargs['data'])
+    assert payload == {
+        "urls": ["https://www.camel-ai.org/"],
+        "format": "markdown",
+        "crawlTimeout": 20,
+        "extrasMeta": True,
+    }
+
+
+@patch('requests.post')
+def test_fetch_querit_content_defaults(mock_post, search_toolkit):
+    """Test Querit content defaults and result without metadata."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "error_code": 200,
+        "error_msg": "",
+        "search_id": 22346,
+        "results": [
+            {
+                "id": "fetch-1",
+                "url": "https://example.com",
+                "content": "plain content",
+            }
+        ],
+        "statuses": [{"id": "fetch-1", "status": "success"}],
+        "searchTime": 1,
+    }
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_api_key'}):
+        result = search_toolkit.fetch_querit_content(
+            urls=["https://example.com"]
+        )
+
+    assert result["results"][0] == {
+        "result_id": 1,
+        "id": "fetch-1",
+        "url": "https://example.com",
+        "content": "plain content",
+        "status": "success",
+    }
+
+    import json
+
+    payload = json.loads(mock_post.call_args[1]['data'])
+    assert payload["format"] == "markdown"
+    assert payload["crawlTimeout"] == 10
+    assert payload["extrasMeta"] is False
+
+
+@patch('requests.post')
+def test_fetch_querit_content_failed_url(mock_post, search_toolkit):
+    """Test that a URL which failed to crawl is marked in the result."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "error_code": 200,
+        "search_id": 22347,
+        "results": [
+            {
+                "id": "fetch-1",
+                "url": "https://this-domain-does-not-exist.com/",
+                "content": "",
+            }
+        ],
+        "statuses": [{"id": "fetch-1", "status": "failed"}],
+        "searchTime": 3.6271142,
+    }
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_api_key'}):
+        result = search_toolkit.fetch_querit_content(
+            urls=["https://this-domain-does-not-exist.com/"]
+        )
+
+    assert result["results"][0]["status"] == "failed"
+    assert result["results"][0]["content"] == ""
+
+
+@pytest.mark.parametrize(
+    "urls", [[], [f"https://example.com/{i}" for i in range(11)]]
+)
+def test_fetch_querit_content_invalid_urls(search_toolkit, urls):
+    """Test URL count validation in Querit content fetch."""
+    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_key'}):
+        result = search_toolkit.fetch_querit_content(urls=urls)
+
+    assert "error" in result
+    assert "between 1 and 10 URLs" in result["error"]
+
+
+def test_fetch_querit_content_invalid_timeout(search_toolkit):
+    """Test crawl_timeout validation in Querit content fetch."""
+    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_key'}):
+        result = search_toolkit.fetch_querit_content(
+            urls=["https://example.com"], crawl_timeout=61
+        )
+
+    assert "error" in result
+    assert "between 1 and 60 seconds" in result["error"]
+
+
+@patch('requests.post')
+def test_fetch_querit_content_http_error(mock_post, search_toolkit):
+    """Test HTTP error handling in Querit content fetch."""
+    mock_response = MagicMock()
+    mock_response.status_code = 401
+    mock_response.text = "Unauthorized"
+    mock_response.json.side_effect = ValueError("not json")
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'QUERIT_API_KEY': 'invalid_key'}):
+        result = search_toolkit.fetch_querit_content(
+            urls=["https://example.com"]
+        )
+
+    assert "error" in result
+    assert "Querit API failed with status 401" in result["error"]
+
+
+@patch('requests.post')
+def test_fetch_querit_content_http_error_message(mock_post, search_toolkit):
+    """Test that error_msg is surfaced for HTTP 4xx responses."""
+    mock_response = MagicMock()
+    mock_response.status_code = 400
+    mock_response.text = '{"error_code":"400","error_msg":"..."}'
+    mock_response.json.return_value = {
+        "error_code": "400",
+        "error_msg": "crawlTimeout must be in [1,60]",
+        "search_id": 1,
+    }
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_key'}):
+        result = search_toolkit.fetch_querit_content(
+            urls=["https://example.com"]
+        )
+
+    assert "error" in result
+    assert "Querit API failed with status 400" in result["error"]
+    assert "crawlTimeout must be in [1,60]" in result["error"]
+
+
+@patch('requests.post')
+def test_fetch_querit_content_string_error_code(mock_post, search_toolkit):
+    """Test that a string error_code in a HTTP 200 body is detected."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "error_code": "400",
+        "error_msg": "Invalid url",
+        "search_id": 0,
+    }
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_key'}):
+        result = search_toolkit.fetch_querit_content(urls=["not-a-url"])
+
+    assert "error" in result
+    assert "Querit API error 400" in result["error"]
+    assert "Invalid url" in result["error"]
+
+
+@patch('requests.post')
+def test_fetch_querit_content_string_success_code(mock_post, search_toolkit):
+    """Test that a string error_code of "200" is treated as success."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "error_code": "200",
+        "error_msg": "",
+        "search_id": 22348,
+        "results": [
+            {"id": "fetch-1", "url": "https://example.com", "content": "x"}
+        ],
+        "statuses": [{"id": "fetch-1", "status": "success"}],
+        "searchTime": 0.1,
+    }
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_key'}):
+        result = search_toolkit.fetch_querit_content(
+            urls=["https://example.com"]
+        )
+
+    assert "error" not in result
+    assert result["results"][0]["content"] == "x"
+
+
+@patch('requests.post')
+def test_fetch_querit_content_api_error(mock_post, search_toolkit):
+    """Test API-level error handling in Querit content fetch."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "error_code": 400,
+        "error_msg": "Invalid url",
+        "search_id": 0,
+    }
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_key'}):
+        result = search_toolkit.fetch_querit_content(urls=["not-a-url"])
+
+    assert "error" in result
+    assert "Querit API error 400" in result["error"]
+    assert "Invalid url" in result["error"]
+
+
+@patch('requests.post')
+def test_fetch_querit_content_request_exception(mock_post, search_toolkit):
+    """Test request exception handling in Querit content fetch."""
+    mock_post.side_effect = requests.exceptions.Timeout("Connection timed out")
+
+    with patch.dict(os.environ, {'QUERIT_API_KEY': 'fake_key'}):
+        result = search_toolkit.fetch_querit_content(
+            urls=["https://example.com"]
+        )
+
+    assert "error" in result
+    assert "Querit content request failed" in result["error"]
+
+
 # ==================== Perplexity Search Tests ====================
 
 
