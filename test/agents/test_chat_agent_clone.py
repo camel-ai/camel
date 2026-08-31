@@ -83,17 +83,22 @@ def test_resetting_clone_does_not_reset_another_clone_terminator():
 
 
 @pytest.mark.parametrize("model_class", [OpenAIModel, OpenAICompatibleModel])
-def test_reset_clears_response_chain_state_for_shared_models(model_class):
+def test_reset_clears_response_chain_state_for_reset_agent(model_class):
     model = model_class(
         model_type=ModelType.GPT_4O_MINI,
         api_mode="responses",
         api_key="test-key",
     )
     agent = ChatAgent(model=model)
-    session_key = model._get_response_chain_session_key()
-    model._save_response_chain_state(session_key, "resp_previous", 3)
+    other_agent = agent.clone()
+    agent_key = agent.agent_id
+    other_key = other_agent.agent_id
+    model._save_response_chain_state(agent_key, "resp_agent", 3)
+    model._save_response_chain_state(other_key, "resp_other", 3)
 
     agent.reset()
 
-    assert session_key not in model._responses_previous_response_id_by_session
-    assert session_key not in model._responses_last_message_count_by_session
+    assert agent_key not in model._responses_previous_response_id_by_session
+    assert agent_key not in model._responses_last_message_count_by_session
+    assert other_key in model._responses_previous_response_id_by_session
+    assert other_key in model._responses_last_message_count_by_session
