@@ -45,7 +45,6 @@ from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
 from .openrouter_config import OPENROUTER_API_PARAMS, OpenRouterConfig
 from .orcarouter_config import ORCAROUTER_API_PARAMS, OrcaRouterConfig
-from .synthorai_config import SYNTHORAI_API_PARAMS, SynthoraiConfig
 from .ppio_config import PPIO_API_PARAMS, PPIOConfig
 from .qianfan_config import QIANFAN_API_PARAMS, QianfanConfig
 from .qwen_config import QWEN_API_PARAMS, QwenConfig
@@ -58,6 +57,7 @@ from .samba_config import (
 )
 from .sglang_config import SGLANG_API_PARAMS, SGLangConfig
 from .siliconflow_config import SILICONFLOW_API_PARAMS, SiliconFlowConfig
+from .synthorai_config import SYNTHORAI_API_PARAMS, SynthoraiConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .volcano_config import VOLCANO_API_PARAMS, VolcanoConfig

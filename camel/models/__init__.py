@@ -51,7 +51,6 @@ from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
 from .openrouter_model import OpenRouterModel
 from .orcarouter_model import OrcaRouterModel
-from .synthorai_model import SynthoraiModel
 from .ppio_model import PPIOModel
 from .qianfan_model import QianfanModel
 from .qwen_model import QwenModel
@@ -60,6 +59,7 @@ from .samba_model import SambaModel
 from .sglang_model import SGLangModel
 from .siliconflow_model import SiliconFlowModel
 from .stub_model import StubModel
+from .synthorai_model import SynthoraiModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .volcano_model import VolcanoModel
