@@ -147,7 +147,26 @@ class WorkforceMode(Enum):
 
 
 class WorkforceSnapshot:
-    r"""Snapshot of workforce state for resuming execution."""
+    r"""Snapshot of workforce state for resuming execution.
+
+    Args:
+        main_task (Optional[Task], optional): The main task currently
+            being processed by the workforce. (default: :obj:`None`)
+        pending_tasks (Optional[Deque[Task]], optional): The tasks
+            waiting to be processed. (default: :obj:`None`)
+        completed_tasks (Optional[List[Task]], optional): The tasks
+            that have already been processed. (default: :obj:`None`)
+        task_dependencies (Optional[Dict[str, List[str]]], optional):
+            A mapping from task IDs to the IDs of the tasks they
+            depend on. (default: :obj:`None`)
+        assignees (Optional[Dict[str, str]], optional): A mapping from
+            task IDs to the IDs of their assigned workers.
+            (default: :obj:`None`)
+        current_task_index (int, optional): The index of the current
+            task in pipeline mode. (default: :obj:`0`)
+        description (str, optional): A description of the snapshot.
+            (default: :obj:`""`)
+    """
 
     def __init__(
         self,
@@ -831,7 +850,7 @@ class Workforce(BaseNode):
         )
 
     def set_mode(self, mode: WorkforceMode) -> Workforce:
-        """Set the execution mode of the workforce.
+        r"""Set the execution mode of the workforce.
 
         This allows switching between AUTO_DECOMPOSE and PIPELINE modes.
         Useful when you want to reuse the same workforce instance for
@@ -862,7 +881,7 @@ class Workforce(BaseNode):
         return self
 
     def _ensure_pipeline_builder(self) -> PipelineTaskBuilder:
-        """Ensure pipeline builder is initialized and switch to
+        r"""Ensure pipeline builder is initialized and switch to
         pipeline mode.
 
         Returns:
@@ -891,7 +910,7 @@ class Workforce(BaseNode):
         additional_info: Optional[Dict[str, Any]] = None,
         auto_depend: bool = True,
     ) -> Workforce:
-        """Add a task to the pipeline with support for chaining.
+        r"""Add a task to the pipeline with support for chaining.
 
         Accepts either a string for simple tasks or a Task object for
         advanced usage with metadata, images, or custom configurations.
@@ -955,7 +974,7 @@ class Workforce(BaseNode):
         task_id_prefix: str = "parallel",
         auto_depend: bool = True,
     ) -> Workforce:
-        """Add multiple parallel tasks to the pipeline.
+        r"""Add multiple parallel tasks to the pipeline.
 
         Accepts either a list of strings for simple tasks or a list of Task
         objects for advanced usage with metadata, images, or custom
@@ -1022,7 +1041,7 @@ class Workforce(BaseNode):
         wait_for: Optional[List[str]] = None,
         task_id: Optional[str] = None,
     ) -> Workforce:
-        """Add a synchronization task that waits for multiple tasks.
+        r"""Add a synchronization task that waits for multiple tasks.
 
         Accepts either a string for simple tasks or a Task object for
         advanced usage with metadata, images, or custom configurations.
@@ -1066,7 +1085,7 @@ class Workforce(BaseNode):
     def pipeline_fork(
         self, task_contents: Union[List[str], List[Task]]
     ) -> Workforce:
-        """Create parallel branches from the current task.
+        r"""Create parallel branches from the current task.
 
         Accepts either a list of strings for simple tasks or a list of Task
         objects for advanced usage with metadata, images, or custom
@@ -1114,7 +1133,7 @@ class Workforce(BaseNode):
     def pipeline_join(
         self, content: Union[str, Task], task_id: Optional[str] = None
     ) -> Workforce:
-        """Join parallel branches with a synchronization task.
+        r"""Join parallel branches with a synchronization task.
 
         Accepts either a string for simple tasks or a Task object for
         advanced usage with metadata, images, or custom configurations.
@@ -1155,7 +1174,7 @@ class Workforce(BaseNode):
         return self
 
     def pipeline_build(self) -> Workforce:
-        """Build the pipeline and set up the tasks for execution.
+        r"""Build the pipeline and set up the tasks for execution.
 
         Returns:
             Workforce: Self for method chaining.
@@ -1174,7 +1193,7 @@ class Workforce(BaseNode):
         return self
 
     def get_pipeline_builder(self) -> PipelineTaskBuilder:
-        """Get the underlying PipelineTaskBuilder for advanced usage.
+        r"""Get the underlying PipelineTaskBuilder for advanced usage.
 
         Returns:
             PipelineTaskBuilder: The pipeline builder instance.
@@ -1188,7 +1207,7 @@ class Workforce(BaseNode):
         return self._ensure_pipeline_builder()
 
     def set_pipeline_tasks(self, tasks: List[Task]) -> None:
-        """Set predefined pipeline tasks for PIPELINE mode.
+        r"""Set predefined pipeline tasks for PIPELINE mode.
 
         Args:
             tasks (List[Task]): List of tasks with dependencies already set.
@@ -2712,7 +2731,7 @@ class Workforce(BaseNode):
             return task
 
     async def _process_task_with_pipeline(self, task: Task) -> Task:
-        """Process task using predefined pipeline tasks."""
+        r"""Process task using predefined pipeline tasks."""
         if not self._pending_tasks:
             raise ValueError(
                 "No pipeline tasks defined. Use set_pipeline_tasks() first."
@@ -2756,7 +2775,7 @@ class Workforce(BaseNode):
         return task
 
     def _collect_pipeline_results(self) -> str:
-        """Collect results from all completed pipeline tasks."""
+        r"""Collect results from all completed pipeline tasks."""
         results = []
         for task in self._completed_tasks:
             if task.result:
@@ -2764,7 +2783,7 @@ class Workforce(BaseNode):
         return "\n\n".join(results) if results else "Pipeline completed"
 
     def _all_pipeline_tasks_successful(self) -> bool:
-        """Check if all pipeline tasks completed successfully.
+        r"""Check if all pipeline tasks completed successfully.
 
         INTENT: This method determines the FINAL STATE of the entire
         pipeline but does NOT affect task execution flow. It's called
@@ -3358,7 +3377,7 @@ class Workforce(BaseNode):
         async def save_single_worker(
             child: BaseNode,
         ) -> tuple[str, str]:
-            """Save workflow for a single worker, then return (node_id,
+            r"""Save workflow for a single worker, then return (node_id,
             result)."""
             if isinstance(child, SingleAgentWorker):
                 try:
