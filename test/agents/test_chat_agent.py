@@ -15,6 +15,7 @@ import asyncio
 import json
 from copy import deepcopy
 from io import BytesIO
+from types import SimpleNamespace
 from typing import List, Literal
 from unittest.mock import AsyncMock, MagicMock
 
@@ -33,6 +34,7 @@ from camel.agents import ChatAgent
 from camel.agents.chat_agent import (
     StreamContentAccumulator,
     ToolCallingRecord,
+    _is_rate_limit_error,
     _ToolOutputHistoryEntry,
 )
 from camel.configs import ChatGPTConfig
@@ -119,6 +121,67 @@ class DummyNativeStructuredOutputToolModel(DummyModel):
 
 class TripSchema(BaseModel):
     city: str
+
+
+class ProviderHTTPError(Exception):
+    def __init__(self, status_code: int):
+        super().__init__(f"provider error {status_code}")
+        self.status_code = status_code
+
+
+class ProviderResponseHTTPError(Exception):
+    def __init__(self, status_code: int):
+        super().__init__(f"provider response error {status_code}")
+        self.response = SimpleNamespace(status_code=status_code)
+
+
+class ProviderCodeOnlyError(Exception):
+    def __init__(self, code: int):
+        super().__init__(f"provider code error {code}")
+        self.code = code
+
+
+def test_is_rate_limit_error_detects_provider_status_code():
+    assert _is_rate_limit_error(ProviderHTTPError(429))
+    assert _is_rate_limit_error(ProviderResponseHTTPError(429))
+    assert not _is_rate_limit_error(ProviderHTTPError(500))
+    assert not _is_rate_limit_error(ProviderResponseHTTPError(500))
+
+
+def test_is_rate_limit_error_ignores_provider_code_attribute():
+    assert not _is_rate_limit_error(ProviderCodeOnlyError(429))
+
+
+def test_chat_agent_retries_provider_status_code_rate_limit():
+    assistant = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=DummyModel(ModelType.GPT_4O_MINI),
+        retry_attempts=2,
+        retry_delay=0,
+    )
+    assistant.model_backend.run = MagicMock(
+        side_effect=[ProviderHTTPError(429), model_backend_rsp_base]
+    )
+
+    response = assistant._get_model_response([])
+
+    assert response.output_messages
+    assert assistant.model_backend.run.call_count == 2
+
+
+def test_chat_agent_raises_non_rate_limit_provider_status_code():
+    assistant = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=DummyModel(ModelType.GPT_4O_MINI),
+        retry_attempts=2,
+        retry_delay=0,
+    )
+    assistant.model_backend.run = MagicMock(side_effect=ProviderHTTPError(500))
+
+    with pytest.raises(ProviderHTTPError):
+        assistant._get_model_response([])
+
+    assert assistant.model_backend.run.call_count == 1
 
 
 @parametrize
