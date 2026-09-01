@@ -144,6 +144,30 @@ def test_deduplicate_internally_with_precomputed_embeddings():
         ), f"Missing embedding for unique id {uid}"
 
 
+def test_deduplicate_internally_cross_batch():
+    r"""Batching must not change results: a ``batch_size`` smaller than the
+    number of texts must find the same duplicates as a single batch.
+
+    Regression test for a mask that used batch-local indices, so cross-batch
+    duplicates (e.g. the first item of any batch after the first) were missed.
+    """
+    texts = ["A", "B", "C", "D"]
+    embeddings = [[0.5, 0.5, 0.5]] * 4  # all identical -> 1, 2, 3 duplicate 0
+
+    single: DeduplicationResult = deduplicate_internally(
+        texts=texts, threshold=0.9, embeddings=embeddings, batch_size=1000
+    )
+    batched: DeduplicationResult = deduplicate_internally(
+        texts=texts, threshold=0.9, embeddings=embeddings, batch_size=2
+    )
+
+    assert single.duplicate_to_target_map == {1: 0, 2: 0, 3: 0}
+    assert batched.duplicate_to_target_map == single.duplicate_to_target_map, (
+        "batched dedup must match single-batch; got "
+        f"{batched.duplicate_to_target_map}"
+    )
+
+
 def test_deduplicate_internally_chain_scenario():
     r"""Test scenario:
       - A <-> B similarity > threshold
