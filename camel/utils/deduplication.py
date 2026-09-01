@@ -193,10 +193,10 @@ def deduplicate_internally(
             embeddings_array[i:batch_end], embeddings_array[:batch_end]
         )
 
-        # Create mask keeping only comparisons against earlier texts. Rows are
-        # local to the batch (row r == global text i + r) but columns are global
-        # indices, so the diagonal must be offset by the batch start i: keep
-        # [r, c] only when c < i + r (i.e. k=i-1), not c < r.
+        # Create mask keeping only comparisons against earlier texts. Rows
+        # are local to the batch (row r == global text i + r) but columns
+        # are global indices, so the diagonal must be offset by the batch
+        # start i: keep [r, c] only when c < i + r (i.e. k=i-1), not c < r.
         tril_mask = np.tril(np.ones_like(batch_similarities), k=i - 1)
         batch_similarities = batch_similarities * tril_mask
 
