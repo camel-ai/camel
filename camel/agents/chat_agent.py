@@ -192,7 +192,8 @@ class StreamContentAccumulator:
     def add_streaming_content(self, new_content: str):
         r"""Add new streaming content."""
         self.current_content.append(new_content)
-        self.is_reasoning_phase = False  # Once we get content, we're past reasoning
+        # Once we get content, we're past reasoning.
+        self.is_reasoning_phase = False
 
     def add_reasoning_content(self, new_reasoning: str):
         r"""Add new reasoning content."""
