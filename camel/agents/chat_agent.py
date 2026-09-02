@@ -192,9 +192,7 @@ class StreamContentAccumulator:
     def add_streaming_content(self, new_content: str):
         r"""Add new streaming content."""
         self.current_content.append(new_content)
-        self.is_reasoning_phase = (
-            False  # Once we get content, we're past reasoning
-        )
+        self.is_reasoning_phase = False  # Once we get content, we're past reasoning
 
     def add_reasoning_content(self, new_reasoning: str):
         r"""Add new reasoning content."""
@@ -300,9 +298,7 @@ class StreamingChatAgentResponse:
         self._ensure_latest_response()
         if self._current_response and hasattr(self._current_response, name):
             return getattr(self._current_response, name)
-        raise AttributeError(
-            f"'StreamingChatAgentResponse' object has no attribute '{name}'"
-        )
+        raise AttributeError(f"'StreamingChatAgentResponse' object has no attribute '{name}'")
 
 
 class AsyncStreamingChatAgentResponse:
@@ -313,9 +309,7 @@ class AsyncStreamingChatAgentResponse:
     both awaitable and async iterable interfaces.
     """
 
-    def __init__(
-        self, async_generator: AsyncGenerator[ChatAgentResponse, None]
-    ):
+    def __init__(self, async_generator: AsyncGenerator[ChatAgentResponse, None]):
         self._async_generator = async_generator
         self._current_response: Optional[ChatAgentResponse] = None
         self._responses: List[ChatAgentResponse] = []
@@ -501,12 +495,8 @@ class ChatAgent(BaseAgent):
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
-        toolkits_to_register_agent: Optional[
-            List[RegisteredAgentToolkit]
-        ] = None,
-        external_tools: Optional[
-            List[Union[FunctionTool, Callable, Dict[str, Any]]]
-        ] = None,
+        toolkits_to_register_agent: Optional[List[RegisteredAgentToolkit]] = None,
+        external_tools: Optional[List[Union[FunctionTool, Callable, Dict[str, Any]]]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
         scheduling_strategy: str = "round_robin",
         max_iteration: Optional[int] = None,
@@ -566,23 +556,16 @@ class ChatAgent(BaseAgent):
 
         # Set up system message and initialize messages
         self._original_system_message = (
-            BaseMessage.make_system_message(system_message)
-            if isinstance(system_message, str)
-            else system_message
+            BaseMessage.make_system_message(system_message) if isinstance(system_message, str) else system_message
         )
         self._output_language = output_language
-        self._system_message = (
-            self._generate_system_message_for_output_language()
-        )
+        self._system_message = self._generate_system_message_for_output_language()
         self.init_messages()
 
         # Set up summarize threshold with validation
         if summarize_threshold is not None:
             if not (0 < summarize_threshold <= 100):
-                raise ValueError(
-                    f"summarize_threshold must be between 0 and 100, "
-                    f"got {summarize_threshold}"
-                )
+                raise ValueError(f"summarize_threshold must be between 0 and 100, got {summarize_threshold}")
             logger.info(
                 f"Automatic context compression is enabled. Will trigger "
                 f"summarization when context window exceeds "
@@ -591,20 +574,12 @@ class ChatAgent(BaseAgent):
         self.summarize_threshold = summarize_threshold
 
         # Set up role name and role type
-        self.role_name: str = (
-            getattr(self.system_message, "role_name", None) or "assistant"
-        )
-        self.role_type: RoleType = (
-            getattr(self.system_message, "role_type", None)
-            or RoleType.ASSISTANT
-        )
+        self.role_name: str = getattr(self.system_message, "role_name", None) or "assistant"
+        self.role_type: RoleType = getattr(self.system_message, "role_type", None) or RoleType.ASSISTANT
 
         # Set up tools
         self._internal_tools = {
-            tool.get_function_name(): tool
-            for tool in [
-                convert_to_function_tool(tool) for tool in (tools or [])
-            ]
+            tool.get_function_name(): tool for tool in [convert_to_function_tool(tool) for tool in (tools or [])]
         }
 
         # Register agent with toolkits that have RegisteredAgentToolkit mixin
@@ -615,9 +590,7 @@ class ChatAgent(BaseAgent):
 
         self._external_tool_schemas = {
             tool_schema["function"]["name"]: tool_schema
-            for tool_schema in [
-                convert_to_schema(tool) for tool in (external_tools or [])
-            ]
+            for tool_schema in [convert_to_schema(tool) for tool in (external_tools or [])]
         }
 
         # Set up other properties
@@ -627,11 +600,7 @@ class ChatAgent(BaseAgent):
         self.stop_event = stop_event
         self.tool_execution_timeout = tool_execution_timeout
         self.mask_tool_output = mask_tool_output
-        self._tool_log_dir = (
-            Path(tool_log_dir).expanduser().resolve()
-            if tool_log_dir is not None
-            else None
-        )
+        self._tool_log_dir = Path(tool_log_dir).expanduser().resolve() if tool_log_dir is not None else None
         self._secure_result_store: Dict[str, Any] = {}
         self._secure_result_store_lock = threading.Lock()
         self.pause_event = pause_event
@@ -646,9 +615,7 @@ class ChatAgent(BaseAgent):
         # Store whether user explicitly set stream_accumulate
         # Warning will be issued only when streaming is actually used
         self._stream_accumulate_explicit = stream_accumulate is not None
-        self.stream_accumulate = (
-            stream_accumulate if stream_accumulate is not None else False
-        )
+        self.stream_accumulate = stream_accumulate if stream_accumulate is not None else False
         self._last_tool_call_record: Optional[ToolCallingRecord] = None
         self._last_tool_call_signature: Optional[str] = None
         self.summary_window_ratio = summary_window_ratio
@@ -659,9 +626,7 @@ class ChatAgent(BaseAgent):
         self.init_messages()
         session_key = self.agent_id
         for model in self.model_backend.models:
-            clear_response_chain_state = getattr(
-                model, "_clear_response_chain_state", None
-            )
+            clear_response_chain_state = getattr(model, "_clear_response_chain_state", None)
             if clear_response_chain_state is not None:
                 clear_response_chain_state(session_key)
         # Snapshot-clean cache is per-conversation state and must not survive
@@ -689,10 +654,8 @@ class ChatAgent(BaseAgent):
 
         total_tokens = prompt_tokens + completion_tokens
         context_creator = self.memory.get_context_creator()
-        if hasattr(context_creator, 'set_cached_token_count'):
-            context_creator.set_cached_token_count(
-                total_tokens, message_count + 1
-            )
+        if hasattr(context_creator, "set_cached_token_count"):
+            context_creator.set_cached_token_count(total_tokens, message_count + 1)
 
     def _resolve_models(
         self,
@@ -759,13 +722,9 @@ class ChatAgent(BaseAgent):
                 model_type=model_type,
             )
         else:
-            raise TypeError(
-                f"Unsupported type for model parameter: {type(model)}"
-            )
+            raise TypeError(f"Unsupported type for model parameter: {type(model)}")
 
-    def _resolve_model_list(
-        self, model_list: list
-    ) -> Union[BaseModelBackend, List[BaseModelBackend]]:
+    def _resolve_model_list(self, model_list: list) -> Union[BaseModelBackend, List[BaseModelBackend]]:
         r"""Resolves a list of model specifications into model backend
         instances.
 
@@ -780,9 +739,7 @@ class ChatAgent(BaseAgent):
             TypeError: If the list elements format is not supported.
         """
         if not model_list:  # Handle empty list
-            logger.warning(
-                "Empty list provided for model, using default model."
-            )
+            logger.warning("Empty list provided for model, using default model.")
             return ModelFactory.create(
                 model_platform=ModelPlatformType.DEFAULT,
                 model_type=ModelType.DEFAULT,
@@ -816,17 +773,10 @@ class ChatAgent(BaseAgent):
                     model_spec[0],
                     model_spec[1],
                 )
-                resolved_models_list.append(
-                    ModelFactory.create(
-                        model_platform=platform, model_type=type_
-                    )
-                )
+                resolved_models_list.append(ModelFactory.create(model_platform=platform, model_type=type_))
             return resolved_models_list
         else:
-            raise TypeError(
-                "Unsupported type for list elements in model: "
-                f"{type(model_list[0])}"
-            )
+            raise TypeError(f"Unsupported type for list elements in model: {type(model_list[0])}")
 
     @property
     def system_message(self) -> Optional[BaseMessage]:
@@ -855,9 +805,7 @@ class ChatAgent(BaseAgent):
         Note that this will clear the message history.
         """
         self._output_language = value
-        self._system_message = (
-            self._generate_system_message_for_output_language()
-        )
+        self._system_message = self._generate_system_message_for_output_language()
         self.init_messages()
 
     @property
@@ -883,7 +831,7 @@ class ChatAgent(BaseAgent):
 
         # Clear token cache for the new memory
         context_creator = self.memory.get_context_creator()
-        if hasattr(context_creator, 'clear_cache'):
+        if hasattr(context_creator, "clear_cache"):
             context_creator.clear_cache()
 
         if self.system_message is None:
@@ -934,9 +882,7 @@ class ChatAgent(BaseAgent):
         if other_records:
             self.memory.write_records(other_records)
 
-    def set_context_utility(
-        self, context_utility: Optional[ContextUtility]
-    ) -> None:
+    def set_context_utility(self, context_utility: Optional[ContextUtility]) -> None:
         r"""Set the context utility for the agent.
 
         This allows external components (like SingleAgentWorker) to provide
@@ -953,8 +899,7 @@ class ChatAgent(BaseAgent):
         and external tools.
         """
         return list(self._external_tool_schemas.values()) + [
-            func_tool.get_openai_tool_schema()
-            for func_tool in self._internal_tools.values()
+            func_tool.get_openai_tool_schema() for func_tool in self._internal_tools.values()
         ]
 
     @staticmethod
@@ -965,34 +910,24 @@ class ChatAgent(BaseAgent):
             return str(args)
 
     @classmethod
-    def _build_tool_signature(
-        cls, func_name: str, args: Dict[str, Any]
-    ) -> str:
+    def _build_tool_signature(cls, func_name: str, args: Dict[str, Any]) -> str:
         args_repr = cls._serialize_tool_args(args)
         return f"{func_name}:{args_repr}"
 
-    def _describe_tool_call(
-        self, record: Optional[ToolCallingRecord]
-    ) -> Optional[str]:
+    def _describe_tool_call(self, record: Optional[ToolCallingRecord]) -> Optional[str]:
         if record is None:
             return None
         args_repr = self._serialize_tool_args(record.args)
         return f"Tool `{record.tool_name}` invoked with arguments {args_repr}."
 
-    def _update_last_tool_call_state(
-        self, record: Optional[ToolCallingRecord]
-    ) -> None:
+    def _update_last_tool_call_state(self, record: Optional[ToolCallingRecord]) -> None:
         """Track the most recent tool call and its identifying signature."""
         self._last_tool_call_record = record
         if record is None:
             self._last_tool_call_signature = None
             return
 
-        args = (
-            record.args
-            if isinstance(record.args, dict)
-            else {"_raw": record.args}
-        )
+        args = record.args if isinstance(record.args, dict) else {"_raw": record.args}
         try:
             signature = self._build_tool_signature(record.tool_name, args)
         except Exception:  # pragma: no cover - defensive guard
@@ -1000,9 +935,7 @@ class ChatAgent(BaseAgent):
         self._last_tool_call_signature = signature
 
     @staticmethod
-    def _append_user_messages_section(
-        summary_content: str, user_messages: List[str]
-    ) -> str:
+    def _append_user_messages_section(summary_content: str, user_messages: List[str]) -> str:
         section_title = "- **All User Messages**:"
         sanitized_messages: List[str] = []
         for msg in user_messages:
@@ -1012,11 +945,7 @@ class ChatAgent(BaseAgent):
             if cleaned:
                 sanitized_messages.append(cleaned)
 
-        bullet_block = (
-            "\n".join(f"- {m}" for m in sanitized_messages)
-            if sanitized_messages
-            else "- None noted"
-        )
+        bullet_block = "\n".join(f"- {m}" for m in sanitized_messages) if sanitized_messages else "- None noted"
         user_section = f"{section_title}\n{bullet_block}"
 
         summary_clean = summary_content.rstrip()
@@ -1038,26 +967,16 @@ class ChatAgent(BaseAgent):
         summary_token_count = self._summary_token_count
 
         if summary_token_count > self.token_limit * self.summary_window_ratio:
-            logger.warning(
-                f"Summary tokens ({summary_token_count}) "
-                f"exceed limit, full compression."
-            )
+            logger.warning(f"Summary tokens ({summary_token_count}) exceed limit, full compression.")
             summary = self.summarize(include_summaries=True)
-            self._update_memory_with_summary(
-                summary.get("summary", ""), include_summaries=True
-            )
+            self._update_memory_with_summary(summary.get("summary", ""), include_summaries=True)
             return self.memory.get_context()
 
         threshold = self._calculate_next_summary_threshold()
         if num_tokens > threshold:
-            logger.warning(
-                f"Token count ({num_tokens}) exceed threshold "
-                f"({threshold}). Triggering summarization."
-            )
+            logger.warning(f"Token count ({num_tokens}) exceed threshold ({threshold}). Triggering summarization.")
             summary = self.summarize(include_summaries=False)
-            self._update_memory_with_summary(
-                summary.get("summary", ""), include_summaries=False
-            )
+            self._update_memory_with_summary(summary.get("summary", ""), include_summaries=False)
             return self.memory.get_context()
 
         return openai_messages, num_tokens
@@ -1074,26 +993,16 @@ class ChatAgent(BaseAgent):
         summary_token_count = self._summary_token_count
 
         if summary_token_count > self.token_limit * self.summary_window_ratio:
-            logger.warning(
-                f"Summary tokens ({summary_token_count}) "
-                f"exceed limit, full compression."
-            )
+            logger.warning(f"Summary tokens ({summary_token_count}) exceed limit, full compression.")
             summary = await self.asummarize(include_summaries=True)
-            self._update_memory_with_summary(
-                summary.get("summary", ""), include_summaries=True
-            )
+            self._update_memory_with_summary(summary.get("summary", ""), include_summaries=True)
             return self.memory.get_context()
 
         threshold = self._calculate_next_summary_threshold()
         if num_tokens > threshold:
-            logger.warning(
-                f"Token count ({num_tokens}) exceed threshold "
-                f"({threshold}). Triggering summarization."
-            )
+            logger.warning(f"Token count ({num_tokens}) exceed threshold ({threshold}). Triggering summarization.")
             summary = await self.asummarize(include_summaries=False)
-            self._update_memory_with_summary(
-                summary.get("summary", ""), include_summaries=False
-            )
+            self._update_memory_with_summary(summary.get("summary", ""), include_summaries=False)
             return self.memory.get_context()
 
         return openai_messages, num_tokens
@@ -1118,10 +1027,7 @@ class ChatAgent(BaseAgent):
             int: The token count threshold for next summarization.
         """
         if self.summarize_threshold is None:
-            raise ValueError(
-                "Cannot calculate summary threshold when "
-                "summarize_threshold is None"
-            )
+            raise ValueError("Cannot calculate summary threshold when summarize_threshold is None")
 
         token_limit = self.token_limit
         summary_token_count = self._summary_token_count
@@ -1131,18 +1037,11 @@ class ChatAgent(BaseAgent):
             threshold = int(token_limit * self.summarize_threshold / 100)
         else:
             # Subsequent summarizations: adaptive threshold
-            threshold = int(
-                (token_limit - summary_token_count)
-                * self.summarize_threshold
-                / 100
-                + summary_token_count
-            )
+            threshold = int((token_limit - summary_token_count) * self.summarize_threshold / 100 + summary_token_count)
 
         return threshold
 
-    def _update_memory_with_summary(
-        self, summary: str, include_summaries: bool = False
-    ) -> None:
+    def _update_memory_with_summary(self, summary: str, include_summaries: bool = False) -> None:
         r"""Update memory with summary result.
 
         This method handles memory clearing and restoration of summaries based
@@ -1155,33 +1054,25 @@ class ChatAgent(BaseAgent):
         last_user_message: Optional[str] = None
         messages, _ = self.memory.get_context()
         for msg in messages:
-            content = msg.get('content', '')
-            role = msg.get('role', '')
-            if role == 'user' and isinstance(content, str) and content:
+            content = msg.get("content", "")
+            role = msg.get("role", "")
+            if role == "user" and isinstance(content, str) and content:
                 last_user_message = content
-            if (
-                not include_summaries
-                and isinstance(content, str)
-                and content.startswith('[CONTEXT_SUMMARY]')
-            ):
+            if not include_summaries and isinstance(content, str) and content.startswith("[CONTEXT_SUMMARY]"):
                 existing_summaries.append(msg)
 
         self.clear_memory(reset_summary_state=False)
 
         # Restore old summaries (for progressive compression)
         for old_summary in existing_summaries:
-            content = old_summary.get('content', '')
+            content = old_summary.get("content", "")
             if not isinstance(content, str):
                 content = str(content)
-            summary_msg = BaseMessage.make_assistant_message(
-                role_name="assistant", content=content
-            )
+            summary_msg = BaseMessage.make_assistant_message(role_name="assistant", content=content)
             self.update_memory(summary_msg, OpenAIBackendRole.ASSISTANT)
 
         # Add new summary
-        new_summary_msg = BaseMessage.make_assistant_message(
-            role_name="assistant", content=summary_content
-        )
+        new_summary_msg = BaseMessage.make_assistant_message(role_name="assistant", content=summary_content)
         self.update_memory(new_summary_msg, OpenAIBackendRole.ASSISTANT)
 
         # Restore last user message to maintain conversation structure
@@ -1189,10 +1080,7 @@ class ChatAgent(BaseAgent):
         # latest one so the model knows what to respond to
         if last_user_message:
             # Avoid duplicate prefix - check if already prefixed
-            context_prefix = (
-                "Based on the previous CONTEXT_SUMMARY, "
-                "continue with my current message: "
-            )
+            context_prefix = "Based on the previous CONTEXT_SUMMARY, continue with my current message: "
             if not last_user_message.startswith(context_prefix):
                 last_user_message = f"{context_prefix}{last_user_message}"
             user_msg = BaseMessage.make_user_message(
@@ -1203,15 +1091,11 @@ class ChatAgent(BaseAgent):
 
         # Update token count
         try:
-            summary_tokens = (
-                self.model_backend.token_counter.count_tokens_from_messages(
-                    [{"role": "assistant", "content": summary_content}]
-                )
+            summary_tokens = self.model_backend.token_counter.count_tokens_from_messages(
+                [{"role": "assistant", "content": summary_content}]
             )
 
-            if (
-                include_summaries
-            ):  # Full compression - reset and set to new summary tokens only
+            if include_summaries:  # Full compression - reset and set to new summary tokens only
                 self._summary_token_count = summary_tokens
                 logger.info(
                     f"Full compression: Summary with {summary_tokens} tokens. "
@@ -1250,9 +1134,7 @@ class ChatAgent(BaseAgent):
         except (TypeError, ValueError):
             return str(result)
 
-    def _save_tool_output_log(
-        self, func_name: str, content: str
-    ) -> Optional[str]:
+    def _save_tool_output_log(self, func_name: str, content: str) -> Optional[str]:
         r"""Save full tool output to a .log file when truncation occurs.
 
         Args:
@@ -1269,9 +1151,7 @@ class ChatAgent(BaseAgent):
 
         try:
             log_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
-            safe_func_name = re.sub(r"[^A-Za-z0-9_-]+", "_", func_name).strip(
-                "_"
-            )
+            safe_func_name = re.sub(r"[^A-Za-z0-9_-]+", "_", func_name).strip("_")
             safe_func_name = safe_func_name[:64] or "tool"
             with tempfile.NamedTemporaryFile(
                 mode="w",
@@ -1283,19 +1163,13 @@ class ChatAgent(BaseAgent):
             ) as log_file:
                 log_file.write(content)
                 log_path = Path(log_file.name)
-            logger.info(
-                "Full tool output for '%s' saved to: %s", func_name, log_path
-            )
+            logger.info("Full tool output for '%s' saved to: %s", func_name, log_path)
             return str(log_path)
         except Exception as e:
-            logger.warning(
-                "Failed to save tool output log for '%s': %s", func_name, e
-            )
+            logger.warning("Failed to save tool output log for '%s': %s", func_name, e)
             return None
 
-    def _truncate_tool_result(
-        self, func_name: str, result: Any
-    ) -> Tuple[Any, bool]:
+    def _truncate_tool_result(self, func_name: str, result: Any) -> Tuple[Any, bool]:
         r"""Truncate tool result if it exceeds the maximum token limit.
 
         Args:
@@ -1309,11 +1183,7 @@ class ChatAgent(BaseAgent):
         """
         serialized = self._serialize_tool_result(result)
         # Use summarize_threshold if set, otherwise default to 90%
-        threshold_ratio = (
-            min(0.9, self.summarize_threshold / 100)
-            if self.summarize_threshold is not None
-            else 0.9
-        )
+        threshold_ratio = min(0.9, self.summarize_threshold / 100) if self.summarize_threshold is not None else 0.9
         max_tokens = int(self.token_limit * threshold_ratio)
         result_tokens = self._get_token_count(serialized)
 
@@ -1327,11 +1197,7 @@ class ChatAgent(BaseAgent):
         log_ref = ""
         if self._tool_log_dir is not None:
             log_path = self._save_tool_output_log(func_name, serialized)
-            log_ref = (
-                f" Full output saved to: {log_path}"
-                if log_path
-                else " (log saving failed)"
-            )
+            log_ref = f" Full output saved to: {log_path}" if log_path else " (log saving failed)"
 
         notice = (
             f"\n\n[TRUNCATED] Tool '{func_name}' output truncated "
@@ -1339,10 +1205,7 @@ class ChatAgent(BaseAgent):
             f"Tool executed successfully.{log_ref}"
         )
 
-        logger.warning(
-            f"Tool '{func_name}' result truncated: "
-            f"{result_tokens} -> ~{target_tokens} tokens"
-        )
+        logger.warning(f"Tool '{func_name}' result truncated: {result_tokens} -> ~{target_tokens} tokens")
 
         return notice + truncated, True
 
@@ -1371,35 +1234,35 @@ class ChatAgent(BaseAgent):
         """
         original = line.strip()
         if not original:
-            return ''
+            return ""
 
         # Check if line is just an element type marker
         # (e.g., "- generic:", "button:")
-        if re.match(r'^(?:-\s+)?\w+\s*:?\s*$', original):
-            return ''
+        if re.match(r"^(?:-\s+)?\w+\s*:?\s*$", original):
+            return ""
 
         # Remove element type prefix
-        line = re.sub(r'^(?:-\s+)?\w+[\s:]+', '', original)
+        line = re.sub(r"^(?:-\s+)?\w+[\s:]+", "", original)
 
         # Remove bracket markers while preserving quoted text
         quoted_parts = []
 
         def save_quoted(match):
             quoted_parts.append(match.group(0))
-            return f'__QUOTED_{len(quoted_parts) - 1}__'
+            return f"__QUOTED_{len(quoted_parts) - 1}__"
 
         line = re.sub(r'"[^"]*"', save_quoted, line)
-        line = re.sub(r'\s*\[[^\]]+\]\s*', ' ', line)
+        line = re.sub(r"\s*\[[^\]]+\]\s*", " ", line)
 
         for i, quoted in enumerate(quoted_parts):
-            line = line.replace(f'__QUOTED_{i}__', quoted)
+            line = line.replace(f"__QUOTED_{i}__", quoted)
 
         # Clean up formatting
-        line = re.sub(r'\s+', ' ', line).strip()
-        line = re.sub(r'\s*:\s*', ': ', line)
-        line = line.lstrip(': ').strip()
+        line = re.sub(r"\s+", " ", line).strip()
+        line = re.sub(r"\s*:\s*", ": ", line)
+        line = line.lstrip(": ").strip()
 
-        return '' if not line else line
+        return "" if not line else line
 
     def _clean_snapshot_content(self, content: str) -> str:
         r"""Clean snapshot content by removing prefixes, references, and
@@ -1426,35 +1289,31 @@ class ChatAgent(BaseAgent):
                 if isinstance(obj, dict):
                     result = {}
                     for key, value in obj.items():
-                        if key == 'snapshot' and isinstance(value, str):
+                        if key == "snapshot" and isinstance(value, str):
                             try:
-                                decoded_value = value.encode().decode(
-                                    'unicode_escape'
-                                )
+                                decoded_value = value.encode().decode("unicode_escape")
                             except (UnicodeDecodeError, AttributeError):
                                 decoded_value = value
 
                             needs_cleaning = (
-                                '- ' in decoded_value
-                                or '[ref=' in decoded_value
+                                "- " in decoded_value
+                                or "[ref=" in decoded_value
                                 or any(
-                                    elem + ':' in decoded_value
+                                    elem + ":" in decoded_value
                                     for elem in [
-                                        'generic',
-                                        'img',
-                                        'banner',
-                                        'list',
-                                        'listitem',
-                                        'search',
-                                        'navigation',
+                                        "generic",
+                                        "img",
+                                        "banner",
+                                        "list",
+                                        "listitem",
+                                        "search",
+                                        "navigation",
                                     ]
                                 )
                             )
 
                             if needs_cleaning:
-                                cleaned_snapshot = self._clean_text_snapshot(
-                                    decoded_value
-                                )
+                                cleaned_snapshot = self._clean_text_snapshot(decoded_value)
                                 result[key] = cleaned_snapshot
                                 modified = True
                             else:
@@ -1493,7 +1352,7 @@ class ChatAgent(BaseAgent):
             The cleaned content with deduplicated lines, no indentation,
             and no empty lines.
         """
-        lines = content.split('\n')
+        lines = content.split("\n")
         cleaned_lines = []
         seen = set()
 
@@ -1504,12 +1363,10 @@ class ChatAgent(BaseAgent):
                 continue
 
             # Skip metadata lines (like "- /url:", "- /ref:")
-            if re.match(r'^-?\s*/\w+\s*:', stripped_line):
+            if re.match(r"^-?\s*/\w+\s*:", stripped_line):
                 continue
 
-            is_snapshot_line = '[ref=' in stripped_line or re.match(
-                r'^(?:-\s+)?\w+(?:[\s:]|$)', stripped_line
-            )
+            is_snapshot_line = "[ref=" in stripped_line or re.match(r"^(?:-\s+)?\w+(?:[\s:]|$)", stripped_line)
 
             if is_snapshot_line:
                 cleaned = self._clean_snapshot_line(stripped_line)
@@ -1521,7 +1378,7 @@ class ChatAgent(BaseAgent):
                     cleaned_lines.append(stripped_line)
                     seen.add(stripped_line)
 
-        return '\n'.join(cleaned_lines)
+        return "\n".join(cleaned_lines)
 
     def _register_tool_output_for_cache(
         self,
@@ -1553,23 +1410,17 @@ class ChatAgent(BaseAgent):
                 continue
             self._clean_snapshot_in_memory(entry)
 
-    def _clean_snapshot_in_memory(
-        self, entry: _ToolOutputHistoryEntry
-    ) -> None:
+    def _clean_snapshot_in_memory(self, entry: _ToolOutputHistoryEntry) -> None:
         if not entry.record_uuids:
             return
 
         # Clean snapshot markers and references from historical tool output
         result_text = entry.result_text
-        if '- ' in result_text and '[ref=' in result_text:
+        if "- " in result_text and "[ref=" in result_text:
             cleaned_result = self._clean_snapshot_content(result_text)
 
             # Update the message in memory storage
-            timestamp = (
-                entry.record_timestamps[0]
-                if entry.record_timestamps
-                else time.time_ns() / 1_000_000_000
-            )
+            timestamp = entry.record_timestamps[0] if entry.record_timestamps else time.time_ns() / 1_000_000_000
             cleaned_message = FunctionCallingMessage(
                 role_name=self.role_name,
                 role_type=self.role_type,
@@ -1580,24 +1431,16 @@ class ChatAgent(BaseAgent):
                 tool_call_id=entry.tool_call_id,
             )
 
-            chat_history_block = getattr(
-                self.memory, "_chat_history_block", None
-            )
+            chat_history_block = getattr(self.memory, "_chat_history_block", None)
             storage = getattr(chat_history_block, "storage", None)
             if storage is None:
                 return
 
             existing_records = storage.load()
             existing_record_uuids = {
-                str(record.get("uuid"))
-                for record in existing_records
-                if record.get("uuid") is not None
+                str(record.get("uuid")) for record in existing_records if record.get("uuid") is not None
             }
-            matched_uuids = [
-                record_uuid
-                for record_uuid in entry.record_uuids
-                if record_uuid in existing_record_uuids
-            ]
+            matched_uuids = [record_uuid for record_uuid in entry.record_uuids if record_uuid in existing_record_uuids]
 
             if not matched_uuids:
                 # Record no longer exists in current memory (e.g. after reset).
@@ -1607,11 +1450,7 @@ class ChatAgent(BaseAgent):
                 entry.record_timestamps = []
                 return
 
-            updated_records = [
-                record
-                for record in existing_records
-                if str(record.get("uuid")) not in matched_uuids
-            ]
+            updated_records = [record for record in existing_records if str(record.get("uuid")) not in matched_uuids]
             new_record = MemoryRecord(
                 message=cleaned_message,
                 role_at_backend=OpenAIBackendRole.FUNCTION,
@@ -1633,9 +1472,7 @@ class ChatAgent(BaseAgent):
             entry.record_uuids = [str(new_record.uuid)]
             entry.record_timestamps = [timestamp]
 
-    def add_external_tool(
-        self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
-    ) -> None:
+    def add_external_tool(self, tool: Union[FunctionTool, Callable, Dict[str, Any]]) -> None:
         new_tool_schema = convert_to_schema(tool)
         self._external_tool_schemas[new_tool_schema["name"]] = new_tool_schema
 
@@ -1699,9 +1536,7 @@ class ChatAgent(BaseAgent):
         record = MemoryRecord(
             message=message,
             role_at_backend=role,
-            timestamp=timestamp
-            if timestamp is not None
-            else time.time_ns() / 1_000_000_000,  # Nanosecond precision
+            timestamp=timestamp if timestamp is not None else time.time_ns() / 1_000_000_000,  # Nanosecond precision
             agent_id=self.agent_id,
         )
         self.memory.write_record(record)
@@ -1739,39 +1574,25 @@ class ChatAgent(BaseAgent):
         all_records = json_store.load()
 
         if not all_records:
-            raise ValueError(
-                f"No records found for agent_id={self.agent_id} in {path}"
-            )
+            raise ValueError(f"No records found for agent_id={self.agent_id} in {path}")
 
         for record_dict in all_records:
             # Validate the record dictionary before conversion
-            required_keys = ['message', 'role_at_backend', 'agent_id']
+            required_keys = ["message", "role_at_backend", "agent_id"]
             if not all(key in record_dict for key in required_keys):
-                logger.warning(
-                    f"Skipping invalid record: missing required "
-                    f"keys in {record_dict}"
-                )
+                logger.warning(f"Skipping invalid record: missing required keys in {record_dict}")
                 continue
 
             # Validate message structure in the record
-            if (
-                not isinstance(record_dict['message'], dict)
-                or '__class__' not in record_dict['message']
-            ):
-                logger.warning(
-                    f"Skipping invalid record: malformed message "
-                    f"structure in {record_dict}"
-                )
+            if not isinstance(record_dict["message"], dict) or "__class__" not in record_dict["message"]:
+                logger.warning(f"Skipping invalid record: malformed message structure in {record_dict}")
                 continue
 
             try:
                 record = MemoryRecord.from_dict(record_dict)
                 self.memory.write_records([record])
             except Exception as e:
-                logger.warning(
-                    f"Error converting record to MemoryRecord: {e}. "
-                    f"Record: {record_dict}"
-                )
+                logger.warning(f"Error converting record to MemoryRecord: {e}. Record: {record_dict}")
         logger.info(f"Memory loaded from {path}")
 
     def save_memory(self, path: str) -> None:
@@ -1834,8 +1655,7 @@ class ChatAgent(BaseAgent):
         """
 
         warnings.warn(
-            "summarize() is synchronous. Consider using asummarize() "
-            "for async/await support and better performance.",
+            "summarize() is synchronous. Consider using asummarize() for async/await support and better performance.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -1850,9 +1670,7 @@ class ChatAgent(BaseAgent):
             # Use external context if set, otherwise create local one
             if self._context_utility is None:
                 if working_directory is not None:
-                    self._context_utility = ContextUtility(
-                        working_directory=str(working_directory)
-                    )
+                    self._context_utility = ContextUtility(working_directory=str(working_directory))
                 else:
                     self._context_utility = ContextUtility()
             context_util = self._context_utility
@@ -1861,32 +1679,21 @@ class ChatAgent(BaseAgent):
             messages, _ = self.memory.get_context()
 
             if not messages:
-                status_message = (
-                    "No conversation context available to summarize."
-                )
+                status_message = "No conversation context available to summarize."
                 result["status"] = status_message
                 return result
 
             # build conversation text using shared helper
-            conversation_text, user_messages = (
-                self._build_conversation_text_from_messages(
-                    messages, include_summaries
-                )
-            )
+            conversation_text, user_messages = self._build_conversation_text_from_messages(messages, include_summaries)
 
             if not conversation_text:
-                status_message = (
-                    "Conversation context is empty; skipping summary."
-                )
+                status_message = "Conversation context is empty; skipping summary."
                 result["status"] = status_message
                 return result
 
             if self._context_summary_agent is None:
                 self._context_summary_agent = ChatAgent(
-                    system_message=(
-                        "You are a helpful assistant that summarizes "
-                        "conversations"
-                    ),
+                    system_message=("You are a helpful assistant that summarizes conversations"),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
                     token_limit=self.token_limit,
@@ -1897,34 +1704,24 @@ class ChatAgent(BaseAgent):
                 self._context_summary_agent.reset()
 
             if summary_prompt:
-                prompt_text = (
-                    f"{summary_prompt.rstrip()}\n\n"
-                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
-                    f"{conversation_text}"
-                )
+                prompt_text = f"{summary_prompt.rstrip()}\n\nAGENT CONVERSATION TO BE SUMMARIZED:\n{conversation_text}"
             else:
                 prompt_text = build_default_summary_prompt(conversation_text)
 
             try:
                 # Use structured output if response_format is provided
                 if response_format:
-                    response = self._context_summary_agent.step(
-                        prompt_text, response_format=response_format
-                    )
+                    response = self._context_summary_agent.step(prompt_text, response_format=response_format)
                 else:
                     response = self._context_summary_agent.step(prompt_text)
             except Exception as step_exc:
-                error_message = (
-                    f"Failed to generate summary using model: {step_exc}"
-                )
+                error_message = f"Failed to generate summary using model: {step_exc}"
                 logger.error(error_message)
                 result["status"] = error_message
                 return result
 
             if not response.msgs:
-                status_message = (
-                    "Failed to generate summary from model response."
-                )
+                status_message = "Failed to generate summary from model response."
                 result["status"] = status_message
                 return result
 
@@ -1943,17 +1740,11 @@ class ChatAgent(BaseAgent):
             # structured output, or generate timestamp
             if filename:
                 base_filename = filename
-            elif structured_output and hasattr(
-                structured_output, 'task_title'
-            ):
+            elif structured_output and hasattr(structured_output, "task_title"):
                 # use task_title from structured output for filename
                 task_title = structured_output.task_title
-                clean_title = ContextUtility.sanitize_workflow_filename(
-                    task_title
-                )
-                base_filename = (
-                    f"{clean_title}_workflow" if clean_title else "workflow"
-                )
+                clean_title = ContextUtility.sanitize_workflow_filename(task_title)
+                base_filename = f"{clean_title}_workflow" if clean_title else "workflow"
             else:
                 base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
 
@@ -1973,10 +1764,10 @@ class ChatAgent(BaseAgent):
                 # exclude operation_mode and target_workflow_filename
                 # if present (used for workflow save logic, not persisted)
                 exclude_fields = []
-                if hasattr(structured_output, 'operation_mode'):
-                    exclude_fields.append('operation_mode')
-                if hasattr(structured_output, 'target_workflow_filename'):
-                    exclude_fields.append('target_workflow_filename')
+                if hasattr(structured_output, "operation_mode"):
+                    exclude_fields.append("operation_mode")
+                if hasattr(structured_output, "target_workflow_filename"):
+                    exclude_fields.append("target_workflow_filename")
 
                 summary_content = context_util.structured_output_to_markdown(
                     structured_data=structured_output,
@@ -1984,23 +1775,17 @@ class ChatAgent(BaseAgent):
                     exclude_fields=exclude_fields if exclude_fields else None,
                 )
             if add_user_messages:
-                summary_content = self._append_user_messages_section(
-                    summary_content, user_messages
-                )
+                summary_content = self._append_user_messages_section(summary_content, user_messages)
 
             # Save the markdown (either custom structured or default)
             save_status = context_util.save_markdown_file(
                 base_filename,
                 summary_content,
-                title="Conversation Summary"
-                if not structured_output
-                else None,
+                title="Conversation Summary" if not structured_output else None,
                 metadata=metadata if not structured_output else None,
             )
 
-            file_path = (
-                context_util.get_working_directory() / f"{base_filename}.md"
-            )
+            file_path = context_util.get_working_directory() / f"{base_filename}.md"
             summary_content = (
                 f"[CONTEXT_SUMMARY] The following is a summary of our "
                 f"conversation from a previous session: {summary_content}"
@@ -2048,38 +1833,34 @@ class ChatAgent(BaseAgent):
         conversation_lines = []
         user_messages: List[str] = []
         for message in messages:
-            role = message.get('role', 'unknown')
-            content = message.get('content', '')
+            role = message.get("role", "unknown")
+            content = message.get("content", "")
 
             # Skip summary messages if include_summaries is False
             if not include_summaries and isinstance(content, str):
                 # Check if this is a summary message by looking for marker
-                if content.startswith('[CONTEXT_SUMMARY]'):
+                if content.startswith("[CONTEXT_SUMMARY]"):
                     continue
 
             # Handle tool call messages (assistant calling tools)
-            tool_calls = message.get('tool_calls')
+            tool_calls = message.get("tool_calls")
             if tool_calls and isinstance(tool_calls, (list, tuple)):
                 for tool_call in tool_calls:
                     # Handle both dict and object formats
                     if isinstance(tool_call, dict):
-                        func_name = tool_call.get('function', {}).get(
-                            'name', 'unknown_tool'
-                        )
-                        func_args_str = tool_call.get('function', {}).get(
-                            'arguments', '{}'
-                        )
+                        func_name = tool_call.get("function", {}).get("name", "unknown_tool")
+                        func_args_str = tool_call.get("function", {}).get("arguments", "{}")
                     else:
                         # Handle object format (Pydantic or similar)
                         func_name = getattr(
-                            getattr(tool_call, 'function', None),
-                            'name',
-                            'unknown_tool',
+                            getattr(tool_call, "function", None),
+                            "name",
+                            "unknown_tool",
                         )
                         func_args_str = getattr(
-                            getattr(tool_call, 'function', None),
-                            'arguments',
-                            '{}',
+                            getattr(tool_call, "function", None),
+                            "arguments",
+                            "{}",
                         )
 
                     # Parse and format arguments for readability
@@ -2087,29 +1868,23 @@ class ChatAgent(BaseAgent):
                         import json
 
                         args_dict = json.loads(func_args_str)
-                        args_formatted = ', '.join(
-                            f"{k}={v}" for k, v in args_dict.items()
-                        )
+                        args_formatted = ", ".join(f"{k}={v}" for k, v in args_dict.items())
                     except (json.JSONDecodeError, ValueError, TypeError):
                         args_formatted = func_args_str
 
-                    conversation_lines.append(
-                        f"[TOOL CALL] {func_name}({args_formatted})"
-                    )
+                    conversation_lines.append(f"[TOOL CALL] {func_name}({args_formatted})")
 
             # Handle tool response messages
-            elif role == 'tool':
-                tool_name = message.get('name', 'unknown_tool')
+            elif role == "tool":
+                tool_name = message.get("name", "unknown_tool")
                 if not content:
-                    content = str(message.get('content', ''))
-                conversation_lines.append(
-                    f"[TOOL RESULT] {tool_name} → {content}"
-                )
+                    content = str(message.get("content", ""))
+                conversation_lines.append(f"[TOOL RESULT] {tool_name} → {content}")
 
             # Handle regular content messages (user/assistant/system)
             elif content:
                 content = str(content)
-                if role == 'user':
+                if role == "user":
                     user_messages.append(content)
                 conversation_lines.append(f"{role}: {content}")
 
@@ -2120,7 +1895,7 @@ class ChatAgent(BaseAgent):
         summary_prompt: Optional[str] = None,
         response_format: Optional[Type[BaseModel]] = None,
         include_summaries: bool = False,
-        conversation_accumulator: Optional['ChatAgent'] = None,
+        conversation_accumulator: Optional["ChatAgent"] = None,
     ) -> Dict[str, Any]:
         r"""Generate a workflow summary without saving to disk.
 
@@ -2156,9 +1931,7 @@ class ChatAgent(BaseAgent):
 
         try:
             # get conversation from accumulator or self
-            source_agent = (
-                conversation_accumulator if conversation_accumulator else self
-            )
+            source_agent = conversation_accumulator if conversation_accumulator else self
             messages, _ = source_agent.memory.get_context()
 
             if not messages:
@@ -2166,9 +1939,7 @@ class ChatAgent(BaseAgent):
                 return result
 
             # build conversation text using shared helper
-            conversation_text, _ = self._build_conversation_text_from_messages(
-                messages, include_summaries
-            )
+            conversation_text, _ = self._build_conversation_text_from_messages(messages, include_summaries)
 
             if not conversation_text:
                 result["status"] = "Conversation context is empty"
@@ -2177,10 +1948,7 @@ class ChatAgent(BaseAgent):
             # create or reuse summarizer agent
             if self._context_summary_agent is None:
                 self._context_summary_agent = ChatAgent(
-                    system_message=(
-                        "You are a helpful assistant that summarizes "
-                        "conversations"
-                    ),
+                    system_message=("You are a helpful assistant that summarizes conversations"),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
                     token_limit=self.token_limit,
@@ -2192,19 +1960,13 @@ class ChatAgent(BaseAgent):
 
             # prepare prompt
             if summary_prompt:
-                prompt_text = (
-                    f"{summary_prompt.rstrip()}\n\n"
-                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
-                    f"{conversation_text}"
-                )
+                prompt_text = f"{summary_prompt.rstrip()}\n\nAGENT CONVERSATION TO BE SUMMARIZED:\n{conversation_text}"
             else:
                 prompt_text = build_default_summary_prompt(conversation_text)
 
             # call summarizer agent
             if response_format:
-                response = await self._context_summary_agent.astep(
-                    prompt_text, response_format=response_format
-                )
+                response = await self._context_summary_agent.astep(prompt_text, response_format=response_format)
             else:
                 response = await self._context_summary_agent.astep(prompt_text)
 
@@ -2290,9 +2052,7 @@ class ChatAgent(BaseAgent):
             # Use external context if set, otherwise create local one
             if self._context_utility is None:
                 if working_directory is not None:
-                    self._context_utility = ContextUtility(
-                        working_directory=str(working_directory)
-                    )
+                    self._context_utility = ContextUtility(working_directory=str(working_directory))
                 else:
                     self._context_utility = ContextUtility()
             context_util = self._context_utility
@@ -2301,32 +2061,21 @@ class ChatAgent(BaseAgent):
             messages, _ = self.memory.get_context()
 
             if not messages:
-                status_message = (
-                    "No conversation context available to summarize."
-                )
+                status_message = "No conversation context available to summarize."
                 result["status"] = status_message
                 return result
 
             # build conversation text using shared helper
-            conversation_text, user_messages = (
-                self._build_conversation_text_from_messages(
-                    messages, include_summaries
-                )
-            )
+            conversation_text, user_messages = self._build_conversation_text_from_messages(messages, include_summaries)
 
             if not conversation_text:
-                status_message = (
-                    "Conversation context is empty; skipping summary."
-                )
+                status_message = "Conversation context is empty; skipping summary."
                 result["status"] = status_message
                 return result
 
             if self._context_summary_agent is None:
                 self._context_summary_agent = ChatAgent(
-                    system_message=(
-                        "You are a helpful assistant that summarizes "
-                        "conversations"
-                    ),
+                    system_message=("You are a helpful assistant that summarizes conversations"),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
                     token_limit=self.token_limit,
@@ -2337,24 +2086,16 @@ class ChatAgent(BaseAgent):
                 self._context_summary_agent.reset()
 
             if summary_prompt:
-                prompt_text = (
-                    f"{summary_prompt.rstrip()}\n\n"
-                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
-                    f"{conversation_text}"
-                )
+                prompt_text = f"{summary_prompt.rstrip()}\n\nAGENT CONVERSATION TO BE SUMMARIZED:\n{conversation_text}"
             else:
                 prompt_text = build_default_summary_prompt(conversation_text)
 
             try:
                 # Use structured output if response_format is provided
                 if response_format:
-                    response = await self._context_summary_agent.astep(
-                        prompt_text, response_format=response_format
-                    )
+                    response = await self._context_summary_agent.astep(prompt_text, response_format=response_format)
                 else:
-                    response = await self._context_summary_agent.astep(
-                        prompt_text
-                    )
+                    response = await self._context_summary_agent.astep(prompt_text)
 
                 # Handle streaming response
                 if isinstance(response, AsyncStreamingChatAgentResponse):
@@ -2363,17 +2104,13 @@ class ChatAgent(BaseAgent):
                     response = final_response
 
             except Exception as step_exc:
-                error_message = (
-                    f"Failed to generate summary using model: {step_exc}"
-                )
+                error_message = f"Failed to generate summary using model: {step_exc}"
                 logger.error(error_message)
                 result["status"] = error_message
                 return result
 
             if not response.msgs:
-                status_message = (
-                    "Failed to generate summary from model response."
-                )
+                status_message = "Failed to generate summary from model response."
                 result["status"] = status_message
                 return result
 
@@ -2392,17 +2129,11 @@ class ChatAgent(BaseAgent):
             # structured output, or generate timestamp
             if filename:
                 base_filename = filename
-            elif structured_output and hasattr(
-                structured_output, 'task_title'
-            ):
+            elif structured_output and hasattr(structured_output, "task_title"):
                 # use task_title from structured output for filename
                 task_title = structured_output.task_title
-                clean_title = ContextUtility.sanitize_workflow_filename(
-                    task_title
-                )
-                base_filename = (
-                    f"{clean_title}_workflow" if clean_title else "workflow"
-                )
+                clean_title = ContextUtility.sanitize_workflow_filename(task_title)
+                base_filename = f"{clean_title}_workflow" if clean_title else "workflow"
             else:
                 base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
 
@@ -2422,10 +2153,10 @@ class ChatAgent(BaseAgent):
                 # exclude operation_mode and target_workflow_filename
                 # if present (used for workflow save logic, not persisted)
                 exclude_fields = []
-                if hasattr(structured_output, 'operation_mode'):
-                    exclude_fields.append('operation_mode')
-                if hasattr(structured_output, 'target_workflow_filename'):
-                    exclude_fields.append('target_workflow_filename')
+                if hasattr(structured_output, "operation_mode"):
+                    exclude_fields.append("operation_mode")
+                if hasattr(structured_output, "target_workflow_filename"):
+                    exclude_fields.append("target_workflow_filename")
 
                 summary_content = context_util.structured_output_to_markdown(
                     structured_data=structured_output,
@@ -2433,23 +2164,17 @@ class ChatAgent(BaseAgent):
                     exclude_fields=exclude_fields if exclude_fields else None,
                 )
             if add_user_messages:
-                summary_content = self._append_user_messages_section(
-                    summary_content, user_messages
-                )
+                summary_content = self._append_user_messages_section(summary_content, user_messages)
 
             # Save the markdown (either custom structured or default)
             save_status = context_util.save_markdown_file(
                 base_filename,
                 summary_content,
-                title="Conversation Summary"
-                if not structured_output
-                else None,
+                title="Conversation Summary" if not structured_output else None,
                 metadata=metadata if not structured_output else None,
             )
 
-            file_path = (
-                context_util.get_working_directory() / f"{base_filename}.md"
-            )
+            file_path = context_util.get_working_directory() / f"{base_filename}.md"
 
             summary_content = (
                 f"[CONTEXT_SUMMARY] The following is a summary of our "
@@ -2489,7 +2214,7 @@ class ChatAgent(BaseAgent):
 
         # Reset token cache when memory is cleared
         context_creator = self.memory.get_context_creator()
-        if hasattr(context_creator, 'clear_cache'):
+        if hasattr(context_creator, "clear_cache"):
             context_creator.clear_cache()
 
         if self.system_message is not None:
@@ -2516,10 +2241,7 @@ class ChatAgent(BaseAgent):
         if not self._output_language:
             return self._original_system_message
 
-        language_prompt = (
-            "\nRegardless of the input language, "
-            f"you must output text in {self._output_language}."
-        )
+        language_prompt = f"\nRegardless of the input language, you must output text in {self._output_language}."
 
         if self._original_system_message is not None:
             content = self._original_system_message.content + language_prompt
@@ -2553,19 +2275,13 @@ class ChatAgent(BaseAgent):
         if system_message is None:
             raise ValueError("system_message is required and cannot be None. ")
         self._original_system_message = (
-            BaseMessage.make_system_message(system_message)
-            if isinstance(system_message, str)
-            else system_message
+            BaseMessage.make_system_message(system_message) if isinstance(system_message, str) else system_message
         )
-        self._system_message = (
-            self._generate_system_message_for_output_language()
-        )
+        self._system_message = self._generate_system_message_for_output_language()
         if reset_memory:
             self.init_messages()
 
-    def append_to_system_message(
-        self, content: str, reset_memory: bool = True
-    ) -> None:
+    def append_to_system_message(self, content: str, reset_memory: bool = True) -> None:
         """Append additional context to existing system message.
 
         Args:
@@ -2574,18 +2290,10 @@ class ChatAgent(BaseAgent):
                 Whether to reinitialize conversation messages after appending
                 additional context. Defaults to True.
         """
-        original_content = (
-            self._original_system_message.content
-            if self._original_system_message
-            else ""
-        )
-        new_system_message = original_content + '\n' + content
-        self._original_system_message = BaseMessage.make_system_message(
-            new_system_message
-        )
-        self._system_message = (
-            self._generate_system_message_for_output_language()
-        )
+        original_content = self._original_system_message.content if self._original_system_message else ""
+        new_system_message = original_content + "\n" + content
+        self._original_system_message = BaseMessage.make_system_message(new_system_message)
+        self._system_message = self._generate_system_message_for_output_language()
         if reset_memory:
             self.init_messages()
 
@@ -2611,9 +2319,7 @@ class ChatAgent(BaseAgent):
         """
         self.update_memory(message, OpenAIBackendRole.ASSISTANT)
 
-    def _try_format_message(
-        self, message: BaseMessage, response_format: Type[BaseModel]
-    ) -> bool:
+    def _try_format_message(self, message: BaseMessage, response_format: Type[BaseModel]) -> bool:
         r"""Try to format the message if needed.
 
         Returns:
@@ -2624,9 +2330,7 @@ class ChatAgent(BaseAgent):
             return True
 
         try:
-            message.parsed = response_format.model_validate_json(
-                message.content
-            )
+            message.parsed = response_format.model_validate_json(message.content)
             return True
         except ValidationError:
             return False
@@ -2644,9 +2348,7 @@ class ChatAgent(BaseAgent):
                 return False
         return True
 
-    def _convert_response_format_to_prompt(
-        self, response_format: Type[BaseModel]
-    ) -> str:
+    def _convert_response_format_to_prompt(self, response_format: Type[BaseModel]) -> str:
         r"""Convert a Pydantic response format to a prompt instruction.
 
         Args:
@@ -2660,9 +2362,7 @@ class ChatAgent(BaseAgent):
             schema = response_format.model_json_schema()
 
             # Create a prompt based on the schema
-            format_instruction = (
-                "\n\nPlease respond in the following JSON format:\n{\n"
-            )
+            format_instruction = "\n\nPlease respond in the following JSON format:\n{\n"
 
             properties = schema.get("properties", {})
             for field_name, field_info in properties.items():
@@ -2670,9 +2370,7 @@ class ChatAgent(BaseAgent):
                 description = field_info.get("description", "")
 
                 if field_type == "array":
-                    format_instruction += (
-                        f'    "{field_name}": ["array of values"]'
-                    )
+                    format_instruction += f'    "{field_name}": ["array of values"]'
                 elif field_type == "object":
                     format_instruction += f'    "{field_name}": {{"object"}}'
                 elif field_type == "boolean":
@@ -2683,7 +2381,7 @@ class ChatAgent(BaseAgent):
                     format_instruction += f'    "{field_name}": "string value"'
 
                 if description:
-                    format_instruction += f'  // {description}'
+                    format_instruction += f"  // {description}"
 
                 # Add comma if not the last item
                 if field_name != list(properties.keys())[-1]:
@@ -2694,14 +2392,8 @@ class ChatAgent(BaseAgent):
             return format_instruction
 
         except Exception as e:
-            logger.warning(
-                f"Failed to convert response_format to prompt: {e}. "
-                f"Using generic format instruction."
-            )
-            return (
-                "\n\nPlease respond in a structured JSON format "
-                "that matches the requested schema."
-            )
+            logger.warning(f"Failed to convert response_format to prompt: {e}. Using generic format instruction.")
+            return "\n\nPlease respond in a structured JSON format that matches the requested schema."
 
     def _handle_response_format_with_non_strict_tools(
         self,
@@ -2722,30 +2414,20 @@ class ChatAgent(BaseAgent):
             return input_message, response_format, False
 
         # Check if tools are strict mode compatible
-        if (
-            self._check_tools_strict_compatibility()
-            or self.model_backend.supports_tool_response_format
-        ):
+        if self._check_tools_strict_compatibility() or self.model_backend.supports_tool_response_format:
             return input_message, response_format, False
 
         # Tools are not strict compatible, convert to prompt
-        logger.info(
-            "Non-strict tools detected. Converting response_format to "
-            "prompt-based formatting."
-        )
+        logger.info("Non-strict tools detected. Converting response_format to prompt-based formatting.")
 
-        format_prompt = self._convert_response_format_to_prompt(
-            response_format
-        )
+        format_prompt = self._convert_response_format_to_prompt(response_format)
 
         # Modify the message to include format instruction
         modified_message: Union[BaseMessage, str]
         if isinstance(input_message, str):
             modified_message = input_message + format_prompt
         else:
-            modified_message = input_message.create_new_instance(
-                input_message.content + format_prompt
-            )
+            modified_message = input_message.create_new_instance(input_message.content + format_prompt)
 
         # Return None for response_format to avoid strict mode conflicts
         # and True to indicate we used prompt formatting
@@ -2768,8 +2450,8 @@ class ChatAgent(BaseAgent):
         try:
             for frame_info in inspect.stack():
                 frame_locals = frame_info.frame.f_locals
-                if 'self' in frame_locals:
-                    caller_self = frame_locals['self']
+                if "self" in frame_locals:
+                    caller_self = frame_locals["self"]
                     if isinstance(caller_self, RegisteredAgentToolkit):
                         return True
 
@@ -2803,27 +2485,19 @@ class ChatAgent(BaseAgent):
                     # Try direct parsing first
                     try:
                         parsed_json = json.loads(content)
-                        message.parsed = (
-                            original_response_format.model_validate(
-                                parsed_json
-                            )
-                        )
+                        message.parsed = original_response_format.model_validate(parsed_json)
                         continue
                     except (json.JSONDecodeError, ValidationError):
                         pass
 
                     # Try to extract JSON from text
-                    json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+                    json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
                     json_matches = re.findall(json_pattern, content, re.DOTALL)
 
                     for json_str in json_matches:
                         try:
                             parsed_json = json.loads(json_str)
-                            message.parsed = (
-                                original_response_format.model_validate(
-                                    parsed_json
-                                )
-                            )
+                            message.parsed = original_response_format.model_validate(parsed_json)
                             # Update content to just the JSON for consistency
                             message.content = json.dumps(parsed_json)
                             break
@@ -2831,9 +2505,7 @@ class ChatAgent(BaseAgent):
                             continue
 
                     if not message.parsed:
-                        logger.warning(
-                            f"Failed to parse JSON from response: {content}"
-                        )
+                        logger.warning(f"Failed to parse JSON from response: {content}")
 
                 except Exception as e:
                     logger.warning(f"Error during prompt-based parsing: {e}")
@@ -2869,8 +2541,7 @@ class ChatAgent(BaseAgent):
             if not self._try_format_message(message, response_format):
                 logger.warning(f"Failed to parse response: {message.content}")
                 logger.warning(
-                    "To improve reliability, consider using models "
-                    "that are better equipped to handle structured output"
+                    "To improve reliability, consider using models that are better equipped to handle structured output"
                 )
 
     async def _aformat_response_if_needed(
@@ -2951,19 +2622,13 @@ class ChatAgent(BaseAgent):
 
         # Execute with timeout if configured
         if self.step_timeout is not None:
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=1
-            ) as executor:
-                future = executor.submit(
-                    self._step_impl, input_message, response_format
-                )
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(self._step_impl, input_message, response_format)
                 try:
                     return future.result(timeout=self.step_timeout)
                 except concurrent.futures.TimeoutError:
                     future.cancel()
-                    raise TimeoutError(
-                        f"Step timed out after {self.step_timeout}s"
-                    )
+                    raise TimeoutError(f"Step timed out after {self.step_timeout}s")
         else:
             return self._step_impl(input_message, response_format)
 
@@ -2992,17 +2657,13 @@ class ChatAgent(BaseAgent):
 
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
-        input_message, response_format, used_prompt_formatting = (
-            self._handle_response_format_with_non_strict_tools(
-                input_message, response_format
-            )
+        input_message, response_format, used_prompt_formatting = self._handle_response_format_with_non_strict_tools(
+            input_message, response_format
         )
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
-            input_message = BaseMessage.make_user_message(
-                role_name="User", content=input_message
-            )
+            input_message = BaseMessage.make_user_message(role_name="User", content=input_message)
 
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
@@ -3010,9 +2671,7 @@ class ChatAgent(BaseAgent):
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
 
-        accumulated_context_tokens = (
-            0  # This tracks cumulative context tokens, not API usage tokens
-        )
+        accumulated_context_tokens = 0  # This tracks cumulative context tokens, not API usage tokens
 
         # Initialize token usage tracker
         step_token_usage = self._create_token_usage_tracker()
@@ -3034,22 +2693,16 @@ class ChatAgent(BaseAgent):
                         time.sleep(0.001)
 
             try:
-                openai_messages, num_tokens = (
-                    self._get_context_with_summarization()
-                )
+                openai_messages, num_tokens = self._get_context_with_summarization()
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
-                return self._step_terminate(
-                    e.args[1], tool_call_records, "max_tokens_exceeded"
-                )
+                return self._step_terminate(e.args[1], tool_call_records, "max_tokens_exceeded")
             # Get response from model backend
             response = self._get_model_response(
                 openai_messages,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=[]
-                if disable_tools
-                else self._get_full_tool_schemas(),
+                tool_schemas=[] if disable_tools else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
 
@@ -3057,9 +2710,7 @@ class ChatAgent(BaseAgent):
             iteration_count += 1
 
             # Accumulate API token usage
-            self._update_token_usage_tracker(
-                step_token_usage, response.usage_dict
-            )
+            self._update_token_usage_tracker(step_token_usage, response.usage_dict)
             self._emit_request_usage(
                 usage_dict=response.usage_dict,
                 step_usage=step_token_usage.copy(),
@@ -3073,9 +2724,7 @@ class ChatAgent(BaseAgent):
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
-                logger.info(
-                    f"Termination triggered at iteration {iteration_count}"
-                )
+                logger.info(f"Termination triggered at iteration {iteration_count}")
                 return self._step_terminate(
                     accumulated_context_tokens,
                     tool_call_records,
@@ -3089,10 +2738,7 @@ class ChatAgent(BaseAgent):
                 # Separate internal and external tool calls
                 internal_tool_requests = []
                 for tool_call_request in tool_call_requests:
-                    if (
-                        tool_call_request.tool_name
-                        in self._external_tool_schemas
-                    ):
+                    if tool_call_request.tool_name in self._external_tool_schemas:
                         if external_tool_call_requests is None:
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
@@ -3103,20 +2749,13 @@ class ChatAgent(BaseAgent):
                 # external)
                 response_content = ""
                 if response.output_messages:
-                    response_content = (
-                        response.output_messages[0].content or ""
-                    )
-                self._record_assistant_tool_calls_from_requests(
-                    tool_call_requests, content=response_content
-                )
+                    response_content = response.output_messages[0].content or ""
+                self._record_assistant_tool_calls_from_requests(tool_call_requests, content=response_content)
                 recorded_tool_calls = True
 
                 # Execute internal tools only
                 for tool_call_request in internal_tool_requests:
-                    if (
-                        self.pause_event is not None
-                        and not self.pause_event.is_set()
-                    ):
+                    if self.pause_event is not None and not self.pause_event.is_set():
                         if isinstance(self.pause_event, threading.Event):
                             self.pause_event.wait()
                         else:
@@ -3129,10 +2768,7 @@ class ChatAgent(BaseAgent):
                 if external_tool_call_requests:
                     break
 
-                if (
-                    self.max_iteration is not None
-                    and iteration_count >= self.max_iteration
-                ):
+                if self.max_iteration is not None and iteration_count >= self.max_iteration:
                     logger.info(f"Max iteration reached: {iteration_count}")
                     break
 
@@ -3143,26 +2779,17 @@ class ChatAgent(BaseAgent):
             if self.response_terminators:
                 # Check terminators to see if task is complete
                 termination_results = [
-                    terminator.is_terminated(response.output_messages)
-                    for terminator in self.response_terminators
+                    terminator.is_terminated(response.output_messages) for terminator in self.response_terminators
                 ]
-                should_terminate = any(
-                    terminated for terminated, _ in termination_results
-                )
+                should_terminate = any(terminated for terminated, _ in termination_results)
 
                 if should_terminate:
                     # Task is complete, exit the loop
                     break
 
                 # Task not complete - prompt the model to continue
-                if (
-                    self.max_iteration is not None
-                    and iteration_count >= self.max_iteration
-                ):
-                    logger.warning(
-                        f"Max iteration {self.max_iteration} reached without "
-                        "termination signal"
-                    )
+                if self.max_iteration is not None and iteration_count >= self.max_iteration:
+                    logger.warning(f"Max iteration {self.max_iteration} reached without termination signal")
                     break
 
                 # Add a continuation prompt to memory as a user message
@@ -3182,9 +2809,7 @@ class ChatAgent(BaseAgent):
 
         # Apply manual parsing if we used prompt-based formatting
         if used_prompt_formatting and original_response_format:
-            self._apply_prompt_based_parsing(
-                response, original_response_format
-            )
+            self._apply_prompt_based_parsing(response, original_response_format)
 
         # Only record final output if we haven't already recorded tool calls
         # for this response (to avoid duplicate assistant messages)
@@ -3263,19 +2888,13 @@ class ChatAgent(BaseAgent):
             if self.step_timeout is not None:
                 try:
                     return await asyncio.wait_for(
-                        self._astep_non_streaming_task(
-                            input_message, response_format
-                        ),
+                        self._astep_non_streaming_task(input_message, response_format),
                         timeout=self.step_timeout,
                     )
                 except asyncio.TimeoutError:
-                    raise asyncio.TimeoutError(
-                        f"Async step timed out after {self.step_timeout}s"
-                    )
+                    raise asyncio.TimeoutError(f"Async step timed out after {self.step_timeout}s")
             else:
-                return await self._astep_non_streaming_task(
-                    input_message, response_format
-                )
+                return await self._astep_non_streaming_task(input_message, response_format)
 
     async def _astep_non_streaming_task(
         self,
@@ -3301,24 +2920,18 @@ class ChatAgent(BaseAgent):
 
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
-        input_message, response_format, used_prompt_formatting = (
-            self._handle_response_format_with_non_strict_tools(
-                input_message, response_format
-            )
+        input_message, response_format, used_prompt_formatting = self._handle_response_format_with_non_strict_tools(
+            input_message, response_format
         )
 
         if isinstance(input_message, str):
-            input_message = BaseMessage.make_user_message(
-                role_name="User", content=input_message
-            )
+            input_message = BaseMessage.make_user_message(role_name="User", content=input_message)
 
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
-        accumulated_context_tokens = (
-            0  # This tracks cumulative context tokens, not API usage tokens
-        )
+        accumulated_context_tokens = 0  # This tracks cumulative context tokens, not API usage tokens
 
         # Initialize token usage tracker
         step_token_usage = self._create_token_usage_tracker()
@@ -3344,17 +2957,13 @@ class ChatAgent(BaseAgent):
                 ) = await self._get_context_with_summarization_async()
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
-                return self._step_terminate(
-                    e.args[1], tool_call_records, "max_tokens_exceeded"
-                )
+                return self._step_terminate(e.args[1], tool_call_records, "max_tokens_exceeded")
             # Get response from model backend
             response = await self._aget_model_response(
                 openai_messages,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=[]
-                if disable_tools
-                else self._get_full_tool_schemas(),
+                tool_schemas=[] if disable_tools else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
 
@@ -3362,9 +2971,7 @@ class ChatAgent(BaseAgent):
             iteration_count += 1
 
             # Accumulate API token usage
-            self._update_token_usage_tracker(
-                step_token_usage, response.usage_dict
-            )
+            self._update_token_usage_tracker(step_token_usage, response.usage_dict)
             await self._aemit_request_usage(
                 usage_dict=response.usage_dict,
                 step_usage=step_token_usage.copy(),
@@ -3378,9 +2985,7 @@ class ChatAgent(BaseAgent):
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
-                logger.info(
-                    f"Termination triggered at iteration {iteration_count}"
-                )
+                logger.info(f"Termination triggered at iteration {iteration_count}")
                 return self._step_terminate(
                     accumulated_context_tokens,
                     tool_call_records,
@@ -3394,10 +2999,7 @@ class ChatAgent(BaseAgent):
                 # Separate internal and external tool calls
                 internal_tool_requests = []
                 for tool_call_request in tool_call_requests:
-                    if (
-                        tool_call_request.tool_name
-                        in self._external_tool_schemas
-                    ):
+                    if tool_call_request.tool_name in self._external_tool_schemas:
                         if external_tool_call_requests is None:
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
@@ -3408,40 +3010,26 @@ class ChatAgent(BaseAgent):
                 # external) BEFORE executing any tools.
                 response_content = ""
                 if response.output_messages:
-                    response_content = (
-                        response.output_messages[0].content or ""
-                    )
-                self._record_assistant_tool_calls_from_requests(
-                    tool_call_requests, content=response_content
-                )
+                    response_content = response.output_messages[0].content or ""
+                self._record_assistant_tool_calls_from_requests(tool_call_requests, content=response_content)
                 recorded_tool_calls = True
 
                 # Execute internal tools only
                 for tool_call_request in internal_tool_requests:
-                    if (
-                        self.pause_event is not None
-                        and not self.pause_event.is_set()
-                    ):
+                    if self.pause_event is not None and not self.pause_event.is_set():
                         if isinstance(self.pause_event, asyncio.Event):
                             await self.pause_event.wait()
                         elif isinstance(self.pause_event, threading.Event):
                             loop = asyncio.get_event_loop()
-                            await loop.run_in_executor(
-                                None, self.pause_event.wait
-                            )
-                    tool_call_record = await self._aexecute_tool(
-                        tool_call_request
-                    )
+                            await loop.run_in_executor(None, self.pause_event.wait)
+                    tool_call_record = await self._aexecute_tool(tool_call_request)
                     tool_call_records.append(tool_call_record)
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
                     break
 
-                if (
-                    self.max_iteration is not None
-                    and iteration_count >= self.max_iteration
-                ):
+                if self.max_iteration is not None and iteration_count >= self.max_iteration:
                     break
 
                 # If we're still here, continue the loop
@@ -3451,26 +3039,17 @@ class ChatAgent(BaseAgent):
             if self.response_terminators:
                 # Check terminators to see if task is complete
                 termination_results = [
-                    terminator.is_terminated(response.output_messages)
-                    for terminator in self.response_terminators
+                    terminator.is_terminated(response.output_messages) for terminator in self.response_terminators
                 ]
-                should_terminate = any(
-                    terminated for terminated, _ in termination_results
-                )
+                should_terminate = any(terminated for terminated, _ in termination_results)
 
                 if should_terminate:
                     # Task is complete, exit the loop
                     break
 
                 # Task not complete - prompt the model to continue
-                if (
-                    self.max_iteration is not None
-                    and iteration_count >= self.max_iteration
-                ):
-                    logger.warning(
-                        f"Max iteration {self.max_iteration} reached without "
-                        "termination signal"
-                    )
+                if self.max_iteration is not None and iteration_count >= self.max_iteration:
+                    logger.warning(f"Max iteration {self.max_iteration} reached without termination signal")
                     break
 
                 # Add a continuation prompt to memory as a user message
@@ -3490,9 +3069,7 @@ class ChatAgent(BaseAgent):
 
         # Apply manual parsing if we used prompt-based formatting
         if used_prompt_formatting and original_response_format:
-            self._apply_prompt_based_parsing(
-                response, original_response_format
-            )
+            self._apply_prompt_based_parsing(response, original_response_format)
 
         # Only record final output if we haven't already recorded tool calls
         # for this response (to avoid duplicate assistant messages)
@@ -3521,9 +3098,7 @@ class ChatAgent(BaseAgent):
         """
         return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
-    def _update_token_usage_tracker(
-        self, tracker: Dict[str, int], usage_dict: Dict[str, int]
-    ) -> None:
+    def _update_token_usage_tracker(self, tracker: Dict[str, int], usage_dict: Dict[str, int]) -> None:
         r"""Updates a token usage tracker with values from a usage dictionary.
 
         Args:
@@ -3531,9 +3106,7 @@ class ChatAgent(BaseAgent):
             usage_dict (Dict[str, int]): The usage dictionary with new values.
         """
         tracker["prompt_tokens"] += usage_dict.get("prompt_tokens") or 0
-        tracker["completion_tokens"] += (
-            usage_dict.get("completion_tokens") or 0
-        )
+        tracker["completion_tokens"] += usage_dict.get("completion_tokens") or 0
         tracker["total_tokens"] += usage_dict.get("total_tokens") or 0
 
     def _emit_request_usage(
@@ -3556,16 +3129,12 @@ class ChatAgent(BaseAgent):
             callback_result = self.on_request_usage(payload)
             if inspect.isawaitable(callback_result):
                 logger.warning(
-                    "on_request_usage returned awaitable in sync step. "
-                    "Use a sync callback for `step`, or use `astep`."
+                    "on_request_usage returned awaitable in sync step. Use a sync callback for `step`, or use `astep`."
                 )
                 if inspect.iscoroutine(callback_result):
                     callback_result.close()
         except Exception as exc:
-            logger.warning(
-                f"on_request_usage callback failed at request "
-                f"{request_index}: {exc}"
-            )
+            logger.warning(f"on_request_usage callback failed at request {request_index}: {exc}")
 
     async def _aemit_request_usage(
         self,
@@ -3588,10 +3157,7 @@ class ChatAgent(BaseAgent):
             if inspect.isawaitable(callback_result):
                 await callback_result
         except Exception as exc:
-            logger.warning(
-                f"on_request_usage callback failed at request "
-                f"{request_index}: {exc}"
-            )
+            logger.warning(f"on_request_usage callback failed at request {request_index}: {exc}")
 
     def _build_request_usage_payload(
         self,
@@ -3652,10 +3218,7 @@ class ChatAgent(BaseAgent):
         if len(output_messages) == 1:
             self.record_message(output_messages[0])
         elif len(output_messages) == 0:
-            logger.warning(
-                "No messages returned in `step()`. The model returned an "
-                "empty response."
-            )
+            logger.warning("No messages returned in `step()`. The model returned an empty response.")
         else:
             logger.warning(
                 f"{len(output_messages)} messages returned in `step()`. "
@@ -3676,9 +3239,7 @@ class ChatAgent(BaseAgent):
 
         for attempt in range(self.retry_attempts):
             try:
-                response = self.model_backend.run(
-                    openai_messages, response_format, tool_schemas or None
-                )
+                response = self.model_backend.run(openai_messages, response_format, tool_schemas or None)
                 if response:
                     break
             except RateLimitError as e:
@@ -3687,15 +3248,11 @@ class ChatAgent(BaseAgent):
                     delay = min(self.retry_delay * (2**attempt), 60.0)
                     delay = random.uniform(0, delay)  # Add jitter
                     logger.warning(
-                        f"Rate limit hit (attempt {attempt + 1}"
-                        f"/{self.retry_attempts}). Retrying in {delay:.1f}s"
+                        f"Rate limit hit (attempt {attempt + 1}/{self.retry_attempts}). Retrying in {delay:.1f}s"
                     )
                     time.sleep(delay)
                 else:
-                    logger.error(
-                        f"Rate limit exhausted after "
-                        f"{self.retry_attempts} attempts"
-                    )
+                    logger.error(f"Rate limit exhausted after {self.retry_attempts} attempts")
             except Exception:
                 logger.error(
                     f"Model error: {self.model_backend.model_type}",
@@ -3704,23 +3261,15 @@ class ChatAgent(BaseAgent):
         else:
             # Loop completed without success
             raise ModelProcessingError(
-                f"Unable to process messages: "
-                f"{str(last_error) if last_error else 'Unknown error'}"
+                f"Unable to process messages: {str(last_error) if last_error else 'Unknown error'}"
             )
 
         # Log success
-        sanitized = self._sanitize_messages_for_logging(
-            openai_messages, prev_num_openai_messages
-        )
-        logger.info(
-            f"Model {self.model_backend.model_type} "
-            f"[{current_iteration}]: {sanitized}"
-        )
+        sanitized = self._sanitize_messages_for_logging(openai_messages, prev_num_openai_messages)
+        logger.info(f"Model {self.model_backend.model_type} [{current_iteration}]: {sanitized}")
 
         if not isinstance(response, ChatCompletion):
-            raise TypeError(
-                f"Expected ChatCompletion, got {type(response).__name__}"
-            )
+            raise TypeError(f"Expected ChatCompletion, got {type(response).__name__}")
 
         return self._handle_batch_response(response)
 
@@ -3738,9 +3287,7 @@ class ChatAgent(BaseAgent):
 
         for attempt in range(self.retry_attempts):
             try:
-                response = await self.model_backend.arun(
-                    openai_messages, response_format, tool_schemas or None
-                )
+                response = await self.model_backend.arun(openai_messages, response_format, tool_schemas or None)
                 if response:
                     break
             except RateLimitError as e:
@@ -3749,16 +3296,11 @@ class ChatAgent(BaseAgent):
                     delay = min(self.retry_delay * (2**attempt), 60.0)
                     delay = random.uniform(0, delay)  # Add jitter
                     logger.warning(
-                        f"Rate limit hit (attempt {attempt + 1}"
-                        f"/{self.retry_attempts}). "
-                        f"Retrying in {delay:.1f}s"
+                        f"Rate limit hit (attempt {attempt + 1}/{self.retry_attempts}). Retrying in {delay:.1f}s"
                     )
                     await asyncio.sleep(delay)
                 else:
-                    logger.error(
-                        f"Rate limit exhausted after "
-                        f"{self.retry_attempts} attempts"
-                    )
+                    logger.error(f"Rate limit exhausted after {self.retry_attempts} attempts")
             except Exception:
                 logger.error(
                     f"Model error: {self.model_backend.model_type}",
@@ -3768,29 +3310,19 @@ class ChatAgent(BaseAgent):
         else:
             # Loop completed without success
             raise ModelProcessingError(
-                f"Unable to process messages: "
-                f"{str(last_error) if last_error else 'Unknown error'}"
+                f"Unable to process messages: {str(last_error) if last_error else 'Unknown error'}"
             )
 
         # Log success
-        sanitized = self._sanitize_messages_for_logging(
-            openai_messages, prev_num_openai_messages
-        )
-        logger.info(
-            f"Model {self.model_backend.model_type} "
-            f"[{current_iteration}]: {sanitized}"
-        )
+        sanitized = self._sanitize_messages_for_logging(openai_messages, prev_num_openai_messages)
+        logger.info(f"Model {self.model_backend.model_type} [{current_iteration}]: {sanitized}")
 
         if not isinstance(response, ChatCompletion):
-            raise TypeError(
-                f"Expected ChatCompletion, got {type(response).__name__}"
-            )
+            raise TypeError(f"Expected ChatCompletion, got {type(response).__name__}")
 
         return self._handle_batch_response(response)
 
-    def _sanitize_messages_for_logging(
-        self, messages, prev_num_openai_messages: int
-    ):
+    def _sanitize_messages_for_logging(self, messages, prev_num_openai_messages: int):
         r"""Sanitize OpenAI messages for logging by replacing base64 image
         data with a simple message and a link to view the image.
 
@@ -3809,23 +3341,16 @@ class ChatAgent(BaseAgent):
             if isinstance(msg, dict):
                 sanitized_msg = msg.copy()
                 # Check if content is a list (multimodal content with images)
-                if isinstance(sanitized_msg.get('content'), list):
+                if isinstance(sanitized_msg.get("content"), list):
                     content_list = []
-                    for item in sanitized_msg['content']:
-                        if (
-                            isinstance(item, dict)
-                            and item.get('type') == 'image_url'
-                        ):
+                    for item in sanitized_msg["content"]:
+                        if isinstance(item, dict) and item.get("type") == "image_url":
                             # Handle image URL
-                            image_url = item.get('image_url', {}).get(
-                                'url', ''
-                            )
-                            if image_url and image_url.startswith(
-                                'data:image'
-                            ):
+                            image_url = item.get("image_url", {}).get("url", "")
+                            if image_url and image_url.startswith("data:image"):
                                 # Extract image data and format
                                 match = re.match(
-                                    r'data:image/([^;]+);base64,(.+)',
+                                    r"data:image/([^;]+);base64,(.+)",
                                     image_url,
                                 )
                                 if match:
@@ -3833,37 +3358,23 @@ class ChatAgent(BaseAgent):
 
                                     # Create a hash of the image data to use
                                     # as filename
-                                    img_hash = hashlib.md5(
-                                        base64_data[:100].encode()
-                                    ).hexdigest()[:10]
-                                    img_filename = (
-                                        f"image_{img_hash}.{img_format}"
-                                    )
+                                    img_hash = hashlib.md5(base64_data[:100].encode()).hexdigest()[:10]
+                                    img_filename = f"image_{img_hash}.{img_format}"
 
                                     # Save image to temp directory for viewing
                                     try:
                                         # Sanitize img_format to prevent path
                                         # traversal
-                                        safe_format = re.sub(
-                                            r'[^a-zA-Z0-9]', '', img_format
-                                        )[:10]
-                                        img_filename = (
-                                            f"image_{img_hash}.{safe_format}"
-                                        )
+                                        safe_format = re.sub(r"[^a-zA-Z0-9]", "", img_format)[:10]
+                                        img_filename = f"image_{img_hash}.{safe_format}"
 
                                         temp_dir = tempfile.gettempdir()
-                                        img_path = os.path.join(
-                                            temp_dir, img_filename
-                                        )
+                                        img_path = os.path.join(temp_dir, img_filename)
 
                                         # Only save if file doesn't exist
                                         if not os.path.exists(img_path):
-                                            with open(img_path, 'wb') as f:
-                                                f.write(
-                                                    base64.b64decode(
-                                                        base64_data
-                                                    )
-                                                )
+                                            with open(img_path, "wb") as f:
+                                                f.write(base64.b64decode(base64_data))
                                             # Register for cleanup
                                             with _temp_files_lock:
                                                 _temp_files.add(img_path)
@@ -3874,12 +3385,10 @@ class ChatAgent(BaseAgent):
 
                                         content_list.append(
                                             {
-                                                'type': 'image_url',
-                                                'image_url': {
-                                                    'url': f'{file_url}',
-                                                    'detail': item.get(
-                                                        'image_url', {}
-                                                    ).get('detail', 'auto'),
+                                                "type": "image_url",
+                                                "image_url": {
+                                                    "url": f"{file_url}",
+                                                    "detail": item.get("image_url", {}).get("detail", "auto"),
                                                 },
                                             }
                                         )
@@ -3888,15 +3397,10 @@ class ChatAgent(BaseAgent):
                                         # message
                                         content_list.append(
                                             {
-                                                'type': 'image_url',
-                                                'image_url': {
-                                                    'url': '[base64 '
-                                                    + 'image - error saving: '
-                                                    + str(e)
-                                                    + ']',
-                                                    'detail': item.get(
-                                                        'image_url', {}
-                                                    ).get('detail', 'auto'),
+                                                "type": "image_url",
+                                                "image_url": {
+                                                    "url": "[base64 " + "image - error saving: " + str(e) + "]",
+                                                    "detail": item.get("image_url", {}).get("detail", "auto"),
                                                 },
                                             }
                                         )
@@ -3905,13 +3409,10 @@ class ChatAgent(BaseAgent):
                                     # message
                                     content_list.append(
                                         {
-                                            'type': 'image_url',
-                                            'image_url': {
-                                                'url': '[base64 '
-                                                + 'image - invalid format]',
-                                                'detail': item.get(
-                                                    'image_url', {}
-                                                ).get('detail', 'auto'),
+                                            "type": "image_url",
+                                            "image_url": {
+                                                "url": "[base64 " + "image - invalid format]",
+                                                "detail": item.get("image_url", {}).get("detail", "auto"),
                                             },
                                         }
                                     )
@@ -3919,7 +3420,7 @@ class ChatAgent(BaseAgent):
                                 content_list.append(item)
                         else:
                             content_list.append(item)
-                    sanitized_msg['content'] = content_list
+                    sanitized_msg["content"] = content_list
                 sanitized_messages.append(sanitized_msg)
             else:
                 sanitized_messages.append(msg)
@@ -3967,17 +3468,10 @@ class ChatAgent(BaseAgent):
             termination, the agent's state is updated accordingly, and the
             termination reason is recorded.
         """
-        termination = [
-            terminator.is_terminated(output_messages)
-            for terminator in self.response_terminators
-        ]
+        termination = [terminator.is_terminated(output_messages) for terminator in self.response_terminators]
         # Terminate the agent if any of the terminator terminates
         self.terminated, termination_reason = next(
-            (
-                (terminated, termination_reason)
-                for terminated, termination_reason in termination
-                if terminated
-            ),
+            ((terminated, termination_reason) for terminated, termination_reason in termination if terminated),
             (False, None),
         )
         # For now only retain the first termination reason
@@ -3993,9 +3487,7 @@ class ChatAgent(BaseAgent):
             external_tool_call_requests,
         )
 
-    def _handle_batch_response(
-        self, response: ChatCompletion
-    ) -> ModelResponse:
+    def _handle_batch_response(self, response: ChatCompletion) -> ModelResponse:
         r"""Process a batch response from the model and extract the necessary
         information.
 
@@ -4009,8 +3501,7 @@ class ChatAgent(BaseAgent):
         for choice in response.choices:
             # Skip messages with no meaningful content
             if (
-                choice.message.content is None
-                or choice.message.content.strip() == ""
+                choice.message.content is None or choice.message.content.strip() == ""
             ) and not choice.message.tool_calls:
                 continue
 
@@ -4018,9 +3509,7 @@ class ChatAgent(BaseAgent):
             if logprobs_info := handle_logprobs(choice):
                 meta_dict["logprobs_info"] = logprobs_info
 
-            reasoning_content = getattr(
-                choice.message, "reasoning_content", None
-            )
+            reasoning_content = getattr(choice.message, "reasoning_content", None)
 
             chat_message = BaseMessage(
                 role_name=self.role_name,
@@ -4033,9 +3522,7 @@ class ChatAgent(BaseAgent):
 
             output_messages.append(chat_message)
 
-        finish_reasons = [
-            str(choice.finish_reason) for choice in response.choices
-        ]
+        finish_reasons = [str(choice.finish_reason) for choice in response.choices]
 
         usage = {}
         if response.usage is not None:
@@ -4048,7 +3535,7 @@ class ChatAgent(BaseAgent):
                 tool_name = tool_call.function.name  # type: ignore[union-attr]
                 tool_call_id = tool_call.id
                 args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
-                extra_content = getattr(tool_call, 'extra_content', None)
+                extra_content = getattr(tool_call, "extra_content", None)
 
                 tool_call_request = ToolCallRequest(
                     tool_name=tool_name,
@@ -4179,17 +3666,15 @@ class ChatAgent(BaseAgent):
         else:
             try:
                 # Try different invocation paths in order of preference
-                if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
+                if hasattr(tool, "func") and hasattr(tool.func, "async_call"):
                     # Case: FunctionTool wrapping an MCP tool
                     raw_result = await tool.func.async_call(**args)
 
-                elif hasattr(tool, 'async_call') and callable(tool.async_call):
+                elif hasattr(tool, "async_call") and callable(tool.async_call):
                     # Case: tool itself has async_call
                     raw_result = await tool.async_call(**args)
 
-                elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
-                    tool.func
-                ):
+                elif hasattr(tool, "func") and asyncio.iscoroutinefunction(tool.func):
                     # Case: tool wraps a direct async function
                     raw_result = await tool.func(**args)
 
@@ -4201,9 +3686,7 @@ class ChatAgent(BaseAgent):
                     # Fallback: synchronous call
                     # Use functools.partial to properly capture args
                     loop = asyncio.get_running_loop()
-                    raw_result = await loop.run_in_executor(
-                        None, functools.partial(tool, **args)
-                    )
+                    raw_result = await loop.run_in_executor(None, functools.partial(tool, **args))
 
                 if self.mask_tool_output:
                     with self._secure_result_store_lock:
@@ -4263,9 +3746,7 @@ class ChatAgent(BaseAgent):
         """
         # Truncate tool result if it exceeds the maximum token limit
         # This prevents single tool calls from exceeding context window
-        truncated_result, was_truncated = self._truncate_tool_result(
-            func_name, result
-        )
+        truncated_result, was_truncated = self._truncate_tool_result(func_name, result)
         result_for_memory = truncated_result if was_truncated else result
 
         # Create the tool response message
@@ -4319,9 +3800,7 @@ class ChatAgent(BaseAgent):
         self._update_last_tool_call_state(tool_record)
         return tool_record
 
-    def _inject_tool_images_into_memory(
-        self, func_name: str, image_list: List[str]
-    ) -> None:
+    def _inject_tool_images_into_memory(self, func_name: str, image_list: List[str]) -> None:
         r"""Inject images from a tool result into agent memory.
 
         Args:
@@ -4343,14 +3822,13 @@ class ChatAgent(BaseAgent):
                 return
 
             logger.info(
-                f"Tool '{func_name}' returned ToolResult with "
-                f"{len(image_list)} image(s), injecting into context"
+                f"Tool '{func_name}' returned ToolResult with {len(image_list)} image(s), injecting into context"
             )
 
             pil_images: List[Union[Image.Image, str]] = []
             for img_data in image_list:
-                if img_data.startswith('data:image/'):
-                    base64_str = img_data.split(',', 1)[1]
+                if img_data.startswith("data:image/"):
+                    base64_str = img_data.split(",", 1)[1]
                     img_bytes = base64.b64decode(base64_str)
                     pil_img = Image.open(io.BytesIO(img_bytes))
                     pil_images.append(pil_img)
@@ -4366,14 +3844,9 @@ class ChatAgent(BaseAgent):
                     OpenAIBackendRole.USER,
                     return_records=False,
                 )
-                logger.info(
-                    f"Successfully injected {len(pil_images)} "
-                    "image(s) into agent context"
-                )
+                logger.info(f"Successfully injected {len(pil_images)} image(s) into agent context")
         except Exception as e:
-            logger.error(
-                f"Failed to inject visual content from {func_name}: {e}"
-            )
+            logger.error(f"Failed to inject visual content from {func_name}: {e}")
 
     def _stream(
         self,
@@ -4395,44 +3868,34 @@ class ChatAgent(BaseAgent):
                 available.
         """
         # Handle response format compatibility with non-strict tools
-        input_message, response_format, _ = (
-            self._handle_response_format_with_non_strict_tools(
-                input_message, response_format
-            )
+        input_message, response_format, _ = self._handle_response_format_with_non_strict_tools(
+            input_message, response_format
         )
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
-            input_message = BaseMessage.make_user_message(
-                role_name="User", content=input_message
-            )
+            input_message = BaseMessage.make_user_message(role_name="User", content=input_message)
 
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         # Get context for streaming
         try:
-            openai_messages, num_tokens = (
-                self._get_context_with_summarization()
-            )
+            openai_messages, num_tokens = self._get_context_with_summarization()
         except RuntimeError as e:
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
 
         # Start streaming response
-        yield from self._stream_response(
-            openai_messages, num_tokens, response_format
-        )
+        yield from self._stream_response(openai_messages, num_tokens, response_format)
 
     def _get_token_count(self, content: str) -> int:
         r"""Get token count for content with fallback."""
-        if hasattr(self.model_backend, 'token_counter'):
+        if hasattr(self.model_backend, "token_counter"):
             try:
                 return len(self.model_backend.token_counter.encode(content))
             except BaseException as e:
-                logger.debug(
-                    f"Token counting failed, using char fallback: {e}"
-                )
+                logger.debug(f"Token counting failed, using char fallback: {e}")
         # Conservative estimate: ~3 chars per token
         return len(content) // 3
 
@@ -4478,12 +3941,8 @@ class ChatAgent(BaseAgent):
         while True:
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
-                logger.info(
-                    f"Termination triggered at iteration {iteration_count}"
-                )
-                yield self._step_terminate(
-                    num_tokens, tool_call_records, "termination_triggered"
-                )
+                logger.info(f"Termination triggered at iteration {iteration_count}")
+                yield self._step_terminate(num_tokens, tool_call_records, "termination_triggered")
                 return
 
             # Get streaming response from model
@@ -4495,9 +3954,7 @@ class ChatAgent(BaseAgent):
                 )
                 iteration_count += 1
             except Exception as exc:
-                logger.error(
-                    f"Error in streaming model response: {exc}", exc_info=exc
-                )
+                logger.error(f"Error in streaming model response: {exc}", exc_info=exc)
                 yield self._create_error_response(str(exc), tool_call_records)
                 return
 
@@ -4507,8 +3964,8 @@ class ChatAgent(BaseAgent):
                 isinstance(response, Stream)
                 or inspect.isgenerator(response)
                 or (
-                    hasattr(response, '__iter__')
-                    and hasattr(response, '__enter__')
+                    hasattr(response, "__iter__")
+                    and hasattr(response, "__enter__")
                     and not isinstance(response, ChatCompletion)
                 )
             ):
@@ -4539,15 +3996,10 @@ class ChatAgent(BaseAgent):
 
                     # If we executed tools and not in
                     # single iteration mode, continue
-                    if tool_call_records and (
-                        self.max_iteration is None
-                        or iteration_count < self.max_iteration
-                    ):
+                    if tool_call_records and (self.max_iteration is None or iteration_count < self.max_iteration):
                         # Update messages with tool results for next iteration
                         try:
-                            openai_messages, num_tokens = (
-                                self.memory.get_context()
-                            )
+                            openai_messages, num_tokens = self.memory.get_context()
                         except RuntimeError as e:
                             yield self._step_terminate(
                                 e.args[1],
@@ -4564,9 +4016,7 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, '__enter__') and not hasattr(
-                response, '__iter__'
-            ):
+            elif hasattr(response, "__enter__") and not hasattr(response, "__iter__"):
                 request_token_usage = self._create_token_usage_tracker()
                 # Handle structured output stream (ChatCompletionStreamManager)
                 # This catches context managers that aren't iterators
@@ -4589,12 +4039,9 @@ class ChatAgent(BaseAgent):
                             parsed_object = getattr(event, "parsed", None)
                             break
                         elif event.type == "error":
-                            logger.error(
-                                f"Error in structured stream: "
-                                f"{getattr(event, 'error', '')}"
-                            )
+                            logger.error(f"Error in structured stream: {getattr(event, 'error', '')}")
                             yield self._create_error_response(
-                                str(getattr(event, 'error', '')),
+                                str(getattr(event, "error", "")),
                                 tool_call_records,
                             )
                             return
@@ -4602,13 +4049,8 @@ class ChatAgent(BaseAgent):
                     # Get final completion and record final message
                     try:
                         final_completion = stream.get_final_completion()
-                        final_content = (
-                            final_completion.choices[0].message.content or ""
-                        )
-                        final_reasoning = (
-                            content_accumulator.get_full_reasoning_content()
-                            or None
-                        )
+                        final_content = final_completion.choices[0].message.content or ""
+                        final_reasoning = content_accumulator.get_full_reasoning_content() or None
 
                         final_message = BaseMessage(
                             role_name=self.role_name,
@@ -4624,11 +4066,7 @@ class ChatAgent(BaseAgent):
 
                         self.record_message(final_message)
 
-                        request_usage = (
-                            safe_model_dump(final_completion.usage)
-                            if final_completion.usage
-                            else {}
-                        )
+                        request_usage = safe_model_dump(final_completion.usage) if final_completion.usage else {}
                         self._update_token_usage_tracker(
                             request_token_usage,
                             request_usage,
@@ -4646,19 +4084,14 @@ class ChatAgent(BaseAgent):
                                 "id": final_completion.id or "",
                                 "usage": step_token_usage.copy(),
                                 "finish_reasons": [
-                                    choice.finish_reason or "stop"
-                                    for choice in final_completion.choices
+                                    choice.finish_reason or "stop" for choice in final_completion.choices
                                 ],
-                                "num_tokens": self._get_token_count(
-                                    final_content
-                                ),
+                                "num_tokens": self._get_token_count(final_content),
                                 "tool_calls": tool_call_records,
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
-                                "stream_accumulate_mode": "accumulate"
-                                if self.stream_accumulate
-                                else "delta",
+                                "stream_accumulate_mode": "accumulate" if self.stream_accumulate else "delta",
                             },
                         )
                         self._emit_request_usage(
@@ -4672,18 +4105,14 @@ class ChatAgent(BaseAgent):
 
                     except Exception as e:
                         logger.error(f"Error getting final completion: {e}")
-                        yield self._create_error_response(
-                            str(e), tool_call_records
-                        )
+                        yield self._create_error_response(str(e), tool_call_records)
                         return
             else:
                 # Handle non-streaming response (fallback)
                 model_response = self._handle_batch_response(
                     response  # type: ignore[arg-type]
                 )
-                self._update_token_usage_tracker(
-                    step_token_usage, model_response.usage_dict
-                )
+                self._update_token_usage_tracker(step_token_usage, model_response.usage_dict)
                 self._emit_request_usage(
                     usage_dict=model_response.usage_dict,
                     step_usage=step_token_usage.copy(),
@@ -4719,7 +4148,7 @@ class ChatAgent(BaseAgent):
         last_response_id = ""
 
         for chunk in stream:
-            last_response_id = getattr(chunk, 'id', '') or last_response_id
+            last_response_id = getattr(chunk, "id", "") or last_response_id
             has_choices = bool(chunk.choices and len(chunk.choices) > 0)
 
             # Process chunk delta
@@ -4728,45 +4157,34 @@ class ChatAgent(BaseAgent):
                 delta = choice.delta
 
                 # Handle reasoning content streaming (for DeepSeek reasoner)
-                if (
-                    hasattr(delta, 'reasoning_content')
-                    and delta.reasoning_content
-                ):
-                    content_accumulator.add_reasoning_content(
-                        delta.reasoning_content
-                    )
+                if hasattr(delta, "reasoning_content") and delta.reasoning_content:
+                    content_accumulator.add_reasoning_content(delta.reasoning_content)
                     # Yield partial response with reasoning content
-                    partial_response = (
-                        self._create_streaming_response_with_accumulator(
-                            content_accumulator,
-                            "",  # No regular content yet
-                            step_token_usage,
-                            getattr(chunk, 'id', ''),
-                            tool_call_records.copy(),
-                            reasoning_delta=delta.reasoning_content,
-                        )
+                    partial_response = self._create_streaming_response_with_accumulator(
+                        content_accumulator,
+                        "",  # No regular content yet
+                        step_token_usage,
+                        getattr(chunk, "id", ""),
+                        tool_call_records.copy(),
+                        reasoning_delta=delta.reasoning_content,
                     )
                     yield partial_response
 
                 # Handle content streaming
                 if delta.content:
                     # Use accumulator for proper content management
-                    partial_response = (
-                        self._create_streaming_response_with_accumulator(
-                            content_accumulator,
-                            delta.content,
-                            step_token_usage,
-                            getattr(chunk, 'id', ''),
-                            tool_call_records.copy(),
-                        )
+                    partial_response = self._create_streaming_response_with_accumulator(
+                        content_accumulator,
+                        delta.content,
+                        step_token_usage,
+                        getattr(chunk, "id", ""),
+                        tool_call_records.copy(),
                     )
                     yield partial_response
 
                 # Handle tool calls streaming
                 if delta.tool_calls:
-                    tool_calls_complete = self._accumulate_tool_calls(
-                        delta.tool_calls, accumulated_tool_calls
-                    )
+                    tool_calls_complete = self._accumulate_tool_calls(delta.tool_calls, accumulated_tool_calls)
 
                 # Check if stream is complete
                 if choice.finish_reason:
@@ -4777,9 +4195,7 @@ class ChatAgent(BaseAgent):
                     if accumulated_tool_calls:
                         # Execute tools synchronously with
                         # optimized status updates
-                        for (
-                            status_response
-                        ) in self._execute_tools_sync_with_status_accumulator(
+                        for status_response in self._execute_tools_sync_with_status_accumulator(
                             accumulated_tool_calls,
                             tool_call_records,
                         ):
@@ -4794,19 +4210,12 @@ class ChatAgent(BaseAgent):
                     # will handle message recording.
                     final_content = content_accumulator.get_full_content()
                     if final_content.strip() and not accumulated_tool_calls:
-                        final_reasoning = (
-                            content_accumulator.get_full_reasoning_content()
-                            or None
-                        )
+                        final_reasoning = content_accumulator.get_full_reasoning_content() or None
 
                         # Extract <think> tags from accumulated
                         # streaming content when reasoning_content
                         # is not already set by the model.
-                        final_content, final_reasoning = (
-                            extract_thinking_from_content(
-                                final_content, final_reasoning
-                            )
-                        )
+                        final_content, final_reasoning = extract_thinking_from_content(final_content, final_reasoning)
 
                         final_message = BaseMessage(
                             role_name=self.role_name,
@@ -4817,49 +4226,32 @@ class ChatAgent(BaseAgent):
                         )
 
                         if response_format:
-                            self._try_format_message(
-                                final_message, response_format
-                            )
+                            self._try_format_message(final_message, response_format)
 
                         self.record_message(final_message)
             if chunk.usage:
                 # Handle final usage chunk, whether or not choices are present.
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
-                self._update_token_usage_tracker(
-                    request_token_usage, safe_model_dump(chunk.usage)
-                )
-                self._update_token_usage_tracker(
-                    step_token_usage, safe_model_dump(chunk.usage)
-                )
+                self._update_token_usage_tracker(request_token_usage, safe_model_dump(chunk.usage))
+                self._update_token_usage_tracker(step_token_usage, safe_model_dump(chunk.usage))
 
                 # Create final response with final usage
                 should_finalize = stream_completed or not has_choices
                 if should_finalize:
                     final_content = content_accumulator.get_full_content()
                     if final_content.strip():
-                        final_reasoning = (
-                            content_accumulator.get_full_reasoning_content()
-                            or None
-                        )
+                        final_reasoning = content_accumulator.get_full_reasoning_content() or None
 
                         # Extract <think> tags from accumulated
                         # streaming content when reasoning_content
                         # is not already set by the model.
-                        final_content, final_reasoning = (
-                            extract_thinking_from_content(
-                                final_content, final_reasoning
-                            )
-                        )
+                        final_content, final_reasoning = extract_thinking_from_content(final_content, final_reasoning)
 
                         # In delta mode, final response content should be empty
                         # since all content was already yielded incrementally
-                        display_content = (
-                            final_content if self.stream_accumulate else ""
-                        )
-                        display_reasoning = (
-                            final_reasoning if self.stream_accumulate else None
-                        )
+                        display_content = final_content if self.stream_accumulate else ""
+                        display_reasoning = final_reasoning if self.stream_accumulate else None
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
@@ -4869,28 +4261,22 @@ class ChatAgent(BaseAgent):
                         )
 
                         if response_format:
-                            self._try_format_message(
-                                final_message, response_format
-                            )
+                            self._try_format_message(final_message, response_format)
 
                         # Create final response with final usage (not partial)
                         final_response = ChatAgentResponse(
                             msgs=[final_message],
                             terminated=False,
                             info={
-                                "id": getattr(chunk, 'id', ''),
+                                "id": getattr(chunk, "id", ""),
                                 "usage": step_token_usage.copy(),
                                 "finish_reasons": ["stop"],
-                                "num_tokens": self._get_token_count(
-                                    final_content
-                                ),
+                                "num_tokens": self._get_token_count(final_content),
                                 "tool_calls": tool_call_records or [],
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
-                                "stream_accumulate_mode": "accumulate"
-                                if self.stream_accumulate
-                                else "delta",
+                                "stream_accumulate_mode": "accumulate" if self.stream_accumulate else "delta",
                             },
                         )
                         yield final_response
@@ -4919,14 +4305,14 @@ class ChatAgent(BaseAgent):
             bool: True if any tool call is complete, False otherwise.
         """
 
-        index_map_key = '_index_to_key_map'
+        index_map_key = "_index_to_key_map"
         if index_map_key not in accumulated_tool_calls:
             accumulated_tool_calls[index_map_key] = {}
         index_map = accumulated_tool_calls[index_map_key]
 
         for delta_tool_call in tool_call_deltas:
-            index = getattr(delta_tool_call, 'index', None)
-            tool_call_id = getattr(delta_tool_call, 'id', None)
+            index = getattr(delta_tool_call, "index", None)
+            tool_call_id = getattr(delta_tool_call, "id", None)
 
             # Determine entry key
             if index is not None:
@@ -4938,9 +4324,7 @@ class ChatAgent(BaseAgent):
                         # First time seeing this index, use tool_call_id as key
                         entry_key = tool_call_id
                     elif current_key in accumulated_tool_calls:
-                        existing_id = accumulated_tool_calls[current_key].get(
-                            'id'
-                        )
+                        existing_id = accumulated_tool_calls[current_key].get("id")
                         if existing_id and existing_id != tool_call_id:
                             # ID changed: use new ID as key
                             entry_key = tool_call_id
@@ -4960,67 +4344,53 @@ class ChatAgent(BaseAgent):
             elif tool_call_id is not None:
                 entry_key = tool_call_id
             else:
-                entry_key = '0'  # Default fallback as string
+                entry_key = "0"  # Default fallback as string
 
             # Initialize tool call entry if not exists
             if entry_key not in accumulated_tool_calls:
                 accumulated_tool_calls[entry_key] = {
-                    'id': '',
-                    'type': 'function',
-                    'function': {'name': '', 'arguments': ''},
-                    'extra_content': None,
-                    'complete': False,
+                    "id": "",
+                    "type": "function",
+                    "function": {"name": "", "arguments": ""},
+                    "extra_content": None,
+                    "complete": False,
                 }
 
             tool_call_entry = accumulated_tool_calls[entry_key]
 
             # Accumulate tool call data
             if tool_call_id:
-                tool_call_entry['id'] = (
-                    tool_call_id  # Set full ID, don't append
-                )
+                tool_call_entry["id"] = tool_call_id  # Set full ID, don't append
 
-            if (
-                hasattr(delta_tool_call, 'function')
-                and delta_tool_call.function
-            ):
+            if hasattr(delta_tool_call, "function") and delta_tool_call.function:
                 if delta_tool_call.function.name:
-                    tool_call_entry['function']['name'] += (
-                        delta_tool_call.function.name
-                    )  # Append incremental name
+                    tool_call_entry["function"]["name"] += delta_tool_call.function.name  # Append incremental name
                 if delta_tool_call.function.arguments:
-                    tool_call_entry['function']['arguments'] += (
-                        delta_tool_call.function.arguments
-                    )
+                    tool_call_entry["function"]["arguments"] += delta_tool_call.function.arguments
             # Handle extra_content if present
-            if (
-                hasattr(delta_tool_call, 'extra_content')
-                and delta_tool_call.extra_content
-            ):
-                tool_call_entry['extra_content'] = (
-                    delta_tool_call.extra_content
-                )
+            if hasattr(delta_tool_call, "extra_content") and delta_tool_call.extra_content:
+                tool_call_entry["extra_content"] = delta_tool_call.extra_content
 
         # Check if any tool calls are complete
         any_complete = False
         for _index, tool_call_entry in accumulated_tool_calls.items():
             # Skip internal mapping key
-            if _index == '_index_to_key_map':
+            if _index == "_index_to_key_map":
                 continue
             if (
-                tool_call_entry['id']
-                and tool_call_entry['function']['name']
-                and tool_call_entry['function']['arguments']
-                and tool_call_entry['function']['name'] in self._internal_tools
+                tool_call_entry["id"]
+                and tool_call_entry["function"]["name"]
+                and tool_call_entry["function"]["arguments"]
+                and tool_call_entry["function"]["name"] in self._internal_tools
             ):
                 try:
                     # Try to parse arguments to check completeness
-                    json.loads(tool_call_entry['function']['arguments'])
-                    tool_call_entry['complete'] = True
+                    json.loads(tool_call_entry["function"]["arguments"])
+                    tool_call_entry["complete"] = True
                     any_complete = True
                 except json.JSONDecodeError:
                     # Arguments not complete yet
-                    tool_call_entry['complete'] = False
+                    tool_call_entry["complete"] = False
 
         return any_complete
 
@@ -5035,9 +4405,9 @@ class ChatAgent(BaseAgent):
         tool_calls_to_execute = []
         for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
             # Skip internal mapping key
-            if _tool_call_index == '_index_to_key_map':
+            if _tool_call_index == "_index_to_key_map":
                 continue
-            if tool_call_data.get('complete', False):
+            if tool_call_data.get("complete", False):
                 tool_calls_to_execute.append(tool_call_data)
 
         if not tool_calls_to_execute:
@@ -5050,35 +4420,27 @@ class ChatAgent(BaseAgent):
 
         # Execute tools using ThreadPoolExecutor for proper timeout handling
         # Use max_workers=len() for parallel execution, with min of 1
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=max(1, len(tool_calls_to_execute))
-        ) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(tool_calls_to_execute))) as executor:
             # Submit all tools first (parallel execution)
             futures_map = {}
             for tool_call_data in tool_calls_to_execute:
-                function_name = tool_call_data['function']['name']
+                function_name = tool_call_data["function"]["name"]
                 try:
-                    args = json.loads(tool_call_data['function']['arguments'])
+                    args = json.loads(tool_call_data["function"]["arguments"])
                 except json.JSONDecodeError:
-                    args = tool_call_data['function']['arguments']
+                    args = tool_call_data["function"]["arguments"]
 
                 # Log debug info
-                logger.info(
-                    f"Calling function: {function_name} with arguments: {args}"
-                )
+                logger.info(f"Calling function: {function_name} with arguments: {args}")
 
                 # Submit tool execution (non-blocking)
-                future = executor.submit(
-                    self._execute_tool_from_stream_data, tool_call_data
-                )
+                future = executor.submit(self._execute_tool_from_stream_data, tool_call_data)
                 futures_map[future] = (function_name, tool_call_data)
 
             # Wait for all futures to complete (or timeout)
             for future in concurrent.futures.as_completed(
                 futures_map.keys(),
-                timeout=self.tool_execution_timeout
-                if self.tool_execution_timeout
-                else None,
+                timeout=self.tool_execution_timeout if self.tool_execution_timeout else None,
             ):
                 function_name, tool_call_data = futures_map[future]
 
@@ -5086,27 +4448,18 @@ class ChatAgent(BaseAgent):
                     tool_call_record = future.result()
                     if tool_call_record:
                         tool_call_records.append(tool_call_record)
-                        logger.info(
-                            f"Function output: {tool_call_record.result}"
-                        )
+                        logger.info(f"Function output: {tool_call_record.result}")
                 except concurrent.futures.TimeoutError:
-                    logger.warning(
-                        f"Function '{function_name}' timed out after "
-                        f"{self.tool_execution_timeout} seconds"
-                    )
+                    logger.warning(f"Function '{function_name}' timed out after {self.tool_execution_timeout} seconds")
                     future.cancel()
                 except Exception as e:
-                    logger.error(
-                        f"Error executing tool '{function_name}': {e}"
-                    )
+                    logger.error(f"Error executing tool '{function_name}': {e}")
 
         # Ensure this function remains a generator (required by type signature)
         return
         yield  # This line is never reached but makes this a generator function
 
-    def _execute_tool_from_stream_data(
-        self, tool_call_data: Dict[str, Any]
-    ) -> Optional[ToolCallingRecord]:
+    def _execute_tool_from_stream_data(self, tool_call_data: Dict[str, Any]) -> Optional[ToolCallingRecord]:
         r"""Execute a tool from accumulated stream data.
 
         Note: The assistant message with tool_calls should be recorded BEFORE
@@ -5115,10 +4468,10 @@ class ChatAgent(BaseAgent):
         """
 
         try:
-            function_name = tool_call_data['function']['name']
-            args = json.loads(tool_call_data['function']['arguments'])
-            tool_call_id = tool_call_data['id']
-            extra_content = tool_call_data.get('extra_content')
+            function_name = tool_call_data["function"]["name"]
+            args = json.loads(tool_call_data["function"]["arguments"])
+            tool_call_id = tool_call_data["id"]
+            extra_content = tool_call_data.get("extra_content")
 
             if function_name in self._internal_tools:
                 tool = self._internal_tools[function_name]
@@ -5138,12 +4491,8 @@ class ChatAgent(BaseAgent):
                     # Truncate tool result if it exceeds the maximum token
                     # limit. This prevents single tool calls from exceeding
                     # context window
-                    truncated_result, was_truncated = (
-                        self._truncate_tool_result(function_name, result)
-                    )
-                    result_for_memory = (
-                        truncated_result if was_truncated else result
-                    )
+                    truncated_result, was_truncated = self._truncate_tool_result(function_name, result)
+                    result_for_memory = truncated_result if was_truncated else result
 
                     # Create the tool response message
                     # Note: assistant message with tool_calls is already
@@ -5167,9 +4516,7 @@ class ChatAgent(BaseAgent):
                     images = None
                     if isinstance(result, ToolResult) and result.images:
                         images = result.images
-                        self._inject_tool_images_into_memory(
-                            function_name, result.images
-                        )
+                        self._inject_tool_images_into_memory(function_name, result.images)
 
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
@@ -5182,9 +4529,7 @@ class ChatAgent(BaseAgent):
                     return tool_record
 
                 except Exception as e:
-                    error_msg = (
-                        f"Error executing tool '{function_name}': {e!s}"
-                    )
+                    error_msg = f"Error executing tool '{function_name}': {e!s}"
                     result = {"error": error_msg}
                     logger.warning(f"{error_msg} with result: {result}")
 
@@ -5211,9 +4556,7 @@ class ChatAgent(BaseAgent):
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
             else:
-                error_msg = (
-                    f"Tool '{function_name}' not found in registered tools"
-                )
+                error_msg = f"Tool '{function_name}' not found in registered tools"
                 result = {"error": error_msg}
                 logger.warning(error_msg)
 
@@ -5242,9 +4585,7 @@ class ChatAgent(BaseAgent):
             logger.error(f"Error processing tool call: {e}")
             return None
 
-    async def _aexecute_tool_from_stream_data(
-        self, tool_call_data: Dict[str, Any]
-    ) -> Optional[ToolCallingRecord]:
+    async def _aexecute_tool_from_stream_data(self, tool_call_data: Dict[str, Any]) -> Optional[ToolCallingRecord]:
         r"""Async execute a tool from accumulated stream data.
 
         Note: The assistant message with tool_calls should be recorded BEFORE
@@ -5253,30 +4594,24 @@ class ChatAgent(BaseAgent):
         """
 
         try:
-            function_name = tool_call_data['function']['name']
-            args = json.loads(tool_call_data['function']['arguments'])
-            tool_call_id = tool_call_data['id']
-            extra_content = tool_call_data.get('extra_content')
+            function_name = tool_call_data["function"]["name"]
+            args = json.loads(tool_call_data["function"]["arguments"])
+            tool_call_id = tool_call_data["id"]
+            extra_content = tool_call_data.get("extra_content")
 
             if function_name in self._internal_tools:
                 tool = self._internal_tools[function_name]
                 try:
                     # Try different invocation paths in order of preference
-                    if hasattr(tool, 'func') and hasattr(
-                        tool.func, 'async_call'
-                    ):
+                    if hasattr(tool, "func") and hasattr(tool.func, "async_call"):
                         # Case: FunctionTool wrapping an MCP tool
                         result = await tool.func.async_call(**args)
 
-                    elif hasattr(tool, 'async_call') and callable(
-                        tool.async_call
-                    ):
+                    elif hasattr(tool, "async_call") and callable(tool.async_call):
                         # Case: tool itself has async_call
                         result = await tool.async_call(**args)
 
-                    elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
-                        tool.func
-                    ):
+                    elif hasattr(tool, "func") and asyncio.iscoroutinefunction(tool.func):
                         # Case: tool wraps a direct async function
                         result = await tool.func(**args)
 
@@ -5288,9 +4623,7 @@ class ChatAgent(BaseAgent):
                         # Fallback: synchronous call
                         # Use functools.partial to properly capture args
                         loop = asyncio.get_running_loop()
-                        result = await loop.run_in_executor(
-                            None, functools.partial(tool, **args)
-                        )
+                        result = await loop.run_in_executor(None, functools.partial(tool, **args))
 
                     # Handle mask_tool_output
                     if self.mask_tool_output:
@@ -5305,12 +4638,8 @@ class ChatAgent(BaseAgent):
                     # Truncate tool result if it exceeds the maximum token
                     # limit. This prevents single tool calls from exceeding
                     # context window
-                    truncated_result, was_truncated = (
-                        self._truncate_tool_result(function_name, result)
-                    )
-                    result_for_memory = (
-                        truncated_result if was_truncated else result
-                    )
+                    truncated_result, was_truncated = self._truncate_tool_result(function_name, result)
+                    result_for_memory = truncated_result if was_truncated else result
 
                     # Create the tool response message
                     # Note: assistant message with tool_calls is already
@@ -5332,9 +4661,7 @@ class ChatAgent(BaseAgent):
                     images = None
                     if isinstance(result, ToolResult) and result.images:
                         images = result.images
-                        self._inject_tool_images_into_memory(
-                            function_name, result.images
-                        )
+                        self._inject_tool_images_into_memory(function_name, result.images)
 
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
@@ -5347,9 +4674,7 @@ class ChatAgent(BaseAgent):
                     return tool_record
 
                 except Exception as e:
-                    error_msg = (
-                        f"Error executing async tool '{function_name}': {e!s}"
-                    )
+                    error_msg = f"Error executing async tool '{function_name}': {e!s}"
                     result = {"error": error_msg}
                     logger.warning(f"{error_msg} with result: {result}")
 
@@ -5375,9 +4700,7 @@ class ChatAgent(BaseAgent):
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
             else:
-                error_msg = (
-                    f"Tool '{function_name}' not found in registered tools"
-                )
+                error_msg = f"Tool '{function_name}' not found in registered tools"
                 result = {"error": error_msg}
                 logger.warning(error_msg)
 
@@ -5437,9 +4760,7 @@ class ChatAgent(BaseAgent):
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
-            input_message = BaseMessage.make_user_message(
-                role_name="User", content=input_message
-            )
+            input_message = BaseMessage.make_user_message(role_name="User", content=input_message)
 
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
@@ -5456,9 +4777,7 @@ class ChatAgent(BaseAgent):
 
         # Start async streaming response
         last_response = None
-        async for response in self._astream_response(
-            openai_messages, num_tokens, response_format
-        ):
+        async for response in self._astream_response(openai_messages, num_tokens, response_format):
             last_response = response
             yield response
 
@@ -5489,12 +4808,8 @@ class ChatAgent(BaseAgent):
         while True:
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
-                logger.info(
-                    f"Termination triggered at iteration {iteration_count}"
-                )
-                yield self._step_terminate(
-                    num_tokens, tool_call_records, "termination_triggered"
-                )
+                logger.info(f"Termination triggered at iteration {iteration_count}")
+                yield self._step_terminate(num_tokens, tool_call_records, "termination_triggered")
                 return
 
             # Get async streaming response from model
@@ -5519,8 +4834,8 @@ class ChatAgent(BaseAgent):
                 isinstance(response, AsyncStream)
                 or inspect.isasyncgen(response)
                 or (
-                    hasattr(response, '__aiter__')
-                    and hasattr(response, '__aenter__')
+                    hasattr(response, "__aiter__")
+                    and hasattr(response, "__aenter__")
                     and not isinstance(response, ChatCompletion)
                 )
             ):
@@ -5530,9 +4845,7 @@ class ChatAgent(BaseAgent):
                 request_response_id = ""
 
                 # Process chunks and forward them
-                async for (
-                    item
-                ) in self._aprocess_stream_chunks_with_accumulator(
+                async for item in self._aprocess_stream_chunks_with_accumulator(
                     response,  # type: ignore[arg-type]
                     content_accumulator,
                     accumulated_tool_calls,
@@ -5566,15 +4879,10 @@ class ChatAgent(BaseAgent):
 
                     # If we executed tools and not in
                     # single iteration mode, continue
-                    if tool_call_records and (
-                        self.max_iteration is None
-                        or iteration_count < self.max_iteration
-                    ):
+                    if tool_call_records and (self.max_iteration is None or iteration_count < self.max_iteration):
                         # Update messages with tool results for next iteration
                         try:
-                            openai_messages, num_tokens = (
-                                self.memory.get_context()
-                            )
+                            openai_messages, num_tokens = self.memory.get_context()
                         except RuntimeError as e:
                             yield self._step_terminate(
                                 e.args[1],
@@ -5591,9 +4899,7 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, '__aenter__') and not hasattr(
-                response, '__aiter__'
-            ):
+            elif hasattr(response, "__aenter__") and not hasattr(response, "__aiter__"):
                 request_token_usage = self._create_token_usage_tracker()
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
@@ -5617,12 +4923,9 @@ class ChatAgent(BaseAgent):
                             parsed_object = getattr(event, "parsed", None)
                             break
                         elif event.type == "error":
-                            logger.error(
-                                f"Error in async structured stream: "
-                                f"{getattr(event, 'error', '')}"
-                            )
+                            logger.error(f"Error in async structured stream: {getattr(event, 'error', '')}")
                             yield self._create_error_response(
-                                str(getattr(event, 'error', '')),
+                                str(getattr(event, "error", "")),
                                 tool_call_records,
                             )
                             return
@@ -5630,13 +4933,8 @@ class ChatAgent(BaseAgent):
                     # Get final completion and record final message
                     try:
                         final_completion = await stream.get_final_completion()
-                        final_content = (
-                            final_completion.choices[0].message.content or ""
-                        )
-                        final_reasoning = (
-                            content_accumulator.get_full_reasoning_content()
-                            or None
-                        )
+                        final_content = final_completion.choices[0].message.content or ""
+                        final_reasoning = content_accumulator.get_full_reasoning_content() or None
 
                         final_message = BaseMessage(
                             role_name=self.role_name,
@@ -5652,11 +4950,7 @@ class ChatAgent(BaseAgent):
 
                         self.record_message(final_message)
 
-                        request_usage = (
-                            safe_model_dump(final_completion.usage)
-                            if final_completion.usage
-                            else {}
-                        )
+                        request_usage = safe_model_dump(final_completion.usage) if final_completion.usage else {}
                         self._update_token_usage_tracker(
                             request_token_usage,
                             request_usage,
@@ -5674,19 +4968,14 @@ class ChatAgent(BaseAgent):
                                 "id": final_completion.id or "",
                                 "usage": step_token_usage.copy(),
                                 "finish_reasons": [
-                                    choice.finish_reason or "stop"
-                                    for choice in final_completion.choices
+                                    choice.finish_reason or "stop" for choice in final_completion.choices
                                 ],
-                                "num_tokens": self._get_token_count(
-                                    final_content
-                                ),
+                                "num_tokens": self._get_token_count(final_content),
                                 "tool_calls": tool_call_records,
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
-                                "stream_accumulate_mode": "accumulate"
-                                if self.stream_accumulate
-                                else "delta",
+                                "stream_accumulate_mode": "accumulate" if self.stream_accumulate else "delta",
                             },
                         )
                         await self._aemit_request_usage(
@@ -5699,21 +4988,15 @@ class ChatAgent(BaseAgent):
                         break
 
                     except Exception as e:
-                        logger.error(
-                            f"Error getting async final completion: {e}"
-                        )
-                        yield self._create_error_response(
-                            str(e), tool_call_records
-                        )
+                        logger.error(f"Error getting async final completion: {e}")
+                        yield self._create_error_response(str(e), tool_call_records)
                         return
             else:
                 # Handle non-streaming response (fallback)
                 model_response = self._handle_batch_response(
                     response  # type: ignore[arg-type]
                 )
-                self._update_token_usage_tracker(
-                    step_token_usage, model_response.usage_dict
-                )
+                self._update_token_usage_tracker(step_token_usage, model_response.usage_dict)
                 await self._aemit_request_usage(
                     usage_dict=model_response.usage_dict,
                     step_usage=step_token_usage.copy(),
@@ -5732,9 +5015,7 @@ class ChatAgent(BaseAgent):
                 accumulated_tool_calls.clear()
                 break
 
-    def _record_assistant_tool_calls_message(
-        self, accumulated_tool_calls: Dict[str, Any], content: str = ""
-    ) -> None:
+    def _record_assistant_tool_calls_message(self, accumulated_tool_calls: Dict[str, Any], content: str = "") -> None:
         r"""Record the assistant message that contains tool calls.
 
         This method creates and records an assistant message that includes
@@ -5745,9 +5026,9 @@ class ChatAgent(BaseAgent):
         tool_calls_list = []
         for key, tool_call_data in accumulated_tool_calls.items():
             # Skip internal mapping key
-            if key == '_index_to_key_map':
+            if key == "_index_to_key_map":
                 continue
-            if tool_call_data.get('complete', False):
+            if tool_call_data.get("complete", False):
                 tool_call_dict = {
                     "id": tool_call_data["id"],
                     "type": "function",
@@ -5757,10 +5038,8 @@ class ChatAgent(BaseAgent):
                     },
                 }
                 # Include extra_content if present
-                if tool_call_data.get('extra_content'):
-                    tool_call_dict["extra_content"] = tool_call_data[
-                        "extra_content"
-                    ]
+                if tool_call_data.get("extra_content"):
+                    tool_call_dict["extra_content"] = tool_call_data["extra_content"]
                 tool_calls_list.append(tool_call_dict)
 
         # Early return if no tool calls to record
@@ -5835,9 +5114,7 @@ class ChatAgent(BaseAgent):
         request_token_usage: Dict[str, int],
         step_token_usage: Dict[str, int],
         response_format: Optional[Type[BaseModel]] = None,
-    ) -> AsyncGenerator[
-        Union[ChatAgentResponse, Tuple[bool, bool, str]], None
-    ]:
+    ) -> AsyncGenerator[Union[ChatAgentResponse, Tuple[bool, bool, str]], None]:
         r"""Async version of process streaming chunks with
         content accumulator.
         """
@@ -5847,7 +5124,7 @@ class ChatAgent(BaseAgent):
         last_response_id = ""
 
         async for chunk in stream:
-            last_response_id = getattr(chunk, 'id', '') or last_response_id
+            last_response_id = getattr(chunk, "id", "") or last_response_id
             has_choices = bool(chunk.choices and len(chunk.choices) > 0)
 
             # Process chunk delta
@@ -5856,45 +5133,34 @@ class ChatAgent(BaseAgent):
                 delta = choice.delta
 
                 # Handle reasoning content streaming (for DeepSeek reasoner)
-                if (
-                    hasattr(delta, 'reasoning_content')
-                    and delta.reasoning_content
-                ):
-                    content_accumulator.add_reasoning_content(
-                        delta.reasoning_content
-                    )
+                if hasattr(delta, "reasoning_content") and delta.reasoning_content:
+                    content_accumulator.add_reasoning_content(delta.reasoning_content)
                     # Yield partial response with reasoning content
-                    partial_response = (
-                        self._create_streaming_response_with_accumulator(
-                            content_accumulator,
-                            "",  # No regular content yet
-                            step_token_usage,
-                            getattr(chunk, 'id', ''),
-                            tool_call_records.copy(),
-                            reasoning_delta=delta.reasoning_content,
-                        )
+                    partial_response = self._create_streaming_response_with_accumulator(
+                        content_accumulator,
+                        "",  # No regular content yet
+                        step_token_usage,
+                        getattr(chunk, "id", ""),
+                        tool_call_records.copy(),
+                        reasoning_delta=delta.reasoning_content,
                     )
                     yield partial_response
 
                 # Handle content streaming
                 if delta.content:
                     # Use accumulator for proper content management
-                    partial_response = (
-                        self._create_streaming_response_with_accumulator(
-                            content_accumulator,
-                            delta.content,
-                            step_token_usage,
-                            getattr(chunk, 'id', ''),
-                            tool_call_records.copy(),
-                        )
+                    partial_response = self._create_streaming_response_with_accumulator(
+                        content_accumulator,
+                        delta.content,
+                        step_token_usage,
+                        getattr(chunk, "id", ""),
+                        tool_call_records.copy(),
                     )
                     yield partial_response
 
                 # Handle tool calls streaming
                 if delta.tool_calls:
-                    tool_calls_complete = self._accumulate_tool_calls(
-                        delta.tool_calls, accumulated_tool_calls
-                    )
+                    tool_calls_complete = self._accumulate_tool_calls(delta.tool_calls, accumulated_tool_calls)
 
                 # Check if stream is complete
                 if choice.finish_reason:
@@ -5905,9 +5171,7 @@ class ChatAgent(BaseAgent):
                     if accumulated_tool_calls:
                         # Execute tools asynchronously with real-time
                         # status updates
-                        async for (
-                            status_response
-                        ) in self._execute_tools_async_with_status_accumulator(
+                        async for status_response in self._execute_tools_async_with_status_accumulator(
                             accumulated_tool_calls,
                             content_accumulator,
                             step_token_usage,
@@ -5924,19 +5188,12 @@ class ChatAgent(BaseAgent):
                     # will handle message recording.
                     final_content = content_accumulator.get_full_content()
                     if final_content.strip() and not accumulated_tool_calls:
-                        final_reasoning = (
-                            content_accumulator.get_full_reasoning_content()
-                            or None
-                        )
+                        final_reasoning = content_accumulator.get_full_reasoning_content() or None
 
                         # Extract <think> tags from accumulated
                         # streaming content when reasoning_content
                         # is not already set by the model.
-                        final_content, final_reasoning = (
-                            extract_thinking_from_content(
-                                final_content, final_reasoning
-                            )
-                        )
+                        final_content, final_reasoning = extract_thinking_from_content(final_content, final_reasoning)
 
                         final_message = BaseMessage(
                             role_name=self.role_name,
@@ -5947,49 +5204,32 @@ class ChatAgent(BaseAgent):
                         )
 
                         if response_format:
-                            self._try_format_message(
-                                final_message, response_format
-                            )
+                            self._try_format_message(final_message, response_format)
 
                         self.record_message(final_message)
             if chunk.usage:
                 # Handle final usage chunk, whether or not choices are present.
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
-                self._update_token_usage_tracker(
-                    request_token_usage, safe_model_dump(chunk.usage)
-                )
-                self._update_token_usage_tracker(
-                    step_token_usage, safe_model_dump(chunk.usage)
-                )
+                self._update_token_usage_tracker(request_token_usage, safe_model_dump(chunk.usage))
+                self._update_token_usage_tracker(step_token_usage, safe_model_dump(chunk.usage))
 
                 # Create final response with final usage
                 should_finalize = stream_completed or not has_choices
                 if should_finalize:
                     final_content = content_accumulator.get_full_content()
                     if final_content.strip():
-                        final_reasoning = (
-                            content_accumulator.get_full_reasoning_content()
-                            or None
-                        )
+                        final_reasoning = content_accumulator.get_full_reasoning_content() or None
 
                         # Extract <think> tags from accumulated
                         # streaming content when reasoning_content
                         # is not already set by the model.
-                        final_content, final_reasoning = (
-                            extract_thinking_from_content(
-                                final_content, final_reasoning
-                            )
-                        )
+                        final_content, final_reasoning = extract_thinking_from_content(final_content, final_reasoning)
 
                         # In delta mode, final response content should be empty
                         # since all content was already yielded incrementally
-                        display_content = (
-                            final_content if self.stream_accumulate else ""
-                        )
-                        display_reasoning = (
-                            final_reasoning if self.stream_accumulate else None
-                        )
+                        display_content = final_content if self.stream_accumulate else ""
+                        display_reasoning = final_reasoning if self.stream_accumulate else None
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
@@ -5999,28 +5239,22 @@ class ChatAgent(BaseAgent):
                         )
 
                         if response_format:
-                            self._try_format_message(
-                                final_message, response_format
-                            )
+                            self._try_format_message(final_message, response_format)
 
                         # Create final response with final usage (not partial)
                         final_response = ChatAgentResponse(
                             msgs=[final_message],
                             terminated=False,
                             info={
-                                "id": getattr(chunk, 'id', ''),
+                                "id": getattr(chunk, "id", ""),
                                 "usage": step_token_usage.copy(),
                                 "finish_reasons": ["stop"],
-                                "num_tokens": self._get_token_count(
-                                    final_content
-                                ),
+                                "num_tokens": self._get_token_count(final_content),
                                 "tool_calls": tool_call_records or [],
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
-                                "stream_accumulate_mode": "accumulate"
-                                if self.stream_accumulate
-                                else "delta",
+                                "stream_accumulate_mode": "accumulate" if self.stream_accumulate else "delta",
                             },
                         )
                         yield final_response
@@ -6051,42 +5285,34 @@ class ChatAgent(BaseAgent):
         tool_tasks = []
         for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
             # Skip internal mapping key
-            if _tool_call_index == '_index_to_key_map':
+            if _tool_call_index == "_index_to_key_map":
                 continue
-            if tool_call_data.get('complete', False):
-                function_name = tool_call_data['function']['name']
+            if tool_call_data.get("complete", False):
+                function_name = tool_call_data["function"]["name"]
                 try:
-                    args = json.loads(tool_call_data['function']['arguments'])
+                    args = json.loads(tool_call_data["function"]["arguments"])
                 except json.JSONDecodeError:
-                    args = tool_call_data['function']['arguments']
+                    args = tool_call_data["function"]["arguments"]
 
                 # Log debug info instead of adding to content
-                logger.info(
-                    f"Calling function: {function_name} with arguments: {args}"
-                )
+                logger.info(f"Calling function: {function_name} with arguments: {args}")
 
                 # Start tool execution asynchronously (non-blocking)
                 if self.tool_execution_timeout is not None:
                     task = asyncio.create_task(
                         asyncio.wait_for(
-                            self._aexecute_tool_from_stream_data(
-                                tool_call_data
-                            ),
+                            self._aexecute_tool_from_stream_data(tool_call_data),
                             timeout=self.tool_execution_timeout,
                         )
                     )
                 else:
-                    task = asyncio.create_task(
-                        self._aexecute_tool_from_stream_data(tool_call_data)
-                    )
+                    task = asyncio.create_task(self._aexecute_tool_from_stream_data(tool_call_data))
                 tool_tasks.append((task, tool_call_data))
 
         # Phase 2: Wait for tools to complete and yield results as they finish
         if tool_tasks:
             # Use asyncio.as_completed for true async processing
-            for completed_task in asyncio.as_completed(
-                [task for task, _ in tool_tasks]
-            ):
+            for completed_task in asyncio.as_completed([task for task, _ in tool_tasks]):
                 try:
                     tool_call_record = await completed_task
                     if tool_call_record:
@@ -6103,10 +5329,7 @@ class ChatAgent(BaseAgent):
                 except Exception as e:
                     if isinstance(e, asyncio.TimeoutError):
                         # Log timeout info instead of adding to content
-                        logger.warning(
-                            f"Function timed out after "
-                            f"{self.tool_execution_timeout} seconds"
-                        )
+                        logger.warning(f"Function timed out after {self.tool_execution_timeout} seconds")
                     else:
                         logger.error(f"Error in async tool execution: {e}")
                     continue
@@ -6143,11 +5366,7 @@ class ChatAgent(BaseAgent):
         full_reasoning = accumulator.get_full_reasoning_content()
         reasoning_payload: Optional[str] = None
         if full_reasoning:
-            reasoning_payload = (
-                full_reasoning
-                if self.stream_accumulate
-                else reasoning_delta or ""
-            )
+            reasoning_payload = full_reasoning if self.stream_accumulate else reasoning_delta or ""
             if reasoning_payload:
                 meta_dict["is_reasoning"] = accumulator.is_reasoning_phase
             else:
@@ -6173,15 +5392,11 @@ class ChatAgent(BaseAgent):
                 "external_tool_requests": None,
                 "streaming": True,
                 "partial": True,
-                "stream_accumulate_mode": "accumulate"
-                if self.stream_accumulate
-                else "delta",
+                "stream_accumulate_mode": "accumulate" if self.stream_accumulate else "delta",
             },
         )
 
-    def get_usage_dict(
-        self, output_messages: List[BaseMessage], prompt_tokens: int
-    ) -> Dict[str, int]:
+    def get_usage_dict(self, output_messages: List[BaseMessage], prompt_tokens: int) -> Dict[str, int]:
         r"""Get usage dictionary when using the stream mode.
 
         Args:
@@ -6192,10 +5407,7 @@ class ChatAgent(BaseAgent):
             dict: Usage dictionary.
         """
         encoding = get_model_encoding(self.model_type.value_for_tiktoken)
-        completion_tokens = sum(
-            len(encoding.encode(message.content))
-            for message in output_messages
-        )
+        completion_tokens = sum(len(encoding.encode(message.content)) for message in output_messages)
         return dict(
             completion_tokens=completion_tokens,
             prompt_tokens=prompt_tokens,
@@ -6242,30 +5454,20 @@ class ChatAgent(BaseAgent):
             model=self.model_backend.models,  # Pass the existing model_backend
             memory=None,  # clone memory later
             message_window_size=getattr(self.memory, "window_size", None),
-            token_limit=getattr(
-                self.memory.get_context_creator(), "token_limit", None
-            ),
+            token_limit=getattr(self.memory.get_context_creator(), "token_limit", None),
             output_language=self._output_language,
             tools=cast(List[Union[FunctionTool, Callable]], cloned_tools),
             toolkits_to_register_agent=toolkits_to_register,
-            external_tools=[
-                schema for schema in self._external_tool_schemas.values()
-            ],
+            external_tools=[schema for schema in self._external_tool_schemas.values()],
             response_terminators=copy.deepcopy(self.response_terminators),
-            scheduling_strategy=(
-                self.model_backend.scheduling_strategy.__name__
-            ),
+            scheduling_strategy=(self.model_backend.scheduling_strategy.__name__),
             max_iteration=self.max_iteration,
             stop_event=self.stop_event,
             tool_execution_timeout=self.tool_execution_timeout,
             pause_event=self.pause_event,
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
             on_request_usage=self.on_request_usage,
-            stream_accumulate=(
-                self.stream_accumulate
-                if self._stream_accumulate_explicit
-                else None
-            ),
+            stream_accumulate=(self.stream_accumulate if self._stream_accumulate_explicit else None),
             summarize_threshold=self.summarize_threshold,
             mask_tool_output=self.mask_tool_output,
             tool_log_dir=self._tool_log_dir,
@@ -6307,22 +5509,18 @@ class ChatAgent(BaseAgent):
 
         for tool in self._internal_tools.values():
             # Check if this tool is a method bound to a toolkit instance
-            if hasattr(tool.func, '__self__'):
+            if hasattr(tool.func, "__self__"):
                 toolkit_instance = tool.func.__self__
                 toolkit_id = id(toolkit_instance)
 
                 if toolkit_id not in cloned_toolkits:
                     # Check if the toolkit has a clone method
-                    if hasattr(toolkit_instance, 'clone_for_new_session'):
+                    if hasattr(toolkit_instance, "clone_for_new_session"):
                         try:
                             import uuid
 
                             new_session_id = str(uuid.uuid4())[:8]
-                            new_toolkit = (
-                                toolkit_instance.clone_for_new_session(
-                                    new_session_id
-                                )
-                            )
+                            new_toolkit = toolkit_instance.clone_for_new_session(new_session_id)
 
                             # If this is a RegisteredAgentToolkit,
                             # add it to registration list
@@ -6411,9 +5609,7 @@ class ChatAgent(BaseAgent):
         Returns:
             str: The string representation of the :obj:`ChatAgent`.
         """
-        return (
-            f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
-        )
+        return f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
 
     @dependencies_required("mcp")
     def to_mcp(
@@ -6464,9 +5660,7 @@ class ChatAgent(BaseAgent):
             r"""Execute a single step in the chat session with the agent."""
             format_cls = None
             if response_format:
-                format_cls = model_from_json_schema(
-                    "DynamicResponseFormat", response_format
-                )
+                format_cls = model_from_json_schema("DynamicResponseFormat", response_format)
             response = await agent_instance.astep(message, format_cls)
             return {
                 "status": "success",
