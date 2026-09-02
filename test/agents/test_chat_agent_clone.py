@@ -75,7 +75,7 @@ def test_resetting_clone_does_not_reset_another_clone_terminator():
     )
     second.reset()
 
-    terminated, reason = first.response_terminators[0].is_terminated(_stop_response())
+    terminated, reason = first.response_terminators[0].is_terminated(\n        _stop_response()\n    )
     assert terminated
     assert reason is not None
 
