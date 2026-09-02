@@ -106,7 +106,7 @@ def test_step_sets_agent_session_before_streaming(monkeypatch):
     model = OpenAIModel(
         model_type=ModelType.GPT_4O_MINI,
         api_mode="responses",
-        api_key='test-key',
+        api_key="test-key",
     )
     model.model_config_dict["stream"] = True
     agent = ChatAgent(model=model)
@@ -118,11 +118,12 @@ def test_step_sets_agent_session_before_streaming(monkeypatch):
         captured["session_id"] = get_current_agent_session_id()
         return iter(())
 
-    monkeypatch.setattr(agent, '_stream', fake_stream)
+    monkeypatch.setattr(agent, "_stream", fake_stream)
 
-    agent.step('hello')
+    agent.step("hello")
 
     assert captured["session_id"] == agent.agent_id
+
 
 @pytest.mark.parametrize("model_class", [OpenAIModel, OpenAICompatibleModel])
 def test_sync_stream_step_sets_agent_session_id(model_class):
