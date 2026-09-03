@@ -57,6 +57,7 @@ from .samba_config import (
 )
 from .sglang_config import SGLANG_API_PARAMS, SGLangConfig
 from .siliconflow_config import SILICONFLOW_API_PARAMS, SiliconFlowConfig
+from .synthorai_config import SYNTHORAI_API_PARAMS, SynthoraiConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .volcano_config import VOLCANO_API_PARAMS, VolcanoConfig
@@ -95,6 +96,7 @@ __all__ = [
     'OPENAI_API_PARAMS',
     'OPENROUTER_API_PARAMS',
     'ORCAROUTER_API_PARAMS',
+    'SYNTHORAI_API_PARAMS',
     'PPIO_API_PARAMS',
     'QIANFAN_API_PARAMS',
     'QWEN_API_PARAMS',
@@ -142,6 +144,7 @@ __all__ = [
     'OllamaConfig',
     'OpenRouterConfig',
     'OrcaRouterConfig',
+    'SynthoraiConfig',
     'PPIOConfig',
     'QianfanConfig',
     'QwenConfig',

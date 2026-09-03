@@ -59,6 +59,7 @@ from .samba_model import SambaModel
 from .sglang_model import SGLangModel
 from .siliconflow_model import SiliconFlowModel
 from .stub_model import StubModel
+from .synthorai_model import SynthoraiModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .volcano_model import VolcanoModel
@@ -109,6 +110,7 @@ __all__ = [
     'OpenAIModel',
     'OpenRouterModel',
     'OrcaRouterModel',
+    'SynthoraiModel',
     'PPIOModel',
     'QianfanModel',
     'QwenModel',
