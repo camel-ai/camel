@@ -423,6 +423,19 @@ class ChatAgent(BaseAgent):
             calling iterations allowed per step. If `None` (default), there's
             no explicit limit. If `1`, it performs a single model call. If `N
             > 1`, it allows up to N model calls. (default: :obj:`None`)
+        max_tool_calls (Optional[int], optional): Maximum number of internal
+            tool executions allowed per step (or per :obj:`astep` call). This
+            is independent from `max_iteration`: a single model response can
+            request several tool calls (e.g. parallel tool calls), and each
+            executed call counts against this budget. The counter resets at
+            the start of every `step`/`astep` call. If `None` (default),
+            there's no explicit limit. Once the budget is exhausted, tool
+            calls beyond the limit are rejected (they still receive a valid
+            tool-result message so the conversation history stays
+            structurally consistent) and tools are omitted from subsequent
+            model calls within the same step, allowing the model to produce
+            a final textual response from the results already gathered.
+            (default: :obj:`None`)
         agent_id (str, optional): The ID of the agent. If not provided, a
             random UUID will be generated. (default: :obj:`None`)
         stop_event (Optional[threading.Event], optional): Event to signal
@@ -510,6 +523,7 @@ class ChatAgent(BaseAgent):
         response_terminators: Optional[List[ResponseTerminator]] = None,
         scheduling_strategy: str = "round_robin",
         max_iteration: Optional[int] = None,
+        max_tool_calls: Optional[int] = None,
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
         tool_execution_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
@@ -624,6 +638,16 @@ class ChatAgent(BaseAgent):
         self.terminated = False
         self.response_terminators = response_terminators or []
         self.max_iteration = max_iteration
+        if max_tool_calls is not None and (
+            isinstance(max_tool_calls, bool)
+            or not isinstance(max_tool_calls, int)
+            or max_tool_calls < 1
+        ):
+            raise ValueError(
+                "max_tool_calls must be a positive integer or None, got "
+                f"{max_tool_calls!r}"
+            )
+        self.max_tool_calls = max_tool_calls
         self.stop_event = stop_event
         self.tool_execution_timeout = tool_execution_timeout
         self.mask_tool_output = mask_tool_output
@@ -2998,6 +3022,12 @@ class ChatAgent(BaseAgent):
         iteration_count: int = 0
         prev_num_openai_messages: int = 0
 
+        # Cumulative count of internal tool calls executed during this step.
+        # This is per-step local state (not persisted on the instance) so
+        # the max_tool_calls budget resets automatically on every new
+        # step()/astep() call.
+        tool_call_count: int = 0
+
         # Track if we've recorded tool calls for the current response
         # to avoid duplicate assistant message recording
         recorded_tool_calls = False
@@ -3021,13 +3051,20 @@ class ChatAgent(BaseAgent):
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
+            # Once the tool-call budget is exhausted, stop offering tools so
+            # the model can produce a final textual response from the tool
+            # results already gathered.
+            tool_budget_exhausted = (
+                self.max_tool_calls is not None
+                and tool_call_count >= self.max_tool_calls
+            )
             # Get response from model backend
             response = self._get_model_response(
                 openai_messages,
                 current_iteration=iteration_count,
                 response_format=response_format,
                 tool_schemas=[]
-                if disable_tools
+                if (disable_tools or tool_budget_exhausted)
                 else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
@@ -3090,8 +3127,28 @@ class ChatAgent(BaseAgent):
                 )
                 recorded_tool_calls = True
 
-                # Execute internal tools only
-                for tool_call_request in internal_tool_requests:
+                # Execute internal tools only, honoring the max_tool_calls
+                # budget. The remaining budget is computed once before any
+                # tool in this batch is dispatched, so a single model
+                # response containing several (e.g. parallel) tool calls
+                # cannot execute more tools than the configured limit.
+                remaining_tool_budget = self._remaining_tool_call_budget(
+                    tool_call_count
+                )
+                for idx, tool_call_request in enumerate(
+                    internal_tool_requests
+                ):
+                    if (
+                        remaining_tool_budget is not None
+                        and idx >= remaining_tool_budget
+                    ):
+                        tool_call_records.append(
+                            self._record_tool_call_budget_exceeded(
+                                tool_call_request
+                            )
+                        )
+                        continue
+
                     if (
                         self.pause_event is not None
                         and not self.pause_event.is_set()
@@ -3103,6 +3160,7 @@ class ChatAgent(BaseAgent):
                                 time.sleep(0.001)
                     result = self._execute_tool(tool_call_request)
                     tool_call_records.append(result)
+                    tool_call_count += 1
 
                 # If we found external tool calls, break the loop
                 if external_tool_call_requests:
@@ -3304,6 +3362,12 @@ class ChatAgent(BaseAgent):
         iteration_count: int = 0
         prev_num_openai_messages: int = 0
 
+        # Cumulative count of internal tool calls executed during this step.
+        # This is per-step local state (not persisted on the instance) so
+        # the max_tool_calls budget resets automatically on every new
+        # step()/astep() call.
+        tool_call_count: int = 0
+
         # Track if we've recorded tool calls for the current response
         # to avoid duplicate assistant message recording
         recorded_tool_calls = False
@@ -3326,13 +3390,20 @@ class ChatAgent(BaseAgent):
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
+            # Once the tool-call budget is exhausted, stop offering tools so
+            # the model can produce a final textual response from the tool
+            # results already gathered.
+            tool_budget_exhausted = (
+                self.max_tool_calls is not None
+                and tool_call_count >= self.max_tool_calls
+            )
             # Get response from model backend
             response = await self._aget_model_response(
                 openai_messages,
                 current_iteration=iteration_count,
                 response_format=response_format,
                 tool_schemas=[]
-                if disable_tools
+                if (disable_tools or tool_budget_exhausted)
                 else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
@@ -3395,8 +3466,28 @@ class ChatAgent(BaseAgent):
                 )
                 recorded_tool_calls = True
 
-                # Execute internal tools only
-                for tool_call_request in internal_tool_requests:
+                # Execute internal tools only, honoring the max_tool_calls
+                # budget. The remaining budget is computed once before any
+                # tool in this batch is dispatched, so a single model
+                # response containing several (e.g. parallel) tool calls
+                # cannot execute more tools than the configured limit.
+                remaining_tool_budget = self._remaining_tool_call_budget(
+                    tool_call_count
+                )
+                for idx, tool_call_request in enumerate(
+                    internal_tool_requests
+                ):
+                    if (
+                        remaining_tool_budget is not None
+                        and idx >= remaining_tool_budget
+                    ):
+                        tool_call_records.append(
+                            self._record_tool_call_budget_exceeded(
+                                tool_call_request
+                            )
+                        )
+                        continue
+
                     if (
                         self.pause_event is not None
                         and not self.pause_event.is_set()
@@ -3412,6 +3503,7 @@ class ChatAgent(BaseAgent):
                         tool_call_request
                     )
                     tool_call_records.append(tool_call_record)
+                    tool_call_count += 1
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
@@ -4085,6 +4177,57 @@ class ChatAgent(BaseAgent):
             msgs=[],
             terminated=self.terminated,
             info=info,
+        )
+
+    def _remaining_tool_call_budget(
+        self, executed_count: int
+    ) -> Optional[int]:
+        r"""Returns the number of internal tool calls still allowed during
+        the current step, given how many have already been executed.
+
+        Args:
+            executed_count (int): The number of internal tool calls already
+                executed during the current step.
+
+        Returns:
+            Optional[int]: The remaining budget, or :obj:`None` if
+                `max_tool_calls` is not configured (i.e. unlimited).
+        """
+        if self.max_tool_calls is None:
+            return None
+        return max(0, self.max_tool_calls - executed_count)
+
+    def _record_tool_call_budget_exceeded(
+        self, tool_call_request: ToolCallRequest
+    ) -> ToolCallingRecord:
+        r"""Record a tool-result message for a call that was rejected
+        because the `max_tool_calls` budget for the current step was
+        already exhausted.
+
+        The tool itself is never invoked. This reuses the standard
+        tool-result recording path so the resulting message history stays
+        structurally valid: every `tool_calls` entry recorded on the
+        assistant message is matched by a corresponding tool-role result
+        message.
+
+        Args:
+            tool_call_request (ToolCallRequest): The rejected tool call
+                request.
+
+        Returns:
+            ToolCallingRecord: A record describing the rejected tool call.
+        """
+        result = (
+            f"Tool call '{tool_call_request.tool_name}' was not executed "
+            f"because the maximum number of tool calls "
+            f"({self.max_tool_calls}) for this step has been reached."
+        )
+        return self._record_tool_calling(
+            tool_call_request.tool_name,
+            tool_call_request.args,
+            result,
+            tool_call_request.tool_call_id,
+            extra_content=tool_call_request.extra_content,
         )
 
     @observe()
@@ -6235,6 +6378,7 @@ class ChatAgent(BaseAgent):
                 self.model_backend.scheduling_strategy.__name__
             ),
             max_iteration=self.max_iteration,
+            max_tool_calls=self.max_tool_calls,
             stop_event=self.stop_event,
             tool_execution_timeout=self.tool_execution_timeout,
             pause_event=self.pause_event,
