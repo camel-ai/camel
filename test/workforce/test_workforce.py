@@ -17,6 +17,7 @@ from collections import deque
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from PIL import Image
 
 from camel.agents import ChatAgent
 from camel.messages.base import BaseMessage
@@ -28,7 +29,11 @@ from camel.societies.workforce.utils import (
     RecoveryStrategy,
     TaskAnalysisResult,
 )
-from camel.societies.workforce.workforce import Workforce
+from camel.societies.workforce.workforce import (
+    Workforce,
+    WorkforceSnapshot,
+    WorkforceState,
+)
 from camel.tasks.task import Task, TaskState
 from camel.types import ModelPlatformType, ModelType
 
@@ -45,6 +50,78 @@ class TimeoutWorkforce(Workforce):
         self._task = None
         self._child_listening_tasks = []
         self._children = []
+
+
+def test_workforce_snapshot_preserves_point_in_time_task_state():
+    r"""Test that snapshots preserve task state after source mutations."""
+    main_task = Task(content="main original", id="main")
+    pending_task = Task(content="pending original", id="pending")
+    completed_task = Task(content="completed original", id="completed")
+    completed_task.update_result("completed result")
+
+    snapshot = WorkforceSnapshot(
+        main_task=main_task,
+        pending_tasks=deque([pending_task]),
+        completed_tasks=[completed_task],
+    )
+
+    main_task.content = "main mutated"
+    pending_task.content = "pending mutated"
+    completed_task.content = "completed mutated"
+    completed_task.result = "mutated result"
+    completed_task.state = TaskState.FAILED
+
+    assert snapshot.main_task.content == "main original"
+    assert snapshot.pending_tasks[0].content == "pending original"
+    assert snapshot.completed_tasks[0].content == "completed original"
+    assert snapshot.completed_tasks[0].result == "completed result"
+    assert snapshot.completed_tasks[0].state == TaskState.DONE
+
+
+def test_restore_from_snapshot_does_not_mutate_saved_snapshot():
+    r"""Test restored live state is isolated from the saved snapshot."""
+    task = Task(content="pending original", id="pending")
+    snapshot = WorkforceSnapshot(pending_tasks=deque([task]))
+    workforce = object.__new__(Workforce)
+    workforce._snapshots = [snapshot]
+    workforce._state = WorkforceState.IDLE
+
+    assert workforce.restore_from_snapshot(0)
+
+    workforce._pending_tasks[0].content = "pending mutated after restore"
+
+    assert snapshot.pending_tasks[0].content == "pending original"
+
+
+def test_workforce_snapshot_shares_multimodal_payloads():
+    r"""Test snapshots do not duplicate large multimodal payload objects."""
+    image = Image.new("RGB", (1, 1))
+    main_task = Task(
+        content="main original",
+        id="main",
+        image_list=[image],
+    )
+    pending_task = Task(
+        content="pending original",
+        id="pending",
+        image_list=[image],
+    )
+
+    snapshot = WorkforceSnapshot(
+        main_task=main_task,
+        pending_tasks=deque([pending_task]),
+    )
+
+    main_task.content = "main mutated"
+    pending_task.content = "pending mutated"
+    main_task.image_list.append(Image.new("RGB", (1, 1)))
+
+    assert snapshot.main_task.content == "main original"
+    assert snapshot.pending_tasks[0].content == "pending original"
+    assert snapshot.main_task.image_list is not main_task.image_list
+    assert len(snapshot.main_task.image_list) == 1
+    assert snapshot.main_task.image_list[0] is image
+    assert snapshot.pending_tasks[0].image_list[0] is image
 
 
 @pytest.mark.asyncio
