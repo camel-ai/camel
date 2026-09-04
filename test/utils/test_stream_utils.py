@@ -31,6 +31,18 @@ from camel.utils.stream_utils import (
 )
 
 
+@pytest.fixture(autouse=True)
+def stub_openai_api_key(monkeypatch):
+    r"""Give ModelFactory a key to validate against.
+
+    ``ModelFactory.create`` checks ``OPENAI_API_KEY`` at construction time, and
+    fork pull requests get no repository secrets. Every streamed response in
+    this module is mocked, so no request is ever made with this value.
+    """
+
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+
+
 def _make_chunk(content: str | None) -> ChatAgentResponse:
     if content is None:
         return ChatAgentResponse(msgs=[], terminated=False, info={})
