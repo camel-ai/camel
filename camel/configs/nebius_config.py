@@ -20,9 +20,9 @@ from camel.configs.base_config import BaseConfig
 
 class NebiusConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using OpenAI
-    compatibility with Nebius AI Studio.
+    compatibility with Nebius Token Factory.
 
-    Reference: https://nebius.com/docs/ai-studio/api
+    Reference: https://docs.tokenfactory.nebius.com/api-reference/introduction
 
     Args:
         temperature (float, optional): Sampling temperature to use, between
