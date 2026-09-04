@@ -130,6 +130,8 @@ requirements:
 - Ensures all fields are marked as required or have null type for optional
 fields.
 - Recursively adds additionalProperties: false to all nested objects.
+- Disables strict mode when an object intentionally allows additional
+properties.
 
 **Parameters:**
 
@@ -137,8 +139,8 @@ fields.
 
 **Returns:**
 
-  dict: The updated dictionary with invalid defaults removed and all
-fields properly configured for strict mode.
+  dict: The updated dictionary with invalid defaults removed and strict
+mode enabled only when every object schema is closed.
 
 <a id="camel.toolkits.function_tool.generate_docstring"></a>
 
