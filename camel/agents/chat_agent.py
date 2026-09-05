@@ -2476,6 +2476,8 @@ class ChatAgent(BaseAgent):
                 summarization. Defaults to True for full memory clearing.
         """
         self.memory.clear()
+        for model in self.model_backend.models:
+            model.reset(self.agent_id)
 
         if reset_summary_state:
             self._reset_summary_state()
@@ -2892,6 +2894,18 @@ class ChatAgent(BaseAgent):
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
 
+    def _set_current_agent_context(self) -> None:
+        from camel.utils.agent_context import set_current_agent_id
+
+        set_current_agent_id(self.agent_id)
+
+        try:
+            from camel.utils.langfuse import set_current_agent_session_id
+
+            set_current_agent_session_id(self.agent_id)
+        except ImportError:
+            pass
+
     @observe()
     def step(
         self,
@@ -2920,6 +2934,7 @@ class ChatAgent(BaseAgent):
         Raises:
             TimeoutError: If the step operation exceeds the configured timeout.
         """
+        self._set_current_agent_context()
 
         stream = self.model_backend.model_config_dict.get("stream", False)
 
@@ -2952,18 +2967,7 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Implementation of non-streaming step logic."""
-        # Set agent_id in context-local storage for logging
-        from camel.utils.agent_context import set_current_agent_id
-
-        set_current_agent_id(self.agent_id)
-
-        # Set Langfuse session_id using agent_id for trace grouping
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
+        self._set_current_agent_context()
 
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
@@ -3221,17 +3225,7 @@ class ChatAgent(BaseAgent):
             asyncio.TimeoutError: If the step operation exceeds the configured
                 timeout.
         """
-        # Set agent_id in context-local storage for logging
-        from camel.utils.agent_context import set_current_agent_id
-
-        set_current_agent_id(self.agent_id)
-
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
+        self._set_current_agent_context()
 
         stream = self.model_backend.model_config_dict.get("stream", False)
         if stream:
@@ -3262,17 +3256,7 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Internal async method for non-streaming astep logic."""
-        # Set agent_id in context-local storage for logging
-        from camel.utils.agent_context import set_current_agent_id
-
-        set_current_agent_id(self.agent_id)
-
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
+        self._set_current_agent_context()
 
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
@@ -3655,6 +3639,7 @@ class ChatAgent(BaseAgent):
 
         for attempt in range(self.retry_attempts):
             try:
+                self._set_current_agent_context()
                 response = self.model_backend.run(
                     openai_messages, response_format, tool_schemas or None
                 )
@@ -3717,6 +3702,7 @@ class ChatAgent(BaseAgent):
 
         for attempt in range(self.retry_attempts):
             try:
+                self._set_current_agent_context()
                 response = await self.model_backend.arun(
                     openai_messages, response_format, tool_schemas or None
                 )
@@ -4467,6 +4453,7 @@ class ChatAgent(BaseAgent):
 
             # Get streaming response from model
             try:
+                self._set_current_agent_context()
                 response = self.model_backend.run(
                     openai_messages,
                     response_format,
@@ -5478,6 +5465,7 @@ class ChatAgent(BaseAgent):
 
             # Get async streaming response from model
             try:
+                self._set_current_agent_context()
                 response = await self.model_backend.arun(
                     openai_messages,
                     response_format,
