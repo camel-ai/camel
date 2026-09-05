@@ -11,9 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import pytest
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from camel.models import StubModel
+from camel.models import OpenAICompatibleModel, OpenAIModel, StubModel
 from camel.terminators import ResponseWordsTerminator
 from camel.types import ModelType
 
@@ -78,3 +80,69 @@ def test_resetting_clone_does_not_reset_another_clone_terminator():
     )
     assert terminated
     assert reason is not None
+
+
+@pytest.mark.parametrize("model_class", [OpenAIModel, OpenAICompatibleModel])
+def test_reset_clears_response_chain_state_for_reset_agent(model_class):
+    model = model_class(
+        model_type=ModelType.GPT_4O_MINI,
+        api_mode="responses",
+        api_key="test-key",
+    )
+    agent = ChatAgent(model=model)
+    other_agent = agent.clone()
+    agent_key = agent.agent_id
+    other_key = other_agent.agent_id
+    model._save_response_chain_state(agent_key, "resp_agent", 3)
+    model._save_response_chain_state(other_key, "resp_other", 3)
+
+    agent.reset()
+
+    assert agent_key not in model._responses_previous_response_id_by_session
+    assert agent_key not in model._responses_last_message_count_by_session
+    assert other_key in model._responses_previous_response_id_by_session
+    assert other_key in model._responses_last_message_count_by_session
+
+
+def test_step_sets_agent_session_before_streaming(monkeypatch):
+    model = OpenAIModel(
+        model_type=ModelType.GPT_4O_MINI,
+        api_mode="responses",
+        api_key="test-key",
+    )
+    model.model_config_dict["stream"] = True
+    agent = ChatAgent(model=model)
+    captured = {}
+
+    def fake_stream(*args, **kwargs):
+        from camel.utils.langfuse import get_current_agent_session_id
+
+        captured["session_id"] = get_current_agent_session_id()
+        return iter(())
+
+    monkeypatch.setattr(agent, "_stream", fake_stream)
+
+    agent.step("hello")
+
+    assert captured["session_id"] == agent.agent_id
+
+
+@pytest.mark.parametrize("model_class", [OpenAIModel, OpenAICompatibleModel])
+def test_sync_stream_step_sets_agent_session_id(model_class):
+    model = model_class(
+        model_type=ModelType.GPT_4O_MINI,
+        api_mode="responses",
+        api_key="test-key",
+    )
+    model.model_config_dict["stream"] = True
+    agent = ChatAgent(model=model)
+
+    from camel.utils.langfuse import (
+        get_current_agent_session_id,
+        set_current_agent_session_id,
+    )
+
+    set_current_agent_session_id(None)  # type: ignore[arg-type]
+    agent.step("hello")
+
+    assert get_current_agent_session_id() == agent.agent_id

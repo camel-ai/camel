@@ -192,9 +192,8 @@ class StreamContentAccumulator:
     def add_streaming_content(self, new_content: str):
         r"""Add new streaming content."""
         self.current_content.append(new_content)
-        self.is_reasoning_phase = (
-            False  # Once we get content, we're past reasoning
-        )
+        # Once we get content, we're past reasoning.
+        self.is_reasoning_phase = False
 
     def add_reasoning_content(self, new_reasoning: str):
         r"""Add new reasoning content."""
@@ -657,6 +656,13 @@ class ChatAgent(BaseAgent):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
+        session_key = self.agent_id
+        for model in self.model_backend.models:
+            clear_response_chain_state = getattr(
+                model, "_clear_response_chain_state", None
+            )
+            if clear_response_chain_state is not None:
+                clear_response_chain_state(session_key)
         # Snapshot-clean cache is per-conversation state and must not survive
         # agent reuse (e.g. pooled workers across different tasks).
         self._tool_output_history.clear()
@@ -2920,6 +2926,20 @@ class ChatAgent(BaseAgent):
         Raises:
             TimeoutError: If the step operation exceeds the configured timeout.
         """
+
+        # Set agent_id in context-local storage for logging and response
+        # chain state before returning a lazy streaming generator.
+        from camel.utils.agent_context import set_current_agent_id
+
+        set_current_agent_id(self.agent_id)
+
+        # Set Langfuse session_id using agent_id for trace grouping.
+        try:
+            from camel.utils.langfuse import set_current_agent_session_id
+
+            set_current_agent_session_id(self.agent_id)
+        except ImportError:
+            pass  # Langfuse not available
 
         stream = self.model_backend.model_config_dict.get("stream", False)
 
