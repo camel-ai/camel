@@ -54,7 +54,7 @@ def _tool_item():
     )
 
 
-def _response(*, status, output, incomplete_reason=None):
+def _response(*, status, output, incomplete_reason=None, error=None):
     return SimpleNamespace(
         id="resp_1",
         created_at=1234567890,
@@ -64,6 +64,7 @@ def _response(*, status, output, incomplete_reason=None):
             if incomplete_reason is not None
             else None
         ),
+        error=error,
         output=output,
         usage=_usage(),
     )
@@ -118,6 +119,24 @@ def test_non_streaming_completed_tool_call_is_tool_calls():
     completion = response_to_chat_completion(response, MODEL)
 
     assert completion.choices[0].finish_reason == "tool_calls"
+
+
+def test_non_streaming_failed_raises_instead_of_stop():
+    # A failed Responses call must not look like a normal completion.
+    response = _response(
+        status="failed",
+        output=[],
+        error=SimpleNamespace(
+            code="server_error",
+            message="generation failed",
+        ),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="server_error: generation failed",
+    ):
+        response_to_chat_completion(response, MODEL)
 
 
 # --------------------------------------------------------------------------- #

@@ -293,6 +293,81 @@ def test_responses_stream_tool_call_arguments_not_duplicated():
         assert chunks[-1].choices[0].finish_reason == "tool_calls"
 
 
+def test_responses_mode_failed_does_not_save_chain_state():
+    with patch("camel.models.openai_model.OpenAI") as mock_openai:
+        mock_client = MagicMock()
+        mock_openai.return_value = mock_client
+
+        mock_client.responses.create.return_value = {
+            "id": "resp_failed",
+            "created_at": 1741294021,
+            "status": "failed",
+            "error": {
+                "code": "server_error",
+                "message": "generation failed",
+            },
+            "incomplete_details": None,
+            "usage": None,
+            "output": [],
+        }
+
+        model = OpenAIModel(
+            model_type=ModelType.GPT_4O_MINI,
+            api_mode="responses",
+            api_key="dummy",
+        )
+
+        with pytest.raises(
+            RuntimeError,
+            match="server_error: generation failed",
+        ):
+            model.run([{"role": "user", "content": "Hello"}])
+
+        assert model._responses_previous_response_id_by_session == {}
+
+
+@pytest.mark.asyncio
+async def test_responses_mode_failed_async_does_not_save_chain_state():
+    with (
+        patch("camel.models.openai_model.OpenAI") as mock_openai,
+        patch("camel.models.openai_model.AsyncOpenAI") as mock_async_openai,
+    ):
+        mock_client = MagicMock()
+        mock_openai.return_value = mock_client
+        mock_async_client = MagicMock()
+        mock_async_openai.return_value = mock_async_client
+
+        async def _failed_create(**kwargs):
+            return {
+                "id": "resp_failed_async",
+                "created_at": 1741294021,
+                "status": "failed",
+                "error": {
+                    "code": "server_error",
+                    "message": "generation failed",
+                },
+                "incomplete_details": None,
+                "usage": None,
+                "output": [],
+            }
+
+        mock_async_client.responses.create = _failed_create
+
+        model = OpenAIModel(
+            model_type=ModelType.GPT_4O_MINI,
+            api_mode="responses",
+            api_key="dummy",
+        )
+
+        with pytest.raises(
+            RuntimeError,
+            match="server_error: generation failed",
+        ):
+            await model.arun([{"role": "user", "content": "Hello"}])
+
+        assert model._responses_previous_response_id_by_session == {}
+
+
 def test_responses_mode_uses_previous_response_id_and_delta_input():
     with patch("camel.models.openai_model.OpenAI") as mock_openai:
         mock_client = MagicMock()
@@ -301,6 +376,7 @@ def test_responses_mode_uses_previous_response_id_and_delta_input():
         first_response = {
             "id": "resp_first",
             "created_at": 1741294021,
+            "status": "completed",
             "usage": {
                 "input_tokens": 10,
                 "output_tokens": 6,
@@ -317,6 +393,7 @@ def test_responses_mode_uses_previous_response_id_and_delta_input():
         second_response = {
             "id": "resp_second",
             "created_at": 1741294022,
+            "status": "completed",
             "usage": {
                 "input_tokens": 11,
                 "output_tokens": 5,

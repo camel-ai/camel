@@ -65,6 +65,39 @@ def test_openai_compatible_model_apikey_from_env(monkeypatch: MonkeyPatch):
     assert model._async_client.base_url == URL(url)
 
 
+def test_openai_compatible_responses_failed_does_not_save_chain_state():
+    mock_client = MagicMock()
+    mock_client.responses.create.return_value = {
+        "id": "resp_failed",
+        "created_at": 1741294021,
+        "status": "failed",
+        "error": {
+            "code": "server_error",
+            "message": "generation failed",
+        },
+        "incomplete_details": None,
+        "usage": None,
+        "output": [],
+    }
+
+    model = OpenAICompatibleModel(
+        model_type="dummy-model",
+        api_key="dummy",
+        url="https://example.invalid",
+        api_mode="responses",
+        client=mock_client,
+        async_client=MagicMock(),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="server_error: generation failed",
+    ):
+        model.run([{"role": "user", "content": "Hello"}])
+
+    assert model._responses_previous_response_id_by_session == {}
+
+
 def test_openai_compatible_responses_use_agent_session_scope_without_langfuse(
     monkeypatch,
 ):
