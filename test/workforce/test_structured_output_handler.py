@@ -16,7 +16,10 @@ import pytest
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
 )
-from camel.societies.workforce.utils import RecoveryStrategy, TaskAnalysisResult
+from camel.societies.workforce.utils import (
+    RecoveryStrategy,
+    TaskAnalysisResult,
+)
 
 
 class TestFixCommonIssuesRecoveryStrategy:
@@ -29,7 +32,9 @@ class TestFixCommonIssuesRecoveryStrategy:
     """
 
     def test_non_string_recovery_strategy_uses_fallback_values(self):
-        response = '{"reasoning": "task failed", "recovery_strategy": ["retry"]}'
+        response = (
+            '{"reasoning": "task failed", "recovery_strategy": ["retry"]}'
+        )
         fallback_values = {
             "reasoning": "Defaulting to retry due to parsing error",
             "recovery_strategy": RecoveryStrategy.RETRY,
