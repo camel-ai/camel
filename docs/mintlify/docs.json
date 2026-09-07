@@ -558,6 +558,7 @@
               "reference/camel.toolkits.origene_mcp_toolkit",
               "reference/camel.toolkits.planning_worktree_toolkit",
               "reference/camel.toolkits.playwright_mcp_toolkit",
+              "reference/camel.toolkits.plivo_toolkit",
               "reference/camel.toolkits.pptx_toolkit",
               "reference/camel.toolkits.pubmed_toolkit",
               "reference/camel.toolkits.pulse_mcp_search_toolkit",

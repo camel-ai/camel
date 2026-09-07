@@ -24,7 +24,7 @@ from camel.utils import (
 
 
 class NebiusModel(OpenAICompatibleModel):
-    r"""LLM API served by Nebius AI Studio in a unified OpenAICompatibleModel
+    r"""LLM API served by Nebius Token Factory in an OpenAI-compatible
     interface.
 
     Args:
@@ -35,8 +35,8 @@ class NebiusModel(OpenAICompatibleModel):
             If:obj:`None`, :obj:`NebiusConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating
-            with the Nebius AI Studio service. (default: :obj:`None`).
-        url (Optional[str], optional): The url to the Nebius AI Studio service.
+            with Nebius Token Factory. (default: :obj:`None`).
+        url (Optional[str], optional): The URL to Nebius Token Factory.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
@@ -68,7 +68,8 @@ class NebiusModel(OpenAICompatibleModel):
             model_config_dict = NebiusConfig().as_dict()
         api_key = api_key or os.environ.get("NEBIUS_API_KEY")
         url = url or os.environ.get(
-            "NEBIUS_API_BASE_URL", "https://api.studio.nebius.com/v1"
+            "NEBIUS_API_BASE_URL",
+            "https://api.tokenfactory.nebius.com/v1",
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(

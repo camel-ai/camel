@@ -659,6 +659,31 @@ class MCPClient:
 
         return run_async(self.list_mcp_tools)()
 
+    def _convert_mcp_content_to_string(self, content: Any) -> str:
+        r"""Convert a single MCP content block to its string representation.
+
+        Args:
+            content (Any): An MCP content block from CallToolResult.content.
+
+        Returns:
+            str: Textual representation of the content block.
+        """
+        if content.type == "text":
+            return content.text
+        elif content.type == "image":
+            # Return image URL or data URI if available
+            if hasattr(content, "url") and content.url:
+                return f"Image available at: {content.url}"
+            return "Image content received (data URI not shown)"
+        elif content.type == "embedded_resource":
+            # Return resource information if available
+            if hasattr(content, "name") and content.name:
+                return f"Embedded resource: {content.name}"
+            return "Embedded resource received"
+        else:
+            msg = f"Received content of type '{content.type}'"
+            return f"{msg} which is not fully supported yet."
+
     def generate_function_from_mcp_tool(
         self, mcp_tool: types.Tool
     ) -> Callable:
@@ -730,24 +755,12 @@ class MCPClient:
             if not result.content or len(result.content) == 0:
                 return "No data available for this request."
 
-            # Handle different content types
+            # Handle different content types for every MCP content block.
             try:
-                content = result.content[0]
-                if content.type == "text":
-                    return content.text
-                elif content.type == "image":
-                    # Return image URL or data URI if available
-                    if hasattr(content, "url") and content.url:
-                        return f"Image available at: {content.url}"
-                    return "Image content received (data URI not shown)"
-                elif content.type == "embedded_resource":
-                    # Return resource information if available
-                    if hasattr(content, "name") and content.name:
-                        return f"Embedded resource: {content.name}"
-                    return "Embedded resource received"
-                else:
-                    msg = f"Received content of type '{content.type}'"
-                    return f"{msg} which is not fully supported yet."
+                return "\n".join(
+                    self._convert_mcp_content_to_string(content)
+                    for content in result.content
+                )
             except (IndexError, AttributeError) as e:
                 from camel.logger import get_logger
 

@@ -20,7 +20,7 @@ import json
 import tempfile
 from pathlib import Path
 from typing import Any, Optional, Union
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import mcp.types as types
 import pytest
@@ -827,6 +827,79 @@ class TestSSEFallback:
             await client._try_connect(TransportType.STREAMABLE_HTTP)
 
         assert observed_timeouts == [42.0, 42.0]
+
+
+class TestGenerateFunctionFromMCPToolContent:
+    """Tests for MCP tool result content block rendering."""
+
+    @pytest.fixture
+    def client(self):
+        client = MCPClient({"url": "https://example.com/mcp"})
+        client._session = AsyncMock()
+        return client
+
+    def _tool(self, name: str = "multi_block_tool") -> types.Tool:
+        return types.Tool(
+            name=name,
+            description="Returns MCP content blocks",
+            inputSchema={"type": "object", "properties": {}},
+        )
+
+    @pytest.mark.asyncio
+    async def test_multiple_text_blocks_preserved_in_order(self, client):
+        """All text content blocks should be returned in order."""
+        client._session.call_tool.return_value = types.CallToolResult(
+            content=[
+                types.TextContent(type="text", text="search result"),
+                types.TextContent(type="text", text="citation"),
+            ]
+        )
+        generated = client.generate_function_from_mcp_tool(self._tool())
+
+        result = await generated.async_call()
+
+        assert result == "search result\ncitation"
+
+    @pytest.mark.asyncio
+    async def test_single_text_block_unchanged(self, client):
+        """A single text block should keep the existing output."""
+        client._session.call_tool.return_value = types.CallToolResult(
+            content=[types.TextContent(type="text", text="search result")]
+        )
+        generated = client.generate_function_from_mcp_tool(self._tool())
+
+        result = await generated.async_call()
+
+        assert result == "search result"
+
+    @pytest.mark.asyncio
+    async def test_empty_content_returns_existing_message(self, client):
+        """Empty content should keep the existing empty-response message."""
+        client._session.call_tool.return_value = types.CallToolResult(
+            content=[]
+        )
+        generated = client.generate_function_from_mcp_tool(self._tool())
+
+        result = await generated.async_call()
+
+        assert result == "No data available for this request."
+
+    @pytest.mark.asyncio
+    async def test_content_block_order_is_deterministic(self, client):
+        """Block order must match the MCP result content list order."""
+        client._session.call_tool.return_value = types.CallToolResult(
+            content=[
+                types.TextContent(type="text", text="first"),
+                types.TextContent(type="text", text="second"),
+                types.TextContent(type="text", text="third"),
+            ]
+        )
+        generated = client.generate_function_from_mcp_tool(self._tool())
+
+        result = await generated.async_call()
+
+        assert result == "first\nsecond\nthird"
+        assert result.split("\n") == ["first", "second", "third"]
 
 
 if __name__ == "__main__":

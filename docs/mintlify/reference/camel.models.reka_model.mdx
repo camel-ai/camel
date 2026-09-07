@@ -36,6 +36,23 @@ def __init__(
 ):
 ```
 
+<a id="camel.models.reka_model.RekaModel._map_finish_reason"></a>
+
+### _map_finish_reason
+
+```python
+def _map_finish_reason(reka_reason: str):
+```
+
+Map a Reka finish reason to its OpenAI equivalent.
+
+Reka's SDK types finish_reason as
+`__INLINE_CODE_0__`, so a future
+provider value is a normal, successful response rather than a
+malformed one. An unrecognized reason falls back to "stop" (the
+OpenAI default for a completed response) instead of raising, and
+the raw value is logged so the mapping can be extended.
+
 <a id="camel.models.reka_model.RekaModel._convert_reka_to_openai_response"></a>
 
 ### _convert_reka_to_openai_response
