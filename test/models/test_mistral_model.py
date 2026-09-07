@@ -181,10 +181,13 @@ def test_to_openai_response_finish_reason_none_stays_none(monkeypatch):
     assert result.choices[0].finish_reason is None
 
 
-def test_map_finish_reason_unknown_value_passes_through():
-    r"""mistralai types FinishReason as a Literal plus UnrecognizedStr, so a
-    value added by a later API version is forwarded unchanged instead of
-    raising."""
-    assert MistralModel._map_finish_reason("some_new_reason") == (
-        "some_new_reason"
-    )
+@pytest.mark.model_backend
+def test_to_openai_response_raises_for_unknown_finish_reason(monkeypatch):
+    r"""Unknown finish reasons must not reach OpenAI-compatible consumers."""
+    monkeypatch.setenv("MISTRAL_API_KEY", "test_key")
+    model = MistralModel(ModelType.MISTRAL_LARGE, MistralConfig().as_dict())
+
+    with pytest.raises(
+        ValueError, match="Unknown Mistral finish reason: 'some_new_reason'"
+    ):
+        model._to_openai_response(_mock_mistral_response("some_new_reason"))

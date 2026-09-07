@@ -59,7 +59,12 @@ else:
 
 # "model_length" is Mistral's own length stop, which OpenAI expresses as
 # "length".
-_FINISH_REASON_MAP = {"model_length": "length"}
+_FINISH_REASON_MAP = {
+    "stop": "stop",
+    "length": "length",
+    "tool_calls": "tool_calls",
+    "model_length": "length",
+}
 
 
 class MistralModel(BaseModelBackend):
@@ -141,9 +146,12 @@ class MistralModel(BaseModelBackend):
                 "Mistral generation failed with finish reason "
                 f"{mistral_reason!r}"
             )
-        # mistralai types FinishReason as a Literal plus UnrecognizedStr, so
-        # an unknown value is a later API addition, not a failure.
-        return _FINISH_REASON_MAP.get(mistral_reason, mistral_reason)
+        try:
+            return _FINISH_REASON_MAP[mistral_reason]
+        except KeyError as exc:
+            raise ValueError(
+                f"Unknown Mistral finish reason: {mistral_reason!r}"
+            ) from exc
 
     def _to_openai_response(
         self, response: 'ChatCompletionResponse'
