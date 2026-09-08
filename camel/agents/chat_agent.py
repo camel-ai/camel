@@ -1046,10 +1046,11 @@ class ChatAgent(BaseAgent):
                 f"exceed limit, full compression."
             )
             summary = self.summarize(include_summaries=True)
-            self._update_memory_with_summary(
-                summary.get("summary", ""), include_summaries=True
-            )
-            return self.memory.get_context()
+            if self._try_update_memory_with_summary(
+                summary, include_summaries=True
+            ):
+                return self.memory.get_context()
+            return openai_messages, num_tokens
 
         threshold = self._calculate_next_summary_threshold()
         if num_tokens > threshold:
@@ -1058,10 +1059,11 @@ class ChatAgent(BaseAgent):
                 f"({threshold}). Triggering summarization."
             )
             summary = self.summarize(include_summaries=False)
-            self._update_memory_with_summary(
-                summary.get("summary", ""), include_summaries=False
-            )
-            return self.memory.get_context()
+            if self._try_update_memory_with_summary(
+                summary, include_summaries=False
+            ):
+                return self.memory.get_context()
+            return openai_messages, num_tokens
 
         return openai_messages, num_tokens
 
@@ -1082,10 +1084,11 @@ class ChatAgent(BaseAgent):
                 f"exceed limit, full compression."
             )
             summary = await self.asummarize(include_summaries=True)
-            self._update_memory_with_summary(
-                summary.get("summary", ""), include_summaries=True
-            )
-            return self.memory.get_context()
+            if self._try_update_memory_with_summary(
+                summary, include_summaries=True
+            ):
+                return self.memory.get_context()
+            return openai_messages, num_tokens
 
         threshold = self._calculate_next_summary_threshold()
         if num_tokens > threshold:
@@ -1094,10 +1097,11 @@ class ChatAgent(BaseAgent):
                 f"({threshold}). Triggering summarization."
             )
             summary = await self.asummarize(include_summaries=False)
-            self._update_memory_with_summary(
-                summary.get("summary", ""), include_summaries=False
-            )
-            return self.memory.get_context()
+            if self._try_update_memory_with_summary(
+                summary, include_summaries=False
+            ):
+                return self.memory.get_context()
+            return openai_messages, num_tokens
 
         return openai_messages, num_tokens
 
@@ -1142,6 +1146,27 @@ class ChatAgent(BaseAgent):
             )
 
         return threshold
+
+    def _try_update_memory_with_summary(
+        self,
+        summary_result: Dict[str, Any],
+        include_summaries: bool = False,
+    ) -> bool:
+        r"""Update memory only after summarization succeeds."""
+        summary = summary_result.get("summary", "")
+        if (
+            summary_result.get("status") != "success"
+            or not isinstance(summary, str)
+            or not summary.strip()
+        ):
+            logger.warning(
+                "Skipping memory update because summarization failed: %s",
+                summary_result.get("status") or "unknown error",
+            )
+            return False
+
+        self._update_memory_with_summary(summary, include_summaries)
+        return True
 
     def _update_memory_with_summary(
         self, summary: str, include_summaries: bool = False

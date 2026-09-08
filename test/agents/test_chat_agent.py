@@ -292,6 +292,67 @@ def test_clean_snapshot_in_memory_skips_missing_records():
     assert entry.cached is True
 
 
+def _make_agent_with_summarization_history():
+    model = DummyModel(ModelType.GPT_4O_MINI)
+    model._token_counter = MagicMock()
+    model._token_counter.count_tokens_from_messages.return_value = 10
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        token_limit=100_000,
+        summarize_threshold=50,
+    )
+    agent.update_memory(
+        BaseMessage.make_user_message("user", "Remember this."),
+        OpenAIBackendRole.USER,
+    )
+    agent.update_memory(
+        BaseMessage.make_assistant_message("assistant", "I will."),
+        OpenAIBackendRole.ASSISTANT,
+    )
+    agent._calculate_next_summary_threshold = MagicMock(return_value=0)
+    return agent
+
+
+@pytest.mark.parametrize(
+    "summary_result",
+    [
+        {
+            "summary": "",
+            "status": "Failed to generate summary using model: transient",
+        },
+        {"summary": "partial summary", "status": "Error: write failed"},
+        {"summary": "", "status": "success"},
+    ],
+)
+def test_failed_automatic_summarization_preserves_memory(summary_result):
+    agent = _make_agent_with_summarization_history()
+    context_before = agent.memory.get_context()
+    agent.summarize = MagicMock(return_value=summary_result)
+
+    context_after = agent._get_context_with_summarization()
+
+    assert context_after == context_before
+    assert agent.memory.get_context() == context_before
+
+
+@pytest.mark.asyncio
+async def test_failed_async_automatic_summarization_preserves_memory():
+    agent = _make_agent_with_summarization_history()
+    context_before = agent.memory.get_context()
+    agent.asummarize = AsyncMock(
+        return_value={
+            "summary": "",
+            "status": "Failed to generate summary from model response.",
+        }
+    )
+
+    context_after = await agent._get_context_with_summarization_async()
+
+    assert context_after == context_before
+    assert agent.memory.get_context() == context_before
+
+
 @pytest.mark.model_backend
 def test_chat_agent_stored_messages():
     system_msg = BaseMessage(
