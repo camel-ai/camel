@@ -1152,13 +1152,9 @@ class ChatAgent(BaseAgent):
         summary_result: Dict[str, Any],
         include_summaries: bool = False,
     ) -> bool:
-        r"""Update memory only after summarization succeeds."""
+        r"""Update memory when summary text exists, even if saving failed."""
         summary = summary_result.get("summary", "")
-        if (
-            summary_result.get("status") != "success"
-            or not isinstance(summary, str)
-            or not summary.strip()
-        ):
+        if not isinstance(summary, str) or not summary.strip():
             logger.warning(
                 "Skipping memory update because summarization failed: %s",
                 summary_result.get("status") or "unknown error",

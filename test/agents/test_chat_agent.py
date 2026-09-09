@@ -292,14 +292,14 @@ def test_clean_snapshot_in_memory_skips_missing_records():
     assert entry.cached is True
 
 
-def _make_agent_with_summarization_history():
+def _make_agent_with_summarization_history(token_limit=100_000):
     model = DummyModel(ModelType.GPT_4O_MINI)
     model._token_counter = MagicMock()
     model._token_counter.count_tokens_from_messages.return_value = 10
     agent = ChatAgent(
         system_message="You are a helpful assistant.",
         model=model,
-        token_limit=100_000,
+        token_limit=token_limit,
         summarize_threshold=50,
     )
     agent.update_memory(
@@ -321,7 +321,6 @@ def _make_agent_with_summarization_history():
             "summary": "",
             "status": "Failed to generate summary using model: transient",
         },
-        {"summary": "partial summary", "status": "Error: write failed"},
         {"summary": "", "status": "success"},
     ],
 )
@@ -351,6 +350,54 @@ async def test_failed_async_automatic_summarization_preserves_memory():
 
     assert context_after == context_before
     assert agent.memory.get_context() == context_before
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("async_mode", [False, True])
+@pytest.mark.parametrize("include_summaries", [False, True])
+async def test_automatic_summarization_uses_summary_when_save_fails(
+    async_mode, include_summaries
+):
+    agent = _make_agent_with_summarization_history(token_limit=1000)
+    count_tokens = agent.model_backend.token_counter.count_tokens_from_messages
+    count_tokens.side_effect = lambda messages: 30 * len(messages)
+    # Exercise the real threshold so repeated context builds detect retries.
+    del agent._calculate_next_summary_threshold
+    for _ in range(10):
+        agent.update_memory(
+            BaseMessage.make_user_message("user", "Remember this."),
+            OpenAIBackendRole.USER,
+        )
+        agent.update_memory(
+            BaseMessage.make_assistant_message("assistant", "I will."),
+            OpenAIBackendRole.ASSISTANT,
+        )
+    if include_summaries:
+        agent._summary_token_count = agent.token_limit
+    summary = "[CONTEXT_SUMMARY] A perfectly good summary."
+    result = {"summary": summary, "status": "Error: write failed"}
+    summarizer = (
+        AsyncMock(return_value=result)
+        if async_mode
+        else MagicMock(return_value=result)
+    )
+    if async_mode:
+        agent.asummarize = summarizer
+    else:
+        agent.summarize = summarizer
+
+    for _ in range(5):
+        if async_mode:
+            messages, _ = await agent._get_context_with_summarization_async()
+        else:
+            messages, _ = agent._get_context_with_summarization()
+        assert len(messages) == 3
+        assert messages[1]["content"] == summary
+        assert "Remember this." in messages[2]["content"]
+
+    summarizer.assert_called_once_with(include_summaries=include_summaries)
+    if async_mode:
+        summarizer.assert_awaited_once()
 
 
 @pytest.mark.model_backend
