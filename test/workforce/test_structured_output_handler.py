@@ -60,23 +60,50 @@ class TestFixCommonIssuesRecoveryStrategy:
     @pytest.mark.parametrize(
         "raw_value, expected",
         [
-            ("RETRY", RecoveryStrategy.RETRY),
-            ("rety", RecoveryStrategy.RETRY),
-            ("replan", RecoveryStrategy.REPLAN),
+            ("RETRY", "retry"),
+            ("REPLAN", "replan"),
+            ("Decompose", "decompose"),
         ],
     )
-    def test_string_recovery_strategy_normalization_unchanged(
+    def test_mixed_case_strategy_is_normalized_in_place(
         self, raw_value, expected
     ):
-        response = (
+        # Unit-level: pins the write-back itself, so the normalization cannot
+        # regress into a dead store again.
+        fixed = StructuredOutputHandler._fix_common_issues(
+            {"reasoning": "task failed", "recovery_strategy": raw_value},
+            TaskAnalysisResult,
+        )
+        assert fixed["recovery_strategy"] == expected
+
+        # End-to-end: the normalized value must validate, not fall through to
+        # the default instance (which also returns RETRY).
+        result = StructuredOutputHandler.parse_structured_response(
             '{"reasoning": "task failed", '
             f'"recovery_strategy": "{raw_value}"'
-            '}'
+            '}',
+            TaskAnalysisResult,
         )
-
-        result = StructuredOutputHandler.parse_structured_response(
-            response, TaskAnalysisResult
-        )
-
-        assert isinstance(result, TaskAnalysisResult)
         assert result.recovery_strategy == expected
+
+    @pytest.mark.parametrize("raw_value", ["rety", "not-a-strategy"])
+    def test_unfixable_string_value_falls_back_to_default_instance(
+        self, raw_value
+    ):
+        # "rety" is not a partial match ('retry'.startswith('rety') is False),
+        # so it stays unfixable and validation fails into the default
+        # instance, which returns RETRY.
+        result = StructuredOutputHandler.parse_structured_response(
+            '{"reasoning": "task failed", '
+            f'"recovery_strategy": "{raw_value}"'
+            '}',
+            TaskAnalysisResult,
+        )
+        assert result.recovery_strategy == RecoveryStrategy.RETRY
+
+    def test_non_string_value_is_left_untouched_for_validation(self):
+        fixed = StructuredOutputHandler._fix_common_issues(
+            {"reasoning": "task failed", "recovery_strategy": ["retry"]},
+            TaskAnalysisResult,
+        )
+        assert fixed["recovery_strategy"] == ["retry"]

@@ -391,6 +391,10 @@ Ensure the JSON is valid and properly formatted.
                 # values, same as an unfixable string value.
                 if isinstance(strategy, str):
                     strategy = strategy.lower()
+                    # Write the normalized value back so mixed-case input
+                    # (e.g. "REPLAN") validates instead of falling through to
+                    # the default instance.
+                    fixed_data['recovery_strategy'] = strategy
                     valid_strategies = [
                         'retry',
                         'replan',
