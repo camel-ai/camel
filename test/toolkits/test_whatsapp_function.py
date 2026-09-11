@@ -15,7 +15,7 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
-from requests import RequestException
+import requests
 
 from camel.toolkits.whatsapp_toolkit import WhatsAppToolkit
 
@@ -143,21 +143,46 @@ def test_get_tools(whatsapp_toolkit):
         )
 
 
+def test_send_message_does_not_duplicate_send_on_timeout(whatsapp_toolkit):
+    calls = []
+
+    def fake_post(*args, **kwargs):
+        calls.append(kwargs.get("json"))
+        if len(calls) == 1:
+            raise requests.exceptions.Timeout(
+                "Connection timed out after sending"
+            )
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.return_value = None
+        mock_resp.json.return_value = {"messages": [{"id": "wamid.SECOND"}]}
+        return mock_resp
+
+    with patch("requests.post", side_effect=fake_post):
+        result = whatsapp_toolkit.send_message("1234567890", "Test message")
+
+    assert len(calls) == 1
+    assert "Failed to send message" in result
+    assert result != {"messages": [{"id": "wamid.SECOND"}]}
+
+
 @patch('time.sleep')
-@patch('requests.post')
-def test_retry_mechanism(mock_post, mock_sleep, whatsapp_toolkit):
-    # Mock failed API responses followed by a success
-    mock_post.side_effect = [
-        RequestException("API Error"),
-        RequestException("API Error"),
-        MagicMock(
-            json=lambda: {"message_id": "test_message_id"},
-            raise_for_status=lambda: None,
-        ),
-    ]
+def test_send_message_retries_on_connection_error(
+    mock_sleep, whatsapp_toolkit
+):
+    calls = []
 
-    result = whatsapp_toolkit.send_message("1234567890", "Test message")
+    def fake_post(*args, **kwargs):
+        calls.append(kwargs.get("json"))
+        if len(calls) == 1:
+            raise requests.exceptions.ConnectionError("Failed to resolve host")
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.return_value = None
+        mock_resp.json.return_value = {"messages": [{"id": "wamid.SUCCESS"}]}
+        return mock_resp
 
-    assert result == {"message_id": "test_message_id"}
-    assert mock_post.call_count == 3
-    assert mock_sleep.call_count == 2
+    with patch("requests.post", side_effect=fake_post):
+        result = whatsapp_toolkit.send_message("1234567890", "Test message")
+
+    assert len(calls) == 2
+    assert result == {"messages": [{"id": "wamid.SUCCESS"}]}
+    mock_sleep.assert_called_once()

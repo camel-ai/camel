@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import time
 from typing import Any, Dict, List, Optional, Union
 
 import requests
@@ -53,7 +54,6 @@ class WhatsAppToolkit(BaseToolkit):
                 "WHATSAPP_PHONE_NUMBER_ID environment variables."
             )
 
-    @retry_on_error()
     def send_message(
         self, to: str, message: str
     ) -> Union[Dict[str, Any], str]:
@@ -80,14 +80,27 @@ class WhatsAppToolkit(BaseToolkit):
             "text": {"body": message},
         }
 
-        try:
-            response = requests.post(url=url, headers=headers, json=data)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            raise e
-        except Exception as e:
-            return f"Failed to send message: {e!s}"
+        max_retries = 3
+        delay = 1.0
+
+        for attempt in range(max_retries + 1):
+            try:
+                response = requests.post(url=url, headers=headers, json=data)
+                response.raise_for_status()
+                return response.json()
+            except requests.exceptions.ConnectionError as e:
+                # Connection failed before request could be completed.
+                # Safe to retry without causing duplicate delivery.
+                if attempt == max_retries:
+                    return f"Failed to send message: {e!s}"
+                time.sleep(delay)
+                delay *= 2
+            except requests.exceptions.RequestException as e:
+                # Ambiguous failures (e.g. read/write timeouts) or HTTP errors
+                # must not be retried to prevent duplicate message sends.
+                return f"Failed to send message: {e!s}"
+            except Exception as e:
+                return f"Failed to send message: {e!s}"
 
     @retry_on_error()
     def get_message_templates(self) -> Union[List[Dict[str, Any]], str]:
