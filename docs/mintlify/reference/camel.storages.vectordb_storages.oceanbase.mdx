@@ -19,7 +19,7 @@ OceanBase Vector Database.
 - **user** (str): Username for connecting to OceanBase. (default: :obj:`"root@test"`)
 - **password** (str): Password for the user. (default: :obj:`""`) (default: `""`)
 - **db_name** (str): Database name in OceanBase. (default: :obj:`"test"`) distance (Literal["l2", "cosine", "inner_product", "negative_inner_product"], optional): The distance metric for vector comparison. Options: "l2", "cosine", "inner_product", "negative_inner_product". (default: :obj:`"l2"`)
-- **delete_table_on_del** (bool, optional): Flag to determine if the table should be deleted upon object destruction. (default: :obj:`False`) **kwargs (Any): Additional keyword arguments for initializing `ObVecClient`.
+- **delete_table_on_del** (bool, optional): Flag to determine if the table should be deleted upon object destruction. (default: :obj:`False`) **kwargs (Any): Additional keyword arguments for initializing :obj:`ObVecClient`.
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.__init__"></a>
 
@@ -178,8 +178,6 @@ to map the full range to [0, 1].
 def clear(self):
 ```
 
-Remove all vectors from the storage.
-
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.load"></a>
 
 ### load
@@ -198,4 +196,6 @@ Load the collection hosted on cloud service.
 def client(self):
 ```
 
-Provides access to underlying OceanBase vector database client.
+**Returns:**
+
+  ObVecClient: The underlying OceanBase client instance.

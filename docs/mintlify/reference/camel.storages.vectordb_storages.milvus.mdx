@@ -18,7 +18,7 @@ The detailed information about Milvus is available at:
 
 - **vector_dim** (int): The dimension of storing vectors.
 - **url_and_api_key** (Tuple[str, str]): Tuple containing the URL and API key for connecting to a remote Milvus instance. URL maps to Milvus uri concept, typically "endpoint:port". API key maps to Milvus token concept, for self-hosted it's "username:pwd", for Zilliz Cloud (fully-managed Milvus) it's API Key.
-- **collection_name** (Optional[str], optional): Name for the collection in the Milvus. If not provided, set it to the current time with iso format. (default: :obj:`None`) **kwargs (Any): Additional keyword arguments for initializing `MilvusClient`.
+- **collection_name** (Optional[str], optional): Name for the collection in the Milvus. If not provided, set it to the current time with iso format. (default: :obj:`None`) **kwargs (Any): Additional keyword arguments for initializing :obj:`MilvusClient`.
 
 <a id="camel.storages.vectordb_storages.milvus.MilvusStorage.__init__"></a>
 
@@ -46,7 +46,7 @@ Initializes the Milvus client with the provided connection details.
 
 **Parameters:**
 
-- **url_and_api_key** (Tuple[str, str]): The URL and API key for the Milvus server. **kwargs: Additional keyword arguments passed to the Milvus client.
+- **url_and_api_key** (Tuple[str, str]): The URL and API key for the Milvus server. **kwargs (Any): Additional keyword arguments passed to the Milvus client.
 
 <a id="camel.storages.vectordb_storages.milvus.MilvusStorage._check_and_create_collection"></a>
 
@@ -55,9 +55,6 @@ Initializes the Milvus client with the provided connection details.
 ```python
 def _check_and_create_collection(self):
 ```
-
-Checks if the specified collection exists in Milvus and creates it
-if it doesn't, ensuring it matches the specified vector dimensionality.
 
 <a id="camel.storages.vectordb_storages.milvus.MilvusStorage._create_collection"></a>
 
@@ -71,7 +68,7 @@ Creates a new collection in the database.
 
 **Parameters:**
 
-- **collection_name** (str): Name of the collection to be created. **kwargs (Any): Additional keyword arguments pass to create collection.
+- **collection_name** (str): Name of the collection to be created. **kwargs (Any): Additional keyword arguments passed to create collection.
 
 <a id="camel.storages.vectordb_storages.milvus.MilvusStorage._delete_collection"></a>
 
@@ -85,7 +82,7 @@ Deletes an existing collection from the database.
 
 **Parameters:**
 
-- **collection** (str): Name of the collection to be deleted.
+- **collection_name** (str): Name of the collection to be deleted.
 
 <a id="camel.storages.vectordb_storages.milvus.MilvusStorage._collection_exists"></a>
 
@@ -168,7 +165,7 @@ Adds a list of vectors to the specified collection.
 
 **Parameters:**
 
-- **records** (List[VectorRecord]): List of vectors to be added. **kwargs (Any): Additional keyword arguments pass to insert.
+- **records** (List[VectorRecord]): List of vectors to be added. **kwargs (Any): Additional keyword arguments passed to insert.
 
 <a id="camel.storages.vectordb_storages.milvus.MilvusStorage.delete"></a>
 

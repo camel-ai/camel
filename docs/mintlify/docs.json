@@ -384,6 +384,7 @@
             "pages": [
               "reference/camel.memories.agent_memories",
               "reference/camel.memories.base",
+              "reference/camel.memories.memanto",
               "reference/camel.memories.records",
               "reference/camel.memories.blocks.chat_history_block",
               "reference/camel.memories.blocks.vectordb_block",

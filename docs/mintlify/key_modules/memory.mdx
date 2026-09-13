@@ -335,6 +335,64 @@ Add [Mem0](https://mem0.ai/) for cloud-based memory with automatic sync.
 
 **Use when:** you need reliable, persistent chat history in the cloud (not advanced semantic search).
 </Card>
+
+<Card title="Memanto Memory" icon="warehouse">
+[Memanto](https://docs.memanto.ai) provides semantic long-term memory through
+`MemantoMemory`, an implementation of CAMEL's agent memory interface.
+`ChatAgent` automatically archives user and assistant text and retrieves
+relevant memories using the current user message.
+
+Start a Memanto server and create an agent once:
+
+```bash
+pip install memanto
+memanto serve
+# In another terminal:
+memanto agent create my-camel-agent
+```
+
+```python
+from camel.agents import ChatAgent
+from camel.memories import MemantoMemory, ScoreBasedContextCreator
+from camel.types import ModelType
+from camel.utils import OpenAITokenCounter
+
+memory = MemantoMemory(
+    context_creator=ScoreBasedContextCreator(
+        OpenAITokenCounter(ModelType.GPT_4O_MINI), token_limit=4096,
+    ),
+    agent_id="my-camel-agent",
+    base_url="http://localhost:8000",
+    retrieve_limit=3,
+)
+try:
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        agent_id="my-camel-agent",
+        memory=memory,
+    )
+    response = agent.step("I prefer concise Python examples.")
+    print(response.msgs[0].content)
+finally:
+    memory.close()
+```
+
+Set `OPENAI_API_KEY` for the default ChatAgent model. `agent_id` and `base_url`
+can also be configured through `MEMANTO_AGENT_ID` and `MEMANTO_BASE_URL`.
+
+Complete current conversation records, including system roles, attachments,
+and tool calls/results, remain in the configured chat-history storage
+(in-memory by default). Memanto stores user/assistant text and returns it as
+historical context; it is not a lossless backup of the conversation.
+
+`clear()`, `ChatAgent.reset()`, and rollback operations affect current chat
+history only. Archived Memanto memories remain available for later recall.
+Manage deletion of archived memories in Memanto. Remote writes and retrieval
+can depend on server indexing latency; current user input remains available
+in local chat history immediately. HTTP errors are raised to the caller.
+
+See the [memory reference](/reference/camel.memories.memanto).
+</Card>
 </Card>
 
 <Card title="Advanced Topics" icon="star">
