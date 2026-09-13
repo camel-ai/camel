@@ -19,6 +19,7 @@ import pytest
 
 from camel.storages import (
     BaseVectorStorage,
+    FaissStorage,
     QdrantStorage,
     VectorDBQuery,
     VectorRecord,
@@ -39,10 +40,15 @@ def storage(request):
             yield QdrantStorage(vector_dim=4)
         elif params[1] == "local":
             tmpdir = tempfile.mkdtemp()
-            yield QdrantStorage(
+            storage = QdrantStorage(
                 vector_dim=4,
                 path=tmpdir,
             )
+            yield storage
+            # Close the local client so that its file handles are
+            # released before the directory is removed (required on
+            # Windows, where open files cannot be deleted).
+            storage.close_client()
             shutil.rmtree(tmpdir)
 
 
@@ -108,3 +114,19 @@ def test_get_payload_by_vector(storage: BaseVectorStorage):
     payloads = storage.get_payloads_by_vector([1.0, 1.0, 1.0, 1.0], top_k=2)
     assert payloads[0] == {"order": 3}
     assert payloads[1] == {"order": 2}
+
+
+def test_generated_collection_names_are_windows_safe() -> None:
+    r"""Auto-generated collection names must be valid Windows path
+    components, because Qdrant's local mode uses the name as a directory
+    name and FaissStorage uses it as a file name when a storage path is
+    set. Raw ``datetime.isoformat()`` output contains ``:`` (and ``.``),
+    which is illegal in Windows paths.
+    """
+    illegal_chars = set('<>:"/\\|?*')
+
+    qdrant_storage = QdrantStorage(vector_dim=4)
+    assert not illegal_chars & set(qdrant_storage.collection_name)
+
+    faiss_storage = FaissStorage(vector_dim=4)
+    assert not illegal_chars & set(faiss_storage.collection_name)

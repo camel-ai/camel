@@ -235,10 +235,15 @@ class QdrantStorage(BaseVectorStorage):
     def _generate_collection_name(self) -> str:
         r"""Generates a collection name if user doesn't provide.
 
+        Qdrant's local mode uses the collection name as a directory name,
+        so the name must not contain characters that are illegal in
+        Windows paths. ``:`` and ``.`` are replaced with ``-``, consistent
+        with the ChromaDB implementation.
+
         Returns:
             str: Generated collection name.
         """
-        return datetime.now().isoformat()
+        return datetime.now().isoformat().replace(':', '-').replace('.', '-')
 
     def _get_collection_info(self, collection_name: str) -> Dict[str, Any]:
         r"""Retrieves details of an existing collection.

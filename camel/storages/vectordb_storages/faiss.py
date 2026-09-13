@@ -120,7 +120,14 @@ class FaissStorage(BaseVectorStorage):
         Returns:
             str: Generated collection name.
         """
-        return f"faiss_index_{datetime.now().isoformat()}"
+        # The collection name is used as a file name when a storage
+        # path is set, so it must not contain characters that are illegal
+        # in Windows paths. ``:`` and ``.`` are replaced with ``-``,
+        # consistent with the ChromaDB implementation.
+        timestamp = (
+            datetime.now().isoformat().replace(':', '-').replace('.', '-')
+        )
+        return f"faiss_index_{timestamp}"
 
     def _get_index_path(self) -> str:
         r"""Returns the path to the index file.
