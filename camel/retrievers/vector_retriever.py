@@ -253,7 +253,7 @@ class VectorRetriever(BaseRetriever):
                 and result.record.payload is not None
             ):
                 result_dict = {
-                    'similarity score': str(result.similarity),
+                    'similarity score': float(result.similarity),
                     'content path': result.record.payload.get(
                         'content path', ''
                     ),

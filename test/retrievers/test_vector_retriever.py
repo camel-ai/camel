@@ -94,7 +94,7 @@ def test_query(vector_retriever):
 
     results = vector_retriever.query(query, top_k=top_k)
     assert len(results) == 1
-    assert results[0]['similarity score'] == '0.8'
+    assert results[0]['similarity score'] == 0.8
 
 
 # Test query with no results found
@@ -131,3 +131,31 @@ def test_query_payload_none(vector_retriever):
         ),
     ):
         vector_retriever.query(query, top_k=top_k)
+
+
+def test_query_returns_numeric_similarity_scores(
+    vector_retriever, mock_vector_storage
+):
+    from camel.storages import VectorDBQueryResult, VectorRecord
+
+    mock_vector_storage.query = Mock(
+        return_value=[
+            VectorDBQueryResult(
+                record=VectorRecord(
+                    vector=[0.0, 0.0],
+                    payload={
+                        'text': 'doc a',
+                        'content path': 'doc_a.txt',
+                        'metadata': {},
+                        'extra_info': {},
+                    },
+                ),
+                similarity=0.9,
+            )
+        ]
+    )
+
+    results = vector_retriever.query('query text')
+
+    assert results[0]['similarity score'] == 0.9
+    assert isinstance(results[0]['similarity score'], float)
