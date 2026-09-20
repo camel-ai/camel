@@ -17,7 +17,7 @@ from ssl import SSLContext
 from typing import TYPE_CHECKING, List, Optional
 
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 if TYPE_CHECKING:
     from slack_sdk import WebClient
@@ -36,6 +36,7 @@ class SlackToolkit(BaseToolkit):
     channel, joining an existing channel, leaving a channel.
     """
 
+    @dependencies_required('slack_sdk')
     def __init__(
         self,
         timeout: Optional[float] = None,

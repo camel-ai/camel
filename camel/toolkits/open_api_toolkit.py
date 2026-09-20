@@ -19,6 +19,7 @@ import requests
 
 from camel.toolkits import FunctionTool, openapi_security_config
 from camel.types import OpenAPIName
+from camel.utils import dependencies_required
 
 
 class OpenAPIToolkit:
@@ -30,6 +31,7 @@ class OpenAPIToolkit:
     to the API endpoints.
     """
 
+    @dependencies_required('prance')
     def parse_openapi_file(
         self, openapi_spec_path: str
     ) -> Optional[Dict[str, Any]]:

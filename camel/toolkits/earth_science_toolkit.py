@@ -15,12 +15,12 @@ import math
 import os
 import re
 from pathlib import Path
-from typing import Any, List, cast
+from typing import Any, List, Optional, cast
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -36,6 +36,10 @@ class EarthScienceToolkit(BaseToolkit):
     Index (12), Inversion (18), Perception (15), Analysis (10), Statistics
     (49).
     """
+
+    @dependencies_required('numpy', 'rasterio')
+    def __init__(self, timeout: Optional[float] = None):
+        super().__init__(timeout=timeout)
 
     def calculate_ndvi(self, input_nir_path, input_red_path, output_path):
         r"""Calculate NDVI from NIR and Red band rasters.
@@ -615,6 +619,7 @@ class EarthScienceToolkit(BaseToolkit):
             results.append(res)
         return results
 
+    @dependencies_required('scipy')
     def calculate_ndsi(
         self, input_green_path: str, input_swir_path: str, output_path: str
     ) -> str:
@@ -763,6 +768,7 @@ class EarthScienceToolkit(BaseToolkit):
         extreme_loss_percentage = len(extreme_loss_pixels) / len(valid_pixels)
         return float(extreme_loss_percentage)
 
+    @dependencies_required('scipy')
     def compute_tvdi(
         self, ndvi_path: str, lst_path: str, output_path: str
     ) -> str:
@@ -2524,6 +2530,7 @@ class EarthScienceToolkit(BaseToolkit):
         a, b = np.linalg.lstsq(A, y_arr, rcond=None)[0]
         return float(a), float(b)
 
+    @dependencies_required('scipy')
     def mann_kendall_test(self, x: list):
         """
         Description:
@@ -2774,6 +2781,7 @@ class EarthScienceToolkit(BaseToolkit):
         else:
             return best_lag
 
+    @dependencies_required('scipy')
     def getis_ord_gi_star(
         self, image_path: str, weight_matrix: list, output_path: str
     ) -> str:
@@ -3252,6 +3260,7 @@ class EarthScienceToolkit(BaseToolkit):
             for file_path in file_list
         ]
 
+    @dependencies_required('scipy')
     def calc_single_image_skewness(
         self, file_path: str, uint8: bool = False
     ) -> float:
@@ -3298,6 +3307,7 @@ class EarthScienceToolkit(BaseToolkit):
             for file_path in file_list
         ]
 
+    @dependencies_required('scipy')
     def calc_single_image_kurtosis(
         self, file_path: str, uint8: bool = False
     ) -> float:
