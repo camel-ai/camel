@@ -31,8 +31,13 @@ build_image() {
     echo "Creating temporary build directory: $TEMP_DIR"
 
     # Copy necessary files to temporary directory
+    rsync -av \
+          --exclude='.git' \
+          --exclude-from="$SCRIPT_DIR/.dockerignore" \
+          "$CAMEL_ROOT/" "$TEMP_DIR/"
+
     cp "$SCRIPT_DIR/Dockerfile" "$TEMP_DIR/"
-    cp -r "$CAMEL_ROOT" "$TEMP_DIR/camel_source"
+    cp "$SCRIPT_DIR/.dockerignore" "$TEMP_DIR/" 2>/dev/null || true
 
     # Ensure API file exists
     if [ ! -f "$CAMEL_ROOT/camel/runtimes/api.py" ]; then
@@ -40,13 +45,8 @@ build_image() {
         exit 1
     fi
 
-    # Copy API file to a known location
-    mkdir -p "$TEMP_DIR/api"
-    cp "$CAMEL_ROOT/camel/runtimes/api.py" "$TEMP_DIR/api/"
-
-    # Modify Dockerfile COPY commands - fix the sed command
-    sed -i '' 's|COPY ../../../|COPY camel_source/|g' "$TEMP_DIR/Dockerfile"
-    sed -i '' 's|COPY camel/runtimes/api.py|COPY api/api.py|g' "$TEMP_DIR/Dockerfile"
+    # Modify Dockerfile COPY commands
+    sed -i '' 's|COPY ../../../|COPY ./|g' "$TEMP_DIR/Dockerfile"
 
     # Build in temporary directory
     (cd "$TEMP_DIR" && docker build -t ${FULL_NAME} .)
