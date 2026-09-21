@@ -1,0 +1,69 @@
+<a id="camel.societies.workforce.tool_selector"></a>
+
+<a id="camel.societies.workforce.tool_selector.ToolSelector"></a>
+
+## ToolSelector
+
+```python
+class ToolSelector(ABC):
+```
+
+Abstract base class for all tool selectors.
+
+Subclasses must implement the [select_tools] method to provide
+different strategies for selecting tools based on task content.
+
+<a id="camel.societies.workforce.tool_selector.ToolSelector.select_tools"></a>
+
+### select_tools
+
+```python
+def select_tools(self, task_content: str):
+```
+
+Selects appropriate tools based on the given task content.
+
+**Parameters:**
+
+- **task_content** (str): The description of the task that requires tools.
+
+**Returns:**
+
+  List[Any]: A list of available tools.
+
+<a id="camel.societies.workforce.tool_selector.ACIFunctionToolSelector"></a>
+
+## ACIFunctionToolSelector
+
+```python
+class ACIFunctionToolSelector(ToolSelector):
+```
+
+Tool selector using ACIToolkit to dynamically search functions based on
+task intent.
+
+<a id="camel.societies.workforce.tool_selector.ACIFunctionToolSelector.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, linked_account_owner_id: str | None = None):
+```
+
+<a id="camel.societies.workforce.tool_selector.ACIFunctionToolSelector.select_tools"></a>
+
+### select_tools
+
+```python
+def select_tools(self, task_content: str):
+```
+
+Searches for functions via ACI Toolkit based on the task intent.
+
+**Parameters:**
+
+- **task_content** (str): Description of the task for function discovery.
+
+**Returns:**
+
+  List[FunctionTool]: A list of matched function tools.
