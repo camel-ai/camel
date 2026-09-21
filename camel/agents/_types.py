@@ -15,10 +15,16 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import AsyncStream, Stream
 from openai.types.chat import ChatCompletionChunk
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from camel.messages import BaseMessage
 from camel.types import ChatCompletion
+
+# OpenAI enforces a maximum of 40 characters for tool_call IDs.
+# But Openai compatible endpoints may generate much longer IDs.
+# We normalize at ingestion so downstream consumers never see oversized IDs.
+# https://github.com/camel-ai/camel/issues/2215
+_MAX_TOOL_CALL_ID_LEN = 40
 
 
 class ToolCallRequest(BaseModel):
@@ -28,6 +34,19 @@ class ToolCallRequest(BaseModel):
     args: Dict[str, Any]
     tool_call_id: str
     extra_content: Optional[Dict[str, Any]] = None
+
+    @field_validator('tool_call_id')
+    @classmethod
+    def truncate_tool_call_id(cls, v: str) -> str:
+        r"""Truncate oversized tool_call IDs for cross-provider compat.
+
+        Some backends (e.g. vLLM) generate IDs longer than the 40-char
+        limit enforced by OpenAI. Truncating once here avoids repeated
+        normalization on every API call.
+        """
+        if len(v) > _MAX_TOOL_CALL_ID_LEN:
+            return v[:_MAX_TOOL_CALL_ID_LEN]
+        return v
 
 
 class ModelResponse(BaseModel):
