@@ -21,10 +21,6 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
-import numpy as np
-from rouge import Rouge
-from tqdm import tqdm
-
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
 from camel.messages import BaseMessage
@@ -138,6 +134,8 @@ class APIBankBenchmark(BaseBenchmark):
         jsonl_files = [
             f for f in os.listdir(file_path) if f.endswith('.jsonl')
         ]
+        from tqdm import tqdm
+
         for file in tqdm(jsonl_files, desc="Processing files"):
             history = []
             with open(file_path / file, 'r') as f:
@@ -240,6 +238,8 @@ class APIBankBenchmark(BaseBenchmark):
         total_api_calls, correct_api_calls, rougel_scores = 0, 0, []
 
         with open(self.save_to, "w") as f:
+            from tqdm import tqdm
+
             for test in tqdm(datas, desc="Running"):
                 samples = self._data[test]
                 evaluator = Evaluator(samples)  # type: ignore[arg-type]
@@ -380,6 +380,8 @@ class APIBankBenchmark(BaseBenchmark):
                 else 0,
             }
         elif dialog_test_enabled:
+            import numpy as np
+
             return {'Dialog_score': np.mean(rougel_scores)}
 
 
@@ -415,6 +417,8 @@ def agent_call(messages: List[Dict], agent: ChatAgent):
 
 def calculate_rouge_l_score(reference, hypothesis):
     r"""Calculate rouge l score between hypothesis and reference."""
+    from rouge import Rouge
+
     rouge = Rouge()
     scores = rouge.get_scores(hypothesis, reference)
     rouge_l_score = scores[0]['rouge-l']['f']

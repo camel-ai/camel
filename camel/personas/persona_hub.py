@@ -17,7 +17,6 @@ import uuid
 from functools import lru_cache
 from typing import Dict, List, Literal, Optional, Union
 
-import numpy as np
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
@@ -235,13 +234,15 @@ persona_description: <BLANK>
         return embedding_model.embed(description)
 
     @staticmethod
-    def _cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
+    def _cosine_similarity(vec1: 'np.ndarray', vec2: 'np.ndarray') -> float:
         r"""Copmute the cosine similarity of two vectors.
 
         Args:
             vec1 (np.ndarray): Vector 1
             vec2 (np.ndarray): Vector 2
         """
+        import numpy as np
+
         return np.dot(vec1, vec2) / (
             np.linalg.norm(vec1) * np.linalg.norm(vec2)
         )
@@ -275,6 +276,8 @@ persona_description: <BLANK>
         persona2_embeddings = self._get_embedding(
             embedding_model, persona2_description
         )
+
+        import numpy as np
 
         similarity = self._cosine_similarity(
             np.array(persona1_embeddings), np.array(persona2_embeddings)
