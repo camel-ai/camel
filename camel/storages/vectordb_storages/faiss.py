@@ -14,6 +14,7 @@
 
 import os
 import pickle
+import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
@@ -32,6 +33,33 @@ if TYPE_CHECKING:
     from numpy import ndarray
 
 logger = get_logger(__name__)
+
+
+class _SafeUnpickler(pickle.Unpickler):
+    r"""Unpickler restricted to the value types FaissStorage persists.
+
+    The metadata sidecar is deserialized in the constructor, so an
+    attacker-supplied file would otherwise execute arbitrary code through a
+    crafted pickle (#4353). Only the globals actually written by
+    ``_save_to_disk`` are allowed; everything else raises ``UnpicklingError``,
+    which lands in the existing try/except and rebuilds a fresh index.
+    """
+
+    _ALLOWED_GLOBALS = {
+        ("collections", "OrderedDict"),
+        ("numpy", "dtype"),
+        ("numpy", "_reconstruct"),
+        ("numpy.core.multiarray", "_reconstruct"),
+    }
+
+    def find_class(self, module: str, name: str):
+        if (module, name) in self._ALLOWED_GLOBALS or (
+            module == "numpy.dtypes" and name.endswith("DType")
+        ):
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(
+            f"Forbidden class in FAISS metadata pickle: {module}.{name}"
+        )
 
 
 class FaissStorage(BaseVectorStorage):
@@ -117,10 +145,16 @@ class FaissStorage(BaseVectorStorage):
     def _generate_collection_name(self) -> str:
         r"""Generates a collection name if user doesn't provide.
 
+        The ISO timestamp is sanitized to [A-Za-z0-9_-]: the name becomes a
+        file on disk (`<storage_path>/<name>.index`), and ':' is an illegal
+        path character on Windows (same treatment as the chroma and milvus
+        backends).
+
         Returns:
             str: Generated collection name.
         """
-        return f"faiss_index_{datetime.now().isoformat()}"
+        timestamp = datetime.now().isoformat()
+        return f"faiss_index_{re.sub(r'[^a-zA-Z0-9_-]', '_', timestamp)}"
 
     def _get_index_path(self) -> str:
         r"""Returns the path to the index file.
@@ -254,9 +288,11 @@ class FaissStorage(BaseVectorStorage):
                 # Load the FAISS index
                 self._index = faiss.read_index(index_path)
 
-                # Load the metadata
+                # Load the metadata with a restricted unpickler: the sidecar is
+                # deserialized on construction, so an unsandboxed pickle.load
+                # would let a tampered file execute arbitrary code (#4353).
                 with open(metadata_path, 'rb') as f:
-                    metadata = pickle.load(f)
+                    metadata = _SafeUnpickler(f).load()
 
                 # Verify metadata structure before assigning
                 required_keys = [
