@@ -1,0 +1,171 @@
+<a id="camel.toolkits.anysearch_toolkit"></a>
+
+<a id="camel.toolkits.anysearch_toolkit.AnySearchToolkit"></a>
+
+## AnySearchToolkit
+
+```python
+class AnySearchToolkit(BaseToolkit):
+```
+
+A toolkit for web search and page extraction with AnySearch.
+
+Search supports general queries and vertical sources discovered through
+`anysearch_list_subdomains`. Batch search sends up to five separate requests
+concurrently. Each request counts toward the service quota.
+
+See the [integration and maintenance guide](https://github.com/camel-ai/camel/blob/master/docs/toolkits/anysearch_toolkit.md)
+for configuration, examples, and error handling.
+
+**Parameters:**
+
+- **api_key** (Optional[str]): AnySearch API key. If not provided, reads `ANYSEARCH_API_KEY`. If neither is set, requests are anonymous. (default: :obj:`None`)
+- **anonymous** (bool): Omit authentication even if a key is available. Anonymous requests are subject to the service's IP-based limits. (default: :obj:`False`)
+- **timeout** (Optional[float]): HTTPX timeout in seconds for each network phase. Set to `None` to disable it. (default: :obj:`30.0`)
+
+<a id="camel.toolkits.anysearch_toolkit.AnySearchToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    api_key: Optional[str] = None,
+    anonymous: bool = False,
+    timeout: Optional[float] = 30.0
+):
+```
+
+<a id="camel.toolkits.anysearch_toolkit.AnySearchToolkit.anysearch_search_web"></a>
+
+### anysearch_search_web
+
+```python
+def anysearch_search_web(
+    self,
+    query: str,
+    max_results: Optional[int] = None,
+    tag: Optional[str] = None,
+    zone: Optional[Literal["cn", "intl"]] = None,
+    language: Optional[str] = None,
+    params: Optional[Dict[str, Any]] = None,
+    format: Optional[Literal["json", "markdown"]] = None
+):
+```
+
+Search the web or an AnySearch vertical source.
+
+Use `anysearch_list_subdomains` to discover tags and their required
+parameters before selecting a vertical source.
+
+**Parameters:**
+
+- **query** (str): The search query.
+- **max_results** (Optional[int]): Number of results, from 1 to 10. If `None`, uses 10. (default: :obj:`None`)
+- **tag** (Optional[str]): Vertical source in `domain.subdomain` form. If `None`, uses general search. (default: :obj:`None`)
+- **zone** (Optional[Literal["cn", "intl"]]): Source region. (default: :obj:`None`)
+- **language** (Optional[str]): Preferred result language. (default: :obj:`None`)
+- **params** (Optional[Dict[str, Any]]): Parameters required by the selected vertical source. (default: :obj:`None`)
+- **format** (Optional[Literal["json", "markdown"]]): Result format. The response envelope is always JSON. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: Service envelope with code, message, data and an
+optional request_id. Search data contains results and service metadata.
+On failure, contains error and optional status_code, request_id and
+retry_after (seconds).
+
+<a id="camel.toolkits.anysearch_toolkit.AnySearchToolkit.anysearch_search_batch"></a>
+
+### anysearch_search_batch
+
+```python
+def anysearch_search_batch(
+    self,
+    queries: List[str],
+    max_results: Optional[int] = None,
+    tag: Optional[str] = None,
+    zone: Optional[Literal["cn", "intl"]] = None,
+    language: Optional[str] = None,
+    params: Optional[Dict[str, Any]] = None,
+    format: Optional[Literal["json", "markdown"]] = None
+):
+```
+
+Search one to five queries concurrently with shared options.
+
+Each query makes a separate search request and consumes its own quota.
+Results retain input order, including individual request failures.
+
+**Parameters:**
+
+- **queries** (List[str]): One to five non-empty search queries.
+- **max_results** (Optional[int]): Results per query, from 1 to 10. If `None`, uses 10. (default: :obj:`None`)
+- **tag** (Optional[str]): Vertical source in `domain.subdomain` form. Discover available tags with `anysearch_list_subdomains`. (default: :obj:`None`)
+- **zone** (Optional[Literal["cn", "intl"]]): Source region. (default: :obj:`None`)
+- **language** (Optional[str]): Preferred result language. (default: :obj:`None`)
+- **params** (Optional[Dict[str, Any]]): Parameters required by the selected vertical source. (default: :obj:`None`)
+- **format** (Optional[Literal["json", "markdown"]]): Result format. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: A results list whose entries contain query and response.
+Each response is a search envelope or an error dictionary. Invalid batch
+arguments return an error dictionary.
+
+<a id="camel.toolkits.anysearch_toolkit.AnySearchToolkit.anysearch_list_subdomains"></a>
+
+### anysearch_list_subdomains
+
+```python
+def anysearch_list_subdomains(self, domains: List[str]):
+```
+
+List vertical search sources and their parameter requirements.
+
+**Parameters:**
+
+- **domains** (List[str]): One to five domain names, such as `'code'` or `'finance'`.
+
+**Returns:**
+
+  Dict[str, Any]: Service envelope whose data describes domains, subdomains
+and parameters, or an error dictionary. This directory request does not
+consume search quota.
+
+<a id="camel.toolkits.anysearch_toolkit.AnySearchToolkit.anysearch_extract_page"></a>
+
+### anysearch_extract_page
+
+```python
+def anysearch_extract_page(self, url: str):
+```
+
+Extract readable content from a public HTTP or HTTPS URL.
+
+Supports HTML, XHTML, text, JSON and Markdown. PDF and media files are not
+supported. The service may truncate HTML and text to 50,000 characters;
+oversized JSON and Markdown are rejected.
+
+**Parameters:**
+
+- **url** (str): Public URL to extract. The UTF-8 JSON request must not exceed 16 KiB.
+
+**Returns:**
+
+  Dict[str, Any]: Service envelope with url, title and content in data,
+or an error dictionary.
+
+<a id="camel.toolkits.anysearch_toolkit.AnySearchToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+Return the web search, batch, directory and extraction tools.
+
+**Returns:**
+
+  List[FunctionTool]: Tools available to a CAMEL agent.
