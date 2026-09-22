@@ -124,7 +124,7 @@ def _run_agent(toolkit: "AnySearchToolkit", prompt: str) -> bool:
             "do not retry failed requests."
         ),
         model=model,
-        tools=toolkit.get_tools(),
+        tools=[*toolkit.get_tools()],
         max_iteration=5,
     )
     response = agent.step(prompt)

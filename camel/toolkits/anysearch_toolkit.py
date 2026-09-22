@@ -119,7 +119,7 @@ class AnySearchToolkit(BaseToolkit):
         method: str,
         path: str,
         payload: Optional[Dict[str, Any]] = None,
-        params: Optional[List[Tuple[str, str]]] = None,
+        params: Optional[Tuple[Tuple[str, str], ...]] = None,
     ) -> Dict[str, Any]:
         r"""Send a request without exposing service error bodies."""
         headers = {"Accept": "application/json"}
@@ -328,7 +328,7 @@ class AnySearchToolkit(BaseToolkit):
             )
         ):
             return {"error": "domains must contain between 1 and 5 strings."}
-        params = [("domain", domain) for domain in domains]
+        params = tuple(("domain", domain) for domain in domains)
         return self._request("GET", "/v1/sub-domains", params=params)
 
     @manual_timeout
