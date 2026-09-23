@@ -163,9 +163,7 @@ class TestChatHistoryMemoryWindowWarnings:
         ]
         memory.write_records(records)
 
-        with pytest.warns(
-            UserWarning, match="Chat history window size limit"
-        ):
+        with pytest.warns(UserWarning, match="Chat history window size limit"):
             retrieved = memory.retrieve()
 
         assert [r.memory_record.message.content for r in retrieved] == [
@@ -197,6 +195,40 @@ class TestChatHistoryMemoryWindowWarnings:
             "User 0",
             "User 1",
         ]
+
+    def test_retrieve_loads_storage_once_when_window_truncates(
+        self, mock_context_creator
+    ):
+        """The warning reuses the history already loaded for retrieval."""
+        storage = InMemoryKeyValueStorage()
+        memory = ChatHistoryMemory(
+            mock_context_creator,
+            storage=storage,
+            window_size=2,
+        )
+        memory.write_records(
+            [
+                self._record(
+                    OpenAIBackendRole.SYSTEM,
+                    RoleType.DEFAULT,
+                    "System prompt",
+                ),
+                *[
+                    self._record(
+                        OpenAIBackendRole.USER,
+                        RoleType.USER,
+                        f"User {i}",
+                    )
+                    for i in range(3)
+                ],
+            ]
+        )
+        storage.load = MagicMock(wraps=storage.load)
+
+        with pytest.warns(UserWarning, match="Chat history window size limit"):
+            memory.retrieve()
+
+        storage.load.assert_called_once_with()
 
 
 class TestChatHistoryMemoryCleanToolCalls:

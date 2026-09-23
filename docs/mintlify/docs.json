@@ -384,6 +384,7 @@
             "pages": [
               "reference/camel.memories.agent_memories",
               "reference/camel.memories.base",
+              "reference/camel.memories.memanto",
               "reference/camel.memories.records",
               "reference/camel.memories.blocks.chat_history_block",
               "reference/camel.memories.blocks.vectordb_block",
@@ -558,6 +559,7 @@
               "reference/camel.toolkits.origene_mcp_toolkit",
               "reference/camel.toolkits.planning_worktree_toolkit",
               "reference/camel.toolkits.playwright_mcp_toolkit",
+              "reference/camel.toolkits.plivo_toolkit",
               "reference/camel.toolkits.pptx_toolkit",
               "reference/camel.toolkits.pubmed_toolkit",
               "reference/camel.toolkits.pulse_mcp_search_toolkit",

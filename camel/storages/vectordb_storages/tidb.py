@@ -51,12 +51,13 @@ class TiDBStorage(BaseVectorStorage):
         url_and_api_key (Optional[Union[Tuple[str, str], str]]): A tuple
             containing the database url and API key for connecting to a TiDB
             cluster. The URL should be in the format:
-           "mysql+pymysql://<username>:<password>@<host>:<port>/<db_name>".
-           TiDB will not use the API Key, but retains the definition for
+           :obj:`"mysql+pymysql://<username>:<password>@<host>:<port>/<db_name>"`
+           . TiDB will not use the API Key, but retains the definition for
            interface compatible.
-        collection_name (Optional[str]): Name of the collection.
+        collection_name (Optional[str], optional): Name of the collection.
             The collection name will be used as the table name in TiDB. If not
             provided, set it to the current time with iso format.
+            (default: :obj:`None`)
         **kwargs (Any): Additional keyword arguments for initializing
             TiDB connection.
 
@@ -97,7 +98,8 @@ class TiDBStorage(BaseVectorStorage):
         Args:
             database_url (Optional[str]): The database connection string for
                 the TiDB server.
-            **kwargs: Additional keyword arguments passed to the TiDB client.
+            **kwargs (Any): Additional keyword arguments passed to the TiDB
+                client.
         """
         from pytidb import TiDBClient
 
@@ -107,6 +109,14 @@ class TiDBStorage(BaseVectorStorage):
         )
 
     def _get_table_model(self, collection_name: str) -> Any:
+        r"""Generates a dynamic SQLAlchemy table model for TiDB vector storage.
+
+        Args:
+            collection_name (str): Name of the collection table.
+
+        Returns:
+            Any: The generated table model class.
+        """
         from pytidb.datatype import JSON  # type: ignore[import-not-found]
         from pytidb.schema import Field, TableModel, VectorField
 
@@ -125,7 +135,11 @@ class TiDBStorage(BaseVectorStorage):
         )
 
     def _open_and_create_table(self) -> "Table[Any]":
-        r"""Opens an existing table or creates a new table in TiDB."""
+        r"""Opens an existing table or creates a new table in TiDB.
+
+        Returns:
+            Table[Any]: The opened or created table instance.
+        """
         table = self._client.open_table(self.collection_name)
         if table is None:
             table_model = self._get_table_model(self.collection_name)
@@ -138,6 +152,10 @@ class TiDBStorage(BaseVectorStorage):
     def _check_table(self):
         r"""Ensuring the specified table matches the specified vector
         dimensionality.
+
+        Raises:
+            ValueError: If existing table dimension does not match expected
+                dimension.
         """
         in_dim = self._get_table_info()["vector_dim"]
         if in_dim != self.vector_dim:
@@ -201,7 +219,7 @@ class TiDBStorage(BaseVectorStorage):
                 and convert.
 
         Returns:
-            List[VectorDBRecord]: A list of VectorDBRecord instances.
+            List[Any]: A list of converted database record instances.
         """
         db_records = []
         for record in records:
@@ -231,7 +249,7 @@ class TiDBStorage(BaseVectorStorage):
 
         Args:
             records (List[VectorRecord]): List of vectors to be added.
-            **kwargs (Any): Additional keyword arguments pass to insert.
+            **kwargs (Any): Additional keyword arguments passed to insert.
 
         Raises:
             RuntimeError: If there was an error in the addition process.
@@ -330,6 +348,6 @@ class TiDBStorage(BaseVectorStorage):
         r"""Provides direct access to the TiDB client.
 
         Returns:
-            Any: The TiDB client instance.
+            TiDBClient: The TiDB client instance.
         """
         return self._client

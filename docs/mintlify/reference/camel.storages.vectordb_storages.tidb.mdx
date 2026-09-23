@@ -32,8 +32,8 @@ The detailed information about TiDB is available at:
 **Parameters:**
 
 - **vector_dim** (int): The dimension of storing vectors.
-- **url_and_api_key** (Optional[Union[Tuple[str, str], str]]): A tuple containing the database url and API key for connecting to a TiDB cluster. The URL should be in the format: "mysql+pymysql://`<username>`:`<password>`@`<host>`:`<port>`/`<db_name>`". TiDB will not use the API Key, but retains the definition for interface compatible.
-- **collection_name** (Optional[str]): Name of the collection. The collection name will be used as the table name in TiDB. If not provided, set it to the current time with iso format. **kwargs (Any): Additional keyword arguments for initializing TiDB connection.
+- **url_and_api_key** (Optional[Union[Tuple[str, str], str]]): A tuple containing the database url and API key for connecting to a TiDB cluster. The URL should be in the format: :obj:`"mysql+pymysql://<username>:<password>@<host>:<port>/<db_name>"` . TiDB will not use the API Key, but retains the definition for interface compatible.
+- **collection_name** (Optional[str], optional): Name of the collection. The collection name will be used as the table name in TiDB. If not provided, set it to the current time with iso format. (default: :obj:`None`) **kwargs (Any): Additional keyword arguments for initializing TiDB connection.
 
 <a id="camel.storages.vectordb_storages.tidb.TiDBStorage.__init__"></a>
 
@@ -61,7 +61,7 @@ Initializes the TiDB client with the provided connection details.
 
 **Parameters:**
 
-- **database_url** (Optional[str]): The database connection string for the TiDB server. **kwargs: Additional keyword arguments passed to the TiDB client.
+- **database_url** (Optional[str]): The database connection string for the TiDB server. **kwargs (Any): Additional keyword arguments passed to the TiDB client.
 
 <a id="camel.storages.vectordb_storages.tidb.TiDBStorage._get_table_model"></a>
 
@@ -71,6 +71,16 @@ Initializes the TiDB client with the provided connection details.
 def _get_table_model(self, collection_name: str):
 ```
 
+Generates a dynamic SQLAlchemy table model for TiDB vector storage.
+
+**Parameters:**
+
+- **collection_name** (str): Name of the collection table.
+
+**Returns:**
+
+  Any: The generated table model class.
+
 <a id="camel.storages.vectordb_storages.tidb.TiDBStorage._open_and_create_table"></a>
 
 ### _open_and_create_table
@@ -79,7 +89,9 @@ def _get_table_model(self, collection_name: str):
 def _open_and_create_table(self):
 ```
 
-Opens an existing table or creates a new table in TiDB.
+**Returns:**
+
+  Table[Any]: The opened or created table instance.
 
 <a id="camel.storages.vectordb_storages.tidb.TiDBStorage._check_table"></a>
 
@@ -88,9 +100,6 @@ Opens an existing table or creates a new table in TiDB.
 ```python
 def _check_table(self):
 ```
-
-Ensuring the specified table matches the specified vector
-dimensionality.
 
 <a id="camel.storages.vectordb_storages.tidb.TiDBStorage._generate_table_name"></a>
 
@@ -134,7 +143,7 @@ instances.
 
 **Returns:**
 
-  List[VectorDBRecord]: A list of VectorDBRecord instances.
+  List[Any]: A list of converted database record instances.
 
 <a id="camel.storages.vectordb_storages.tidb.TiDBStorage.add"></a>
 
@@ -148,7 +157,7 @@ Adds a list of vectors to the specified table.
 
 **Parameters:**
 
-- **records** (List[VectorRecord]): List of vectors to be added. **kwargs (Any): Additional keyword arguments pass to insert.
+- **records** (List[VectorRecord]): List of vectors to be added. **kwargs (Any): Additional keyword arguments passed to insert.
 
 <a id="camel.storages.vectordb_storages.tidb.TiDBStorage.delete"></a>
 
@@ -230,4 +239,4 @@ def client(self):
 
 **Returns:**
 
-  Any: The TiDB client instance.
+  TiDBClient: The TiDB client instance.

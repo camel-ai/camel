@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import warnings
 from typing import List, Optional
 
 from camel.memories.base import AgentMemory, BaseContextCreator
@@ -65,38 +64,7 @@ class ChatHistoryMemory(AgentMemory):
         self._agent_id = val
 
     def retrieve(self) -> List[ContextRecord]:
-        records = self._chat_history_block.retrieve(self._window_size)
-        if self._is_window_truncated():
-            warnings.warn(
-                f"Chat history window size limit ({self._window_size}) "
-                f"reached. Some earlier messages will not be included in "
-                f"the context. Consider increasing window_size if you need "
-                f"a longer context.",
-                UserWarning,
-                stacklevel=2,
-            )
-        return records
-
-    def _is_window_truncated(self) -> bool:
-        if self._window_size is None:
-            return False
-
-        record_dicts = self._chat_history_block.storage.load()
-        if not record_dicts:
-            return False
-
-        start_index = (
-            1
-            if (
-                record_dicts[0]['role_at_backend']
-                in {
-                    OpenAIBackendRole.SYSTEM.value,
-                    OpenAIBackendRole.DEVELOPER.value,
-                }
-            )
-            else 0
-        )
-        return len(record_dicts) - start_index > self._window_size
+        return self._chat_history_block.retrieve(self._window_size)
 
     def write_records(self, records: List[MemoryRecord]) -> None:
         for record in records:
