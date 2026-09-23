@@ -8,7 +8,7 @@ toolkit, and calling `get_tools()` do not send network requests.
 ## Configuration
 
 Install the local checkout with `pip install -e .` in an activated development
-environment. Set `ANYSEARCH_API_KEY` in that environment, then initialize:
+environment. Optionally set `ANYSEARCH_API_KEY` there, then initialize:
 
 ```python
 from camel.toolkits import AnySearchToolkit
@@ -19,8 +19,8 @@ tools = toolkit.get_tools()
 
 The constructor accepts `api_key=None`, `anonymous=False`, and `timeout=30.0`.
 An explicit API key takes precedence over `ANYSEARCH_API_KEY`. Without a key,
-the toolkit uses anonymous access. `anonymous=True` explicitly omits
-authentication even when an environment key is present:
+every toolkit operation uses anonymous access. `anonymous=True` explicitly
+omits authentication even when an environment key is present:
 
 ```python
 anonymous_toolkit = AnySearchToolkit(anonymous=True)
@@ -43,6 +43,7 @@ All requests use `https://api.anysearch.com`.
 | --- | --- | --- |
 | `anysearch_search_web` | `POST /v1/search` | Search one query, optionally within a vertical. |
 | `anysearch_search_batch` | Up to five `POST /v1/search` requests | Run one to five queries concurrently and retain input order. |
+| `anysearch_list_domains` | `GET /v1/domains` | Discover currently available search domains. |
 | `anysearch_list_subdomains` | `GET /v1/sub-domains` | Discover vertical tags and their parameter definitions. |
 | `anysearch_extract_page` | `POST /v1/extract` | Extract content from one public webpage URL. |
 
@@ -50,7 +51,9 @@ Search accepts `query` and optional `max_results`, `tag`, `zone`, `language`,
 `params`, and `format`. `max_results` is 1-10; the service default is 10.
 `zone` is `cn` or `intl`, and `format` is `json` or `markdown`. `params` holds
 parameters defined by the selected vertical. Explicit `None` values use the
-same defaults as omitted optional arguments.
+same defaults as omitted optional arguments. Blank optional string values and
+the model-generated placeholders `"null"` and `"none"` are also omitted;
+`zone` and `format` accept valid values regardless of case.
 
 The tool schemas expose `zone` and `format` as enums so models can see the
 accepted values. Runtime validation also rejects invalid arguments before
@@ -69,22 +72,24 @@ result = toolkit.anysearch_search_batch(
 # {"results": [{"query": "...", "response": {...}}, ...]}
 ```
 
-The directory requires one to five domains, sent as repeated `domain` query
-parameters. Call it before choosing a vertical; its response contains
-`data.domains[]`, each with `domain`, `description`, and `sub_domains[]`.
-Each subdomain includes `sub_domain`, `description`, and `params` metadata.
-Use that metadata to supply required parameters rather than guessing them.
+List domains before choosing a vertical. Then request subdomains for one to
+five selected domains, sent as repeated `domain` query parameters. The toolkit
+returns each service response's `data` unchanged, so inspect the live domain
+and subdomain directory for the current tags, parameter definitions, required
+fields, and source options. Do not assume a fixed directory shape or guess
+parameters from an older example.
 
 ```python
+domains = toolkit.anysearch_list_domains()
 directory = toolkit.anysearch_list_subdomains(domains=["code"])
-# Inspect directory["data"]["domains"] and the required parameter metadata.
+# Inspect domains["data"] and directory["data"] before selecting a tag.
 ```
 
 For example, the documented `code.doc` vertical uses a `library` parameter:
 
 ```python
 result = toolkit.anysearch_search_web(
-    "goroutines", tag="code.doc", params={"library": "golang"}
+    "React useEffect cleanup", tag="code.doc", params={"library": "react"}
 )
 ```
 
@@ -99,15 +104,17 @@ within 16 KiB. Text or HTML extraction may be truncated by the service at
 
 ## Responses, errors, and timeouts
 
-Successful single requests preserve the service envelope:
+Successful single requests return a normalized envelope with the service's
+`data` unchanged:
 
 ```json
-{"code": 0, "message": "success", "data": {}, "request_id": "..."}
+{"code": 0, "message": "success", "data": {}}
 ```
 
+The optional `request_id` is included when the service returns a safe value.
 `data` is endpoint-specific. Search output can depend on `format`, while
-directory and extraction results have their own structures. The toolkit
-does not invent a shared result schema or discard citation URLs.
+directory and extraction results have their own structures. The toolkit does
+not invent a shared `data` schema or discard citation URLs.
 
 Failures return `{"error": "..."}` and, when available, safe `status_code`,
 `request_id`, or `retry_after` metadata (integer seconds). They include
@@ -131,23 +138,29 @@ wrapper that could replace a dictionary result with a timeout string.
 
 ## Runnable example
 
-From the repository root, choose one operation explicitly. Each invocation
-below makes live requests; none runs when the example is imported. The CLI
-requires `ANYSEARCH_API_KEY` except for its separate anonymous mode.
+From the repository root, choose one operation explicitly. Each operation
+invocation below makes live requests; `--help` only displays usage, and no
+request runs when the example is imported. With no `ANYSEARCH_API_KEY`, all
+operations use anonymous access. Use `--anonymous-access` with any operation
+to omit authentication even when an environment key is present. The older
+`--anonymous QUERY` search form also remains available.
 
 ```bash
 python examples/toolkits/anysearch_toolkit_example.py --help
+python examples/toolkits/anysearch_toolkit_example.py --domains
 python examples/toolkits/anysearch_toolkit_example.py --search "CAMEL AI"
 python examples/toolkits/anysearch_toolkit_example.py --batch "CAMEL AI" "agent tools" --max-results 3
 python examples/toolkits/anysearch_toolkit_example.py --directory code
 python examples/toolkits/anysearch_toolkit_example.py --extract https://www.camel-ai.org/
+python examples/toolkits/anysearch_toolkit_example.py --domains --anonymous-access
 python examples/toolkits/anysearch_toolkit_example.py --anonymous "CAMEL AI"
 ```
 
-After inspecting the directory, a Bash vertical-search invocation is:
+After inspecting the domain and subdomain directories, a Bash vertical-search
+invocation is:
 
 ```bash
-python examples/toolkits/anysearch_toolkit_example.py --vertical goroutines --tag code.doc --params '{"library":"golang"}'
+python examples/toolkits/anysearch_toolkit_example.py --vertical "React useEffect cleanup" --tag code.doc --params '{"library":"react"}'
 ```
 
 Shell JSON quoting differs across platforms; `--params` must reach Python as
@@ -172,7 +185,7 @@ Direct tool modes do not need a model API key.
 ## Development and maintenance
 
 The implementation lives in `camel/toolkits/anysearch_toolkit.py`, is
-exported from `camel.toolkits`, and registers four public functions through
+exported from `camel.toolkits`, and registers five public functions through
 `get_tools()`. Keep API credentials and construction-only settings outside
 their function schemas. `params` intentionally permits a dictionary of
 vertical-specific fields, so inspect generated schemas when changing its
@@ -187,8 +200,8 @@ ruff format --check camel/toolkits/anysearch_toolkit.py examples/toolkits/anysea
 ```
 
 Tests should mock HTTP requests and cover explicit key precedence, anonymous
-headers, optional `None`, request parameters, directory filters, batch order
-and partial errors, extraction validation, malformed responses, timeouts,
+headers, optional `None`, request parameters, both directory endpoints, batch
+order and partial errors, extraction validation, malformed responses, timeouts,
 quota failures, safe error metadata, and `FunctionTool` schemas and calls.
 No API key or network access should be necessary for those tests. Real
 service checks use the CLI explicitly and should record the operation and

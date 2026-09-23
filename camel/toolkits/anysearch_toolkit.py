@@ -26,6 +26,26 @@ from camel.toolkits.base import BaseToolkit, manual_timeout
 from camel.toolkits.function_tool import FunctionTool
 
 _BASE_URL = "https://api.anysearch.com"
+_ERROR_MESSAGES = {
+    401: "AnySearch authentication failed. Check your API key.",
+    402: "AnySearch quota is exhausted.",
+    403: "AnySearch denied access. Check your key permissions.",
+    429: "AnySearch rate limit exceeded. Try again later.",
+}
+
+
+def _optional_text(
+    name: str, value: Any, lowercase: bool = False
+) -> Optional[str]:
+    r"""Treat common model placeholders as omitted optional parameters."""
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError(f"{name} must be a string.")
+    cleaned = value.strip()
+    if cleaned.lower() in ("", "none", "null"):
+        return None
+    return cleaned.lower() if lowercase else cleaned
 
 
 def _search_payload(
@@ -43,15 +63,14 @@ def _search_payload(
     count = 10 if max_results is None else max_results
     if type(count) is not int or not 1 <= count <= 10:
         raise ValueError("max_results must be an integer between 1 and 10.")
+    tag = _optional_text("tag", tag)
+    zone = _optional_text("zone", zone, lowercase=True)
+    language = _optional_text("language", language)
+    format = _optional_text("format", format, lowercase=True)
     if zone is not None and zone not in ("cn", "intl"):
         raise ValueError("zone must be 'cn' or 'intl'.")
     if format is not None and format not in ("json", "markdown"):
         raise ValueError("format must be 'json' or 'markdown'.")
-    for name, text_value in (("tag", tag), ("language", language)):
-        if text_value is not None and (
-            not isinstance(text_value, str) or not text_value.strip()
-        ):
-            raise ValueError(f"{name} must be a non-empty string.")
     if params is not None and not isinstance(params, dict):
         raise ValueError("params must be a JSON object.")
     payload: Dict[str, Any] = {"query": query, "max_results": count}
@@ -87,8 +106,9 @@ class AnySearchToolkit(BaseToolkit):
     r"""A toolkit for web search and page extraction with AnySearch.
 
     Search supports general queries and vertical sources discovered through
-    :meth:`anysearch_list_subdomains`. Batch search sends up to five separate
-    requests concurrently. Each request counts toward the service quota.
+    :meth:`anysearch_list_domains` and :meth:`anysearch_list_subdomains`.
+    Batch search sends up to five separate requests concurrently. Each
+    request counts toward the service quota.
 
     Args:
         api_key (Optional[str]): AnySearch API key. If not provided, reads
@@ -147,15 +167,9 @@ class AnySearchToolkit(BaseToolkit):
         if request_id and request_id != self._api_key:
             metadata["request_id"] = request_id
         if not response.is_success:
-            messages = {
-                401: "AnySearch authentication failed. Check your API key.",
-                403: "AnySearch denied access. Check your key permissions.",
-                402: "AnySearch quota is exhausted. Check your account quota.",
-                429: "AnySearch rate limit exceeded. Try again later.",
-            }
             # Anonymous quota errors can contain newly issued credentials.
             # Never pass the response body or an HTTP exception to the agent.
-            error = messages.get(
+            error = _ERROR_MESSAGES.get(
                 response.status_code, "AnySearch rejected the request."
             )
             retry_after = response.headers.get("Retry-After", "")
@@ -180,11 +194,27 @@ class AnySearchToolkit(BaseToolkit):
         request_id = _request_id(body.get("request_id"))
         if request_id and request_id != self._api_key:
             metadata["request_id"] = request_id
-        if type(body.get("code")) is not int or body["code"] != 0:
-            return {
-                "error": "AnySearch could not complete the request.",
+        business_code = body.get("code")
+        if type(business_code) is not int or business_code != 0:
+            message = (
+                _ERROR_MESSAGES.get(
+                    business_code, "AnySearch could not complete the request."
+                )
+                if type(business_code) is int
+                else "AnySearch could not complete the request."
+            )
+            error_result: Dict[str, Any] = {
+                "error": message,
                 **metadata,
             }
+            if type(business_code) is int and 0 < business_code < 1000000:
+                error_result["code"] = business_code
+            retry_after = response.headers.get("Retry-After", "")
+            if business_code == 429 and re.fullmatch(
+                r"[0-9]{1,10}", retry_after
+            ):
+                error_result["retry_after"] = int(retry_after)
+            return error_result
         if not isinstance(body.get("data"), (dict, list)):
             return {
                 "error": "AnySearch returned an invalid response.",
@@ -210,8 +240,8 @@ class AnySearchToolkit(BaseToolkit):
     ) -> Dict[str, Any]:
         r"""Search the web or an AnySearch vertical source.
 
-        Use anysearch_list_subdomains to discover tags and their required
-        parameters before selecting a vertical source.
+        Use anysearch_list_domains, then anysearch_list_subdomains to discover
+        tags and their required parameters before selecting a vertical source.
 
         Args:
             query (str): The search query.
@@ -231,8 +261,8 @@ class AnySearchToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: Service envelope with code, message, data and an
                 optional request_id. Search data contains results and service
-                metadata. On failure, contains error and optional status_code,
-                request_id and retry_after (seconds).
+                metadata. On failure, contains error and optional business
+                code, HTTP status_code, request_id and retry_after (seconds).
         """
         try:
             payload = _search_payload(
@@ -307,8 +337,21 @@ class AnySearchToolkit(BaseToolkit):
             }
 
     @manual_timeout
+    def anysearch_list_domains(self) -> Dict[str, Any]:
+        r"""List available search domains before discovering subdomains.
+
+        Returns:
+            Dict[str, Any]: Service envelope whose data describes the
+                available domains, or an error dictionary. This directory
+                request does not consume search quota.
+        """
+        return self._request("GET", "/v1/domains")
+
+    @manual_timeout
     def anysearch_list_subdomains(self, domains: List[str]) -> Dict[str, Any]:
         r"""List vertical search sources and their parameter requirements.
+
+        Use anysearch_list_domains to discover available domain names first.
 
         Args:
             domains (List[str]): One to five domain names, such as 'code'
@@ -372,7 +415,7 @@ class AnySearchToolkit(BaseToolkit):
 
     @manual_timeout
     def get_tools(self) -> List[FunctionTool]:
-        r"""Return the web search, batch, directory and extraction tools.
+        r"""Return search, batch, directory and extraction tools.
 
         Returns:
             List[FunctionTool]: Tools available to a CAMEL agent.
@@ -380,6 +423,7 @@ class AnySearchToolkit(BaseToolkit):
         return [
             FunctionTool(self.anysearch_search_web),
             FunctionTool(self.anysearch_search_batch),
+            FunctionTool(self.anysearch_list_domains),
             FunctionTool(self.anysearch_list_subdomains),
             FunctionTool(self.anysearch_extract_page),
         ]

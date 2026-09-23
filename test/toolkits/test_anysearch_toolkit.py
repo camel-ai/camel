@@ -20,6 +20,7 @@ import httpx
 import pytest
 
 from camel.toolkits.anysearch_toolkit import AnySearchToolkit
+from examples.toolkits import anysearch_toolkit_example
 
 TEST_API_KEY = "test-anysearch-private-key"
 BASE_URL = "https://api.anysearch.com"
@@ -76,6 +77,7 @@ def test_initialization_and_schema_do_not_make_requests(mock_api):
     assert {tool.get_function_name() for tool in tools} == {
         "anysearch_search_web",
         "anysearch_search_batch",
+        "anysearch_list_domains",
         "anysearch_list_subdomains",
         "anysearch_extract_page",
     }
@@ -135,6 +137,14 @@ def test_search_defaults_omit_optional_parameters(mock_api):
     assert request.extensions["timeout"]["read"] == 30.0
 
 
+def test_empty_search_results_are_not_an_error(mock_api):
+    empty = {**SUCCESS, "data": {"results": []}}
+    mock_api.handler = lambda request: httpx.Response(200, json=empty)
+    result = AnySearchToolkit().anysearch_search_web("CAMEL")
+    assert result == empty
+    assert "error" not in result
+
+
 def test_search_forwards_filters_and_preserves_false_values(mock_api):
     toolkit = AnySearchToolkit(timeout=7.5)
     result = toolkit.anysearch_search_web(
@@ -172,9 +182,6 @@ def test_search_forwards_filters_and_preserves_false_values(mock_api):
         {"max_results": 11},
         {"zone": "invalid"},
         {"format": "html"},
-        {"tag": ""},
-        {"tag": "   "},
-        {"language": ""},
         {"params": []},
         {"params": {"value": object()}},
     ],
@@ -202,6 +209,41 @@ def test_explicit_nulls_use_defaults(mock_api):
     }
 
 
+def test_blank_optional_strings_are_omitted(mock_api):
+    result = AnySearchToolkit().anysearch_search_web(
+        "CAMEL", tag=" ", zone="", language=" ", format=""
+    )
+    assert result == SUCCESS
+    assert json.loads(mock_api.requests[0].content) == {
+        "query": "CAMEL",
+        "max_results": 10,
+    }
+
+
+def test_model_null_placeholders_are_omitted(mock_api):
+    result = AnySearchToolkit().anysearch_search_web(
+        "CAMEL", tag="null", zone="NULL", language="none", format="null"
+    )
+    assert result == SUCCESS
+    assert json.loads(mock_api.requests[0].content) == {
+        "query": "CAMEL",
+        "max_results": 10,
+    }
+
+
+def test_search_normalizes_choice_case(mock_api):
+    result = AnySearchToolkit().anysearch_search_web(
+        "CAMEL", zone=" INTL ", format=" JSON "
+    )
+    assert result == SUCCESS
+    assert json.loads(mock_api.requests[0].content) == {
+        "query": "CAMEL",
+        "max_results": 10,
+        "zone": "intl",
+        "format": "json",
+    }
+
+
 @pytest.mark.parametrize("domains", [["github"], ["github", "arxiv"]])
 def test_subdomains_use_repeated_domain_parameters(mock_api, domains):
     data = {"domains": [{"name": "github", "subdomains": []}]}
@@ -214,6 +256,19 @@ def test_subdomains_use_repeated_domain_parameters(mock_api, domains):
     assert request.method == "GET"
     assert str(request.url).split("?")[0] == f"{BASE_URL}/v1/sub-domains"
     assert request.url.params.get_list("domain") == domains
+
+
+def test_domains_are_discoverable_without_a_key(mock_api):
+    data = {"domains": [{"domain": "code"}]}
+    mock_api.handler = lambda request: httpx.Response(
+        200, json={**SUCCESS, "data": data}
+    )
+    result = AnySearchToolkit().anysearch_list_domains()
+    assert result["data"] == data
+    request = mock_api.requests[0]
+    assert request.method == "GET"
+    assert str(request.url) == f"{BASE_URL}/v1/domains"
+    assert "authorization" not in request.headers
 
 
 @pytest.mark.parametrize(
@@ -338,6 +393,31 @@ def test_rate_limit_preserves_numeric_retry_after(mock_api):
     assert result["retry_after"] == 12
 
 
+@pytest.mark.parametrize("code", [401, 402, 403, 429, 500])
+def test_business_errors_keep_safe_codes(mock_api, code):
+    mock_api.handler = lambda request: httpx.Response(
+        200,
+        json={"code": code, "message": TEST_API_KEY},
+        headers={"X-Request-ID": "req-safe", "Retry-After": "12"},
+    )
+    result = AnySearchToolkit(api_key=TEST_API_KEY).anysearch_search_web("q")
+    assert result["code"] == code
+    assert result["request_id"] == "req-safe"
+    assert "error" in result
+    assert TEST_API_KEY not in json.dumps(result)
+    assert ("retry_after" in result) == (code == 429)
+
+
+def test_business_error_rejects_non_numeric_code(mock_api):
+    mock_api.handler = lambda request: httpx.Response(
+        200, json={"code": [], "message": TEST_API_KEY}
+    )
+    result = AnySearchToolkit().anysearch_search_web("q")
+    assert "error" in result
+    assert "code" not in result
+    assert TEST_API_KEY not in json.dumps(result)
+
+
 def test_untrusted_headers_are_not_returned(mock_api):
     mock_api.handler = lambda request: httpx.Response(
         402,
@@ -445,3 +525,29 @@ async def test_function_tool_supports_async_calls_and_nulls(mock_api):
     result = await tool.async_call(query="CAMEL", max_results=None)
     assert result == SUCCESS
     assert json.loads(mock_api.requests[0].content)["max_results"] == 10
+
+
+def test_example_supports_keyless_directory_and_extraction(mock_api):
+    assert anysearch_toolkit_example.main(["--domains"]) == 0
+    assert (
+        anysearch_toolkit_example.main(["--extract", "https://example.com/"])
+        == 0
+    )
+    assert [request.url.path for request in mock_api.requests] == [
+        "/v1/domains",
+        "/v1/extract",
+    ]
+    assert all(
+        "authorization" not in request.headers for request in mock_api.requests
+    )
+
+
+def test_example_can_force_anonymous_directory_with_environment_key(
+    mock_api, monkeypatch
+):
+    monkeypatch.setenv("ANYSEARCH_API_KEY", TEST_API_KEY)
+    assert (
+        anysearch_toolkit_example.main(["--domains", "--anonymous-access"])
+        == 0
+    )
+    assert "authorization" not in mock_api.requests[0].headers
