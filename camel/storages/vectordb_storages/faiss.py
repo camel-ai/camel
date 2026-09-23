@@ -16,7 +16,7 @@ import os
 import pickle
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, cast
 
 from camel.logger import get_logger
 from camel.storages.vectordb_storages import (
@@ -45,7 +45,7 @@ class _SafeUnpickler(pickle.Unpickler):
     which lands in the existing try/except and rebuilds a fresh index.
     """
 
-    _ALLOWED_GLOBALS = {
+    _ALLOWED_GLOBALS: ClassVar[set[tuple[str, str]]] = {
         ("collections", "OrderedDict"),
         ("numpy", "dtype"),
         ("numpy", "_reconstruct"),
