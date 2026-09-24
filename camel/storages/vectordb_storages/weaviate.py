@@ -451,13 +451,12 @@ class WeaviateStorage(BaseVectorStorage):
 
         Returns:
             bool: True if collection exists, False otherwise.
+
+        Raises:
+            Exception: If existence cannot be determined, for example
+                because Weaviate is unreachable or rejects the request.
         """
-        try:
-            collection = self._client.collections.get(collection_name)
-            collection.config.get()
-            return True
-        except Exception:
-            return False
+        return self._client.collections.exists(collection_name)
 
     def _get_vector_index_config(self, **kwargs: Any) -> Any:
         r"""Get vector index configuration based on user settings.
