@@ -454,7 +454,11 @@ class WeaviateStorage(BaseVectorStorage):
 
         Raises:
             Exception: If existence cannot be determined, for example
-                because Weaviate is unreachable or rejects the request.
+                because Weaviate rejects the request (401, 403, 429, 5xx)
+                or the connection drops mid-request. Not confined to
+                ``weaviate.exceptions``: a dropped connection surfaces as
+                ``httpx.RemoteProtocolError``, so catching
+                ``WeaviateBaseError`` alone will not see every case.
         """
         return self._client.collections.exists(collection_name)
 

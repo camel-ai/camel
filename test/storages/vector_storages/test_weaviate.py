@@ -14,8 +14,8 @@
 import json
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
-from weaviate.exceptions import WeaviateConnectionError
 
 from camel.storages import VectorDBQuery, VectorRecord, WeaviateStorage
 
@@ -342,7 +342,14 @@ def test_collection_exists_propagates_failure(mock_weaviate_client):
     """
     mock_client, mock_collection = mock_weaviate_client
 
-    error = WeaviateConnectionError("weaviate unreachable")
+    # Deliberately not a weaviate type. A connection dropped mid-request
+    # surfaces as httpx.RemoteProtocolError, and isinstance of
+    # WeaviateBaseError is False for it, so the contract under test is
+    # "any failure propagates" rather than "a weaviate error propagates".
+    # httpx is a base dependency; weaviate-client is only in the rag,
+    # storage and all extras, so importing it here would stop this file
+    # being collectable without them.
+    error = httpx.RemoteProtocolError("server disconnected")
     mock_client.collections.exists.side_effect = error
     mock_client.collections.get.side_effect = error
     mock_collection.config.get.side_effect = error
@@ -362,7 +369,7 @@ def test_collection_exists_propagates_failure(mock_weaviate_client):
             connection_type="local",
         )
 
-    with pytest.raises(WeaviateConnectionError):
+    with pytest.raises(httpx.RemoteProtocolError):
         storage._check_and_create_collection()
 
     mock_client.collections.create.assert_not_called()
