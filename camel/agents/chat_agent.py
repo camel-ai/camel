@@ -4397,6 +4397,17 @@ class ChatAgent(BaseAgent):
                 f"Failed to inject visual content from {func_name}: {e}"
             )
 
+    def _set_agent_context(self) -> None:
+        from camel.utils.agent_context import set_current_agent_id
+
+        set_current_agent_id(self.agent_id)
+        try:
+            from camel.utils.langfuse import set_current_agent_session_id
+
+            set_current_agent_session_id(self.agent_id)
+        except ImportError:
+            pass  # Langfuse not available
+
     def _stream(
         self,
         input_message: Union[BaseMessage, str],
@@ -4416,6 +4427,8 @@ class ChatAgent(BaseAgent):
                 content, tool calls, and other information as they become
                 available.
         """
+        self._set_agent_context()
+
         # Handle response format compatibility with non-strict tools
         input_message, response_format, _ = (
             self._handle_response_format_with_non_strict_tools(
@@ -4441,10 +4454,18 @@ class ChatAgent(BaseAgent):
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
 
-        # Start streaming response
-        yield from self._stream_response(
+        # Rebind before each generator step because consumers can interleave
+        # streams from agents that share a model backend.
+        stream_response = self._stream_response(
             openai_messages, num_tokens, response_format
         )
+        while True:
+            self._set_agent_context()
+            try:
+                response = next(stream_response)
+            except StopIteration:
+                break
+            yield response
 
     def _get_token_count(self, content: str) -> int:
         r"""Get token count for content with fallback."""
@@ -5456,6 +5477,7 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> AsyncGenerator[ChatAgentResponse, None]:
         r"""Asynchronous version of stream method."""
+        self._set_agent_context()
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
@@ -5476,11 +5498,18 @@ class ChatAgent(BaseAgent):
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
 
-        # Start async streaming response
-        last_response = None
-        async for response in self._astream_response(
+        # Rebind before each generator step because consumers can interleave
+        # streams from agents that share a model backend.
+        stream_response = self._astream_response(
             openai_messages, num_tokens, response_format
-        ):
+        )
+        last_response = None
+        while True:
+            self._set_agent_context()
+            try:
+                response = await stream_response.__anext__()
+            except StopAsyncIteration:
+                break
             last_response = response
             yield response
 
