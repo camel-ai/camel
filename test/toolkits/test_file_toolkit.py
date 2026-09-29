@@ -1122,9 +1122,7 @@ def test_edit_file_accepts_absolute_inside(file_write_toolkit):
     target = file_write_toolkit.working_directory / "inside_abs.txt"
     target.write_text("visible", encoding="utf-8")
 
-    result = file_write_toolkit.edit_file(
-        str(target), "visible", "edited"
-    )
+    result = file_write_toolkit.edit_file(str(target), "visible", "edited")
 
     assert "Successfully edited" in result
     assert target.read_text(encoding="utf-8") == "edited"
