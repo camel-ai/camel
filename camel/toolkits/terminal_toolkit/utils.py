@@ -199,16 +199,16 @@ def _dangerous_segment_reason(command: str) -> Optional[str]:
 
     Returns:
         Optional[str]: The rejected base command name, the offending
-            head, or ``'unparseable'`` — anything non-``None`` means the
+            head, or ``'unparsable'`` — anything non-``None`` means the
             command must be rejected.
     """
     # Newlines separate shell commands under shell=True exactly like ';'.
     normalized = command.replace('\r\n', ';').replace('\n', ';')
     segments = _split_command_segments(normalized)
     if segments is None:
-        # Unparseable quoting would still execute under shell=True; fail
+        # Unparsable quoting would still execute under shell=True; fail
         # closed rather than guessing.
-        return 'unparseable'
+        return 'unparsable'
     for segment in segments:
         if not segment:
             continue
@@ -361,7 +361,7 @@ def check_command_safety(
     # previous anchor regex.
     head = _dangerous_segment_reason(command)
     if head is not None:
-        if head == 'unparseable':
+        if head == 'unparsable':
             return (
                 False,
                 "Command could not be safely parsed; refusing to run it "

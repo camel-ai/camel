@@ -731,7 +731,7 @@ def test_sanitize_command_non_command_mentions_stay_allowed(temp_dir, command):
     assert is_safe, (command, message)
 
 
-def test_unparseable_quoting_fails_closed(temp_dir):
+def test_unparsable_quoting_fails_closed(temp_dir):
     """A command shlex cannot parse is refused instead of guessed."""
     is_safe, message = sanitize_command(
         "echo 'unterminated", working_dir=str(temp_dir)
