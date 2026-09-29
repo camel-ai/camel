@@ -184,6 +184,30 @@ class ChatAgentOpenAPIServer:
         self._setup_routes()
 
     @staticmethod
+    def _keys_equal(left: str, right: str) -> bool:
+        r"""Constant-time equality for key material, safe for any
+        Unicode content.
+
+        ``hmac.compare_digest`` rejects non-ASCII ``str`` operands, and
+        HTTP header bytes decoded as latin-1 can carry them; both sides
+        are therefore compared as UTF-8 bytes, and values that cannot
+        encode compare unequal rather than raising.
+
+        Args:
+            left (str): First key value.
+            right (str): Second key value.
+
+        Returns:
+            bool: Whether the two values are byte-identical.
+        """
+        try:
+            return hmac.compare_digest(
+                left.encode("utf-8"), right.encode("utf-8")
+            )
+        except UnicodeEncodeError:
+            return False
+
+    @staticmethod
     def _owner_id(presented_key: str) -> str:
         r"""Returns the owner identity for a presented API key.
 
@@ -237,9 +261,8 @@ class ChatAgentOpenAPIServer:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        presented_bytes = presented.encode("utf-8")
         for key in self.api_keys:
-            if hmac.compare_digest(key.encode("utf-8"), presented_bytes):
+            if self._keys_equal(key, presented):
                 return self._owner_id(key)
         raise HTTPException(
             status_code=401,
@@ -264,10 +287,8 @@ class ChatAgentOpenAPIServer:
         """
         agent = self.agents.get(agent_id)
         owner = self._agent_owners.get(agent_id)
-        if (
-            agent is None
-            or owner is None
-            or not hmac.compare_digest(owner, caller)
+        if agent is None or owner is None or not self._keys_equal(
+            owner, caller
         ):
             raise HTTPException(status_code=404, detail="Agent not found.")
         return agent
@@ -344,7 +365,7 @@ class ChatAgentOpenAPIServer:
             with self._registry_lock:
                 if agent_id in self.agents:
                     owner = self._agent_owners.get(agent_id)
-                    if owner is None or not hmac.compare_digest(owner, caller):
+                    if owner is None or not self._keys_equal(owner, caller):
                         raise HTTPException(
                             status_code=409,
                             detail=(
@@ -449,7 +470,7 @@ class ChatAgentOpenAPIServer:
                 "agent_ids": [
                     agent_id
                     for agent_id, owner in list(self._agent_owners.items())
-                    if hmac.compare_digest(owner, caller)
+                    if self._keys_equal(owner, caller)
                 ]
             }
 
