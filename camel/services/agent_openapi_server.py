@@ -15,16 +15,20 @@
 
 import hmac
 import secrets
+import threading
 from typing import Any, Dict, List, Optional, Type, Union
 
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
 from camel.agents.chat_agent import ChatAgent
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import FunctionTool
 from camel.types import RoleType
+
+logger = get_logger(__name__)
 
 
 class InitRequest(BaseModel):
@@ -157,6 +161,13 @@ class ChatAgentOpenAPIServer:
 
         if api_keys is None:
             api_keys = [secrets.token_urlsafe(32)]
+        elif not api_keys:
+            logger.warning(
+                "ChatAgentOpenAPIServer started with authentication "
+                "disabled (api_keys=[]); every caller shares one "
+                "identity. Use only in single-user, trusted-network "
+                "deployments."
+            )
         self.api_keys: List[str] = list(api_keys)
         self.api_key: Optional[str] = (
             self.api_keys[0] if self.api_keys else None
@@ -165,6 +176,11 @@ class ChatAgentOpenAPIServer:
         # already held in memory for authentication, so ownership stores
         # the key itself; agent-scoped comparisons run in constant time.
         self._agent_owners: Dict[str, str] = {}
+        # Serialises /init's check -> create -> register sequence: the
+        # model construction between the existence check and the registry
+        # write takes long enough for concurrent inits of the same
+        # agent_id to double-register across owners.
+        self._registry_lock = threading.Lock()
         self._setup_routes()
 
     @staticmethod
@@ -218,12 +234,18 @@ class ChatAgentOpenAPIServer:
                 status_code=401,
                 detail="Missing API key. Pass it via 'Authorization: "
                 "Bearer <key>' or 'X-API-Key: <key>'.",
+                headers={"WWW-Authenticate": "Bearer"},
             )
 
+        presented_bytes = presented.encode("utf-8")
         for key in self.api_keys:
-            if hmac.compare_digest(key, presented):
+            if hmac.compare_digest(key.encode("utf-8"), presented_bytes):
                 return self._owner_id(key)
-        raise HTTPException(status_code=401, detail="Invalid API key.")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid API key.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     def _get_owned_agent(self, agent_id: str, caller: str) -> ChatAgent:
         r"""Returns the requested agent when it belongs to the caller.
@@ -319,58 +341,60 @@ class ChatAgentOpenAPIServer:
             """
 
             agent_id = request.agent_id
-            if agent_id in self.agents:
-                owner = self._agent_owners.get(agent_id)
-                if owner is None or not hmac.compare_digest(owner, caller):
-                    raise HTTPException(
-                        status_code=409,
-                        detail=(
-                            f"Agent id {agent_id!r} is already taken by "
-                            "another client."
-                        ),
-                    )
-                return {
-                    "agent_id": agent_id,
-                    "message": "Agent already exists.",
-                }
-
-            model_type = request.model_type
-            model_platform = request.model_platform
-
-            model = ModelFactory.create(
-                model_platform=model_platform,  # type: ignore[arg-type]
-                model_type=model_type,  # type: ignore[arg-type]
-            )
-
-            # tools lookup
-            tools = []
-            if request.tools_names:
-                for name in request.tools_names:
-                    if name in self.tool_registry:
-                        tools.extend(self.tool_registry[name])
-                    else:
+            with self._registry_lock:
+                if agent_id in self.agents:
+                    owner = self._agent_owners.get(agent_id)
+                    if owner is None or not hmac.compare_digest(owner, caller):
                         raise HTTPException(
-                            status_code=400,
-                            detail=f"Tool '{name}' " f"not found in registry",
+                            status_code=409,
+                            detail=(
+                                f"Agent id {agent_id!r} is already taken "
+                                "by another client."
+                            ),
                         )
+                    return {
+                        "agent_id": agent_id,
+                        "message": "Agent already exists.",
+                    }
 
-            # system message
-            system_message = request.system_message
+                model_type = request.model_type
+                model_platform = request.model_platform
 
-            agent = ChatAgent(
-                model=model,
-                tools=tools,  # type: ignore[arg-type]
-                external_tools=request.external_tools,  # type: ignore[arg-type]
-                system_message=system_message,
-                message_window_size=request.message_window_size,
-                token_limit=request.token_limit,
-                output_language=request.output_language,
-                max_iteration=request.max_iteration,
-                agent_id=agent_id,
-            )
+                model = ModelFactory.create(
+                    model_platform=model_platform,  # type: ignore[arg-type]
+                    model_type=model_type,  # type: ignore[arg-type]
+                )
 
-            self.agents[agent_id] = agent
-            self._agent_owners[agent_id] = caller
+                # tools lookup
+                tools = []
+                if request.tools_names:
+                    for name in request.tools_names:
+                        if name in self.tool_registry:
+                            tools.extend(self.tool_registry[name])
+                        else:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Tool '{name}' "
+                                f"not found in registry",
+                            )
+
+                # system message
+                system_message = request.system_message
+
+                agent = ChatAgent(
+                    model=model,
+                    tools=tools,  # type: ignore[arg-type]
+                    external_tools=request.external_tools,  # type: ignore[arg-type]
+                    system_message=system_message,
+                    message_window_size=request.message_window_size,
+                    token_limit=request.token_limit,
+                    output_language=request.output_language,
+                    max_iteration=request.max_iteration,
+                    agent_id=agent_id,
+                )
+
+                self.agents[agent_id] = agent
+                self._agent_owners[agent_id] = caller
             return {"agent_id": agent_id, "message": "Agent initialized."}
 
         @router.post("/astep/{agent_id}")
@@ -424,8 +448,8 @@ class ChatAgentOpenAPIServer:
             return {
                 "agent_ids": [
                     agent_id
-                    for agent_id, owner in self._agent_owners.items()
-                    if owner == caller
+                    for agent_id, owner in list(self._agent_owners.items())
+                    if hmac.compare_digest(owner, caller)
                 ]
             }
 
@@ -445,8 +469,8 @@ class ChatAgentOpenAPIServer:
             """
             self._get_owned_agent(agent_id, caller)
 
-            del self.agents[agent_id]
-            del self._agent_owners[agent_id]
+            self.agents.pop(agent_id, None)
+            self._agent_owners.pop(agent_id, None)
             return {"message": f"Agent {agent_id} deleted."}
 
         @router.post("/step/{agent_id}")

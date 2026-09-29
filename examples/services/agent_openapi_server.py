@@ -44,7 +44,15 @@ def example_init_and_step():
     tool_registry = {"search_wiki": [wiki_tool]}
 
     server = ChatAgentOpenAPIServer(tool_registry=tool_registry)
-    client = TestClient(server.get_app())
+
+    # Every request must present one of the configured API keys. With no
+    # keys supplied the server generated an ephemeral one, exposed as
+    # ``server.api_key``; pass ``api_keys=["..."]`` to provision your own
+    # (agents then stay private to the key that created them).
+    client = TestClient(
+        server.get_app(),
+        headers={"X-API-Key": server.api_key},
+    )
 
     r = client.post(
         "/v1/agents/init",
@@ -234,7 +242,15 @@ def example_init_and_astep():
     tool_registry = {"search_wiki": [wiki_tool]}
 
     server = ChatAgentOpenAPIServer(tool_registry=tool_registry)
-    client = TestClient(server.get_app())
+
+    # Every request must present one of the configured API keys. With no
+    # keys supplied the server generated an ephemeral one, exposed as
+    # ``server.api_key``; pass ``api_keys=["..."]`` to provision your own
+    # (agents then stay private to the key that created them).
+    client = TestClient(
+        server.get_app(),
+        headers={"X-API-Key": server.api_key},
+    )
 
     r = client.post(
         "/v1/agents/init",

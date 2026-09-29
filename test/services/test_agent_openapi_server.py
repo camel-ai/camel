@@ -370,3 +370,59 @@ def test_delete_removes_agent_and_allows_recreate():
     )
     assert response.status_code == 200
     assert "initialized" in response.json()["message"]
+
+
+def test_non_ascii_api_key_header_rejected():
+    r"""A non-ASCII header value must 401, not crash the handler."""
+    client = _client_with_keys("secret-key")
+
+    # Raw latin-1 bytes, as a non-conforming client would put on the
+    # wire (httpx itself refuses str header values outside ASCII).
+    wire_value = "ñ-üñï".encode("latin-1")
+
+    response = client.get(
+        "/v1/agents/list_agent_ids",
+        headers={"X-API-Key": wire_value},
+    )
+
+    assert response.status_code == 401
+
+
+def test_authenticated_missing_agent_returns_404():
+    r"""A valid key querying an id that never existed gets a bare 404."""
+    client = _client_with_keys("secret-key")
+    headers = {"X-API-Key": "secret-key"}
+
+    for method, url in [
+        ("get", "/v1/agents/history/never-existed"),
+        ("post", "/v1/agents/reset/never-existed"),
+        ("post", "/v1/agents/delete/never-existed"),
+    ]:
+        kwargs = {"json": {"input_message": "hi"}} if method == "post" else {}
+        response = getattr(client, method)(url, headers=headers, **kwargs)
+        assert response.status_code == 404, url
+
+
+def test_open_mode_shares_one_identity():
+    r"""With authentication disabled every caller reaches every agent —
+    the documented single-user semantics of api_keys=[]."""
+    server = ChatAgentOpenAPIServer(api_keys=[])
+    first = TestClient(server.get_app())
+    second = TestClient(server.get_app())
+
+    first.post("/v1/agents/init", json={"agent_id": "shared"})
+
+    assert second.post("/v1/agents/reset/shared").status_code == 200
+    assert first.get("/v1/agents/list_agent_ids").json() == {
+        "agent_ids": ["shared"]
+    }
+
+
+def test_401_carries_www_authenticate_header():
+    r"""401 responses advertise the Bearer scheme (RFC 6750)."""
+    client = _client_with_keys("secret-key")
+
+    response = client.get("/v1/agents/list_agent_ids")
+
+    assert response.status_code == 401
+    assert response.headers["WWW-Authenticate"] == "Bearer"
