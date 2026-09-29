@@ -672,3 +672,69 @@ def test_interpreter_in_dangerous_commands_public_list():
     """The public DANGEROUS_COMMANDS list carries the interpreters."""
     for name in ("python", "python3", "node", "perl", "ruby", "php"):
         assert name in DANGEROUS_COMMANDS
+
+
+# ----------------------------------------------
+# Segment-head matching hardening (subagent review on #4364)
+# ----------------------------------------------
+@pytest.mark.parametrize(
+    "command",
+    [
+        '/usr/bin/python -c "import os; os.system(\'id\')"',
+        './venv/bin/python script.py',
+        'echo hi; /usr/bin/python -c "import os"',
+        'ls && ./venv/bin/python -c "import os"',
+        "echo hi\npython -c \"import os; os.system('id')\"",
+        'ls & python -c "import os; os.system(\'id\')"',
+        'py -3 -c "import os; os.system(\'id\')"',
+        "awk 'BEGIN{system(\"id\")}'",
+        "osascript -e 'do shell script \"id\"'",
+        "echo $(python -c \"import os; os.system('id')\")",
+        "echo `python -c \"import os\"`",
+        'x=python; $x -c "import os"',
+    ],
+)
+def test_sanitize_command_blocks_review_bypasses(temp_dir, command):
+    """Bypass variants surfaced by the adversarial review of #4364 must
+    be rejected: pathed interpreters, newline separators, single `&`,
+    the Windows py launcher, awk/osascript, command substitution, and
+    variable-dereference heads."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe, (command, message)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "python3.11 -c \"import os\"",  # versioned interpreter: blocked
+        "python.exe -c \"import os\"",  # .exe suffix: blocked
+        "node18 --version",  # trailing-version binaries too
+    ],
+)
+def test_sanitize_command_versioned_interpreters_blocked(temp_dir, command):
+    """Trailing version components resolve to the base interpreter."""
+    is_safe, _ = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "python3-config --help",  # hyphenated tool name, not python
+        "echo 'python'",
+        "grep python requirements.txt",
+    ],
+)
+def test_sanitize_command_non_command_mentions_stay_allowed(temp_dir, command):
+    """Hyphenated tool names and mid-segment mentions stay allowed."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert is_safe, (command, message)
+
+
+def test_unparseable_quoting_fails_closed(temp_dir):
+    """A command shlex cannot parse is refused instead of guessed."""
+    is_safe, message = sanitize_command(
+        "echo 'unterminated", working_dir=str(temp_dir)
+    )
+    assert not is_safe
+    assert "could not be safely parsed" in message

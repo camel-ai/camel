@@ -131,6 +131,13 @@ DANGEROUS_COMMANDS: List[str] = [
     'rscript',
     'pwsh',
     'powershell',
+    'py',
+    'pyw',
+    'awk',
+    'gawk',
+    'busybox',
+    'osascript',
+    'r',
 ]
 
 
@@ -140,6 +147,65 @@ def _normalize_command_name(command: str) -> str:
     if normalized.endswith('.exe'):
         normalized = normalized[:-4]
     return normalized
+
+
+def _dangerous_head_reason(segment_head: str) -> Optional[str]:
+    r"""Return the blocked base command for a segment head, if any.
+
+    The head is normalized to its basename, so pathed invocations
+    (``/usr/bin/python``, ``./venv/bin/python``) match the same way bare
+    names do (issue #4347). Trailing version components are stripped
+    before comparison, so ``python3.11`` still resolves to ``python``
+    while hyphenated tool names such as ``python3-config`` stay allowed.
+    """
+    name = _normalize_command_name(segment_head)
+    # 'python3.11' -> 'python', 'python3' -> 'python'; hyphenated names
+    # (python3-config) keep their tail and are not blocked.
+    base = re.sub(r'(?:\.?\d+)+$', '', name)
+    # Read the module-level list at call time so downstream
+    # customization (import + extend) keeps working.
+    if any(base == dangerous.lower() for dangerous in DANGEROUS_COMMANDS):
+        return base
+    return None
+
+
+def _dangerous_segment_reason(command: str) -> Optional[str]:
+    r"""Screen every segment head of a command against the blacklist.
+
+    Matching the segment's first token (rather than scanning the raw
+    string) closes the bypasses of the previous anchor regex: pathed
+    interpreter calls (``/`` after the anchor defeats ``\b``), newline
+    separators (``^`` was not MULTILINE), and single ``&`` chaining are
+    all covered here. Segments are matched only on their first token, so
+    quoted or mid-segment mentions (``echo python``, ``grep python x``)
+    do not trigger false positives. A head beginning with ``$`` is a
+    variable dereference executing an attacker-chosen binary and is
+    rejected for the same reason.
+
+    Args:
+        command (str): The raw command string.
+
+    Returns:
+        Optional[str]: The rejected base command name, or ``None`` when
+            no segment head is blacklisted.
+    """
+    # Newlines separate shell commands under shell=True exactly like ';'.
+    normalized = command.replace('\r\n', ';').replace('\n', ';')
+    segments = _split_command_segments(normalized)
+    if segments is None:
+        # Unparseable quoting would still execute under shell=True; fail
+        # closed rather than guessing.
+        return 'unparseable'
+    for segment in segments:
+        if not segment:
+            continue
+        head = segment[0]
+        if head.startswith('$'):
+            return head
+        base = _dangerous_head_reason(head)
+        if base is not None:
+            return base
+    return None
 
 
 def _split_command_segments(command: str) -> Optional[List[List[str]]]:
@@ -219,6 +285,17 @@ def check_command_safety(
         if not is_safe:
             return False, reason
 
+    # Command substitution executes the embedded command before the
+    # visible one and its output is attacker-shapable; it cannot be
+    # screened statically, so safe mode refuses it outright (the `cd`
+    # path has refused it for the same reason all along).
+    if _SHELL_SUBSTITUTION_PATTERN.search(command):
+        return (
+            False,
+            "Command substitution ($(...) or backticks) is not allowed "
+            "in safe mode.",
+        )
+
     # Remove quoted strings to avoid false positives
     clean_command = _QUOTED_STRING_PATTERN.sub(' ', command)
 
@@ -234,11 +311,24 @@ def check_command_safety(
                 )
         return True, ""
 
-    # Check for dangerous commands
-    for cmd in DANGEROUS_COMMANDS:
-        pattern = rf'(?:^|;|\||&&)\s*\b{re.escape(cmd)}\b'
-        if re.search(pattern, clean_command, re.IGNORECASE):
-            return False, f"Command '{cmd}' is blocked for safety."
+    # Screen every segment head (basename, newline/`&`-aware); see
+    # _dangerous_segment_reason for the bypasses this closes over the
+    # previous anchor regex.
+    head = _dangerous_segment_reason(command)
+    if head is not None:
+        if head == 'unparseable':
+            return (
+                False,
+                "Command could not be safely parsed; refusing to run it "
+                "in safe mode.",
+            )
+        if head.startswith('$'):
+            return (
+                False,
+                f"Command '{head}' is blocked for safety: variable "
+                "dereference can execute an unscreenable binary.",
+            )
+        return False, f"Command '{head}' is blocked for safety."
 
     return True, ""
 
