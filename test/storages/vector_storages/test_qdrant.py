@@ -144,3 +144,19 @@ def test_delete_collection(temp_storage):
     assert not temp_storage.client.collection_exists(
         temp_storage.collection_name
     )
+
+
+def test_qdrant_generate_collection_name_windows_safe():
+    tmpdir = tempfile.mkdtemp()
+    storage = QdrantStorage(
+        vector_dim=4,
+        path=tmpdir,
+    )
+    # Check that generated name contains no Windows-prohibited characters
+    prohibited_chars = set('<>:"/\\|?*')
+    assert not any(c in prohibited_chars for c in storage.collection_name)
+    assert ":" not in storage.collection_name
+    assert "." not in storage.collection_name
+
+    storage.close_client()
+    shutil.rmtree(tmpdir)

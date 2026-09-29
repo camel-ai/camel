@@ -39,10 +39,12 @@ def storage(request):
             yield QdrantStorage(vector_dim=4)
         elif params[1] == "local":
             tmpdir = tempfile.mkdtemp()
-            yield QdrantStorage(
+            storage_instance = QdrantStorage(
                 vector_dim=4,
                 path=tmpdir,
             )
+            yield storage_instance
+            storage_instance.close_client()
             shutil.rmtree(tmpdir)
 
 
