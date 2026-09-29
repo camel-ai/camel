@@ -169,7 +169,12 @@ def _dangerous_head_reason(segment_head: str) -> Optional[str]:
     name = _normalize_command_name(segment_head)
     # 'python3.11' -> 'python', 'python3' -> 'python'; hyphenated names
     # (python3-config) keep their tail and are not blocked.
-    base = re.sub(r'(?:\.?\d+)+$', '', name)
+    # Strip trailing version components without a regex: the previous
+    # nested quantifier ((?:\.?\d+)+$) had quadratic-to-exponential
+    # backtracking on attacker-controlled heads made of many digits
+    # (CodeQL high alert), and even a char-class regex with the $
+    # anchor retries per start position (O(n^2)). rstrip is O(n).
+    base = name.rstrip('0123456789.')
     # Read the module-level list at call time so downstream
     # customization (import + extend) keeps working.
     if any(base == dangerous.lower() for dangerous in DANGEROUS_COMMANDS):
