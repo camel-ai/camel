@@ -44,8 +44,8 @@ _ASSIGNMENT_TOKEN_PATTERN = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
 # A bare redirect operator takes the next token as its target;
 # an attached target (2>/dev/null) or &-duplication (2>&1) is
 # self-contained.
-_REDIRECT_OPERATOR_PATTERN = re.compile(r'^\d*[<>]{1,2}$')
-_REDIRECT_WITH_TARGET_PATTERN = re.compile(r'^\d*[<>]{1,2}(?:&\d*|\S+)')
+_HEAD_METACHAR_PATTERN = re.compile(r'[<>|;&`]')
+_PROCESS_SUBSTITUTION_PATTERN = re.compile(r'[<>]\(')
 _CONTROL_FLOW_PATTERN = re.compile(r';|&&|\|\||[|&]')
 _SHELL_COMMANDS = {'bash', 'sh', 'zsh', 'dash', 'ksh', 'ash'}
 _SEPARATORS = {';', '&&', '||', '|', '&'}
@@ -213,29 +213,27 @@ def _dangerous_segment_reason(command: str) -> Optional[str]:
         if not segment:
             continue
         tokens = list(segment)
-        # Skip leading VAR=value assignments (a lone assignment segment
-        # sets state only and is allowed) and leading redirections.
-        # A bare redirect operator consumes the token after it as its
-        # target; attached (2>/dev/null) and &-terminated (2>&1) forms
-        # are self-contained.
-        while tokens:
-            token = tokens[0]
-            if len(tokens) > 1 and _ASSIGNMENT_TOKEN_PATTERN.match(token):
-                tokens = tokens[1:]
-            elif _REDIRECT_OPERATOR_PATTERN.match(token):
-                tokens = tokens[2:]
-            elif _REDIRECT_WITH_TARGET_PATTERN.match(token):
-                tokens = tokens[1:]
-            else:
+        # Skip leading VAR=value assignments (a segment that is only
+        # assignments sets state and is allowed).
+        while len(tokens) > 1 and _ASSIGNMENT_TOKEN_PATTERN.match(tokens[0]):
+            tokens = tokens[1:]
+        # Find the command word: skip subshell parentheses (nested,
+        # possibly split across tokens).
+        word = None
+        for token in tokens:
+            word = token.strip('()')
+            if word:
                 break
-        if not tokens:
+        if word is None:
             continue
-        head = tokens[0].lstrip('(')
-        if not head:
-            continue
-        if head.startswith('$'):
-            return head
-        base = _dangerous_head_reason(head)
+        # A head beginning with '$' is a variable dereference executing
+        # an attacker-chosen binary. A command word embedding any other
+        # shell metacharacter (process substitution <(...), redirection
+        # attached to the word, expansions) cannot be determined
+        # statically either — refuse both rather than guess.
+        if word.startswith('$') or _HEAD_METACHAR_PATTERN.search(word):
+            return word
+        base = _dangerous_head_reason(word)
         if base is not None:
             return base
     return None
@@ -276,10 +274,14 @@ def _extract_shell_c_payloads(command: str) -> List[str]:
             continue
 
         # lstrip('(') covers subshell-wrapped shells like
-        # `(bash -c "rm -rf /")` so the payload still gets screened.
-        if _normalize_command_name(segment[0].lstrip('(')) not in (
-            _SHELL_COMMANDS
-        ):
+        # `(bash -c "rm -rf /")` and the split-token form
+        # `( bash -c "rm -rf /" )`, so the payload still gets screened.
+        head = ''
+        for token in segment:
+            head = _normalize_command_name(token.lstrip('('))
+            if head:
+                break
+        if head not in _SHELL_COMMANDS:
             continue
 
         args = segment[1:]
@@ -331,6 +333,12 @@ def check_command_safety(
             False,
             "Command substitution ($(...) or backticks) is not allowed "
             "in safe mode.",
+        )
+    if _PROCESS_SUBSTITUTION_PATTERN.search(command):
+        return (
+            False,
+            "Process substitution (<(...) or >(...)) is not allowed in "
+            "safe mode.",
         )
 
     # Remove quoted strings to avoid false positives

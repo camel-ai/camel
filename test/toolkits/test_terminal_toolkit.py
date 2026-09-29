@@ -806,3 +806,43 @@ def test_sanitize_command_assignment_and_name_false_positives(
     strip lands on a blacklisted single letter stay allowed."""
     is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
     assert is_safe, (command, message)
+
+
+# ----------------------------------------------
+# Final delta: parens/redirect/here-string/process-substitution
+# ----------------------------------------------
+@pytest.mark.parametrize(
+    "command",
+    [
+        "( python -c \"import os\" )",  # spaced subshell
+        "( ( python -c \"import os\" ) )",  # nested spaced subshell
+        "2>&1 python -c \"import os\"",  # dup then command
+        "cat <(python -c \"import os\")",  # process substitution
+        "diff <(echo a) <(python -c \"import os\")",
+        "python -c \"import os\" <<< x",  # here-string
+        "<<< x python -c \"import os\"",  # leading here-string
+        "echo payload | (python)",  # trailing paren head
+        "echo payload | ((python))",
+        "tr a b < /etc/passwd && python -c \"import os\"",
+    ],
+)
+def test_sanitize_command_blocks_final_delta_bypasses(temp_dir, command):
+    """Subshell parens (spaced/nested/trailing), fd duplication, process
+    substitution, and here-strings must not hide the executed command."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe, (command, message)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "echo hi 2>&1",  # dup on a safe command: fine
+        "echo hi > out.txt 2>&1",
+        "(echo safe)",  # subshell of a safe command
+        "ls (nothing)",  # 'ls' heads; parens not executed
+    ],
+)
+def test_sanitize_command_final_delta_false_positives(temp_dir, command):
+    """Safe commands under the same spellings stay allowed."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert is_safe, (command, message)
