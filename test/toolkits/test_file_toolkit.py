@@ -995,3 +995,71 @@ def test_resolve_filepath_raises_on_escape(file_write_toolkit):
 
     with pytest.raises(ValueError, match="outside the working directory"):
         file_write_toolkit._resolve_existing_filepath("../escape.txt")
+
+
+# ----------------------------------------------
+# Search-path containment (review follow-up on #4362)
+# ----------------------------------------------
+def test_glob_files_rejects_escape(file_write_toolkit, temp_dir):
+    """glob_files must not search outside the working directory."""
+    outside_dir = Path(temp_dir) / "outside_glob"
+    outside_dir.mkdir()
+    (outside_dir / "secret.txt").write_text("secret", encoding="utf-8")
+
+    result = file_write_toolkit.glob_files("*.txt", path=str(outside_dir))
+
+    assert result.startswith("Error:")
+    assert "outside the working directory" in result
+
+
+def test_grep_files_rejects_escape(file_write_toolkit, temp_dir):
+    """grep_files with content output must not read outside the working
+    directory (the arbitrary-read path flagged in review)."""
+    secret = Path(temp_dir) / "credentials.txt"
+    secret.write_text("aws_secret_key = TOPSECRET", encoding="utf-8")
+
+    result = file_write_toolkit.grep_files(
+        pattern="aws_secret_key",
+        path=str(secret.parent),
+    )
+
+    assert result.startswith("Error:")
+    assert "outside the working directory" in result
+    assert "TOPSECRET" not in result
+
+
+def test_grep_files_rejects_relative_escape(file_write_toolkit, temp_dir):
+    """A '../' search root must not escape the working directory."""
+    outside_file = Path(temp_dir) / "secret.txt"
+    outside_file.write_text("topsecret", encoding="utf-8")
+
+    result = file_write_toolkit.grep_files(pattern=".", path="../")
+
+    assert result.startswith("Error:")
+    assert "outside the working directory" in result
+
+
+def test_search_files_rejects_escape(file_write_toolkit, temp_dir):
+    """search_files must not index outside the working directory."""
+    outside_file = Path(temp_dir) / "leak.md"
+    outside_file.write_text("leaky content", encoding="utf-8")
+
+    result = file_write_toolkit.search_files(
+        pattern="leaky", path=str(temp_dir)
+    )
+
+    assert "leaky content" not in str(result)
+    assert "outside the working directory" in str(result)
+
+
+def test_search_inside_working_directory_still_works(file_write_toolkit):
+    """Searches rooted inside the working directory keep working."""
+    (file_write_toolkit.working_directory / "notes").mkdir(exist_ok=True)
+    (file_write_toolkit.working_directory / "notes" / "a.txt").write_text(
+        "hello world", encoding="utf-8"
+    )
+
+    result = file_write_toolkit.glob_files("*.txt", path="notes")
+
+    assert isinstance(result, list)
+    assert any(p.endswith("a.txt") for p in result)

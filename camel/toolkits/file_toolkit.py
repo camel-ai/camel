@@ -135,12 +135,30 @@ class FileToolkit(BaseToolkit):
         return self._ensure_within_working_directory(resolved)
 
     def _resolve_search_path(self, path: Optional[str] = None) -> Path:
-        r"""Resolve a search directory without sanitizing it."""
+        r"""Resolve a search directory without sanitizing it.
+
+        The resolved directory must stay inside :attr:`working_directory`;
+        paths escaping it are rejected. Search reads file *content*
+        (``grep_files`` returns matching lines with context by default),
+        so an unguarded absolute or ``..`` path here would be an
+        arbitrary-read escape of the same kind guarded against in the
+        file resolvers.
+
+        Args:
+            path (Optional[str]): The search root to resolve. Relative
+                paths resolve against :attr:`working_directory`.
+
+        Returns:
+            Path: A fully resolved (absolute) search directory.
+
+        Raises:
+            ValueError: If the resolved path escapes the working directory.
+        """
         if path:
             path_obj = Path(path)
             if not path_obj.is_absolute():
-                return (self.working_directory / path_obj).resolve()
-            return path_obj.resolve()
+                path_obj = self.working_directory / path_obj
+            return self._ensure_within_working_directory(path_obj.resolve())
         return self.working_directory
 
     def _resolve_existing_filepath(self, file_path: str) -> Path:
