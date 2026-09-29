@@ -40,6 +40,12 @@ _PUSHD_PATTERN = re.compile(
     r'\bpushd\s+(?:--\s+)?(["\'][^"\']*["\']|[^\s;|&]+)'
 )
 _SHELL_SUBSTITUTION_PATTERN = re.compile(r'`|(?<!\\)\$\(')
+_ASSIGNMENT_TOKEN_PATTERN = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
+# A bare redirect operator takes the next token as its target;
+# an attached target (2>/dev/null) or &-duplication (2>&1) is
+# self-contained.
+_REDIRECT_OPERATOR_PATTERN = re.compile(r'^\d*[<>]{1,2}$')
+_REDIRECT_WITH_TARGET_PATTERN = re.compile(r'^\d*[<>]{1,2}(?:&\d*|\S+)')
 _CONTROL_FLOW_PATTERN = re.compile(r';|&&|\|\||[|&]')
 _SHELL_COMMANDS = {'bash', 'sh', 'zsh', 'dash', 'ksh', 'ash'}
 _SEPARATORS = {';', '&&', '||', '|', '&'}
@@ -133,11 +139,13 @@ DANGEROUS_COMMANDS: List[str] = [
     'powershell',
     'py',
     'pyw',
+    'pythonw',
     'awk',
     'gawk',
+    'mawk',
+    'nawk',
     'busybox',
     'osascript',
-    'r',
 ]
 
 
@@ -176,18 +184,23 @@ def _dangerous_segment_reason(command: str) -> Optional[str]:
     string) closes the bypasses of the previous anchor regex: pathed
     interpreter calls (``/`` after the anchor defeats ``\b``), newline
     separators (``^`` was not MULTILINE), and single ``&`` chaining are
-    all covered here. Segments are matched only on their first token, so
-    quoted or mid-segment mentions (``echo python``, ``grep python x``)
-    do not trigger false positives. A head beginning with ``$`` is a
-    variable dereference executing an attacker-chosen binary and is
-    rejected for the same reason.
+    all covered here. Before the head is matched, leading ``VAR=value``
+    assignments, redirections (with their targets), and subshell
+    parentheses are skipped — ``FOO=1 python -c ...``, ``> out python
+    ...`` and ``(python -c ...)`` run exactly the command that follows
+    them. Segments are matched only on their first token, so quoted or
+    mid-segment mentions (``echo python``, ``grep python x``) do not
+    trigger false positives. A head beginning with ``$`` is a variable
+    dereference executing an attacker-chosen binary and is rejected for
+    the same reason.
 
     Args:
         command (str): The raw command string.
 
     Returns:
-        Optional[str]: The rejected base command name, or ``None`` when
-            no segment head is blacklisted.
+        Optional[str]: The rejected base command name, the offending
+            head, or ``'unparseable'`` — anything non-``None`` means the
+            command must be rejected.
     """
     # Newlines separate shell commands under shell=True exactly like ';'.
     normalized = command.replace('\r\n', ';').replace('\n', ';')
@@ -199,7 +212,27 @@ def _dangerous_segment_reason(command: str) -> Optional[str]:
     for segment in segments:
         if not segment:
             continue
-        head = segment[0]
+        tokens = list(segment)
+        # Skip leading VAR=value assignments (a lone assignment segment
+        # sets state only and is allowed) and leading redirections.
+        # A bare redirect operator consumes the token after it as its
+        # target; attached (2>/dev/null) and &-terminated (2>&1) forms
+        # are self-contained.
+        while tokens:
+            token = tokens[0]
+            if len(tokens) > 1 and _ASSIGNMENT_TOKEN_PATTERN.match(token):
+                tokens = tokens[1:]
+            elif _REDIRECT_OPERATOR_PATTERN.match(token):
+                tokens = tokens[2:]
+            elif _REDIRECT_WITH_TARGET_PATTERN.match(token):
+                tokens = tokens[1:]
+            else:
+                break
+        if not tokens:
+            continue
+        head = tokens[0].lstrip('(')
+        if not head:
+            continue
         if head.startswith('$'):
             return head
         base = _dangerous_head_reason(head)
@@ -242,7 +275,11 @@ def _extract_shell_c_payloads(command: str) -> List[str]:
         if not segment:
             continue
 
-        if _normalize_command_name(segment[0]) not in _SHELL_COMMANDS:
+        # lstrip('(') covers subshell-wrapped shells like
+        # `(bash -c "rm -rf /")` so the payload still gets screened.
+        if _normalize_command_name(segment[0].lstrip('(')) not in (
+            _SHELL_COMMANDS
+        ):
             continue
 
         args = segment[1:]

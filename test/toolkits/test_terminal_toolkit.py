@@ -738,3 +738,71 @@ def test_unparseable_quoting_fails_closed(temp_dir):
     )
     assert not is_safe
     assert "could not be safely parsed" in message
+
+
+# ----------------------------------------------
+# Segment-head skip hardening (delta review on #4364)
+# ----------------------------------------------
+@pytest.mark.parametrize(
+    "command",
+    [
+        'FOO=1 python -c "import os; os.system(\'id\')"',
+        'PYTHONUNBUFFERED=1 python3 -c "import os"',
+        'A=1 B=2 node -e "require(\'fs\')"',
+        'PYTHONPATH=/tmp python -c "import os"',
+        '> /tmp/out python -c "import os; os.system(\'id\')"',
+        '2>/dev/null python -c "import os; os.system(\'id\')"',
+        '< /dev/null python -c "import os"',
+        '>> log ruby -e "puts 1"',
+        "(python -c \"import os; os.system('id')\")",
+        "(bash -c \"rm -rf /\")",
+    ],
+)
+def test_sanitize_command_blocks_skip_prefix_bypasses(temp_dir, command):
+    """Assignment prefixes, redirection prefixes, and subshell
+    parentheses must not hide the command that actually runs."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe, (command, message)
+
+
+def test_sanitize_command_variable_head_message_pinned(temp_dir):
+    """The variable-dereference rejection carries its own reason, so a
+    regression in the skip logic cannot pass by coincidence."""
+    is_safe, message = sanitize_command(
+        'x=python; $x -c "import os"',
+        working_dir=str(temp_dir),
+    )
+    assert not is_safe
+    assert "variable dereference" in message
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "mawk 'BEGIN{system(\"id\")}'",
+        "nawk 'BEGIN{system(\"id\")}'",
+        "pythonw -c \"import os\"",
+    ],
+)
+def test_sanitize_command_blocks_awk_family_and_pythonw(temp_dir, command):
+    """mawk/nawk/pythonw are single-call code interpreters too."""
+    is_safe, _ = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "r2 /bin/ls",  # radare2 — version-strip must not map to 'r'
+        "sha256sum file.txt",
+        "FOO=1",  # a lone assignment sets state only
+        "echo hi > out.txt",  # benign redirection of a safe command
+    ],
+)
+def test_sanitize_command_assignment_and_name_false_positives(
+    temp_dir, command
+):
+    """Pure assignments, benign redirections, and names whose version
+    strip lands on a blacklisted single letter stay allowed."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert is_safe, (command, message)
