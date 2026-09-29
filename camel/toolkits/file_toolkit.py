@@ -161,6 +161,28 @@ class FileToolkit(BaseToolkit):
             return self._ensure_within_working_directory(path_obj.resolve())
         return self.working_directory
 
+    def _candidate_within_root(self, candidate: Path, root: Path) -> bool:
+        r"""Whether a search candidate stays inside the search root.
+
+        Directories inside the working directory may be symlinks pointing
+        outward; ``rglob``/``glob``/iteration would otherwise surface
+        files resolved through them. Candidates that fail to resolve
+        (races, broken links) are excluded.
+
+        Args:
+            candidate (Path): A candidate path found under ``root``.
+            root (Path): The already-resolved search root.
+
+        Returns:
+            bool: ``True`` when the fully resolved candidate is inside
+                ``root``.
+        """
+        try:
+            resolved = candidate.resolve()
+        except OSError:
+            return False
+        return resolved == root or resolved.is_relative_to(root)
+
     def _resolve_existing_filepath(self, file_path: str) -> Path:
         r"""Resolve a file path without sanitizing the filename.
 
@@ -217,6 +239,8 @@ class FileToolkit(BaseToolkit):
             if not candidate.is_file():
                 continue
             if suffix and candidate.suffix.lower() != suffix:
+                continue
+            if not self._candidate_within_root(candidate, root):
                 continue
             candidates.append(candidate)
         return sorted(candidates)
@@ -1167,20 +1191,24 @@ class FileToolkit(BaseToolkit):
         """
         try:
             file_path = self._resolve_filepath(filename)
-        except ValueError as e:
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Create backup of existing file if backup is enabled
+            if file_path.exists() and self.backup_enabled:
+                self._create_backup(file_path)
+
+            extension = file_path.suffix.lower()
+
+            # If no extension is provided, use markdown as default
+            if extension == "":
+                file_path = file_path.with_suffix('.md')
+                # with_suffix mutates the checked path (a filename that
+                # resolves to the working directory itself becomes
+                # <parent>/<name>.md), so containment is verified again.
+                self._ensure_within_working_directory(file_path)
+                extension = '.md'
+        except (ValueError, OSError) as e:
             return self._tool_error(str(e))
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Create backup of existing file if backup is enabled
-        if file_path.exists() and self.backup_enabled:
-            self._create_backup(file_path)
-
-        extension = file_path.suffix.lower()
-
-        # If no extension is provided, use markdown as default
-        if extension == "":
-            file_path = file_path.with_suffix('.md')
-            extension = '.md'
 
         try:
             # Get encoding or use default
@@ -1389,7 +1417,11 @@ class FileToolkit(BaseToolkit):
             if not root.exists():
                 return self._tool_error(f"Search path does not exist: {root}")
 
-            matches = [item for item in root.glob(pattern) if item.is_file()]
+            matches = [
+                item
+                for item in root.glob(pattern)
+                if item.is_file() and self._candidate_within_root(item, root)
+            ]
             matches.sort(
                 key=lambda item: (item.stat().st_mtime, str(item)),
                 reverse=True,
@@ -1762,6 +1794,12 @@ class FileToolkit(BaseToolkit):
             files_searched = 0
             pattern_lower = pattern.lower()
 
+            matching_files = [
+                file_path
+                for file_path in matching_files
+                if self._candidate_within_root(file_path, search_path)
+            ]
+
             for file_path in matching_files:
                 files_searched += 1
                 try:
@@ -1790,8 +1828,9 @@ class FileToolkit(BaseToolkit):
                                 }
                             )
 
-                except (UnicodeDecodeError, PermissionError) as e:
-                    # skip files that can't be read
+                except OSError as e:
+                    # skip files that can't be read (permissions,
+                    # directories matched by a file pattern, races, ...)
                     logger.debug(f"Skipping file {file_path}: {e}")
                     continue
 

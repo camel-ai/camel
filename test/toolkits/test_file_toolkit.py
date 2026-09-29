@@ -866,10 +866,12 @@ def test_notebook_edit_returns_error_message_for_missing_file(
 # ----------------------------------------------
 # Working-directory containment (issues #4354, #4355)
 # ----------------------------------------------
-def test_write_to_file_rejects_parent_escape(file_write_toolkit, temp_dir):
+def test_write_to_file_rejects_parent_escape(file_write_toolkit):
     r"""A '../' filename must not escape the working directory."""
+    outside_file = (
+        file_write_toolkit.working_directory.parent / "escape_write.txt"
+    )
     filename = "../escape_write.txt"
-    outside_file = Path(temp_dir) / "escape_write.txt"
 
     result = file_write_toolkit.write_to_file(
         "Escape Document", "should not land", filename
@@ -1063,3 +1065,66 @@ def test_search_inside_working_directory_still_works(file_write_toolkit):
 
     assert isinstance(result, list)
     assert any(p.endswith("a.txt") for p in result)
+
+
+def test_write_to_file_rejects_with_suffix_mutation(file_write_toolkit):
+    r"""A filename resolving to the working directory itself must not be
+    written one level up via the implicit '.md' suffix (review HIGH-1)."""
+    outside_file = file_write_toolkit.working_directory.parent / (
+        file_write_toolkit.working_directory.name + ".md"
+    )
+
+    result = file_write_toolkit.write_to_file("T", "content", "")
+
+    assert result.startswith("Error:")
+    assert "outside the working directory" in result
+    assert not outside_file.exists()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="requires symlink privileges")
+def test_grep_files_skips_directory_symlink_escape(
+    file_write_toolkit, temp_dir
+):
+    r"""grep_files must not read through a directory symlink planted
+    inside the working directory (review HIGH-2)."""
+    outside_dir = Path(temp_dir) / "outside_grep"
+    outside_dir.mkdir()
+    (outside_dir / "secret.txt").write_text("TOPSECRET-XYZ", encoding="utf-8")
+    link = file_write_toolkit.working_directory / "etc"
+    link.symlink_to(outside_dir)
+
+    result = file_write_toolkit.grep_files(
+        pattern="TOPSECRET", path=".", glob_pattern="etc/*"
+    )
+
+    assert "TOPSECRET-XYZ" not in str(result)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="requires symlink privileges")
+def test_glob_files_skips_directory_symlink_escape(
+    file_write_toolkit, temp_dir
+):
+    r"""glob_files must not surface files resolved through an inside
+    directory symlink pointing outward (review HIGH-2)."""
+    outside_dir = Path(temp_dir) / "outside_glob"
+    outside_dir.mkdir()
+    (outside_dir / "secret.txt").write_text("x", encoding="utf-8")
+    link = file_write_toolkit.working_directory / "etc"
+    link.symlink_to(outside_dir)
+
+    result = file_write_toolkit.glob_files("etc/*.txt", path=".")
+
+    assert result == []
+
+
+def test_edit_file_accepts_absolute_inside(file_write_toolkit):
+    r"""Absolute paths inside the working directory remain editable."""
+    target = file_write_toolkit.working_directory / "inside_abs.txt"
+    target.write_text("visible", encoding="utf-8")
+
+    result = file_write_toolkit.edit_file(
+        str(target), "visible", "edited"
+    )
+
+    assert "Successfully edited" in result
+    assert target.read_text(encoding="utf-8") == "edited"
