@@ -287,8 +287,10 @@ class ChatAgentOpenAPIServer:
         """
         agent = self.agents.get(agent_id)
         owner = self._agent_owners.get(agent_id)
-        if agent is None or owner is None or not self._keys_equal(
-            owner, caller
+        if (
+            agent is None
+            or owner is None
+            or not self._keys_equal(owner, caller)
         ):
             raise HTTPException(status_code=404, detail="Agent not found.")
         return agent
