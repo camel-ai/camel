@@ -351,7 +351,7 @@ Core components and utilities to build, operate, and enhance CAMEL-AI agents and
 | **[Interpreters](https://docs.camel-ai.org/key_modules/interpreters)** | Code and command interpretation capabilities. |
 | **[Data Loaders](https://docs.camel-ai.org/key_modules/loaders)** | Data ingestion and preprocessing tools. |
 | **[Retrievers](https://docs.camel-ai.org/key_modules/retrievers)** | Knowledge retrieval and RAG components. |
-| **[Runtime](https://github.com/camel-ai/camel/tree/master/camel/runtime)** | Execution environment and process management. |
+| **[Runtime](https://github.com/camel-ai/camel/tree/master/camel/runtimes)** | Execution environment and process management. |
 | **[Human-in-the-Loop](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval)** | Interactive components for human oversight and intervention. |
 ---
 
@@ -630,7 +630,7 @@ For more information please contact camel-ai@eigent.ai
 [star-image]: https://img.shields.io/github/stars/camel-ai/camel?label=stars&logo=github&color=brightgreen
 [star-url]: https://github.com/camel-ai/camel/stargazers
 [package-license-image]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
-[package-license-url]: https://github.com/camel-ai/camel/blob/master/licenses/LICENSE
+[package-license-url]: https://github.com/camel-ai/camel/blob/master/LICENSE
 [package-download-image]: https://img.shields.io/pypi/dm/camel-ai
 
 [colab-url]: https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing

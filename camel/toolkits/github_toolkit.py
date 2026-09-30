@@ -47,7 +47,6 @@ class GithubToolkit(BaseToolkit):
         r"""Initializes a new instance of the GitHubToolkit class.
 
         Args:
-            repo_name (str): The name of the GitHub repository.
             access_token (str, optional): The access token to authenticate
                 with GitHub. If not provided, it will be obtained using the
                 `get_github_access_token` method.
