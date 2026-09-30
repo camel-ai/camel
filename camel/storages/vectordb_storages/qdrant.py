@@ -238,7 +238,7 @@ class QdrantStorage(BaseVectorStorage):
         Returns:
             str: Generated collection name.
         """
-        return datetime.now().isoformat()
+        return datetime.now().isoformat().replace(':', '-').replace('.', '-')
 
     def _get_collection_info(self, collection_name: str) -> Dict[str, Any]:
         r"""Retrieves details of an existing collection.
