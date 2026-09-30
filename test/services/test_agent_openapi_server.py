@@ -12,6 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from unittest.mock import patch
+
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
@@ -426,3 +428,137 @@ def test_401_carries_www_authenticate_header():
 
     assert response.status_code == 401
     assert response.headers["WWW-Authenticate"] == "Bearer"
+
+
+# ----------------------------------------------
+# Coverage: registry lookup, HTTPException re-raise guards, key encoding
+# ----------------------------------------------
+def test_init_returns_400_for_unknown_tool():
+    r"""A tools_names entry missing from the registry is a 400."""
+    client = _client_with_keys("secret-key")
+    headers = {"X-API-Key": "secret-key"}
+
+    response = client.post(
+        "/v1/agents/init",
+        json={
+            "agent_id": "tool-agent",
+            "tools_names": ["no_such_tool"],
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 400
+    assert "not found in registry" in response.json()["detail"]
+
+
+def test_init_resolves_registered_tool():
+    r"""A tools_names entry present in the registry initializes cleanly."""
+
+    def dummy_tool(q: str) -> str:
+        """Dummy tool for registry lookup."""
+        return q
+
+    server = ChatAgentOpenAPIServer(
+        tool_registry={"dummy_tool": [FunctionTool(dummy_tool)]},
+        api_keys=["secret-key"],
+    )
+    client = TestClient(server.get_app(), headers={"X-API-Key": "secret-key"})
+
+    response = client.post(
+        "/v1/agents/init",
+        json={
+            "agent_id": "tool-agent",
+            "tools_names": ["dummy_tool"],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["message"] == "Agent initialized."
+
+
+def test_keys_equal_never_raises_on_unencodable_values():
+    r"""Lone surrogates cannot be UTF-8 encoded; _keys_equal treats them
+    as unequal instead of raising."""
+    server = ChatAgentOpenAPIServer(api_keys=["secret-key"])
+
+    assert server._keys_equal("\ud800", "\ud800") is False
+    assert server._keys_equal("a", "\ud800") is False
+    assert server._keys_equal("a", "a") is True
+
+
+def _patched_agent_cls(step_side_effect):
+    """Build a ChatAgent stand-in whose step/astep raise as instructed."""
+
+    class _FakeAgent:
+        def __init__(self, **_: object) -> None:
+            pass
+
+        @staticmethod
+        def _raise():
+            raise HTTPException(status_code=409, detail="in-flight conflict")
+
+        def step(self, *, input_message, response_format=None):
+            self._raise()
+
+        async def astep(self, *, input_message, response_format=None):
+            self._raise()
+
+    return _FakeAgent, step_side_effect
+
+
+def test_step_reraises_http_exception_from_agent():
+    r"""An HTTPException raised mid-step propagates with its status code
+    instead of being flattened into a 500."""
+
+    class _FakeAgent:
+        def __init__(self, **_: object) -> None:
+            pass
+
+        def step(self, *, input_message, response_format=None):
+            raise HTTPException(status_code=409, detail="conflict-test")
+
+    server = ChatAgentOpenAPIServer(api_keys=["secret-key"])
+    client = TestClient(server.get_app(), headers={"X-API-Key": "secret-key"})
+
+    with client:
+        with patch(
+            "camel.services.agent_openapi_server.ChatAgent", _FakeAgent
+        ):
+            client.post("/v1/agents/init", json={"agent_id": "conflict-agent"})
+            response = client.post(
+                "/v1/agents/step/conflict-agent",
+                json={"input_message": "hi"},
+            )
+
+    assert response.status_code == 409
+    assert "conflict-test" in response.json()["detail"]
+
+
+def test_astep_reraises_http_exception_from_agent():
+    r"""Same re-raise contract for the async step endpoint."""
+
+    class _FakeAgent:
+        def __init__(self, **_: object) -> None:
+            pass
+
+        async def astep(self, *, input_message, response_format=None):
+            raise HTTPException(status_code=409, detail="conflict-test")
+
+        def step(self, *, input_message, response_format=None):
+            raise AssertionError("sync step must not run")
+
+    server = ChatAgentOpenAPIServer(api_keys=["secret-key"])
+    client = TestClient(server.get_app(), headers={"X-API-Key": "secret-key"})
+
+    with client:
+        with patch(
+            "camel.services.agent_openapi_server.ChatAgent", _FakeAgent
+        ):
+            client.post("/v1/agents/init", json={"agent_id": "conflict-agent"})
+            response = client.post(
+                "/v1/agents/astep/conflict-agent",
+                json={"input_message": "hi"},
+            )
+
+    assert response.status_code == 409
+    assert "conflict-test" in response.json()["detail"]
