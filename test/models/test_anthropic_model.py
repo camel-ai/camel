@@ -1239,3 +1239,69 @@ async def test_arun_passes_output_config_tool_choice_and_extra_fields():
         ]
         == "{minLength: 3}"
     )
+
+
+def test_run_default_config_sends_int_max_tokens():
+    """Default config must send an int max_tokens, not None.
+
+    max_tokens is a required parameter of the Anthropic Messages API, so
+    the default AnthropicConfig (whose as_dict drops None values) must
+    still produce an integer max_tokens in the request.
+    """
+    mock_client = MagicMock()
+    mock_async_client = MagicMock()
+
+    mock_response = MagicMock()
+    mock_response.content = [{"type": "text", "text": "Hello"}]
+    mock_response.stop_reason = "end_turn"
+    mock_response.id = "msg_max_tokens"
+    mock_response.usage = MagicMock()
+    mock_response.usage.input_tokens = 10
+    mock_response.usage.output_tokens = 5
+    mock_client.messages.create.return_value = mock_response
+
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        api_key="dummy_api_key",
+        client=mock_client,
+        async_client=mock_async_client,
+    )
+
+    assert model.model_config_dict == {}
+
+    model._run(messages=[{"role": "user", "content": "Hello"}])
+
+    request_kwargs = mock_client.messages.create.call_args.kwargs
+    assert isinstance(request_kwargs["max_tokens"], int)
+    assert request_kwargs["max_tokens"] > 0
+
+
+@pytest.mark.asyncio
+async def test_arun_default_config_sends_int_max_tokens():
+    """Async default config must send an int max_tokens, not None."""
+    mock_client = MagicMock()
+    mock_async_client = MagicMock()
+
+    mock_response = MagicMock()
+    mock_response.content = [{"type": "text", "text": "Hello"}]
+    mock_response.stop_reason = "end_turn"
+    mock_response.id = "msg_max_tokens_async"
+    mock_response.usage = MagicMock()
+    mock_response.usage.input_tokens = 10
+    mock_response.usage.output_tokens = 5
+    mock_async_client.messages.create = AsyncMock(return_value=mock_response)
+
+    model = AnthropicModel(
+        ModelType.CLAUDE_HAIKU_4_5,
+        api_key="dummy_api_key",
+        client=mock_client,
+        async_client=mock_async_client,
+    )
+
+    assert model.model_config_dict == {}
+
+    await model._arun(messages=[{"role": "user", "content": "Hello"}])
+
+    request_kwargs = mock_async_client.messages.create.call_args.kwargs
+    assert isinstance(request_kwargs["max_tokens"], int)
+    assert request_kwargs["max_tokens"] > 0
