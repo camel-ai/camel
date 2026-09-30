@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
+import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 from uuid import UUID
@@ -235,10 +236,16 @@ class QdrantStorage(BaseVectorStorage):
     def _generate_collection_name(self) -> str:
         r"""Generates a collection name if user doesn't provide.
 
+        The ISO timestamp is sanitized to [A-Za-z0-9_-]: Qdrant local mode
+        maps collection names to directories, and ':' is an illegal path
+        character on Windows (same treatment as the chroma and milvus
+        backends).
+
         Returns:
             str: Generated collection name.
         """
-        return datetime.now().isoformat()
+        timestamp = datetime.now().isoformat()
+        return re.sub(r"[^a-zA-Z0-9_-]", "_", timestamp)
 
     def _get_collection_info(self, collection_name: str) -> Dict[str, Any]:
         r"""Retrieves details of an existing collection.
