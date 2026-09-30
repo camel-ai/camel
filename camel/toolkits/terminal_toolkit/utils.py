@@ -229,7 +229,8 @@ def _dangerous_segment_reason(command: str) -> Optional[str]:
             word = token.strip('()')
             if word:
                 break
-        if word is None:
+        if not word:
+            # All-parenthesis token(s): no command word to screen.
             continue
         # A head beginning with '$' is a variable dereference executing
         # an attacker-chosen binary. A command word embedding any other

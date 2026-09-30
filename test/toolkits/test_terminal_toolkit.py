@@ -846,3 +846,54 @@ def test_sanitize_command_final_delta_false_positives(temp_dir, command):
     """Safe commands under the same spellings stay allowed."""
     is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
     assert is_safe, (command, message)
+
+
+def test_sanitize_command_paren_only_segment_is_allowed(temp_dir):
+    """A segment consisting only of parentheses is skipped (nothing to
+    screen) and the command stays allowed."""
+    is_safe, _ = sanitize_command("(())", working_dir=str(temp_dir))
+    assert is_safe
+
+
+def test_dangerous_segment_reason_skips_empty_and_paren_segments(
+    temp_dir, monkeypatch
+):
+    """Defensive segment shapes are skipped rather than screened: an
+    empty segment (the splitter should never produce one) and a segment
+    made only of parenthesis tokens (word strips to empty, so no command
+    word exists)."""
+    import camel.toolkits.terminal_toolkit.utils as terminal_utils
+
+    original = terminal_utils._split_command_segments
+
+    # Empty first segment: skipped; real second segment screened.
+    monkeypatch.setattr(
+        terminal_utils,
+        "_split_command_segments",
+        lambda cmd: [[], ["echo", "hi"]],
+    )
+    from camel.toolkits.terminal_toolkit.utils import (
+        _dangerous_segment_reason,
+    )
+
+    assert _dangerous_segment_reason("echo hi") is None
+
+    # Dangerous command in the second segment still caught.
+    monkeypatch.setattr(
+        terminal_utils,
+        "_split_command_segments",
+        lambda cmd: [[], ["python", "-c", "import os"]],
+    )
+    assert _dangerous_segment_reason("python -c 'import os'") == "python"
+
+    # A segment of only parenthesis tokens: no command word at all.
+    monkeypatch.setattr(
+        terminal_utils,
+        "_split_command_segments",
+        lambda cmd: [["((", "))"]],
+    )
+    assert _dangerous_segment_reason("((  ))") is None
+
+    monkeypatch.setattr(
+        terminal_utils, "_split_command_segments", original
+    )
