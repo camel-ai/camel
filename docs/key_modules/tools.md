@@ -145,6 +145,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | StripeToolkit          | A toolkit for processing payments and managing financial transactions via Stripe.                                                                                             |
 | SymPyToolkit           | A toolkit for performing symbolic computations using SymPy, including algebraic manipulation, calculus, and linear algebra.                                                   |
 | TerminalToolkit        | A toolkit for terminal operations such as searching for files by name or content, executing shell commands, and managing terminal sessions across multiple operating systems. |
+| UsdctoFiatToolkit     | A toolkit for cashing out Base USDC to fiat via USDCtoFiat by Galleon Labs (Fast with 0% spread or Best with Delegate pricing at 10 bps).                |
 | TwitterToolkit         | A toolkit for Twitter operations including creating tweets, deleting tweets, and retrieving user profile information.                                                         |
 | VideoAnalysisToolkit   | A toolkit for analyzing video content with vision-language models, including frame extraction and question answering about video content.                                     |
 | TwelveLabsToolkit      | A toolkit for native video understanding powered by TwelveLabs' Pegasus model, enabling question answering and summarization over a video URL or an indexed video.             |
