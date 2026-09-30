@@ -1126,3 +1126,42 @@ def test_edit_file_accepts_absolute_inside(file_write_toolkit):
 
     assert "Successfully edited" in result
     assert target.read_text(encoding="utf-8") == "edited"
+
+
+def test_candidate_within_root_skips_unresolvable_candidate(
+    file_write_toolkit, monkeypatch
+):
+    r"""A candidate that cannot be resolved (raced away mid-search) is
+    excluded rather than raising out of the search."""
+
+    def _boom(self, strict: bool = False) -> Path:
+        raise OSError("vanished")
+
+    monkeypatch.setattr(Path, "resolve", _boom)
+
+    assert (
+        file_write_toolkit._candidate_within_root(
+            Path("anything"), file_write_toolkit.working_directory
+        )
+        is False
+    )
+
+
+def test_search_files_skips_unreadable_candidates(file_write_toolkit):
+    r"""search_files skips candidates that raise OSError on read (a
+    directory matched by a file pattern) instead of failing the whole
+    search."""
+    (file_write_toolkit.working_directory / "notes").mkdir(exist_ok=True)
+    (file_write_toolkit.working_directory / "notes" / "keep.md").write_text(
+        "found needle here", encoding="utf-8"
+    )
+    # A directory whose name matches the file pattern: read_text on it
+    # raises IsADirectoryError (an OSError).
+    (file_write_toolkit.working_directory / "keep.md").mkdir(exist_ok=True)
+
+    result = file_write_toolkit.search_files(pattern="needle")
+
+    parsed = json.loads(result) if isinstance(result, str) else result
+    files = [m["file"] for m in parsed["matches"]]
+    assert any("notes" in f for f in files), parsed
+    assert all(not f.startswith("keep.md") for f in files)
