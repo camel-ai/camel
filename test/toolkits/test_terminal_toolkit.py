@@ -894,6 +894,4 @@ def test_dangerous_segment_reason_skips_empty_and_paren_segments(
     )
     assert _dangerous_segment_reason("((  ))") is None
 
-    monkeypatch.setattr(
-        terminal_utils, "_split_command_segments", original
-    )
+    monkeypatch.setattr(terminal_utils, "_split_command_segments", original)
