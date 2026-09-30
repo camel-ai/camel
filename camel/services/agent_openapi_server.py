@@ -13,16 +13,22 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
+import hmac
+import secrets
+import threading
 from typing import Any, Dict, List, Optional, Type, Union
 
-from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
 from camel.agents.chat_agent import ChatAgent
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import FunctionTool
 from camel.types import RoleType
+
+logger = get_logger(__name__)
 
 
 class InitRequest(BaseModel):
@@ -107,12 +113,24 @@ class ChatAgentOpenAPIServer:
 
     Supports pluggable tool and response format registries for customizing
     agent behavior or output schemas.
+
+    Authentication and ownership: every request must present one of the
+    configured API keys (``Authorization: Bearer <key>`` or
+    ``X-API-Key: <key>``). An agent belongs to the key that created it:
+    its history, memory resets, message steps, and deletion are only
+    reachable by that key, and ``list_agent_ids`` only reports the
+    caller's own agents. When ``api_keys`` is not provided, one ephemeral
+    key is generated and exposed as :attr:`api_key`, so deployments are
+    authenticated by default; pass a non-empty list to provision your
+    own keys (multi-tenant), or an empty list to explicitly run without
+    authentication (single-user, trusted-network deployments only).
     """
 
     def __init__(
         self,
         tool_registry: Optional[Dict[str, List[FunctionTool]]] = None,
         response_format_registry: Optional[Dict[str, Type[BaseModel]]] = None,
+        api_keys: Optional[List[str]] = None,
     ):
         r"""Initializes the OpenAPI server for managing ChatAgents.
 
@@ -128,6 +146,11 @@ class ChatAgentOpenAPIServer:
                 A mapping from format names to Pydantic output schemas for
                 structured response parsing. Used for controlling the format
                 of step results. (default: :obj:`None`)
+            api_keys (Optional[List[str]]): API keys clients must present.
+                :obj:`None` (default) generates one ephemeral key exposed as
+                :attr:`api_key`; a non-empty list enables multi-tenant
+                ownership (agents are private to the key that created
+                them); an empty list explicitly disables authentication.
         """
 
         # Initialize FastAPI app and agent
@@ -135,7 +158,142 @@ class ChatAgentOpenAPIServer:
         self.agents: Dict[str, ChatAgent] = {}
         self.tool_registry = tool_registry or {}
         self.response_format_registry = response_format_registry or {}
+
+        if api_keys is None:
+            api_keys = [secrets.token_urlsafe(32)]
+        elif not api_keys:
+            logger.warning(
+                "ChatAgentOpenAPIServer started with authentication "
+                "disabled (api_keys=[]); every caller shares one "
+                "identity. Use only in single-user, trusted-network "
+                "deployments."
+            )
+        self.api_keys: List[str] = list(api_keys)
+        self.api_key: Optional[str] = (
+            self.api_keys[0] if self.api_keys else None
+        )
+        # agent_id -> key that created the agent. The configured keys are
+        # already held in memory for authentication, so ownership stores
+        # the key itself; agent-scoped comparisons run in constant time.
+        self._agent_owners: Dict[str, str] = {}
+        # Serialises /init's check -> create -> register sequence: the
+        # model construction between the existence check and the registry
+        # write takes long enough for concurrent inits of the same
+        # agent_id to double-register across owners.
+        self._registry_lock = threading.Lock()
         self._setup_routes()
+
+    @staticmethod
+    def _keys_equal(left: str, right: str) -> bool:
+        r"""Constant-time equality for key material, safe for any
+        Unicode content.
+
+        ``hmac.compare_digest`` rejects non-ASCII ``str`` operands, and
+        HTTP header bytes decoded as latin-1 can carry them; both sides
+        are therefore compared as UTF-8 bytes, and values that cannot
+        encode compare unequal rather than raising.
+
+        Args:
+            left (str): First key value.
+            right (str): Second key value.
+
+        Returns:
+            bool: Whether the two values are byte-identical.
+        """
+        try:
+            return hmac.compare_digest(
+                left.encode("utf-8"), right.encode("utf-8")
+            )
+        except UnicodeEncodeError:
+            return False
+
+    @staticmethod
+    def _owner_id(presented_key: str) -> str:
+        r"""Returns the owner identity for a presented API key.
+
+        Args:
+            presented_key (str): The validated API key.
+
+        Returns:
+            str: The owner identity recorded for agents created by this
+                key.
+        """
+        return presented_key
+
+    def _verify_api_key(
+        self,
+        x_api_key: Optional[str] = Header(default=None),
+        authorization: Optional[str] = Header(default=None),
+    ) -> str:
+        r"""FastAPI dependency resolving and validating the caller.
+
+        Args:
+            x_api_key (Optional[str]): Value of the ``X-API-Key`` header.
+            authorization (Optional[str]): Value of the ``Authorization``
+                header; a ``Bearer <key>`` scheme is accepted.
+
+        Returns:
+            str: The caller's internal key id used for ownership checks.
+                When authentication is disabled (``api_keys=[]``), a
+                single shared owner id is returned for every caller.
+
+        Raises:
+            HTTPException: 401 when no valid key is presented.
+        """
+        if not self.api_keys:
+            # Authentication explicitly disabled: every caller shares one
+            # anonymous identity (single-user, trusted-network mode).
+            return "anonymous"
+
+        presented: Optional[str] = None
+        if authorization:
+            scheme, _, value = authorization.partition(" ")
+            if scheme.lower() == "bearer" and value.strip():
+                presented = value.strip()
+        if presented is None and x_api_key:
+            presented = x_api_key.strip()
+
+        if presented is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Missing API key. Pass it via 'Authorization: "
+                "Bearer <key>' or 'X-API-Key: <key>'.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        for key in self.api_keys:
+            if self._keys_equal(key, presented):
+                return self._owner_id(key)
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid API key.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    def _get_owned_agent(self, agent_id: str, caller: str) -> ChatAgent:
+        r"""Returns the requested agent when it belongs to the caller.
+
+        Args:
+            agent_id (str): The ID of the target agent.
+            caller (str): The caller's key id.
+
+        Returns:
+            ChatAgent: The agent registered under ``agent_id``.
+
+        Raises:
+            HTTPException: 404 when the agent does not exist or belongs
+                to a different key (existence is not disclosed across
+                owners).
+        """
+        agent = self.agents.get(agent_id)
+        owner = self._agent_owners.get(agent_id)
+        if (
+            agent is None
+            or owner is None
+            or not self._keys_equal(owner, caller)
+        ):
+            raise HTTPException(status_code=404, detail="Agent not found.")
+        return agent
 
     def _parse_input_message_for_step(
         self, raw: Union[str, dict]
@@ -189,79 +347,97 @@ class ChatAgentOpenAPIServer:
         router = APIRouter(prefix="/v1/agents")
 
         @router.post("/init")
-        def init_agent(request: InitRequest):
+        def init_agent(
+            request: InitRequest,
+            caller: str = Depends(self._verify_api_key),
+        ):
             r"""Initializes a ChatAgent instance with a model,
             system message, and optional tools.
 
             Args:
                 request (InitRequest): The agent config including
                     model, tools, system message, and agent ID.
+                caller (str): The caller's key id (from the dependency).
 
             Returns:
                 dict: A message with the agent ID and status.
             """
 
             agent_id = request.agent_id
-            if agent_id in self.agents:
-                return {
-                    "agent_id": agent_id,
-                    "message": "Agent already exists.",
-                }
-
-            model_type = request.model_type
-            model_platform = request.model_platform
-
-            model = ModelFactory.create(
-                model_platform=model_platform,  # type: ignore[arg-type]
-                model_type=model_type,  # type: ignore[arg-type]
-            )
-
-            # tools lookup
-            tools = []
-            if request.tools_names:
-                for name in request.tools_names:
-                    if name in self.tool_registry:
-                        tools.extend(self.tool_registry[name])
-                    else:
+            with self._registry_lock:
+                if agent_id in self.agents:
+                    owner = self._agent_owners.get(agent_id)
+                    if owner is None or not self._keys_equal(owner, caller):
                         raise HTTPException(
-                            status_code=400,
-                            detail=f"Tool '{name}' " f"not found in registry",
+                            status_code=409,
+                            detail=(
+                                f"Agent id {agent_id!r} is already taken "
+                                "by another client."
+                            ),
                         )
+                    return {
+                        "agent_id": agent_id,
+                        "message": "Agent already exists.",
+                    }
 
-            # system message
-            system_message = request.system_message
+                model_type = request.model_type
+                model_platform = request.model_platform
 
-            agent = ChatAgent(
-                model=model,
-                tools=tools,  # type: ignore[arg-type]
-                external_tools=request.external_tools,  # type: ignore[arg-type]
-                system_message=system_message,
-                message_window_size=request.message_window_size,
-                token_limit=request.token_limit,
-                output_language=request.output_language,
-                max_iteration=request.max_iteration,
-                agent_id=agent_id,
-            )
+                model = ModelFactory.create(
+                    model_platform=model_platform,  # type: ignore[arg-type]
+                    model_type=model_type,  # type: ignore[arg-type]
+                )
 
-            self.agents[agent_id] = agent
+                # tools lookup
+                tools = []
+                if request.tools_names:
+                    for name in request.tools_names:
+                        if name in self.tool_registry:
+                            tools.extend(self.tool_registry[name])
+                        else:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Tool '{name}' "
+                                f"not found in registry",
+                            )
+
+                # system message
+                system_message = request.system_message
+
+                agent = ChatAgent(
+                    model=model,
+                    tools=tools,  # type: ignore[arg-type]
+                    external_tools=request.external_tools,  # type: ignore[arg-type]
+                    system_message=system_message,
+                    message_window_size=request.message_window_size,
+                    token_limit=request.token_limit,
+                    output_language=request.output_language,
+                    max_iteration=request.max_iteration,
+                    agent_id=agent_id,
+                )
+
+                self.agents[agent_id] = agent
+                self._agent_owners[agent_id] = caller
             return {"agent_id": agent_id, "message": "Agent initialized."}
 
         @router.post("/astep/{agent_id}")
-        async def astep_agent(agent_id: str, request: StepRequest):
+        async def astep_agent(
+            agent_id: str,
+            request: StepRequest,
+            caller: str = Depends(self._verify_api_key),
+        ):
             r"""Runs one async step of agent response.
 
             Args:
                 agent_id (str): The ID of the target agent.
                 request (StepRequest): The input message.
+                caller (str): The caller's key id (from the dependency).
 
             Returns:
                 dict: The model response in serialized form.
             """
 
-            if agent_id not in self.agents:
-                raise HTTPException(status_code=404, detail="Agent not found.")
-
-            agent = self.agents[agent_id]
+            agent = self._get_owned_agent(agent_id, caller)
             input_message = self._parse_input_message_for_step(
                 request.input_message
             )
@@ -274,6 +450,8 @@ class ChatAgentOpenAPIServer:
                     input_message=input_message, response_format=format_cls
                 )
                 return response.model_dump()
+            except HTTPException:
+                raise
             except Exception as e:
                 raise HTTPException(
                     status_code=500,
@@ -281,45 +459,60 @@ class ChatAgentOpenAPIServer:
                 )
 
         @router.get("/list_agent_ids")
-        def list_agent_ids():
-            r"""Returns a list of all active agent IDs.
+        def list_agent_ids(caller: str = Depends(self._verify_api_key)):
+            r"""Returns the list of agent IDs owned by the caller.
+
+            Args:
+                caller (str): The caller's key id (from the dependency).
 
             Returns:
-                dict: A dictionary containing all registered agent IDs.
+                dict: A dictionary containing the caller's agent IDs.
             """
-            return {"agent_ids": list(self.agents.keys())}
+            return {
+                "agent_ids": [
+                    agent_id
+                    for agent_id, owner in list(self._agent_owners.items())
+                    if self._keys_equal(owner, caller)
+                ]
+            }
 
         @router.post("/delete/{agent_id}")
-        def delete_agent(agent_id: str):
+        def delete_agent(
+            agent_id: str,
+            caller: str = Depends(self._verify_api_key),
+        ):
             r"""Deletes an agent from the server.
 
             Args:
                 agent_id (str): The ID of the agent to delete.
+                caller (str): The caller's key id (from the dependency).
 
             Returns:
                 dict: A confirmation message upon successful deletion.
             """
-            if agent_id not in self.agents:
-                raise HTTPException(status_code=404, detail="Agent not found.")
+            self._get_owned_agent(agent_id, caller)
 
-            del self.agents[agent_id]
+            self.agents.pop(agent_id, None)
+            self._agent_owners.pop(agent_id, None)
             return {"message": f"Agent {agent_id} deleted."}
 
         @router.post("/step/{agent_id}")
-        def step_agent(agent_id: str, request: StepRequest):
+        def step_agent(
+            agent_id: str,
+            request: StepRequest,
+            caller: str = Depends(self._verify_api_key),
+        ):
             r"""Runs one step of synchronous agent response.
 
             Args:
                 agent_id (str): The ID of the target agent.
                 request (StepRequest): The input message.
+                caller (str): The caller's key id (from the dependency).
 
             Returns:
                 dict: The model response in serialized form.
             """
-            if agent_id not in self.agents:
-                raise HTTPException(status_code=404, detail="Agent not found.")
-
-            agent = self.agents[agent_id]
+            agent = self._get_owned_agent(agent_id, caller)
             input_message = self._parse_input_message_for_step(
                 request.input_message
             )
@@ -331,6 +524,8 @@ class ChatAgentOpenAPIServer:
                     input_message=input_message, response_format=format_cls
                 )
                 return response.model_dump()
+            except HTTPException:
+                raise
             except Exception as e:
                 raise HTTPException(
                     status_code=500,
@@ -338,35 +533,39 @@ class ChatAgentOpenAPIServer:
                 )
 
         @router.post("/reset/{agent_id}")
-        def reset_agent(agent_id: str):
+        def reset_agent(
+            agent_id: str,
+            caller: str = Depends(self._verify_api_key),
+        ):
             r"""Clears memory for a specific agent.
 
             Args:
                 agent_id (str): The ID of the agent to reset.
+                caller (str): The caller's key id (from the dependency).
 
             Returns:
                 dict: A message confirming reset success.
             """
-            if agent_id not in self.agents:
-                raise HTTPException(status_code=404, detail="Agent not found.")
-            self.agents[agent_id].reset()
+            agent = self._get_owned_agent(agent_id, caller)
+            agent.reset()
             return {"message": f"Agent {agent_id} reset."}
 
         @router.get("/history/{agent_id}")
-        def get_agent_chat_history(agent_id: str):
+        def get_agent_chat_history(
+            agent_id: str,
+            caller: str = Depends(self._verify_api_key),
+        ):
             r"""Returns the chat history of an agent.
 
             Args:
                 agent_id (str): The ID of the agent to query.
+                caller (str): The caller's key id (from the dependency).
 
             Returns:
                 list: The list of conversation messages.
             """
-            if agent_id not in self.agents:
-                raise HTTPException(
-                    status_code=404, detail=f"Agent {agent_id} not found."
-                )
-            return self.agents[agent_id].chat_history
+            agent = self._get_owned_agent(agent_id, caller)
+            return agent.chat_history
 
         # Register all routes to the main FastAPI app
         self.app.include_router(router)
