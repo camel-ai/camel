@@ -15,7 +15,8 @@ import pytest
 
 from camel.agents import CriticAgent
 from camel.messages import BaseMessage
-from camel.types import RoleType
+from camel.models import StubModel
+from camel.types import ModelType, RoleType
 
 
 @pytest.fixture
@@ -33,6 +34,16 @@ def critic_agent() -> CriticAgent:
             ),
         )
     )
+
+
+def test_clone_preserves_message_window_size():
+    source = CriticAgent(
+        "You are a critic.",
+        model=StubModel(ModelType.STUB),
+        message_window_size=3,
+    )
+
+    assert source.clone().memory.window_size == 3
 
 
 def test_flatten_options(critic_agent: CriticAgent):
