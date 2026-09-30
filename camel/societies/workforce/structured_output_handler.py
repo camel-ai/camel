@@ -384,20 +384,30 @@ Ensure the JSON is valid and properly formatted.
         elif schema_name == 'TaskAnalysisResult':
             # Ensure recovery_strategy is valid
             if 'recovery_strategy' in fixed_data:
-                strategy = fixed_data['recovery_strategy'].lower()
-                valid_strategies = [
-                    'retry',
-                    'replan',
-                    'decompose',
-                    'create_worker',
-                    'reassign',
-                ]
-                if strategy not in valid_strategies:
-                    # Try to match partial
-                    for valid in valid_strategies:
-                        if valid.startswith(strategy) or strategy in valid:
-                            fixed_data['recovery_strategy'] = valid
-                            break
+                strategy = fixed_data['recovery_strategy']
+                # Weak models sometimes emit non-string values here; this
+                # best-effort fix path must never raise, so skip normalization
+                # and let schema validation fail into the caller's fallback
+                # values, same as an unfixable string value.
+                if isinstance(strategy, str):
+                    strategy = strategy.lower()
+                    # Write the normalized value back so mixed-case input
+                    # (e.g. "REPLAN") validates instead of falling through to
+                    # the default instance.
+                    fixed_data['recovery_strategy'] = strategy
+                    valid_strategies = [
+                        'retry',
+                        'replan',
+                        'decompose',
+                        'create_worker',
+                        'reassign',
+                    ]
+                    if strategy not in valid_strategies:
+                        # Try to match partial
+                        for valid in valid_strategies:
+                            if valid.startswith(strategy) or strategy in valid:
+                                fixed_data['recovery_strategy'] = valid
+                                break
 
         return fixed_data
 
