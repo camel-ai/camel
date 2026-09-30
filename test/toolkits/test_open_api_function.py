@@ -517,3 +517,50 @@ def test_web_scraper_scrape(get_function):
             }
         )
         assert result == mock_response_data
+
+
+def test_api_key_in_cookie_security_scheme(monkeypatch):
+    openapi_spec = {
+        "openapi": "3.0.0",
+        "info": {"title": "cookie-demo", "version": "1.0"},
+        "servers": [{"url": "https://api.example.com"}],
+        "security": [{"cookieAuth": []}],
+        "paths": {
+            "/data": {
+                "get": {
+                    "operationId": "get_data",
+                    "summary": "Get data authenticated with a cookie",
+                }
+            }
+        },
+        "components": {
+            "securitySchemes": {
+                "cookieAuth": {
+                    "type": "apiKey",
+                    "in": "cookie",
+                    "name": "session",
+                }
+            }
+        },
+    }
+
+    monkeypatch.setenv('COOKIE_DEMO_API_KEY', 'secret-token-123')
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"status": "ok"}
+    with (
+        patch(
+            'camel.toolkits.open_api_toolkit.openapi_security_config',
+            {'cookie-demo': {'cookieAuth': 'COOKIE_DEMO_API_KEY'}},
+        ),
+        patch('requests.request', return_value=mock_response) as mock_request,
+    ):
+        toolkit = OpenAPIToolkit()
+        get_data = toolkit.generate_openapi_funcs('cookie-demo', openapi_spec)[
+            0
+        ]
+        result = get_data()
+        assert result == {"status": "ok"}
+        _, request_kwargs = mock_request.call_args
+        assert request_kwargs['cookies'] == {'session': 'secret-token-123'}
+        assert request_kwargs['params'] == {}
+        assert request_kwargs['headers'] == {}
