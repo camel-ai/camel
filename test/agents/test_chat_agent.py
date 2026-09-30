@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import json
+import os
 from copy import deepcopy
 from io import BytesIO
 from typing import List, Literal
@@ -86,6 +87,13 @@ model_backend_rsp_base = ChatCompletion(
         total_tokens=47,
     ),
 )
+
+if not os.environ.get("OPENAI_API_KEY"):
+    pytest.skip(
+        "OPENAI_API_KEY is required to construct the module-level "
+        "OpenAI model fixture used by this file's parametrize list",
+        allow_module_level=True,
+    )
 
 parametrize = pytest.mark.parametrize(
     'model',

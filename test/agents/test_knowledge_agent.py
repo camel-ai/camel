@@ -11,8 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+
+import pytest
+
 from camel.agents import KnowledgeGraphAgent
 from camel.storages.graph_storages.graph_element import Node, Relationship
+
+if not os.environ.get("OPENAI_API_KEY"):
+    pytest.skip(
+        "OPENAI_API_KEY is required to construct the module-level "
+        "KnowledgeGraphAgent fixture",
+        allow_module_level=True,
+    )
 
 agent = KnowledgeGraphAgent()
 
