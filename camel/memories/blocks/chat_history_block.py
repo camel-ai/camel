@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import warnings
 from typing import List, Optional
 
 from camel.memories.base import MemoryBlock
@@ -109,6 +110,16 @@ class ChatHistoryBlock(MemoryBlock):
             sliding_messages = record_dicts[
                 start_index:
             ]  # Messages to be truncated
+
+            if len(sliding_messages) > window_size:
+                warnings.warn(
+                    f"Chat history window size limit ({window_size}) "
+                    f"reached. Some earlier messages will not be included "
+                    f"in the context. Consider increasing window_size if "
+                    f"you need a longer context.",
+                    UserWarning,
+                    stacklevel=3,
+                )
 
             # Take last window_size messages (if exceeds limit)
             truncated_messages = (
