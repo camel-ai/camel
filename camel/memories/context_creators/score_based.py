@@ -45,6 +45,10 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # message count from the last LLM response
         self._cached_token_count: Optional[int] = None
         self._cached_message_count: int = 0
+        # Fingerprint of the message set the cached count was calibrated on
+        self._cached_fingerprint: Optional[Tuple] = None
+        # Fingerprint of the last context returned by ``create_context``
+        self._context_fingerprint: Optional[Tuple] = None
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -67,11 +71,27 @@ class ScoreBasedContextCreator(BaseContextCreator):
         """
         self._cached_token_count = token_count
         self._cached_message_count = message_count
+        self._cached_fingerprint = self._context_fingerprint
 
     def clear_cache(self) -> None:
         r"""Clear the cached token count."""
         self._cached_token_count = None
         self._cached_message_count = 0
+        self._cached_fingerprint = None
+
+    @staticmethod
+    def _message_fingerprint(message: OpenAIMessage) -> Tuple:
+        r"""Build a cheap identity tuple for one message.
+
+        Used to detect that the message set behind the cached token count
+        still matches, which a message count alone cannot do once a sliding
+        memory window keeps the count constant while replacing messages.
+        """
+        return (
+            message.get("role"),
+            str(message.get("content")),
+            str(message.get("tool_calls")),
+        )
 
     def _estimate_message_tokens(self, message: OpenAIMessage) -> int:
         r"""Estimate token count for a single message.
@@ -140,30 +160,39 @@ class ScoreBasedContextCreator(BaseContextCreator):
         )
 
         if not messages:
+            self._context_fingerprint = ()
             return [], 0
 
         current_count = len(messages)
+        fingerprint = tuple(self._message_fingerprint(msg) for msg in messages)
+        self._context_fingerprint = fingerprint
 
-        # Use cache if available and valid
+        # Use cache if available and valid. The cached count was calibrated on
+        # a specific message set (the one the last ``create_context`` call
+        # returned), so a matching message count alone is not enough: a
+        # sliding memory window keeps the count constant while replacing
+        # messages, and the returned total would go stale. Require the
+        # calibrated fingerprint to be a prefix of the current one.
         if (
             self._cached_token_count is not None
             and self._cached_message_count > 0
+            and self._cached_fingerprint is not None
+            and current_count >= self._cached_message_count
+            and fingerprint[: len(self._cached_fingerprint)]
+            == self._cached_fingerprint
         ):
             if current_count == self._cached_message_count:
-                # Same message count, use cached value directly
+                # Same message set as the calibrated one, use cached value
                 return messages, self._cached_token_count
-            elif current_count > self._cached_message_count:
-                # New messages added, estimate incrementally
-                new_messages = messages[self._cached_message_count :]
-                estimated_new_tokens = sum(
-                    self._estimate_message_tokens(msg) for msg in new_messages
-                )
-                return (
-                    messages,
-                    self._cached_token_count + estimated_new_tokens,
-                )
-            # current_count < cached: messages were removed, cache invalid
-
+            # Strictly new messages appended, estimate incrementally
+            new_messages = messages[self._cached_message_count :]
+            estimated_new_tokens = sum(
+                self._estimate_message_tokens(msg) for msg in new_messages
+            )
+            return (
+                messages,
+                self._cached_token_count + estimated_new_tokens,
+            )
         # No cache or cache is stale - do full calculation
         total_tokens = self.token_counter.count_tokens_from_messages(messages)
         return messages, total_tokens
