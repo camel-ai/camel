@@ -9,14 +9,14 @@ runs:
   using: "composite"
   steps:
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3.1.4
       with:
         python-version: '${{ inputs.python-version }}'
     - name: Install uv
       run: |
         pip install uv
       shell: bash
-    - uses: actions/cache/restore@v3
+    - uses: actions/cache/restore@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
       id: cache-restore
       name: Restore caches for the virtual environment based on uv.lock
       with:
@@ -44,7 +44,7 @@ runs:
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
       shell: bash
-    - uses: actions/cache/save@v3
+    - uses: actions/cache/save@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
       name: Save caches based on uv.lock
       if: steps.cache-restore.outputs.cache-hit != 'true' || steps.validate-venv.outputs.cache-valid == 'false'
       with:
