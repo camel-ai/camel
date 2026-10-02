@@ -14,7 +14,7 @@
 import copy
 import json
 from datetime import datetime
-from typing import List
+from typing import Dict, List, Optional
 
 import pytest
 from jsonschema.exceptions import SchemaError
@@ -186,6 +186,27 @@ def test_get_openai_tool_schema():
         assert openai_tool_schema == expect_res_v2
     else:
         assert openai_tool_schema == expect_res_v1
+
+
+def test_open_mapping_parameter_disables_strict_mode():
+    def submit_prompts(
+        allowed_prompts: Optional[List[Dict[str, str]]] = None,
+    ) -> None:
+        r"""Submit allowed tool and prompt pairs.
+
+        Args:
+            allowed_prompts: Tool and prompt pairs to submit.
+        """
+
+    schema = get_openai_tool_schema(submit_prompts)
+    function_schema = schema["function"]
+    allowed_prompts_schema = function_schema["parameters"]["properties"][
+        "allowed_prompts"
+    ]
+    mapping_schema = allowed_prompts_schema["anyOf"][0]["items"]
+
+    assert function_schema["strict"] is False
+    assert mapping_schema["additionalProperties"] == {"type": "string"}
 
 
 def test_different_docstring_style():

@@ -334,32 +334,36 @@ def sanitize_and_enforce_required(parameters_dict):
     requirements:
     - Removes invalid 'default' fields from the parameters schema.
     - Ensures all fields are marked as required or have null type for optional
-    fields.
+      fields.
     - Recursively adds additionalProperties: false to all nested objects.
+    - Disables strict mode when an object intentionally allows additional
+      properties.
 
     Args:
         parameters_dict (dict): The dictionary representing the function
             schema.
 
     Returns:
-        dict: The updated dictionary with invalid defaults removed and all
-            fields properly configured for strict mode.
+        dict: The updated dictionary with invalid defaults removed and strict
+            mode enabled only when every object schema is closed.
     """
 
     def _add_additional_properties_false(obj):
-        r"""Recursively add additionalProperties: false to all objects."""
+        r"""Close unspecified objects and report strict compatibility."""
+        strict_compatible = True
         if isinstance(obj, dict):
-            if (
-                obj.get("type") == "object"
-                and "additionalProperties" not in obj
-            ):
-                obj["additionalProperties"] = False
+            if obj.get("type") == "object":
+                if "additionalProperties" not in obj:
+                    obj["additionalProperties"] = False
+                elif obj["additionalProperties"] is not False:
+                    strict_compatible = False
 
             # Process nested structures
             for key, value in obj.items():
                 if key == "properties" and isinstance(value, dict):
                     for prop_value in value.values():
-                        _add_additional_properties_false(prop_value)
+                        if not _add_additional_properties_false(prop_value):
+                            strict_compatible = False
                 elif key in [
                     "items",
                     "allOf",
@@ -367,13 +371,17 @@ def sanitize_and_enforce_required(parameters_dict):
                     "anyOf",
                 ] and isinstance(value, (dict, list)):
                     if isinstance(value, dict):
-                        _add_additional_properties_false(value)
+                        if not _add_additional_properties_false(value):
+                            strict_compatible = False
                     elif isinstance(value, list):
                         for item in value:
-                            _add_additional_properties_false(item)
+                            if not _add_additional_properties_false(item):
+                                strict_compatible = False
                 elif key == "$defs" and isinstance(value, dict):
                     for def_value in value.values():
-                        _add_additional_properties_false(def_value)
+                        if not _add_additional_properties_false(def_value):
+                            strict_compatible = False
+        return strict_compatible
 
     # Check if 'function' and 'parameters' exist
     if (
@@ -441,8 +449,12 @@ def sanitize_and_enforce_required(parameters_dict):
         # Set all fields as required (strict mode requirement)
         parameters['required'] = required_fields
 
-        # Recursively add additionalProperties: false to all objects
-        _add_additional_properties_false(parameters)
+        # Recursively close object schemas that do not explicitly opt into
+        # additional properties. Open mappings cannot be represented in
+        # strict mode without changing their accepted arguments, so preserve
+        # their schema and fall back to best-effort function calling.
+        if not _add_additional_properties_false(parameters):
+            parameters_dict['function']['strict'] = False
 
     return parameters_dict
 

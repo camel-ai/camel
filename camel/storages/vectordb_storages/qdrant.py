@@ -96,8 +96,8 @@ class QdrantStorage(BaseVectorStorage):
         self.delete_collection_on_del = delete_collection_on_del
 
     def __del__(self):
-        r"""Deletes the collection if :obj:`del_collection` is set to
-        :obj:`True`.
+        r"""Deletes the collection if :obj:`delete_collection_on_del` is set
+        to :obj:`True`.
         """
         # If the client is a local client, decrease count by 1
         if self._local_path is not None:
@@ -211,7 +211,7 @@ class QdrantStorage(BaseVectorStorage):
         r"""Deletes an existing collection from the database.
 
         Args:
-            collection (str): Name of the collection to be deleted.
+            collection_name (str): Name of the collection to be deleted.
             **kwargs (Any): Additional keyword arguments.
         """
         self._client.delete_collection(
@@ -219,14 +219,25 @@ class QdrantStorage(BaseVectorStorage):
         )
 
     def _collection_exists(self, collection_name: str) -> bool:
-        r"""Returns whether the collection exists in the database"""
+        r"""Returns whether the collection exists in the database.
+
+        Args:
+            collection_name (str): The name of the collection to check.
+
+        Returns:
+            bool: True if the collection exists, False otherwise.
+        """
         for c in self._client.get_collections().collections:
             if collection_name == c.name:
                 return True
         return False
 
     def _generate_collection_name(self) -> str:
-        r"""Generates a collection name if user doesn't provide"""
+        r"""Generates a collection name if user doesn't provide.
+
+        Returns:
+            str: Generated collection name.
+        """
         return datetime.now().isoformat()
 
     def _get_collection_info(self, collection_name: str) -> Dict[str, Any]:
@@ -255,8 +266,12 @@ class QdrantStorage(BaseVectorStorage):
             "config": collection_info.config,
         }
 
-    def close_client(self, **kwargs):
-        r"""Closes the client connection to the Qdrant storage."""
+    def close_client(self, **kwargs: Any) -> None:
+        r"""Closes the client connection to the Qdrant storage.
+
+        Args:
+            **kwargs (Any): Additional keyword arguments passed to close.
+        """
         self._client.close(**kwargs)
 
     def add(
@@ -267,7 +282,7 @@ class QdrantStorage(BaseVectorStorage):
         r"""Adds a list of vectors to the specified collection.
 
         Args:
-            vectors (List[VectorRecord]): List of vectors to be added.
+            records (List[VectorRecord]): List of vectors to be added.
             **kwargs (Any): Additional keyword arguments.
 
         Raises:
@@ -407,6 +422,11 @@ class QdrantStorage(BaseVectorStorage):
                 )
 
     def status(self) -> VectorDBStatus:
+        r"""Returns status of the vector database.
+
+        Returns:
+            VectorDBStatus: The vector database status.
+        """
         status = self._get_collection_info(self.collection_name)
         return VectorDBStatus(
             vector_dim=status["vector_dim"],
@@ -487,5 +507,9 @@ class QdrantStorage(BaseVectorStorage):
 
     @property
     def client(self) -> "QdrantClient":
-        r"""Provides access to the underlying vector database client."""
+        r"""Provides access to the underlying vector database client.
+
+        Returns:
+            QdrantClient: The underlying Qdrant client instance.
+        """
         return self._client

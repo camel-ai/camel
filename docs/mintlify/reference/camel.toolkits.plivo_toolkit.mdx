@@ -1,0 +1,190 @@
+<a id="camel.toolkits.plivo_toolkit"></a>
+
+<a id="camel.toolkits.plivo_toolkit._response_to_dict"></a>
+
+## _response_to_dict
+
+```python
+def _response_to_dict(obj: Any):
+```
+
+Recursively converts a Plivo SDK response object into plain data.
+
+<a id="camel.toolkits.plivo_toolkit.PlivoToolkit"></a>
+
+## PlivoToolkit
+
+```python
+class PlivoToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for Plivo communication operations.
+
+This toolkit provides methods to interact with the Plivo API, allowing
+agents to send SMS messages, place voice calls, run OTP verification
+sessions, and look up phone number information.
+
+**Note:**
+
+To use this toolkit, set the following environment variables (or pass
+them to the constructor):
+- PLIVO_AUTH_ID: Your Plivo Auth ID.
+- PLIVO_AUTH_TOKEN: Your Plivo Auth Token.
+Both are available from the Plivo console at https://cx.plivo.com.
+
+<a id="camel.toolkits.plivo_toolkit.PlivoToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    auth_id: Optional[str] = None,
+    auth_token: Optional[str] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Initializes the PlivoToolkit.
+
+**Parameters:**
+
+- **auth_id** (Optional[str]): The Plivo Auth ID. If not provided, it is read from the PLIVO_AUTH_ID environment variable. (default: :obj:`None`)
+- **auth_token** (Optional[str]): The Plivo Auth Token. If not provided, it is read from the PLIVO_AUTH_TOKEN environment variable. (default: :obj:`None`)
+- **timeout** (Optional[float]): The timeout for API requests. (default: :obj:`None`)
+
+<a id="camel.toolkits.plivo_toolkit.PlivoToolkit.send_sms"></a>
+
+### send_sms
+
+```python
+def send_sms(
+    self,
+    from_number: str,
+    to_number: str,
+    message: str
+):
+```
+
+Sends an SMS message to one or more recipients.
+
+**Parameters:**
+
+- **from_number** (str): The sender ID in E.164 format, e.g. `__INLINE_CODE_0__`. Must be a Plivo number or approved sender ID.
+- **to_number** (str): The recipient in E.164 format. Multiple recipients are joined with `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2__`.
+- **message** (str): The text body of the message.
+
+**Returns:**
+
+  Union[Dict[str, Any], str]: A dictionary with the queued
+`__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2__` if successful, or an error
+message string if failed. A successful response means the
+message was queued, not yet delivered.
+
+<a id="camel.toolkits.plivo_toolkit.PlivoToolkit.make_call"></a>
+
+### make_call
+
+```python
+def make_call(
+    self,
+    from_number: str,
+    to_number: str,
+    answer_url: str,
+    answer_method: str = 'POST'
+):
+```
+
+Places an outbound voice call.
+
+**Parameters:**
+
+- **from_number** (str): The caller ID in E.164 format, e.g. `__INLINE_CODE_0__`.
+- **to_number** (str): The destination number in E.164 format.
+- **answer_url** (str): A publicly reachable URL that Plivo fetches when the call is answered; it must return Plivo call-flow XML.
+- **answer_method** (str): The HTTP method Plivo uses to fetch the answer URL, either `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5__"POST"`)
+
+**Returns:**
+
+  Union[Dict[str, Any], str]: A dictionary with the `__INLINE_CODE_0__`
+and `__INLINE_CODE_1__` if the call was fired, or an error message
+string if failed.
+
+<a id="camel.toolkits.plivo_toolkit.PlivoToolkit.send_otp"></a>
+
+### send_otp
+
+```python
+def send_otp(self, recipient: str, channel: str = 'sms'):
+```
+
+Starts a Plivo Verify session that sends a one-time passcode.
+
+**Parameters:**
+
+- **recipient** (str): The recipient's number in E.164 format.
+- **channel** (str): The delivery channel, either `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3__"sms"`)
+
+**Returns:**
+
+  Union[Dict[str, Any], str]: A dictionary with the `__INLINE_CODE_0__`
+(needed to validate the code later) and `__INLINE_CODE_1__` if
+successful, or an error message string if failed.
+
+<a id="camel.toolkits.plivo_toolkit.PlivoToolkit.verify_otp"></a>
+
+### verify_otp
+
+```python
+def verify_otp(self, session_uuid: str, otp: str):
+```
+
+Validates the code a user entered against a Verify session.
+
+**Parameters:**
+
+- **session_uuid** (str): The session UUID returned by :meth:`send_otp`. The code is validated against this session, not the phone number.
+- **otp** (str): The one-time passcode the user provided.
+
+**Returns:**
+
+  Union[Dict[str, Any], str]: A dictionary with a boolean
+`__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2__` if the request
+succeeded, or an error message string if failed. `__INLINE_CODE_3__`
+is True only when Plivo reports the session as validated; a
+non-success message is treated as not verified.
+
+<a id="camel.toolkits.plivo_toolkit.PlivoToolkit.lookup_number"></a>
+
+### lookup_number
+
+```python
+def lookup_number(self, number: str):
+```
+
+Looks up carrier, line type, and formatting for a phone number.
+
+**Parameters:**
+
+- **number** (str): The phone number to look up, in E.164 format, e.g. `__INLINE_CODE_0__`.
+
+**Returns:**
+
+  Union[Dict[str, Any], str]: A dictionary with the `__INLINE_CODE_0__`,
+`__INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5__` is one
+of `__INLINE_CODE_6____INLINE_CODE_7____INLINE_CODE_8____INLINE_CODE_9____INLINE_CODE_10__`) if successful, or an
+error message string if failed. Carrier fields are best-effort
+and may be sparse for unallocated numbers.
+
+<a id="camel.toolkits.plivo_toolkit.PlivoToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects for the
+toolkit methods.

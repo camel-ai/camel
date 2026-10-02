@@ -18,7 +18,7 @@ It supports different distance metrics for similarity search.
 **Parameters:**
 
 - **vector_dim** (int): The dimension of the vectors to be stored.
-- **conn_info** (Dict[str, Any]): Connection information for psycopg2.connect.
+- **conn_info** (Dict[str, Any]): Connection information for :obj:`psycopg2.connect`.
 - **table_name** (str, optional): Name of the table to store vectors. (default: :obj:`None`)
 - **distance** (VectorDistance, optional): Distance metric for vector comparison. (default: :obj:`VectorDistance.COSINE`)
 
@@ -39,13 +39,6 @@ def __init__(
 
 Initialize PgVectorStorage.
 
-**Parameters:**
-
-- **vector_dim** (int): The dimension of the vectors.
-- **conn_info** (Dict[str, Any]): Connection info for psycopg2.connect.
-- **table_name** (str, optional): Table name. (default: :obj:`None`)
-- **distance** (VectorDistance, optional): Distance metric. (default: :obj:`VectorDistance.COSINE`)
-
 <a id="camel.storages.vectordb_storages.pgvector.PgVectorStorage._ensure_table"></a>
 
 ### _ensure_table
@@ -53,9 +46,6 @@ Initialize PgVectorStorage.
 ```python
 def _ensure_table(self):
 ```
-
-Ensure the vector table exists in the database.
-Creates the table if it does not exist.
 
 <a id="camel.storages.vectordb_storages.pgvector.PgVectorStorage._ensure_index"></a>
 
@@ -80,7 +70,7 @@ Add or update vector records in the database.
 
 **Parameters:**
 
-- **records** (List[VectorRecord]): List of vector records to add or update.
+- **records** (List[VectorRecord]): List of vector records to add or update. **kwargs (Any): Additional keyword arguments.
 
 <a id="camel.storages.vectordb_storages.pgvector.PgVectorStorage.delete"></a>
 
@@ -94,7 +84,7 @@ Delete vector records from the database by their IDs.
 
 **Parameters:**
 
-- **ids** (List[str]): List of record IDs to delete.
+- **ids** (List[str]): List of record IDs to delete. **kwargs (Any): Additional keyword arguments.
 
 <a id="camel.storages.vectordb_storages.pgvector.PgVectorStorage.query"></a>
 
@@ -126,6 +116,14 @@ def _score_to_similarity(self, score: float):
 
 Convert a pgvector operator result to high-is-better similarity.
 
+**Parameters:**
+
+- **score** (float): The distance or score returned by pgvector.
+
+**Returns:**
+
+  float: The similarity score.
+
 <a id="camel.storages.vectordb_storages.pgvector.PgVectorStorage.status"></a>
 
 ### status
@@ -148,8 +146,6 @@ dimension and count.
 ```python
 def clear(self):
 ```
-
-Remove all vectors from the storage by truncating the table.
 
 <a id="camel.storages.vectordb_storages.pgvector.PgVectorStorage.load"></a>
 

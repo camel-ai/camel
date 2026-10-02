@@ -352,3 +352,79 @@ def test_bedrock_client_supports_api_key_and_region_name(monkeypatch):
     assert client["service_name"] == "bedrock-runtime"
     assert client["kwargs"]["region_name"] == "us-east-1"
     assert "aws_access_key_id" not in client["kwargs"]
+
+
+@pytest.mark.model_backend
+@pytest.mark.parametrize(
+    "stop_reason,expected",
+    [
+        ("content_filtered", "content_filter"),
+        ("guardrail_intervened", "content_filter"),
+        ("model_context_window_exceeded", "length"),
+    ],
+)
+def test_converse_maps_non_default_stop_reasons(stop_reason, expected):
+    r"""Non-streaming: a filtered, guardrailed or context-exceeded turn
+    must not be reported as a normal completion."""
+
+    class DummyClient:
+        def converse(self, **kwargs):
+            return {
+                "output": {
+                    "message": {
+                        "role": "assistant",
+                        "content": [{"text": "partial"}],
+                    }
+                },
+                "stopReason": stop_reason,
+            }
+
+    model = _make_model(bedrock_client=DummyClient())
+    response = model._run([{"role": "user", "content": "hi"}])
+    assert response.choices[0].finish_reason == expected
+
+
+@pytest.mark.model_backend
+@pytest.mark.parametrize(
+    "stop_reason,expected",
+    [
+        ("content_filtered", "content_filter"),
+        ("guardrail_intervened", "content_filter"),
+        ("model_context_window_exceeded", "length"),
+    ],
+)
+def test_converse_stream_maps_non_default_stop_reasons(stop_reason, expected):
+    r"""Streaming path reports the same finish_reason as non-streaming."""
+
+    class DummyEventStream:
+        def __init__(self, events):
+            self._events = events
+
+        def __iter__(self):
+            return iter(self._events)
+
+    class DummyClient:
+        def converse_stream(self, **kwargs):
+            return {
+                "stream": DummyEventStream(
+                    [
+                        {"messageStart": {"role": "assistant"}},
+                        {"contentBlockDelta": {"delta": {"text": "partial"}}},
+                        {"messageStop": {"stopReason": stop_reason}},
+                    ]
+                )
+            }
+
+    model = _make_model(
+        BedrockConfig(stream=True).as_dict(),
+        bedrock_client=DummyClient(),
+    )
+    chunks = list(model._run([{"role": "user", "content": "hi"}]))
+    assert chunks[-1].choices[0].finish_reason == expected
+
+
+@pytest.mark.model_backend
+def test_converse_unknown_stop_reason_still_defaults_to_stop():
+    r"""Values with no OpenAI equivalent keep the generic default."""
+    for stop_reason in ("malformed_model_output", "malformed_tool_use"):
+        assert AWSBedrockConverseModel._map_stop_reason(stop_reason) == "stop"
