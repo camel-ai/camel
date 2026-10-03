@@ -74,7 +74,7 @@ results = vr.query(query=query, similarity_threshold=0)
 print(results)
 ```
 ```markdown vector_retriever_output.md
->>>  [{'similarity score': '0.81...', 'content path': 'https://www.camel-ai.org/', 'metadata': {...}, 'text': '...CAMEL-AI.org is an open-source community dedicated to the study of autonomous and communicative agents...'}]
+>>>  [{'similarity score': 0.81..., 'content path': 'https://www.camel-ai.org/', 'metadata': {...}, 'text': '...CAMEL-AI.org is an open-source community dedicated to the study of autonomous and communicative agents...'}]
 ```
 </CodeGroup>
 </Card>
@@ -102,7 +102,7 @@ print(retrieved_info)
 ```markdown auto_retriever_output.md
 >>> Original Query: {What is CAMEL-AI}
 >>> Retrieved Context:
->>> {'similarity score': '0.83...', 'content path': 'https://www.camel-ai.org/', 'metadata': {...}, 'text': 'Mission\n\nCAMEL-AI.org is an open-source community dedicated to the study of autonomous and communicative agents...'}
+>>> {'similarity score': 0.83..., 'content path': 'https://www.camel-ai.org/', 'metadata': {...}, 'text': 'Mission\n\nCAMEL-AI.org is an open-source community dedicated to the study of autonomous and communicative agents...'}
 ```
 </CodeGroup>
 
