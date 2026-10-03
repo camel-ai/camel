@@ -47,8 +47,12 @@ def is_generic_role_name(role_name: str) -> bool:
         False
         >>> is_generic_role_name("AGENT")
         True
+        >>> is_generic_role_name("")
+        True
     """
-    return role_name.lower() in GENERIC_ROLE_NAMES
+    if not role_name or not str(role_name).strip():
+        return True
+    return str(role_name).strip().lower() in GENERIC_ROLE_NAMES
 
 
 class WorkflowMetadata(BaseModel):
