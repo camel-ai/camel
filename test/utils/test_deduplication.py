@@ -228,3 +228,48 @@ def test_deduplicate_internally_with_inconsistent_embeddings():
             # but the length of embeddings is 2.
             strategy="top1",
         )
+
+
+def test_deduplicate_internally_batched_matches_single_batch():
+    texts = ["A", "B", "A"]
+    embeddings = [[1.0, 0.0], [0.0, 1.0], [1.0, 0.0]]
+
+    expected_map = {2: 0}
+    for batch_size in (1, 2, 3, 1000):
+        result = deduplicate_internally(
+            texts=texts,
+            threshold=0.9,
+            embeddings=embeddings,
+            strategy="top1",
+            batch_size=batch_size,
+        )
+        assert result.duplicate_to_target_map == expected_map, (
+            f"batch_size={batch_size} produced "
+            f"{result.duplicate_to_target_map}, expected {expected_map}"
+        )
+        assert result.unique_ids == [0, 1]
+
+
+def test_deduplicate_internally_batching_finds_cross_batch_duplicates():
+    # Each text duplicates the text five positions earlier, so every
+    # duplicate pair spans a batch boundary when batch_size is 5.
+    base_embeddings = [
+        [1.0, 0.0],
+        [0.0, 1.0],
+        [1.0, 1.0],
+        [1.0, -1.0],
+        [-1.0, 1.0],
+    ]
+    embeddings = base_embeddings * 2
+    texts = [f"text-{i}" for i in range(len(embeddings))]
+
+    result = deduplicate_internally(
+        texts=texts,
+        threshold=0.99,
+        embeddings=embeddings,
+        strategy="top1",
+        batch_size=5,
+    )
+
+    assert result.duplicate_to_target_map == {5: 0, 6: 1, 7: 2, 8: 3, 9: 4}
+    assert result.unique_ids == [0, 1, 2, 3, 4]
