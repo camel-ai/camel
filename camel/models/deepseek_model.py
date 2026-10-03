@@ -143,6 +143,22 @@ class DeepSeekModel(OpenAICompatibleModel):
         self._tool_call_reasoning_by_session: Dict[str, Dict[str, str]] = {}
         self._assistant_reasoning_by_session: Dict[str, Dict[str, str]] = {}
 
+    def clear_reasoning_cache(self, session_id: Optional[str] = None) -> None:
+        r"""Clears the reasoning cache for a specific session or all sessions.
+
+        Args:
+            session_id (Optional[str]): The session ID to clear. If None,
+                clears the cache for the current agent session. If ``"all"``,
+                clears all session caches.
+        """
+        if session_id == "all":
+            self._tool_call_reasoning_by_session.clear()
+            self._assistant_reasoning_by_session.clear()
+        else:
+            sid = session_id or self._get_reasoning_session_id()
+            self._tool_call_reasoning_by_session.pop(sid, None)
+            self._assistant_reasoning_by_session.pop(sid, None)
+
     def _get_reasoning_session_id(self) -> str:
         r"""Get the current agent session ID for reasoning cache isolation."""
         try:
