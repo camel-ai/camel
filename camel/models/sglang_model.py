@@ -32,16 +32,10 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
+    observe,
     update_current_observation,
+    with_langfuse_trace,
 )
-
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-else:
-    from camel.utils import observe
 
 
 class SGLangModel(BaseModelBackend):
@@ -237,6 +231,7 @@ class SGLangModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
+    @with_langfuse_trace
     @observe(as_type='generation')
     async def _arun(
         self,
@@ -264,7 +259,6 @@ class SGLangModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         # Ensure server is running
         self._ensure_server_running()
@@ -302,6 +296,7 @@ class SGLangModel(BaseModelBackend):
         )
         return response
 
+    @with_langfuse_trace
     @observe(as_type='generation')
     def _run(
         self,
@@ -328,7 +323,6 @@ class SGLangModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         # Ensure server is running
         self._ensure_server_running()

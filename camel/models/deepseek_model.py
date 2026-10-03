@@ -44,14 +44,10 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
+    with_langfuse_trace,
 )
 
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
         from traceroot import trace as observe  # type: ignore[import]
     except ImportError:
@@ -475,6 +471,7 @@ class DeepSeekModel(OpenAICompatibleModel):
 
         return request_config
 
+    @with_langfuse_trace
     @observe()
     def _run(
         self,
@@ -493,7 +490,6 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools
@@ -512,6 +508,7 @@ class DeepSeekModel(OpenAICompatibleModel):
 
         return response
 
+    @with_langfuse_trace
     @observe()
     async def _arun(
         self,
@@ -530,7 +527,6 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools

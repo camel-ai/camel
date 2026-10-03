@@ -30,15 +30,11 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     update_current_observation,
+    with_langfuse_trace,
 )
 
 # conditional observe import based on environment variables
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
         from traceroot import trace as observe  # type: ignore[import]
     except ImportError:
@@ -827,6 +823,7 @@ class FunctionGemmaModel(BaseModelBackend):
         except httpx.HTTPStatusError as e:
             raise RuntimeError(f"Ollama API request failed: {e}")
 
+    @with_langfuse_trace
     @observe()
     def _run(
         self,
@@ -856,8 +853,6 @@ class FunctionGemmaModel(BaseModelBackend):
             model_parameters=self.model_config_dict,
         )
 
-        self._log_and_trace()
-
         prompt = self._format_messages(messages, tools)
         logger.debug(f"FunctionGemma prompt:\n{prompt}")
 
@@ -871,6 +866,7 @@ class FunctionGemmaModel(BaseModelBackend):
         update_current_observation(usage=response.usage)
         return response
 
+    @with_langfuse_trace
     @observe()
     async def _arun(
         self,
@@ -899,8 +895,6 @@ class FunctionGemmaModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-
-        self._log_and_trace()
 
         prompt = self._format_messages(messages, tools)
         logger.debug(f"FunctionGemma prompt:\n{prompt}")

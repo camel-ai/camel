@@ -25,16 +25,10 @@ from camel.utils import (
     BaseTokenCounter,
     LiteLLMTokenCounter,
     dependencies_required,
+    observe,
     update_current_observation,
+    with_langfuse_trace,
 )
-
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-else:
-    from camel.utils import observe
 
 
 class LiteLLMModel(BaseModelBackend):
@@ -155,6 +149,7 @@ class LiteLLMModel(BaseModelBackend):
     async def _arun(self) -> None:  # type: ignore[override]
         raise NotImplementedError
 
+    @with_langfuse_trace
     @observe(as_type='generation')
     def _run(
         self,
@@ -186,7 +181,6 @@ class LiteLLMModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         response = self.client(
             timeout=self._timeout,

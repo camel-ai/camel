@@ -11,9 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
 import os
+from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, List, Optional
+from functools import wraps
+from typing import Any, Dict, Generator, List, Optional
 
 from camel.logger import get_logger
 from camel.utils import dependencies_required
@@ -28,11 +31,21 @@ _agent_session_id_var: ContextVar[Optional[str]] = ContextVar(
 _langfuse_configured = False
 
 try:
-    from langfuse.decorators import langfuse_context
+    from langfuse import Langfuse, get_client, observe, propagate_attributes
 
     LANGFUSE_AVAILABLE = True
 except ImportError:
     LANGFUSE_AVAILABLE = False
+
+    def observe(*args, **kwargs):  # type: ignore[misc]
+        def decorator(func):
+            return func
+
+        return decorator
+
+    @contextmanager
+    def propagate_attributes(*args, **kwargs):  # type: ignore[misc]
+        yield
 
 
 @dependencies_required('langfuse')
@@ -58,8 +71,10 @@ def configure_langfuse(
             (default: :obj:`None`)
 
     Note:
-        This function configures the native langfuse_context which works with
-            @observe() decorators. Set enabled=False to disable all tracing.
+        This function initializes the Langfuse v4 client (OpenTelemetry-based)
+            used by the @observe() decorator and by
+            :func:`with_langfuse_trace`. Set enabled=False to disable all
+            tracing.
     """  # noqa: E501
     global _langfuse_configured
 
@@ -100,13 +115,15 @@ def configure_langfuse(
         _langfuse_configured = False
 
     try:
-        # Configure langfuse_context with native method
-        langfuse_context.configure(
+        # Initializing a Langfuse client registers it as the process-wide
+        # singleton returned by langfuse.get_client().
+        Langfuse(
             public_key=public_key,
             secret_key=secret_key,
             host=host,
             debug=debug,
-            enabled=True,  # Always True here since we checked enabled above
+            # Always True here since we checked `enabled` above.
+            tracing_enabled=True,
         )
 
         logger.info("Langfuse tracing enabled for CAMEL models")
@@ -144,6 +161,69 @@ def get_current_agent_session_id() -> Optional[str]:
     return _agent_session_id_var.get()
 
 
+@contextmanager
+def _trace_scope(
+    session_id: Optional[str],
+    metadata: Optional[Dict[str, Any]],
+    tags: Optional[List[str]],
+) -> Generator[None, None, None]:
+    r"""Best-effort context manager around :func:`propagate_attributes`.
+
+    No-ops when Langfuse isn't configured, so it is always safe to enter
+    unconditionally.
+    """
+    if not is_langfuse_available():
+        yield
+        return
+
+    with propagate_attributes(
+        session_id=session_id, metadata=metadata, tags=tags
+    ):
+        yield
+
+
+def with_langfuse_trace(func):
+    r"""Decorator that scopes Langfuse trace propagation around a model
+    backend's ``_run``/``_arun`` implementation.
+
+    This replaces the previous per-provider imperative
+    ``update_langfuse_trace(...)`` call at the top of ``_run``/``_arun``.
+    Langfuse v4 removed the v2 ``langfuse_context.update_current_trace``
+    API; trace-level attributes (session id, tags, metadata) must instead
+    be applied via a :func:`~langfuse.propagate_attributes` scope that
+    covers the observation they should attach to. Wrapping the whole
+    ``_run``/``_arun`` call is the closest equivalent to the old
+    "update trace, then run" behavior.
+    """
+
+    def _scope(self) -> Any:
+        session_id = get_current_agent_session_id()
+        metadata = {
+            "source": "camel",
+            "agent_id": session_id,
+            "agent_type": "camel_chat_agent",
+            "model_type": str(self.model_type),
+        }
+        tags = ["CAMEL-AI", str(self.model_type)]
+        return _trace_scope(session_id, metadata, tags)
+
+    if asyncio.iscoroutinefunction(func):
+
+        @wraps(func)
+        async def async_wrapper(self, *args, **kwargs):
+            with _scope(self):
+                return await func(self, *args, **kwargs)
+
+        return async_wrapper
+
+    @wraps(func)
+    def sync_wrapper(self, *args, **kwargs):
+        with _scope(self):
+            return func(self, *args, **kwargs)
+
+    return sync_wrapper
+
+
 def update_langfuse_trace(
     session_id: Optional[str] = None,
     user_id: Optional[str] = None,
@@ -164,6 +244,16 @@ def update_langfuse_trace(
 
     Returns:
         bool: True if update was successful, False otherwise.
+
+    Note:
+        Langfuse v4 has no direct equivalent of the v2
+        ``update_current_trace`` call: attribute propagation to the active
+        observation and its children is scoped via
+        ``langfuse.propagate_attributes(...)``. This function enters that
+        scope for the remainder of the current execution context (it is
+        not exited), which mirrors the previous fire-and-forget behavior.
+        New CAMEL model backends should prefer :func:`with_langfuse_trace`,
+        which scopes propagation to exactly the ``_run``/``_arun`` call.
     """
     if not is_langfuse_available():
         return False
@@ -182,7 +272,7 @@ def update_langfuse_trace(
         update_data["tags"] = tags
 
     if update_data:
-        langfuse_context.update_current_trace(**update_data)
+        propagate_attributes(**update_data).__enter__()
         return True
 
     return False
@@ -216,13 +306,36 @@ def update_current_observation(
     if not is_langfuse_available():
         return
 
-    langfuse_context.update_current_observation(
+    # The v2 API accepted a generic `usage` kwarg; v4's
+    # `update_current_generation` only accepts `usage_details`.
+    if usage_details is None and "usage" in kwargs:
+        usage_details = kwargs.pop("usage")
+
+    allowed_extra = {
+        "name",
+        "metadata",
+        "version",
+        "level",
+        "status_message",
+        "completion_start_time",
+        "cost_details",
+        "prompt",
+    }
+    unknown = set(kwargs) - allowed_extra
+    if unknown:
+        logger.debug(
+            f"Ignoring unsupported Langfuse observation fields: "
+            f"{sorted(unknown)}"
+        )
+    extra = {k: v for k, v in kwargs.items() if k in allowed_extra}
+
+    get_client().update_current_generation(
         input=input,
         output=output,
         model=model,
         model_parameters=model_parameters,
         usage_details=usage_details,
-        **kwargs,
+        **extra,
     )
 
 
@@ -255,10 +368,3 @@ def get_langfuse_status() -> Dict[str, Any]:
             status["langfuse_context_error"] = str(e)
 
     return status
-
-
-def observe(*args, **kwargs):
-    def decorator(func):
-        return func
-
-    return decorator
