@@ -4,11 +4,21 @@ FROM ubuntu:24.04@sha256:c35e29c9450151419d9448b0fd75374fec4fff364a27f176fb458d4
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install basic dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
-    python3-pip \
     git \
+    curl \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# Download the latest installer
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
+
+# Run the installer then remove it
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+
+# Ensure the installed binary is on the `PATH`
+ENV PATH="/root/.local/bin/:$PATH"
 
 # Set working directory
 WORKDIR /app
@@ -19,8 +29,9 @@ COPY ../../../ ./camel/
 # Change to CAMEL directory
 WORKDIR /app/camel
 
-# Install CAMEL and its dependencies
-RUN pip3 install -e ".[all]"
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --extra all
+
 
 # Copy API service file
 RUN mkdir -p /home
