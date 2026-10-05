@@ -43,6 +43,7 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    with_langfuse_trace,
 )
 
 if TYPE_CHECKING:
@@ -55,12 +56,7 @@ if TYPE_CHECKING:
     )
     from xai_sdk.proto import chat_pb2  # type: ignore[import-untyped]
 
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
         from traceroot import trace as observe  # type: ignore[import]
     except ImportError:
@@ -891,6 +887,7 @@ class XAIModel(BaseModelBackend):
     # Core run methods
     # ------------------------------------------------------------------
 
+    @with_langfuse_trace
     @observe()
     def _run(
         self,
@@ -917,7 +914,6 @@ class XAIModel(BaseModelBackend):
                 ``ChatCompletion`` in non-stream mode, or a
                 ``ChatCompletionChunk`` generator in stream mode.
         """
-        self._log_and_trace()
 
         chat_kwargs, messages_to_send, total = self._prepare_chat(
             messages, tools, response_format
@@ -946,6 +942,7 @@ class XAIModel(BaseModelBackend):
         response = chat.sample()
         return self._handle_response(response, total)
 
+    @with_langfuse_trace
     @observe()
     async def _arun(
         self,
@@ -968,7 +965,6 @@ class XAIModel(BaseModelBackend):
                 ``ChatCompletion`` in non-stream mode, or an async
                 ``ChatCompletionChunk`` generator in stream mode.
         """
-        self._log_and_trace()
 
         chat_kwargs, messages_to_send, total = self._prepare_chat(
             messages, tools, response_format

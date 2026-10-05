@@ -26,16 +26,10 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
+    observe,
     update_current_observation,
+    with_langfuse_trace,
 )
-
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-else:
-    from camel.utils import observe
 
 if TYPE_CHECKING:
     from reka.types import ChatMessage, ChatResponse
@@ -245,6 +239,7 @@ class RekaModel(BaseModelBackend):
             )
         return self._token_counter
 
+    @with_langfuse_trace
     @observe(as_type="generation")
     async def _arun(
         self,
@@ -270,7 +265,6 @@ class RekaModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
@@ -303,6 +297,7 @@ class RekaModel(BaseModelBackend):
 
         return openai_response
 
+    @with_langfuse_trace
     @observe(as_type="generation")
     def _run(
         self,
@@ -328,8 +323,6 @@ class RekaModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-
-        self._log_and_trace()
 
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
