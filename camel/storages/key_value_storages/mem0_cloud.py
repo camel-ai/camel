@@ -112,7 +112,11 @@ class Mem0Storage(BaseKeyValueStorage):
         messages = []
         for record in records:
             content = record["message"]["content"]
-            role = record["role_at_backend"].value
+            role = record["role_at_backend"]
+            # Records that went through MemoryRecord.to_dict() carry the role
+            # as a plain string; in-memory records carry the enum itself.
+            if isinstance(role, OpenAIBackendRole):
+                role = role.value
             messages.append({"role": role, "content": content})
         return messages
 
