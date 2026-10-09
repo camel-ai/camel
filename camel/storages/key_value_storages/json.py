@@ -73,11 +73,7 @@ class JsonStorage(BaseKeyValueStorage):
         self.json_path.touch()
 
     def _json_object_hook(self, d) -> Any:
-        if (
-            len(d) == 1
-            and "__enum__" in d
-            and isinstance(d["__enum__"], str)
-        ):
+        if len(d) == 1 and "__enum__" in d and isinstance(d["__enum__"], str):
             name, _, member = d["__enum__"].partition(".")
             enum_cls = CamelJSONEncoder.CAMEL_ENUMS.get(name)
             if enum_cls is not None and member in enum_cls.__members__:
