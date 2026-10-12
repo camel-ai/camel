@@ -304,7 +304,7 @@ class OpenAPIToolkit:
                         params[request_key_name] = api_key_value
                     elif request_key_in == 'header':
                         headers[request_key_name] = api_key_value
-                    elif request_key_in == 'coolie':
+                    elif request_key_in == 'cookie':
                         cookies[request_key_name] = api_key_value
 
                 # Assign parameters to the correct position
