@@ -73,11 +73,12 @@ class JsonStorage(BaseKeyValueStorage):
         self.json_path.touch()
 
     def _json_object_hook(self, d) -> Any:
-        if "__enum__" in d:
-            name, member = d["__enum__"].split(".")
-            return getattr(CamelJSONEncoder.CAMEL_ENUMS[name], member)
-        else:
-            return d
+        if len(d) == 1 and "__enum__" in d and isinstance(d["__enum__"], str):
+            name, _, member = d["__enum__"].partition(".")
+            enum_cls = CamelJSONEncoder.CAMEL_ENUMS.get(name)
+            if enum_cls is not None and member in enum_cls.__members__:
+                return getattr(enum_cls, member)
+        return d
 
     def save(self, records: List[Dict[str, Any]]) -> None:
         r"""Saves a batch of records to the key-value storage system.
