@@ -23,6 +23,7 @@ from .open_api_specs.security_config import openapi_security_config
 
 from .math_toolkit import MathToolkit
 from .search_toolkit import SearchToolkit
+from .anysearch_toolkit import AnySearchToolkit
 from .weather_toolkit import WeatherToolkit
 from .image_generation_toolkit import ImageGenToolkit, OpenAIImageToolkit
 from .ask_news_toolkit import AskNewsToolkit, AsyncAskNewsToolkit
@@ -123,6 +124,7 @@ __all__ = [
     'MathToolkit',
     'GoogleMapsToolkit',
     'SearchToolkit',
+    'AnySearchToolkit',
     'SlackToolkit',
     'WhatsAppToolkit',
     'PlivoToolkit',
