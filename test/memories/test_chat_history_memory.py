@@ -48,6 +48,16 @@ def memory(request):
         path.unlink()
 
 
+def test_window_size_is_readable():
+    context_creator = ScoreBasedContextCreator(
+        OpenAITokenCounter(ModelType.GPT_4),
+        ModelType.GPT_4.token_limit,
+    )
+
+    assert ChatHistoryMemory(context_creator, window_size=5).window_size == 5
+    assert ChatHistoryMemory(context_creator).window_size is None
+
+
 @pytest.mark.parametrize("memory", ["in-memory", "json"], indirect=True)
 def test_chat_history_memory(memory: ChatHistoryMemory):
     system_msg = BaseMessage(

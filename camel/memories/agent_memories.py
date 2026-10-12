@@ -64,6 +64,10 @@ class ChatHistoryMemory(AgentMemory):
     def agent_id(self, val: Optional[str]) -> None:
         self._agent_id = val
 
+    @property
+    def window_size(self) -> Optional[int]:
+        return self._window_size
+
     def retrieve(self) -> List[ContextRecord]:
         records = self._chat_history_block.retrieve(self._window_size)
         if self._window_size is not None and len(records) == self._window_size:
