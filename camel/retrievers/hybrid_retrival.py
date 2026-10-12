@@ -220,7 +220,9 @@ class HybridRetriever(BaseRetriever):
             info for info in vr_raw_results if 'similarity score' in info
         ]
         vector_retriever_results = sorted(
-            with_score, key=lambda x: x['similarity score'], reverse=True
+            with_score,
+            key=lambda x: float(x['similarity score']),
+            reverse=True,
         )
 
         bm25_retriever_results = self.bm25.query(
