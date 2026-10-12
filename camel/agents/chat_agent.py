@@ -5063,31 +5063,43 @@ class ChatAgent(BaseAgent):
                 futures_map[future] = (function_name, tool_call_data)
 
             # Wait for all futures to complete (or timeout)
-            for future in concurrent.futures.as_completed(
-                futures_map.keys(),
-                timeout=self.tool_execution_timeout
-                if self.tool_execution_timeout
-                else None,
-            ):
-                function_name, tool_call_data = futures_map[future]
+            try:
+                for future in concurrent.futures.as_completed(
+                    futures_map.keys(),
+                    timeout=self.tool_execution_timeout
+                    if self.tool_execution_timeout
+                    else None,
+                ):
+                    function_name, tool_call_data = futures_map[future]
 
-                try:
-                    tool_call_record = future.result()
-                    if tool_call_record:
-                        tool_call_records.append(tool_call_record)
-                        logger.info(
-                            f"Function output: {tool_call_record.result}"
+                    try:
+                        tool_call_record = future.result()
+                        if tool_call_record:
+                            tool_call_records.append(tool_call_record)
+                            logger.info(
+                                f"Function output: {tool_call_record.result}"
+                            )
+                    except concurrent.futures.TimeoutError:
+                        logger.warning(
+                            f"Function '{function_name}' timed out after "
+                            f"{self.tool_execution_timeout} seconds"
                         )
-                except concurrent.futures.TimeoutError:
+                        future.cancel()
+                    except Exception as e:
+                        logger.error(
+                            f"Error executing tool '{function_name}': {e}"
+                        )
+            except concurrent.futures.TimeoutError:
+                # as_completed raises from its iterator once the deadline
+                # passes, so the pending futures are reported here.
+                for future, (function_name, _) in futures_map.items():
+                    if future.done():
+                        continue
                     logger.warning(
                         f"Function '{function_name}' timed out after "
                         f"{self.tool_execution_timeout} seconds"
                     )
                     future.cancel()
-                except Exception as e:
-                    logger.error(
-                        f"Error executing tool '{function_name}': {e}"
-                    )
 
         # Ensure this function remains a generator (required by type signature)
         return
