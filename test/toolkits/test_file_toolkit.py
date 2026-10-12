@@ -320,10 +320,12 @@ def test_write_to_file_nested_directory(file_write_toolkit):
 
 
 def test_write_to_file_absolute_path(temp_dir):
-    r"""Test writing to a file using an absolute path."""
-    toolkit = FileToolkit(working_directory="./default")
+    r"""Test writing to a file using an absolute path inside the
+    working directory."""
+    workdir = os.path.join(temp_dir, "workdir")
+    toolkit = FileToolkit(working_directory=workdir)
     content = "Content with absolute path"
-    filename = os.path.join(temp_dir, "absolute_path.txt")
+    filename = os.path.join(workdir, "absolute_path.txt")
 
     result = toolkit.write_to_file("Absolute Path Document", content, filename)
 
@@ -859,3 +861,307 @@ def test_notebook_edit_returns_error_message_for_missing_file(
     )
 
     assert result.startswith("Error:")
+
+
+# ----------------------------------------------
+# Working-directory containment (issues #4354, #4355)
+# ----------------------------------------------
+def test_write_to_file_rejects_parent_escape(file_write_toolkit):
+    r"""A '../' filename must not escape the working directory."""
+    outside_file = (
+        file_write_toolkit.working_directory.parent / "escape_write.txt"
+    )
+    filename = "../escape_write.txt"
+
+    result = file_write_toolkit.write_to_file(
+        "Escape Document", "should not land", filename
+    )
+
+    assert result.startswith("Error:")
+    assert "outside the working directory" in result
+    assert not outside_file.exists()
+
+
+def test_write_to_file_rejects_absolute_outside(file_write_toolkit, temp_dir):
+    r"""An absolute path outside the working directory must be rejected."""
+    outside_file = Path(temp_dir) / "absolute_escape.txt"
+
+    result = file_write_toolkit.write_to_file(
+        "Escape Document",
+        "should not land",
+        str(outside_file),
+    )
+
+    assert result.startswith("Error:")
+    assert "outside the working directory" in result
+    assert not outside_file.exists()
+
+
+def test_write_to_file_rejects_nested_escape(file_write_toolkit, temp_dir):
+    r"""A nested relative path must not climb out of the working directory."""
+    outside_dir = Path(temp_dir) / "sub"
+    filename = "sub/../../escape_nested.txt"
+
+    result = file_write_toolkit.write_to_file(
+        "Escape Document", "should not land", filename
+    )
+
+    assert result.startswith("Error:")
+    assert "outside the working directory" in result
+    assert not outside_dir.exists()
+    assert not (Path(temp_dir) / "escape_nested.txt").exists()
+
+
+def test_write_to_file_allows_relative_inside(file_write_toolkit):
+    r"""Legitimate nested relative writes still succeed."""
+    result = file_write_toolkit.write_to_file(
+        "Inside Document", "inside ok", "nested/still/inside.txt"
+    )
+
+    assert "successfully written" in result
+    resolved = file_write_toolkit._resolve_filepath("nested/still/inside.txt")
+    assert resolved.exists()
+
+
+def test_write_to_file_allows_absolute_inside(file_write_toolkit):
+    r"""Absolute paths that stay inside the working directory still work."""
+    target = file_write_toolkit.working_directory / "inside_absolute.txt"
+
+    result = file_write_toolkit.write_to_file(
+        "Inside Document", "inside ok", str(target)
+    )
+
+    assert "successfully written" in result
+    assert target.exists()
+
+
+def test_read_file_rejects_escape(file_write_toolkit, temp_dir):
+    r"""read_file must not follow paths outside the working directory."""
+    secret = Path(temp_dir) / "credentials.txt"
+    secret.write_text("top secret", encoding="utf-8")
+
+    result = file_write_toolkit.read_file("../credentials.txt")
+
+    assert result.startswith("Error reading file(s)")
+    assert "top secret" not in result
+
+
+def test_edit_file_rejects_escape(file_write_toolkit, temp_dir):
+    r"""edit_file must not modify files outside the working directory."""
+    outside_file = Path(temp_dir) / "outside_edit.txt"
+    outside_file.write_text("original", encoding="utf-8")
+
+    result = file_write_toolkit.edit_file(
+        "../outside_edit.txt", "original", "tampered"
+    )
+
+    assert result.startswith("Error editing file")
+    assert "outside the working directory" in result
+    assert outside_file.read_text(encoding="utf-8") == "original"
+
+
+def test_notebook_edit_cell_rejects_escape(file_write_toolkit, temp_dir):
+    r"""notebook_edit_cell must not modify notebooks outside the
+    working directory."""
+    notebook_path = Path(temp_dir) / "outside.ipynb"
+    _write_notebook(notebook_path)
+
+    result = file_write_toolkit.notebook_edit_cell(
+        notebook_path="../outside.ipynb",
+        new_source="tampered",
+        cell_id="cell-1",
+    )
+
+    assert result.startswith("Error:")
+    assert "outside the working directory" in result
+
+
+@pytest.mark.skipif(os.name == "nt", reason="requires symlink privileges")
+def test_symlink_escape_rejected(file_write_toolkit, temp_dir):
+    r"""A symlink inside the sandbox pointing outward must be rejected."""
+    outside_file = Path(temp_dir) / "symlink_target.txt"
+    outside_file.write_text("secret", encoding="utf-8")
+    link = file_write_toolkit.working_directory / "link.txt"
+    link.symlink_to(outside_file)
+
+    result = file_write_toolkit.read_file("link.txt")
+
+    assert result.startswith("Error reading file(s)")
+    assert "outside the working directory" in result
+
+
+def test_resolve_filepath_raises_on_escape(file_write_toolkit):
+    r"""The resolver itself raises ValueError on escaping paths."""
+    with pytest.raises(ValueError, match="outside the working directory"):
+        file_write_toolkit._resolve_filepath("../escape.txt")
+
+    with pytest.raises(ValueError, match="outside the working directory"):
+        file_write_toolkit._resolve_existing_filepath("../escape.txt")
+
+
+# ----------------------------------------------
+# Search-path containment (review follow-up on #4362)
+# ----------------------------------------------
+def test_glob_files_rejects_escape(file_write_toolkit, temp_dir):
+    """glob_files must not search outside the working directory."""
+    outside_dir = Path(temp_dir) / "outside_glob"
+    outside_dir.mkdir()
+    (outside_dir / "secret.txt").write_text("secret", encoding="utf-8")
+
+    result = file_write_toolkit.glob_files("*.txt", path=str(outside_dir))
+
+    assert result.startswith("Error:")
+    assert "outside the working directory" in result
+
+
+def test_grep_files_rejects_escape(file_write_toolkit, temp_dir):
+    """grep_files with content output must not read outside the working
+    directory (the arbitrary-read path flagged in review)."""
+    secret = Path(temp_dir) / "credentials.txt"
+    secret.write_text("aws_secret_key = TOPSECRET", encoding="utf-8")
+
+    result = file_write_toolkit.grep_files(
+        pattern="aws_secret_key",
+        path=str(secret.parent),
+    )
+
+    assert result.startswith("Error:")
+    assert "outside the working directory" in result
+    assert "TOPSECRET" not in result
+
+
+def test_grep_files_rejects_relative_escape(file_write_toolkit, temp_dir):
+    """A '../' search root must not escape the working directory."""
+    outside_file = Path(temp_dir) / "secret.txt"
+    outside_file.write_text("topsecret", encoding="utf-8")
+
+    result = file_write_toolkit.grep_files(pattern=".", path="../")
+
+    assert result.startswith("Error:")
+    assert "outside the working directory" in result
+
+
+def test_search_files_rejects_escape(file_write_toolkit, temp_dir):
+    """search_files must not index outside the working directory."""
+    outside_file = Path(temp_dir) / "leak.md"
+    outside_file.write_text("leaky content", encoding="utf-8")
+
+    result = file_write_toolkit.search_files(
+        pattern="leaky", path=str(temp_dir)
+    )
+
+    assert "leaky content" not in str(result)
+    assert "outside the working directory" in str(result)
+
+
+def test_search_inside_working_directory_still_works(file_write_toolkit):
+    """Searches rooted inside the working directory keep working."""
+    (file_write_toolkit.working_directory / "notes").mkdir(exist_ok=True)
+    (file_write_toolkit.working_directory / "notes" / "a.txt").write_text(
+        "hello world", encoding="utf-8"
+    )
+
+    result = file_write_toolkit.glob_files("*.txt", path="notes")
+
+    assert isinstance(result, list)
+    assert any(p.endswith("a.txt") for p in result)
+
+
+def test_write_to_file_rejects_with_suffix_mutation(file_write_toolkit):
+    r"""A filename resolving to the working directory itself must not be
+    written one level up via the implicit '.md' suffix (review HIGH-1)."""
+    outside_file = file_write_toolkit.working_directory.parent / (
+        file_write_toolkit.working_directory.name + ".md"
+    )
+
+    result = file_write_toolkit.write_to_file("T", "content", "")
+
+    assert result.startswith("Error:")
+    assert "outside the working directory" in result
+    assert not outside_file.exists()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="requires symlink privileges")
+def test_grep_files_skips_directory_symlink_escape(
+    file_write_toolkit, temp_dir
+):
+    r"""grep_files must not read through a directory symlink planted
+    inside the working directory (review HIGH-2)."""
+    outside_dir = Path(temp_dir) / "outside_grep"
+    outside_dir.mkdir()
+    (outside_dir / "secret.txt").write_text("TOPSECRET-XYZ", encoding="utf-8")
+    link = file_write_toolkit.working_directory / "etc"
+    link.symlink_to(outside_dir)
+
+    result = file_write_toolkit.grep_files(
+        pattern="TOPSECRET", path=".", glob_pattern="etc/*"
+    )
+
+    assert "TOPSECRET-XYZ" not in str(result)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="requires symlink privileges")
+def test_glob_files_skips_directory_symlink_escape(
+    file_write_toolkit, temp_dir
+):
+    r"""glob_files must not surface files resolved through an inside
+    directory symlink pointing outward (review HIGH-2)."""
+    outside_dir = Path(temp_dir) / "outside_glob"
+    outside_dir.mkdir()
+    (outside_dir / "secret.txt").write_text("x", encoding="utf-8")
+    link = file_write_toolkit.working_directory / "etc"
+    link.symlink_to(outside_dir)
+
+    result = file_write_toolkit.glob_files("etc/*.txt", path=".")
+
+    assert result == []
+
+
+def test_edit_file_accepts_absolute_inside(file_write_toolkit):
+    r"""Absolute paths inside the working directory remain editable."""
+    target = file_write_toolkit.working_directory / "inside_abs.txt"
+    target.write_text("visible", encoding="utf-8")
+
+    result = file_write_toolkit.edit_file(str(target), "visible", "edited")
+
+    assert "Successfully edited" in result
+    assert target.read_text(encoding="utf-8") == "edited"
+
+
+def test_candidate_within_root_skips_unresolvable_candidate(
+    file_write_toolkit, monkeypatch
+):
+    r"""A candidate that cannot be resolved (raced away mid-search) is
+    excluded rather than raising out of the search."""
+
+    def _boom(self, strict: bool = False) -> Path:
+        raise OSError("vanished")
+
+    monkeypatch.setattr(Path, "resolve", _boom)
+
+    assert (
+        file_write_toolkit._candidate_within_root(
+            Path("anything"), file_write_toolkit.working_directory
+        )
+        is False
+    )
+
+
+def test_search_files_skips_unreadable_candidates(file_write_toolkit):
+    r"""search_files skips candidates that raise OSError on read (a
+    directory matched by a file pattern) instead of failing the whole
+    search."""
+    (file_write_toolkit.working_directory / "notes").mkdir(exist_ok=True)
+    (file_write_toolkit.working_directory / "notes" / "keep.md").write_text(
+        "found needle here", encoding="utf-8"
+    )
+    # A directory whose name matches the file pattern: read_text on it
+    # raises IsADirectoryError (an OSError).
+    (file_write_toolkit.working_directory / "keep.md").mkdir(exist_ok=True)
+
+    result = file_write_toolkit.search_files(pattern="needle")
+
+    parsed = json.loads(result) if isinstance(result, str) else result
+    files = [m["file"] for m in parsed["matches"]]
+    assert any("notes" in f for f in files), parsed
+    assert all(not f.startswith("keep.md") for f in files)
