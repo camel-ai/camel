@@ -15,6 +15,7 @@
 from .apibank import APIBankBenchmark
 from .apibench import APIBenchBenchmark
 from .base import BaseBenchmark
+from .bfcl import BFCLBenchmark
 from .browsecomp import BrowseCompBenchmark
 from .gaia import DefaultGAIARetriever, GAIABenchmark
 from .nexus import NexusBenchmark
@@ -22,6 +23,7 @@ from .ragbench import RAGBenchBenchmark
 
 __all__ = [
     "BaseBenchmark",
+    "BFCLBenchmark",
     "BrowseCompBenchmark",
     "GAIABenchmark",
     "DefaultGAIARetriever",
