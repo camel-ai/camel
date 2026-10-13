@@ -120,14 +120,15 @@ def is_langfuse_available() -> bool:
     return _langfuse_configured
 
 
-def set_current_agent_session_id(session_id: str) -> None:
+def set_current_agent_session_id(session_id: Optional[str]) -> None:
     r"""Set the session ID for the current agent in context-local storage.
 
     This is safe to use in both sync and async contexts.
     In async contexts, each coroutine maintains its own value.
 
     Args:
-        session_id(str): The session ID to set for the current agent.
+        session_id (Optional[str]): The session ID to set for the current
+            agent, or None to clear it.
     """
     _agent_session_id_var.set(session_id)
 
