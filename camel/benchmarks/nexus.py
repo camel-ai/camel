@@ -22,12 +22,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
-import pandas as pd
-from datasets import load_dataset
-from tqdm import tqdm
-
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
+from camel.utils import dependencies_required
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +86,7 @@ class NexusBenchmark(BaseBenchmark):
             (default: :obj:`1`)
     """
 
+    @dependencies_required('datasets', 'pandas')
     def __init__(
         self,
         data_dir: str,
@@ -125,6 +123,7 @@ class NexusBenchmark(BaseBenchmark):
             dataset_name (str): Name of the specific dataset to be loaded.
             force_download (bool): Whether to force download the data.
         """
+        import pandas as pd
 
         def _load_csv_data(dataset_dir: Path) -> List:
             r"""Load datasets from CSV files."""
@@ -305,6 +304,8 @@ class NexusBenchmark(BaseBenchmark):
         # Process samples
         tools = construct_tool_descriptions(task)
         with open(self.save_to, "w") as f:
+            from tqdm import tqdm
+
             for sample in tqdm(datas, desc="Running"):
                 prompt = construct_prompt(input=sample.input, tools=tools)
                 ground_truth_call = sample.output
@@ -362,6 +363,8 @@ class NexusBenchmark(BaseBenchmark):
 def construct_tool_descriptions(dataset_name: str) -> str:
     r"""Construct tool descriptions from function definitions and
     descriptions."""
+    from datasets import load_dataset
+
     tool_dataset_mapping = {
         "NVDLibrary": "CVECPE",
         "VirusTotal": "VirusTotal",
