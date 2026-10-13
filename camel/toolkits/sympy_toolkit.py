@@ -18,7 +18,7 @@ from typing import List, Optional
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -30,6 +30,7 @@ class SymPyToolkit(BaseToolkit):
     and Linear Algebra.
     """
 
+    @dependencies_required('sympy')
     def __init__(
         self,
         default_variable: str = 'x',

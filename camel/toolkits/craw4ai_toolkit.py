@@ -17,7 +17,7 @@ from typing import List, Optional
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -26,6 +26,7 @@ logger = get_logger(__name__)
 class Crawl4AIToolkit(BaseToolkit):
     r"""A class representing a toolkit for Crawl4AI."""
 
+    @dependencies_required('crawl4ai')
     def __init__(
         self,
         timeout: Optional[float] = None,
