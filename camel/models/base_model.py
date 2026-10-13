@@ -306,6 +306,15 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             default=False,
         )
 
+    def reset(self, session_id: Optional[str] = None) -> None:
+        r"""Reset conversation state stored by the model backend.
+
+        Args:
+            session_id (Optional[str]): Session whose state should be reset.
+                If :obj:`None`, reset all conversation state.
+                (default: :obj:`None`)
+        """
+
     @property
     @abstractmethod
     def token_counter(self) -> BaseTokenCounter:
