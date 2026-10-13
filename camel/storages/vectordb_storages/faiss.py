@@ -14,6 +14,7 @@
 
 import os
 import pickle
+import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
@@ -117,10 +118,16 @@ class FaissStorage(BaseVectorStorage):
     def _generate_collection_name(self) -> str:
         r"""Generates a collection name if user doesn't provide.
 
+        The ISO timestamp is sanitized to [A-Za-z0-9_-]: the name becomes a
+        file on disk (`<storage_path>/<name>.index`), and ':' is an illegal
+        path character on Windows (same treatment as the chroma and milvus
+        backends).
+
         Returns:
             str: Generated collection name.
         """
-        return f"faiss_index_{datetime.now().isoformat()}"
+        timestamp = datetime.now().isoformat()
+        return f"faiss_index_{re.sub(r'[^a-zA-Z0-9_-]', '_', timestamp)}"
 
     def _get_index_path(self) -> str:
         r"""Returns the path to the index file.
