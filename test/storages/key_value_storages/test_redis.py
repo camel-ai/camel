@@ -75,3 +75,48 @@ def test_clear(sid, redis_storage, mock_redis_client):
     redis_storage.clear()
 
     mock_redis_client.delete.assert_called_once_with(sid)
+
+
+def test_load_empty_session(redis_storage, mock_redis_client):
+    mock_redis_client.get = AsyncMock(return_value=None)
+    assert redis_storage.load() == []
+
+
+def test_save_propagates_error(redis_storage, mock_redis_client):
+    mock_redis_client.set = AsyncMock(
+        side_effect=ConnectionError("connection refused")
+    )
+    with pytest.raises(ConnectionError, match="connection refused"):
+        redis_storage.save([{"key": "value"}])
+
+
+def test_load_propagates_error(redis_storage, mock_redis_client):
+    mock_redis_client.get = AsyncMock(
+        side_effect=ConnectionError("connection refused")
+    )
+    with pytest.raises(ConnectionError, match="connection refused"):
+        redis_storage.load()
+
+
+def test_clear_propagates_error(redis_storage, mock_redis_client):
+    mock_redis_client.delete = AsyncMock(
+        side_effect=ConnectionError("connection refused")
+    )
+    with pytest.raises(ConnectionError, match="connection refused"):
+        redis_storage.clear()
+
+
+def test_methods_without_client_raise(sid):
+    with patch(
+        'camel.storages.key_value_storages.RedisStorage._create_client'
+    ) as create_client_mock:
+        create_client_mock.return_value = None
+        storage = RedisStorage(sid=sid, loop=asyncio.get_event_loop())
+
+    storage._client = None
+    with pytest.raises(ValueError, match="Redis client is not initialized"):
+        storage.save([{"key": "value"}])
+    with pytest.raises(ValueError, match="Redis client is not initialized"):
+        storage.load()
+    with pytest.raises(ValueError, match="Redis client is not initialized"):
+        storage.clear()
