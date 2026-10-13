@@ -76,6 +76,60 @@ class TestModelFromJsonSchema(unittest.TestCase):
         with self.assertRaises(ValidationError):
             Model(rating=6)
 
+    def test_enum_values_are_enforced(self):
+        schema = {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "enum": ["active", "inactive"],
+                },
+                "priority": {
+                    "type": "integer",
+                    "enum": [1, 2, 3],
+                    "default": 2,
+                },
+            },
+            "required": ["status"],
+        }
+        Model = model_from_json_schema("TaskModel", schema)
+
+        # Values listed in ``enum`` are accepted.
+        instance = Model(status="active")
+        self.assertEqual(instance.status, "active")
+        # The optional field keeps its default, which is itself valid.
+        self.assertEqual(instance.priority, 2)
+
+        # A value outside ``enum`` must be rejected for a required field.
+        with self.assertRaises(ValidationError):
+            Model(status="archived")
+
+        # ... and for an optional field as well.
+        with self.assertRaises(ValidationError):
+            Model(status="active", priority=99)
+
+        # The generated JSON schema still advertises the allowed values.
+        properties = Model.model_json_schema()["properties"]
+        self.assertEqual(properties["status"]["enum"], ["active", "inactive"])
+
+    def test_enum_on_nullable_field(self):
+        schema = {
+            "type": "object",
+            "properties": {
+                "tier": {
+                    "type": "string",
+                    "enum": ["free", "pro"],
+                    "nullable": True,
+                }
+            },
+            "required": ["tier"],
+        }
+        Model = model_from_json_schema("TierModel", schema)
+        self.assertIsNone(Model(tier=None).tier)
+        self.assertEqual(Model(tier="pro").tier, "pro")
+        with self.assertRaises(ValidationError):
+            Model(tier="enterprise")
+
     def test_nested_objects(self):
         schema = {
             "type": "object",
