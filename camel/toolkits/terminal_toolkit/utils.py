@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import itertools
 import os
 import platform
 import re
@@ -28,21 +27,6 @@ from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
-# Pre-compiled regex patterns for command safety checks
-_CMD_PATTERN = re.compile(
-    r'(?:^|;|\||&&)\s*\b([a-zA-Z_/][\w\-/]*)', re.IGNORECASE
-)
-_QUOTED_STRING_PATTERN = re.compile(r'''["'][^"']*["']''')
-# Match cd command with optional quoted or unquoted path
-# Handles: cd path, cd "path with spaces", cd 'path with spaces'
-_CD_PATTERN = re.compile(r'\bcd\s+(?:--\s+)?(["\'][^"\']*["\']|[^\s;|&]+)')
-_PUSHD_PATTERN = re.compile(
-    r'\bpushd\s+(?:--\s+)?(["\'][^"\']*["\']|[^\s;|&]+)'
-)
-_SHELL_SUBSTITUTION_PATTERN = re.compile(r'`|(?<!\\)\$\(')
-_CONTROL_FLOW_PATTERN = re.compile(r';|&&|\|\||[|&]')
-_SHELL_COMMANDS = {'bash', 'sh', 'zsh', 'dash', 'ksh', 'ash'}
-_SEPARATORS = {';', '&&', '||', '|', '&'}
 _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE = (
     "Cannot 'cd' outside of the working directory in safe mode. "
     "Allowed root: '{working_dir}'. "
@@ -112,113 +96,194 @@ DANGEROUS_COMMANDS: List[str] = [
 ]
 
 
-def _normalize_command_name(command: str) -> str:
-    r"""Normalize command names for safer matching."""
-    normalized = os.path.basename(command).lower()
-    if normalized.endswith('.exe'):
-        normalized = normalized[:-4]
-    return normalized
+_INTERPRETERS = re.compile(
+    r'(?:python(?:\d+(?:\.\d+)*)?|pypy\d*|node(?:js)?|perl|ruby|'
+    r'php|lua\d*|bash|sh|zsh|dash|ksh|ash|fish|csh|tcsh|'
+    r'cmd|powershell|pwsh)',
+    re.IGNORECASE,
+)
+_EXECUTION_WRAPPERS = {
+    'env',
+    'command',
+    'exec',
+    'eval',
+    'source',
+    'xargs',
+    'nohup',
+    'nice',
+    'timeout',
+    'setsid',
+    'start',
+    'call',
+    'time',
+    'builtin',
+    'busybox',
+}
 
 
-def _split_command_segments(command: str) -> Optional[List[List[str]]]:
-    r"""Split command by shell separators while preserving quoted content."""
-    try:
-        lexer = shlex.shlex(command, posix=True, punctuation_chars=';&|')
-        lexer.whitespace_split = True
-        tokens = list(lexer)
-    except ValueError:
-        return None
+def _parse_safe_segments(command: str) -> List[List[str]]:
+    r"""Parse simple commands without discarding quoted command names.
 
-    segments: List[List[str]] = []
-    current: List[str] = []
-    for token in tokens:
-        if token in _SEPARATORS:
-            if current:
-                segments.append(current)
-                current = []
-        else:
-            current.append(token)
-    if current:
-        segments.append(current)
-    return segments
-
-
-def _extract_shell_c_payloads(command: str) -> List[str]:
-    r"""Extract payloads from shell wrapper commands like `bash -c "<cmd>"`."""
-    segments = _split_command_segments(command)
-    if segments is None:
-        return []
-
-    payloads: List[str] = []
+    Only statically checkable shell syntax is accepted. This is deliberately
+    not a general shell parser: expansion, redirects, subshells and malformed
+    operators fail closed. Quoted operator characters remain literal data.
+    """
+    windows = platform.system() == 'Windows'
+    if '\x00' in command or (windows and any(c in command for c in '%!^')):
+        raise ValueError('Dynamic shell syntax is blocked for safety.')
+    segments = []
+    current = []
+    quote = None
+    index = 0
+    while index < len(command):
+        char = command[index]
+        if char == '$' and quote is not None:
+            raise ValueError('Quoted variable syntax is blocked for safety.')
+        if char == '~' and quote is None and not windows:
+            raise ValueError('Tilde expansion is blocked for safety.')
+        if char == '\\' and not windows and quote != "'":
+            if index + 1 >= len(command) or command[index + 1] in '\r\n':
+                raise ValueError(
+                    'Shell line continuation is blocked for safety.'
+                )
+            if command[index + 1] == '$':
+                raise ValueError(
+                    'Escaped variable syntax is blocked for safety.'
+                )
+            current.extend(command[index : index + 2])
+            index += 2
+            continue
+        if char == quote:
+            quote = None
+        elif quote is None and (char == '"' or (char == "'" and not windows)):
+            quote = char
+        elif quote != "'":
+            if char == '`' or command[index : index + 2] in {
+                '$(',
+                '${',
+                '<(',
+                '>(',
+            }:
+                raise ValueError(
+                    'Command substitution or parameter expansion '
+                    'is blocked for safety.'
+                )
+            if quote is None:
+                if char in '\r\n(){}<>*?[]':
+                    raise ValueError(
+                        'Dynamic shell syntax or redirection '
+                        'is blocked for safety.'
+                    )
+                if char in ';&|':
+                    if not ''.join(current).strip():
+                        raise ValueError(
+                            'Empty command segment is blocked for safety.'
+                        )
+                    segments.append(''.join(current))
+                    current = []
+                    if command[index : index + 2] in {'&&', '||'}:
+                        index += 1
+                    index += 1
+                    continue
+        current.append(char)
+        index += 1
+    if quote is not None:
+        raise ValueError('Unclosed shell quote is blocked for safety.')
+    if not ''.join(current).strip():
+        raise ValueError('Empty command segment is blocked for safety.')
+    segments.append(''.join(current))
+    parsed = []
     for segment in segments:
-        if not segment:
-            continue
+        tokens = shlex.split(segment, posix=not windows)
+        if windows:
+            tokens = [
+                t[1:-1] if t.startswith('"') and t.endswith('"') else t
+                for t in tokens
+            ]
+        if not tokens:
+            raise ValueError('Empty command is blocked for safety.')
+        parsed.append(tokens)
+    return parsed
 
-        if _normalize_command_name(segment[0]) not in _SHELL_COMMANDS:
-            continue
 
-        args = segment[1:]
-        for i, arg in enumerate(args):
-            is_explicit_c = arg in {'-c', '--command'}
-            is_combined_short_flag = (
-                arg.startswith('-')
-                and not arg.startswith('--')
-                and 'c' in arg[1:]
+def _check_segments(
+    segments: List[List[str]], allowed_commands: Optional[Set[str]]
+) -> Tuple[bool, str]:
+    allowed = (
+        {cmd.lower() for cmd in allowed_commands}
+        if allowed_commands is not None
+        else None
+    )
+    for tokens in segments:
+        executable = tokens[0]
+        # Do not basename() this token: a qualified executable can bypass
+        # both an allowlist and the default dangerous-command list.
+        if not re.fullmatch(r'[A-Za-z_][\w.-]*', executable, re.ASCII):
+            return (
+                False,
+                'Path-qualified or dynamic executables '
+                'are blocked for safety.',
             )
-            if is_explicit_c or is_combined_short_flag:
-                if i + 1 < len(args):
-                    payloads.append(args[i + 1])
-                break
-
-    return payloads
+        name = executable.lower()
+        if platform.system() == 'Windows':
+            name = name.rstrip('.')
+        if name.endswith(('.bat', '.cmd', '.com')):
+            return False, 'Executable script wrappers are blocked for safety.'
+        name = name.removesuffix('.exe')
+        if name in _EXECUTION_WRAPPERS:
+            return False, f"Command '{name}' is blocked for safety."
+        if _INTERPRETERS.fullmatch(name) and tokens[1:] not in [
+            ['--version'],
+            ['-V'],
+            ['--help'],
+            ['-h'],
+        ]:
+            return (
+                False,
+                f"Interpreter execution '{name}' is blocked for safety.",
+            )
+        if allowed is not None:
+            if executable.lower() not in allowed:
+                return (
+                    False,
+                    f"Command '{executable}' is not in "
+                    'the allowed commands list.',
+                )
+        elif name in DANGEROUS_COMMANDS:
+            return False, f"Command '{name}' is blocked for safety."
+        # Variable expansion cannot be statically checked for arbitrary
+        # programs. Directory changes are resolved against working_dir below.
+        if name not in {'cd', 'pushd'} and any('$' in arg for arg in tokens):
+            return False, 'Dynamic shell arguments are blocked for safety.'
+    return True, ''
 
 
 def check_command_safety(
     command: str,
     allowed_commands: Optional[Set[str]] = None,
 ) -> Tuple[bool, str]:
-    r"""Check if a command (potentially with chaining) is safe to execute.
+    r"""Check every simple command before shell execution.
 
-    Args:
-        command (str): The command string to check
-        allowed_commands (Optional[Set[str]]): Set of allowed commands
-            (whitelist mode)
-
-    Returns:
-        Tuple[bool, str]: (is_safe, reason)
+    Interpreters and execution wrappers cannot be enabled by the allowlist
+    (except interpreter version/help queries). This is a conservative command
+    filter, not isolation from the behavior of an allowed program.
     """
-    if not command.strip():
-        return False, "Empty command is not allowed."
+    try:
+        segments = _parse_safe_segments(command)
+    except ValueError as exc:
+        return False, str(exc)
+    return _check_segments(segments, allowed_commands)
 
-    # Recursively inspect shell-wrapper payloads to prevent bypasses such as
-    # `bash -c "rm -rf /"` where the dangerous sub-command is quoted.
-    for payload in _extract_shell_c_payloads(command):
-        is_safe, reason = check_command_safety(payload, allowed_commands)
-        if not is_safe:
-            return False, reason
 
-    # Remove quoted strings to avoid false positives
-    clean_command = _QUOTED_STRING_PATTERN.sub(' ', command)
-
-    # If whitelist mode, check ALL commands against the whitelist
-    if allowed_commands is not None:
-        # Extract all command words (at start or after operators)
-        found_commands = _CMD_PATTERN.findall(clean_command)
-        for cmd in found_commands:
-            if cmd.lower() not in allowed_commands:
-                return (
-                    False,
-                    f"Command '{cmd}' is not in the allowed commands list.",
-                )
-        return True, ""
-
-    # Check for dangerous commands
-    for cmd in DANGEROUS_COMMANDS:
-        pattern = rf'(?:^|;|\||&&)\s*\b{re.escape(cmd)}\b'
-        if re.search(pattern, clean_command, re.IGNORECASE):
-            return False, f"Command '{cmd}' is blocked for safety."
-
-    return True, ""
+def _inside_workdir(path: str, working_dir: str) -> bool:
+    r"""Resolve symlinks and drive boundaries before testing containment."""
+    try:
+        return (
+            os.path.commonpath([working_dir, os.path.realpath(path)])
+            == working_dir
+        )
+    except (ValueError, OSError):
+        return False
 
 
 def sanitize_command(
@@ -228,123 +293,73 @@ def sanitize_command(
     working_dir: Optional[str] = None,
     allowed_commands: Optional[Set[str]] = None,
 ) -> Tuple[bool, str]:
-    r"""A comprehensive command sanitizer for both local and Docker backends.
+    r"""Validate simple commands and local path arguments before execution.
 
-    Args:
-        command (str): The command to sanitize
-        use_docker_backend (bool): Whether using Docker backend
-        safe_mode (bool): Whether to apply security checks
-        working_dir (Optional[str]): Working directory for path validation
-        allowed_commands (Optional[Set[str]]): Set of allowed commands
-
-    Returns:
-        Tuple[bool, str]: (is_safe, message_or_command)
+    General shell expansion/redirection and arbitrary interpreter execution
+    require safe_mode=False. Simple chains remain supported only when every
+    command passes validation. Docker paths are not resolved on the host.
     """
     if not safe_mode:
-        return True, command  # Skip all checks if safe_mode is disabled
-
-    # Use safety checker
-    is_safe, reason = check_command_safety(command, allowed_commands)
+        return True, command
+    try:
+        segments = _parse_safe_segments(command)
+    except ValueError as exc:
+        return False, str(exc)
+    is_safe, reason = _check_segments(segments, allowed_commands)
     if not is_safe:
         return False, reason
-
-    # Additional check for local backend: prevent cd/pushd outside working
-    # directory
-    if (
-        not use_docker_backend
-        and working_dir
-        and (
-            'cd ' in command
-            or 'cd\t' in command
-            or 'pushd ' in command
-            or 'pushd\t' in command
-        )
-    ):
-        normalized_working_dir = os.path.normpath(os.path.abspath(working_dir))
-
-        quoted_ranges = [
-            (m.start(), m.end())
-            for m in _QUOTED_STRING_PATTERN.finditer(command)
-        ]
-
-        def _inside_quotes(pos: int) -> bool:
-            return any(s <= pos < e for s, e in quoted_ranges)
-
-        # Collect all cd/pushd matches, keeping only those whose keyword
-        # is NOT inside a quoted string.
-        cd_matches = [
-            (name, m)
-            for name, m in itertools.chain(
-                (('cd', m) for m in _CD_PATTERN.finditer(command)),
-                (('pushd', m) for m in _PUSHD_PATTERN.finditer(command)),
+    if use_docker_backend or not working_dir:
+        if any('$' in arg for segment in segments for arg in segment):
+            return (
+                False,
+                'Directory expansion requires a local working directory.',
             )
-            if not _inside_quotes(m.start())
-        ]
+        return True, command
 
-        if not cd_matches:
-            return True, command
+    root = os.path.realpath(working_dir)
+    directory_changes = [
+        s for s in segments if s[0].lower() in {'cd', 'pushd'}
+    ]
+    if len(directory_changes) > 1:
+        return False, _MULTIPLE_CD_IN_CHAIN_MESSAGE
 
-        # Detect control-flow operators outside of quoted strings.
-        unquoted_command = _QUOTED_STRING_PATTERN.sub(' ', command)
-        has_control_flow = bool(_CONTROL_FLOW_PATTERN.search(unquoted_command))
-
-        # If there are multiple cd/pushd AND the command contains
-        # control flow operators, reject.
-        if len(cd_matches) > 1 and has_control_flow:
-            return False, _MULTIPLE_CD_IN_CHAIN_MESSAGE
-
-        # Exactly one cd/pushd, or multiple without operators
-        for cmd_name, match in cd_matches:
-            target_path = match.group(1).strip('\'"')
-
-            # Block 'cd -' since $OLDPWD may point outside workdir
-            if target_path == '-':
-                return (
-                    False,
-                    _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE.format(
-                        working_dir=normalized_working_dir
-                    ),
+    # A preceding conditional cd may or may not succeed. Check subsequent
+    # paths against every possible working directory, not only the root.
+    bases = {root}
+    for segment in segments:
+        name, *args = segment
+        if name.lower() in {'cd', 'pushd'}:
+            if args[:1] == ['--']:
+                args = args[1:]
+            if len(args) != 1 or args[0] == '-':
+                return False, _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE.format(
+                    working_dir=root
                 )
-
-            if _SHELL_SUBSTITUTION_PATTERN.search(target_path):
-                return (
-                    False,
-                    "Command substitution is not allowed in "
-                    f"'{cmd_name}' paths.",
+            target = os.path.expandvars(args[0])
+            if '$' in target or not _inside_workdir(
+                os.path.join(root, target), root
+            ):
+                return False, _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE.format(
+                    working_dir=root
                 )
-
-            expanded_target = os.path.expanduser(
-                os.path.expandvars(target_path)
-            )
-            if os.path.isabs(expanded_target):
-                resolved_target = expanded_target
-            else:
-                resolved_target = os.path.join(
-                    normalized_working_dir, expanded_target
-                )
-
-            target_dir = os.path.normpath(os.path.abspath(resolved_target))
-            # Use os.path.commonpath for safe path comparison
-            try:
-                common = os.path.commonpath(
-                    [normalized_working_dir, target_dir]
-                )
-                if common != normalized_working_dir:
+            bases.add(os.path.realpath(os.path.join(root, target)))
+            continue
+        for arg in args:
+            # Handle ordinary operands and common --option=path forms.
+            if arg.startswith('-'):
+                if '=' not in arg:
+                    continue
+                arg = arg.split('=', 1)[1]
+            if re.match(r'https?://', arg):
+                continue
+            target = arg
+            for base in bases:
+                if not _inside_workdir(os.path.join(base, target), root):
                     return (
                         False,
-                        _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE.format(
-                            working_dir=normalized_working_dir
-                        ),
+                        'Path argument is outside of the working directory '
+                        'in safe mode.',
                     )
-            except ValueError:
-                # Different drives on Windows or other path issues
-                return (
-                    False,
-                    _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE.format(
-                        working_dir=normalized_working_dir
-                    ),
-                )
-
     return True, command
 
 

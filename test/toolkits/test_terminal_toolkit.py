@@ -121,7 +121,10 @@ def test_shell_exec(terminal_toolkit, temp_dir):
         "test_session",
         "nonexistent_command",
     )
-    assert "not found" in result.lower()
+    assert any(
+        message in result.lower()
+        for message in ("not found", "not recognized")
+    )
 
     # Test session persistence - use non-blocking mode to create sessions
     session_id = "persistent_session"
@@ -247,8 +250,7 @@ def test_sanitize_command_blocks_cd_expansion_outside_workdir(
         "cd ${HOME}", working_dir=str(temp_dir)
     )
     assert not is_safe
-    assert "outside" in message.lower()
-    assert "copy" in message.lower()
+    assert "parameter expansion" in message.lower()
 
 
 def test_shell_exec_cd_outside_returns_copy_guidance(temp_dir, request):
