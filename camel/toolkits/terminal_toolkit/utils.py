@@ -132,7 +132,7 @@ def _parse_safe_segments(command: str) -> List[List[str]]:
     if '\x00' in command or (windows and any(c in command for c in '%!^')):
         raise ValueError('Dynamic shell syntax is blocked for safety.')
     segments = []
-    current = []
+    current: List[str] = []
     quote = None
     index = 0
     while index < len(command):
