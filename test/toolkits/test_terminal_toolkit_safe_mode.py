@@ -56,6 +56,8 @@ from camel.toolkits.terminal_toolkit import utils
         'perl -e "print 1"',
         'ruby -e "puts 1"',
         'bash -c "echo hello"',
+        'bash',
+        'sh',
         'sh -c "echo hello"',
         'bash -lc "echo hello"',
         'cmd.exe /c echo hello',

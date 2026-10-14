@@ -539,7 +539,9 @@ def test_approved_shell_does_not_approve_later_input(
     make_approval_toolkit, temp_dir
 ):
     approval = Mock(side_effect=lambda command: command == "bash")
-    toolkit = make_approval_toolkit(require_approval=approval)
+    # An interactive shell requires an explicit safe-mode opt-out. This test
+    # verifies that approval is still required for every later input.
+    toolkit = make_approval_toolkit(require_approval=approval, safe_mode=False)
     toolkit.shell_exec("approval", "bash", block=False)
     process = toolkit.shell_sessions["approval"]["process"]
     command = "echo bypass > approval_probe.txt"
