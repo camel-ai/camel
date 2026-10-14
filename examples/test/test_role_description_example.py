@@ -11,6 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+
+import pytest
 from mock import patch
 
 import examples.role_description.role_generation
@@ -18,10 +21,22 @@ import examples.role_description.role_playing_with_role_description
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
-model_gpt = ModelFactory.create(
-    ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
-)
+pytestmark = [
+    pytest.mark.model_backend,
+    pytest.mark.skipif(
+        not os.getenv('OPENAI_API_KEY'),
+        reason='Live role-description examples require OPENAI_API_KEY',
+    ),
+]
+
+
+@pytest.fixture
+def model_gpt():
+    # Construct only after pytest decides this credentialed test can run.
+    return ModelFactory.create(
+        ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O,
+    )
 
 model_stub = ModelFactory.create(
     ModelPlatformType.OPENAI,
@@ -29,12 +44,12 @@ model_stub = ModelFactory.create(
 )
 
 
-def test_role_generation_example():
+def test_role_generation_example(model_gpt):
     with patch('time.sleep', return_value=None):
         examples.role_description.role_generation.main(model_gpt)
 
 
-def test_role_playing_with_role_description_example():
+def test_role_playing_with_role_description_example(model_gpt):
     with patch('time.sleep', return_value=None):
         examples.role_description.role_playing_with_role_description.main(
             model_gpt, model_stub, chat_turn_limit=2
