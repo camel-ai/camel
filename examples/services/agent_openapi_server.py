@@ -12,9 +12,22 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
+
 from fastapi.testclient import TestClient
 
 from camel.services.agent_openapi_server import ChatAgentOpenAPIServer
+
+
+def _make_client(tool_registry=None):
+    r"""Use a securely distributed token configured before running examples."""
+    token = os.environ['CAMEL_SERVER_API_KEY']
+    server = ChatAgentOpenAPIServer(
+        tool_registry=tool_registry, api_keys={token: 'example-user'}
+    )
+    return TestClient(
+        server.get_app(), headers={'Authorization': f'Bearer {token}'}
+    )
 
 
 def example_init_and_step():
@@ -43,8 +56,7 @@ def example_init_and_step():
 
     tool_registry = {"search_wiki": [wiki_tool]}
 
-    server = ChatAgentOpenAPIServer(tool_registry=tool_registry)
-    client = TestClient(server.get_app())
+    client = _make_client(tool_registry)
 
     r = client.post(
         "/v1/agents/init",
@@ -233,8 +245,7 @@ def example_init_and_astep():
 
     tool_registry = {"search_wiki": [wiki_tool]}
 
-    server = ChatAgentOpenAPIServer(tool_registry=tool_registry)
-    client = TestClient(server.get_app())
+    client = _make_client(tool_registry)
 
     r = client.post(
         "/v1/agents/init",
@@ -332,11 +343,7 @@ def example_listing_and_delete_agents():
     r"""Creates multiple agents, lists them, deletes one, and lists again
     to verify it was removed.
     """
-    from fastapi.testclient import TestClient
-
-    from camel.services.agent_openapi_server import ChatAgentOpenAPIServer
-
-    client = TestClient(ChatAgentOpenAPIServer().get_app())
+    client = _make_client()
 
     # Step 1: Create two agents
     for agent_id in ["agent_1", "agent_2"]:
@@ -391,7 +398,7 @@ def example_multi_agent_turns(num_rounds: int = 10):
     Prints each round of the debate to stdout.
     """
 
-    client = TestClient(ChatAgentOpenAPIServer().get_app())
+    client = _make_client()
 
     # Debate topic
     topic = "Are multiple agents better than a single agent?"
