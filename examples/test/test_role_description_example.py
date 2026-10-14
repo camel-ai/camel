@@ -38,6 +38,7 @@ def model_gpt():
         model_type=ModelType.GPT_4O,
     )
 
+
 model_stub = ModelFactory.create(
     ModelPlatformType.OPENAI,
     model_type=ModelType.STUB,
