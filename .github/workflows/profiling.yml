@@ -41,7 +41,7 @@ jobs:
         source .venv/bin/activate
         uv pip install -e ".[all]"
 
-    - uses: actions/cache@v4
+    - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
         path: ${{ env.BASELINE_FILE }}
         key: profiling-${{ matrix.benchmark.name }}-${{ github.ref_name }}
@@ -113,13 +113,13 @@ jobs:
       if: success()
       run: cp "$RESULT_FILE" "$BASELINE_FILE"
 
-    - uses: actions/cache/save@v4
+    - uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       if: success()
       with:
         path: ${{ env.BASELINE_FILE }}
         key: profiling-${{ matrix.benchmark.name }}-${{ github.ref_name }}-${{ github.run_id }}
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       if: always()
       with:
         name: profiling-${{ matrix.benchmark.name }}
