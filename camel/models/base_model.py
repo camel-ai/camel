@@ -547,6 +547,22 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         formatted_messages = []
         tool_calls_buffer = []
         tool_responses_buffer = {}
+        answered_ids = {
+            msg.get("tool_call_id")
+            for msg in processed_messages  # type: ignore[union-attr]
+            if msg.get("role") == "tool"
+        }
+
+        def has_pending_response(assistant_message: OpenAIMessage) -> bool:
+            calls = assistant_message.get("tool_calls")
+            if isinstance(calls, list):
+                return any(
+                    isinstance(tc, dict)
+                    and tc.get("id") in answered_ids
+                    and tc.get("id") not in tool_responses_buffer
+                    for tc in calls
+                )
+            return False
 
         for msg in processed_messages:  # type: ignore[assignment]
             # If this is an assistant message with tool calls, add it to the
@@ -564,7 +580,9 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
             # Process any complete tool call + responses before adding regular
             # messages
-            if tool_calls_buffer and tool_responses_buffer:
+            while tool_calls_buffer and not has_pending_response(
+                tool_calls_buffer[0]
+            ):
                 # Add the assistant message with tool calls
                 assistant_msg = tool_calls_buffer[0]
                 formatted_messages.append(assistant_msg)
