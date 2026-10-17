@@ -4785,6 +4785,7 @@ class ChatAgent(BaseAgent):
                             status_response
                         ) in self._execute_tools_sync_with_status_accumulator(
                             accumulated_tool_calls,
+                            content_accumulator,
                             tool_call_records,
                             external_tool_call_requests,
                         ):
@@ -5036,6 +5037,7 @@ class ChatAgent(BaseAgent):
     def _execute_tools_sync_with_status_accumulator(
         self,
         accumulated_tool_calls: Dict[str, Any],
+        content_accumulator: StreamContentAccumulator,
         tool_call_records: List[ToolCallingRecord],
         external_tool_call_requests: List[ToolCallRequest],
     ) -> Generator[ChatAgentResponse, None, None]:
@@ -5065,8 +5067,12 @@ class ChatAgent(BaseAgent):
                     continue
                 tool_calls_to_execute.append(tool_call_data)
 
-        # Record the assistant message with ALL tool calls
-        self._record_assistant_tool_calls_message(accumulated_tool_calls)
+        # Record the assistant message with ALL tool calls, keeping the
+        # streamed content like the non-streaming path
+        self._record_assistant_tool_calls_message(
+            accumulated_tool_calls,
+            content=content_accumulator.get_full_content(),
+        )
 
         if not tool_calls_to_execute:
             # No tools to execute, return immediately
@@ -6089,9 +6095,13 @@ class ChatAgent(BaseAgent):
         proper content accumulation."""
         import asyncio
 
-        # Record the assistant message with ALL tool calls
+        # Record the assistant message with ALL tool calls, keeping the
+        # streamed content like the non-streaming path
         # Note: _record_assistant_tool_calls_message has early return if empty
-        self._record_assistant_tool_calls_message(accumulated_tool_calls)
+        self._record_assistant_tool_calls_message(
+            accumulated_tool_calls,
+            content=content_accumulator.get_full_content(),
+        )
 
         # Phase 1: Start all tools and yield "Calling function"
         # statuses immediately
