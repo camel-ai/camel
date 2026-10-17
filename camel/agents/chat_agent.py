@@ -4502,6 +4502,7 @@ class ChatAgent(BaseAgent):
                 )
             ):
                 request_token_usage = self._create_token_usage_tracker()
+                external_tool_call_requests: List[ToolCallRequest] = []
                 (
                     stream_completed,
                     tool_calls_complete,
@@ -4511,6 +4512,7 @@ class ChatAgent(BaseAgent):
                     content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
+                    external_tool_call_requests,
                     request_token_usage,
                     step_token_usage,
                     response_format,
@@ -4525,6 +4527,18 @@ class ChatAgent(BaseAgent):
                 if tool_calls_complete:
                     # Clear completed tool calls
                     accumulated_tool_calls.clear()
+
+                    # Surface external tool calls to the caller and end
+                    # the step, mirroring the non-streaming behavior
+                    if external_tool_call_requests:
+                        yield self._create_external_tool_call_response(
+                            content_accumulator,
+                            step_token_usage,
+                            request_response_id,
+                            tool_call_records,
+                            external_tool_call_requests,
+                        )
+                        break
 
                     # If we executed tools and not in
                     # single iteration mode, continue
@@ -4697,6 +4711,7 @@ class ChatAgent(BaseAgent):
         content_accumulator: StreamContentAccumulator,
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
+        external_tool_call_requests: List[ToolCallRequest],
         request_token_usage: Dict[str, int],
         step_token_usage: Dict[str, int],
         response_format: Optional[Type[BaseModel]] = None,
@@ -4771,6 +4786,7 @@ class ChatAgent(BaseAgent):
                         ) in self._execute_tools_sync_with_status_accumulator(
                             accumulated_tool_calls,
                             tool_call_records,
+                            external_tool_call_requests,
                         ):
                             yield status_response
 
@@ -4826,7 +4842,12 @@ class ChatAgent(BaseAgent):
                 should_finalize = stream_completed or not has_choices
                 if should_finalize:
                     final_content = content_accumulator.get_full_content()
-                    if final_content.strip():
+                    # When external tool calls were requested, the final
+                    # response carrying them is yielded by the caller
+                    if (
+                        final_content.strip()
+                        and not external_tool_call_requests
+                    ):
                         final_reasoning = (
                             content_accumulator.get_full_reasoning_content()
                             or None
@@ -5000,7 +5021,6 @@ class ChatAgent(BaseAgent):
                 tool_call_entry['id']
                 and tool_call_entry['function']['name']
                 and tool_call_entry['function']['arguments']
-                and tool_call_entry['function']['name'] in self._internal_tools
             ):
                 try:
                     # Try to parse arguments to check completeness
@@ -5017,6 +5037,7 @@ class ChatAgent(BaseAgent):
         self,
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
+        external_tool_call_requests: List[ToolCallRequest],
     ) -> Generator[ChatAgentResponse, None, None]:
         r"""Execute multiple tools synchronously with proper content
         accumulation, using ThreadPoolExecutor for better timeout handling."""
@@ -5027,15 +5048,30 @@ class ChatAgent(BaseAgent):
             if _tool_call_index == '_index_to_key_map':
                 continue
             if tool_call_data.get('complete', False):
+                function_name = tool_call_data['function']['name']
+                if function_name in self._external_tool_schemas:
+                    # External tools are executed by the caller instead of
+                    # the agent, so surface them as tool call requests
+                    external_tool_call_requests.append(
+                        ToolCallRequest(
+                            tool_name=function_name,
+                            args=json.loads(
+                                tool_call_data['function']['arguments']
+                            ),
+                            tool_call_id=tool_call_data['id'],
+                            extra_content=tool_call_data.get('extra_content'),
+                        )
+                    )
+                    continue
                 tool_calls_to_execute.append(tool_call_data)
+
+        # Record the assistant message with ALL tool calls
+        self._record_assistant_tool_calls_message(accumulated_tool_calls)
 
         if not tool_calls_to_execute:
             # No tools to execute, return immediately
             return
             yield  # Make this a generator
-
-        # Record the assistant message with ALL tool calls
-        self._record_assistant_tool_calls_message(accumulated_tool_calls)
 
         # Execute tools using ThreadPoolExecutor for proper timeout handling
         # Use max_workers=len() for parallel execution, with min of 1
@@ -5514,6 +5550,7 @@ class ChatAgent(BaseAgent):
                 )
             ):
                 request_token_usage = self._create_token_usage_tracker()
+                external_tool_call_requests: List[ToolCallRequest] = []
                 stream_completed = False
                 tool_calls_complete = False
                 request_response_id = ""
@@ -5526,6 +5563,7 @@ class ChatAgent(BaseAgent):
                     content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
+                    external_tool_call_requests,
                     request_token_usage,
                     step_token_usage,
                     response_format,
@@ -5552,6 +5590,18 @@ class ChatAgent(BaseAgent):
                 if tool_calls_complete:
                     # Clear completed tool calls
                     accumulated_tool_calls.clear()
+
+                    # Surface external tool calls to the caller and end
+                    # the step, mirroring the non-streaming behavior
+                    if external_tool_call_requests:
+                        yield self._create_external_tool_call_response(
+                            content_accumulator,
+                            step_token_usage,
+                            request_response_id,
+                            tool_call_records,
+                            external_tool_call_requests,
+                        )
+                        break
 
                     # If we executed tools and not in
                     # single iteration mode, continue
@@ -5821,6 +5871,7 @@ class ChatAgent(BaseAgent):
         content_accumulator: StreamContentAccumulator,
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
+        external_tool_call_requests: List[ToolCallRequest],
         request_token_usage: Dict[str, int],
         step_token_usage: Dict[str, int],
         response_format: Optional[Type[BaseModel]] = None,
@@ -5901,6 +5952,7 @@ class ChatAgent(BaseAgent):
                             content_accumulator,
                             step_token_usage,
                             tool_call_records,
+                            external_tool_call_requests,
                         ):
                             yield status_response
 
@@ -5956,7 +6008,12 @@ class ChatAgent(BaseAgent):
                 should_finalize = stream_completed or not has_choices
                 if should_finalize:
                     final_content = content_accumulator.get_full_content()
-                    if final_content.strip():
+                    # When external tool calls were requested, the final
+                    # response carrying them is yielded by the caller
+                    if (
+                        final_content.strip()
+                        and not external_tool_call_requests
+                    ):
                         final_reasoning = (
                             content_accumulator.get_full_reasoning_content()
                             or None
@@ -6026,6 +6083,7 @@ class ChatAgent(BaseAgent):
         content_accumulator: StreamContentAccumulator,
         step_token_usage: Dict[str, int],
         tool_call_records: List[ToolCallingRecord],
+        external_tool_call_requests: List[ToolCallRequest],
     ) -> AsyncGenerator[ChatAgentResponse, None]:
         r"""Execute multiple tools asynchronously with
         proper content accumulation."""
@@ -6044,6 +6102,20 @@ class ChatAgent(BaseAgent):
                 continue
             if tool_call_data.get('complete', False):
                 function_name = tool_call_data['function']['name']
+                if function_name in self._external_tool_schemas:
+                    # External tools are executed by the caller instead of
+                    # the agent, so surface them as tool call requests
+                    external_tool_call_requests.append(
+                        ToolCallRequest(
+                            tool_name=function_name,
+                            args=json.loads(
+                                tool_call_data['function']['arguments']
+                            ),
+                            tool_call_id=tool_call_data['id'],
+                            extra_content=tool_call_data.get('extra_content'),
+                        )
+                    )
+                    continue
                 try:
                     args = json.loads(tool_call_data['function']['arguments'])
                 except json.JSONDecodeError:
@@ -6104,6 +6176,49 @@ class ChatAgent(BaseAgent):
         return
         # This line is never reached but makes this an async generator function
         yield
+
+    def _create_external_tool_call_response(
+        self,
+        content_accumulator: StreamContentAccumulator,
+        step_token_usage: Dict[str, int],
+        response_id: str,
+        tool_call_records: List[ToolCallingRecord],
+        external_tool_call_requests: List[ToolCallRequest],
+    ) -> ChatAgentResponse:
+        r"""Create the final response carrying external tool call
+        requests."""
+
+        final_content = content_accumulator.get_full_content()
+        final_reasoning = (
+            content_accumulator.get_full_reasoning_content() or None
+        )
+        final_message = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={},
+            content=final_content if self.stream_accumulate else "",
+            reasoning_content=(
+                final_reasoning if self.stream_accumulate else None
+            ),
+        )
+
+        return ChatAgentResponse(
+            msgs=[final_message],
+            terminated=False,
+            info={
+                "id": response_id,
+                "usage": step_token_usage.copy(),
+                "finish_reasons": ["tool_calls"],
+                "num_tokens": self._get_token_count(final_content),
+                "tool_calls": tool_call_records or [],
+                "external_tool_requests": external_tool_call_requests,
+                "streaming": False,
+                "partial": False,
+                "stream_accumulate_mode": "accumulate"
+                if self.stream_accumulate
+                else "delta",
+            },
+        )
 
     def _create_streaming_response_with_accumulator(
         self,
