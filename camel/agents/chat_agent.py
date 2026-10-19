@@ -3982,6 +3982,34 @@ class ChatAgent(BaseAgent):
             external_tool_call_requests,
         )
 
+    def _check_response_terminators(
+        self, output_messages: List[BaseMessage]
+    ) -> bool:
+        r"""Check response terminators and update the agent's termination
+        state.
+
+        Args:
+            output_messages (List[BaseMessage]): Messages of a completed
+                model response.
+
+        Returns:
+            bool: Whether any terminator signaled termination.
+        """
+        termination = [
+            terminator.is_terminated(output_messages)
+            for terminator in self.response_terminators
+        ]
+        # Terminate the agent if any of the terminator terminates
+        self.terminated, _ = next(
+            (
+                (terminated, termination_reason)
+                for terminated, termination_reason in termination
+                if terminated
+            ),
+            (False, None),
+        )
+        return self.terminated
+
     def _handle_batch_response(
         self, response: ChatCompletion
     ) -> ModelResponse:
@@ -4552,6 +4580,44 @@ class ChatAgent(BaseAgent):
                 else:
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
+                    if self.response_terminators and not self.terminated:
+                        # Terminator not triggered - prompt the model to
+                        # continue
+                        if (
+                            self.max_iteration is not None
+                            and iteration_count >= self.max_iteration
+                        ):
+                            logger.warning(
+                                f"Max iteration {self.max_iteration} "
+                                "reached without termination signal"
+                            )
+                            break
+                        # Add a continuation prompt to memory as a user
+                        # message
+                        continue_message = BaseMessage(
+                            role_name="user",
+                            role_type=RoleType.USER,
+                            content="Please continue.",
+                            meta_dict={},
+                        )
+                        self.update_memory(
+                            continue_message, OpenAIBackendRole.USER
+                        )
+                        # Update messages for the continuation request
+                        try:
+                            openai_messages, num_tokens = (
+                                self.memory.get_context()
+                            )
+                        except RuntimeError as e:
+                            yield self._step_terminate(
+                                e.args[1],
+                                tool_call_records,
+                                "max_tokens_exceeded",
+                            )
+                            return
+                        # Reset streaming content for next iteration
+                        content_accumulator.reset_streaming_content()
+                        continue
                     break
             elif hasattr(response, '__enter__') and not hasattr(
                 response, '__iter__'
@@ -4612,6 +4678,9 @@ class ChatAgent(BaseAgent):
                         )
 
                         self.record_message(final_message)
+                        terminated = self._check_response_terminators(
+                            [final_message]
+                        )
 
                         request_usage = (
                             safe_model_dump(final_completion.usage)
@@ -4630,7 +4699,7 @@ class ChatAgent(BaseAgent):
                         # Create final response with cumulative step usage.
                         final_response = ChatAgentResponse(
                             msgs=[final_message],
-                            terminated=False,
+                            terminated=terminated,
                             info={
                                 "id": final_completion.id or "",
                                 "usage": step_token_usage.copy(),
@@ -4657,6 +4726,44 @@ class ChatAgent(BaseAgent):
                             response_id=final_completion.id or "",
                         )
                         yield final_response
+                        if self.response_terminators and not self.terminated:
+                            # Terminator not triggered - prompt the model
+                            # to continue
+                            if (
+                                self.max_iteration is not None
+                                and iteration_count >= self.max_iteration
+                            ):
+                                logger.warning(
+                                    f"Max iteration {self.max_iteration} "
+                                    "reached without termination signal"
+                                )
+                                break
+                            # Add a continuation prompt to memory as a
+                            # user message
+                            continue_message = BaseMessage(
+                                role_name="user",
+                                role_type=RoleType.USER,
+                                content="Please continue.",
+                                meta_dict={},
+                            )
+                            self.update_memory(
+                                continue_message, OpenAIBackendRole.USER
+                            )
+                            # Update messages for the continuation request
+                            try:
+                                openai_messages, num_tokens = (
+                                    self.memory.get_context()
+                                )
+                            except RuntimeError as e:
+                                yield self._step_terminate(
+                                    e.args[1],
+                                    tool_call_records,
+                                    "max_tokens_exceeded",
+                                )
+                                return
+                            # Reset streaming content for next iteration
+                            content_accumulator.reset_streaming_content()
+                            continue
                         break
 
                     except Exception as e:
@@ -4706,6 +4813,7 @@ class ChatAgent(BaseAgent):
         tool_calls_complete = False
         stream_completed = False
         last_response_id = ""
+        terminated = False
 
         for chunk in stream:
             last_response_id = getattr(chunk, 'id', '') or last_response_id
@@ -4811,6 +4919,9 @@ class ChatAgent(BaseAgent):
                             )
 
                         self.record_message(final_message)
+                        terminated = self._check_response_terminators(
+                            [final_message]
+                        )
             if chunk.usage:
                 # Handle final usage chunk, whether or not choices are present.
                 # This happens when stream_options={"include_usage": True}
@@ -4865,7 +4976,7 @@ class ChatAgent(BaseAgent):
                         # Create final response with final usage (not partial)
                         final_response = ChatAgentResponse(
                             msgs=[final_message],
-                            terminated=False,
+                            terminated=terminated,
                             info={
                                 "id": getattr(chunk, 'id', ''),
                                 "usage": step_token_usage.copy(),
@@ -5579,6 +5690,44 @@ class ChatAgent(BaseAgent):
                 else:
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
+                    if self.response_terminators and not self.terminated:
+                        # Terminator not triggered - prompt the model to
+                        # continue
+                        if (
+                            self.max_iteration is not None
+                            and iteration_count >= self.max_iteration
+                        ):
+                            logger.warning(
+                                f"Max iteration {self.max_iteration} "
+                                "reached without termination signal"
+                            )
+                            break
+                        # Add a continuation prompt to memory as a user
+                        # message
+                        continue_message = BaseMessage(
+                            role_name="user",
+                            role_type=RoleType.USER,
+                            content="Please continue.",
+                            meta_dict={},
+                        )
+                        self.update_memory(
+                            continue_message, OpenAIBackendRole.USER
+                        )
+                        # Update messages for the continuation request
+                        try:
+                            openai_messages, num_tokens = (
+                                self.memory.get_context()
+                            )
+                        except RuntimeError as e:
+                            yield self._step_terminate(
+                                e.args[1],
+                                tool_call_records,
+                                "max_tokens_exceeded",
+                            )
+                            return
+                        # Reset streaming content for next iteration
+                        content_accumulator.reset_streaming_content()
+                        continue
                     break
             elif hasattr(response, '__aenter__') and not hasattr(
                 response, '__aiter__'
@@ -5640,6 +5789,9 @@ class ChatAgent(BaseAgent):
                         )
 
                         self.record_message(final_message)
+                        terminated = self._check_response_terminators(
+                            [final_message]
+                        )
 
                         request_usage = (
                             safe_model_dump(final_completion.usage)
@@ -5658,7 +5810,7 @@ class ChatAgent(BaseAgent):
                         # Create final response with cumulative step usage.
                         final_response = ChatAgentResponse(
                             msgs=[final_message],
-                            terminated=False,
+                            terminated=terminated,
                             info={
                                 "id": final_completion.id or "",
                                 "usage": step_token_usage.copy(),
@@ -5685,6 +5837,44 @@ class ChatAgent(BaseAgent):
                             response_id=final_completion.id or "",
                         )
                         yield final_response
+                        if self.response_terminators and not self.terminated:
+                            # Terminator not triggered - prompt the model
+                            # to continue
+                            if (
+                                self.max_iteration is not None
+                                and iteration_count >= self.max_iteration
+                            ):
+                                logger.warning(
+                                    f"Max iteration {self.max_iteration} "
+                                    "reached without termination signal"
+                                )
+                                break
+                            # Add a continuation prompt to memory as a
+                            # user message
+                            continue_message = BaseMessage(
+                                role_name="user",
+                                role_type=RoleType.USER,
+                                content="Please continue.",
+                                meta_dict={},
+                            )
+                            self.update_memory(
+                                continue_message, OpenAIBackendRole.USER
+                            )
+                            # Update messages for the continuation request
+                            try:
+                                openai_messages, num_tokens = (
+                                    self.memory.get_context()
+                                )
+                            except RuntimeError as e:
+                                yield self._step_terminate(
+                                    e.args[1],
+                                    tool_call_records,
+                                    "max_tokens_exceeded",
+                                )
+                                return
+                            # Reset streaming content for next iteration
+                            content_accumulator.reset_streaming_content()
+                            continue
                         break
 
                     except Exception as e:
@@ -5834,6 +6024,7 @@ class ChatAgent(BaseAgent):
         tool_calls_complete = False
         stream_completed = False
         last_response_id = ""
+        terminated = False
 
         async for chunk in stream:
             last_response_id = getattr(chunk, 'id', '') or last_response_id
@@ -5941,6 +6132,9 @@ class ChatAgent(BaseAgent):
                             )
 
                         self.record_message(final_message)
+                        terminated = self._check_response_terminators(
+                            [final_message]
+                        )
             if chunk.usage:
                 # Handle final usage chunk, whether or not choices are present.
                 # This happens when stream_options={"include_usage": True}
@@ -5995,7 +6189,7 @@ class ChatAgent(BaseAgent):
                         # Create final response with final usage (not partial)
                         final_response = ChatAgentResponse(
                             msgs=[final_message],
-                            terminated=False,
+                            terminated=terminated,
                             info={
                                 "id": getattr(chunk, 'id', ''),
                                 "usage": step_token_usage.copy(),
