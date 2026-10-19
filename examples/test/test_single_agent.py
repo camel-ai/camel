@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+
 import pytest
 
 import examples.agents.single_agent
@@ -28,7 +30,16 @@ parametrize = pytest.mark.parametrize(
             ModelPlatformType.STUB,
             model_type=ModelType.STUB,
         ),
-        pytest.param(None, marks=pytest.mark.model_backend),
+        pytest.param(
+            None,
+            marks=[
+                pytest.mark.model_backend,
+                pytest.mark.skipif(
+                    not os.getenv('OPENAI_API_KEY'),
+                    reason='Default live model requires OPENAI_API_KEY',
+                ),
+            ],
+        ),
     ],
 )
 
