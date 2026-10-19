@@ -44,7 +44,15 @@ def example_init_and_step():
     tool_registry = {"search_wiki": [wiki_tool]}
 
     server = ChatAgentOpenAPIServer(tool_registry=tool_registry)
-    client = TestClient(server.get_app())
+
+    # Every request must present one of the configured API keys. With no
+    # keys supplied the server generated an ephemeral one, exposed as
+    # ``server.api_key``; pass ``api_keys=["..."]`` to provision your own
+    # (agents then stay private to the key that created them).
+    client = TestClient(
+        server.get_app(),
+        headers={"X-API-Key": server.api_key},
+    )
 
     r = client.post(
         "/v1/agents/init",
@@ -234,7 +242,15 @@ def example_init_and_astep():
     tool_registry = {"search_wiki": [wiki_tool]}
 
     server = ChatAgentOpenAPIServer(tool_registry=tool_registry)
-    client = TestClient(server.get_app())
+
+    # Every request must present one of the configured API keys. With no
+    # keys supplied the server generated an ephemeral one, exposed as
+    # ``server.api_key``; pass ``api_keys=["..."]`` to provision your own
+    # (agents then stay private to the key that created them).
+    client = TestClient(
+        server.get_app(),
+        headers={"X-API-Key": server.api_key},
+    )
 
     r = client.post(
         "/v1/agents/init",
@@ -336,7 +352,14 @@ def example_listing_and_delete_agents():
 
     from camel.services.agent_openapi_server import ChatAgentOpenAPIServer
 
-    client = TestClient(ChatAgentOpenAPIServer().get_app())
+    server = ChatAgentOpenAPIServer()
+
+    # Every request must present an API key; with none supplied the
+    # server generated an ephemeral one, exposed as ``server.api_key``.
+    client = TestClient(
+        server.get_app(),
+        headers={"X-API-Key": server.api_key},
+    )
 
     # Step 1: Create two agents
     for agent_id in ["agent_1", "agent_2"]:
@@ -391,7 +414,14 @@ def example_multi_agent_turns(num_rounds: int = 10):
     Prints each round of the debate to stdout.
     """
 
-    client = TestClient(ChatAgentOpenAPIServer().get_app())
+    server = ChatAgentOpenAPIServer()
+
+    # Every request must present an API key; with none supplied the
+    # server generated an ephemeral one, exposed as ``server.api_key``.
+    client = TestClient(
+        server.get_app(),
+        headers={"X-API-Key": server.api_key},
+    )
 
     # Debate topic
     topic = "Are multiple agents better than a single agent?"
