@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.datasets import BaseGenerator, DataPoint, StaticDataset
 from camel.logger import get_logger
+from camel.utils.commons import dependencies_required
 from camel.verifiers.base import (
     BaseVerifier,
     VerificationOutcome,
@@ -624,12 +625,128 @@ class SingleStepEnv:
 
     @property
     def metadata(self) -> Dict[str, Any]:
-        r"""Retrieve the metadata of the environment.
+        r"""Returns the environment metadata."""
+        return self._metadata
 
-        This provides additional parameters and configuration details.
+    @dependencies_required("mcp")
+    def to_mcp(
+        self,
+        name: str = "CAMEL-SingleStepEnv",
+        description: str = "A single-step environment for RL with LLMs.",
+        dependencies: Optional[List[str]] = None,
+        host: str = "localhost",
+        port: int = 8000,
+    ):
+        r"""Expose this SingleStepEnv as an MCP server.
+
+        Args:
+            name (str): Name of the MCP server.
+                (default: :obj:`CAMEL-SingleStepEnv`)
+            description (str): Description of the environment.
+                (default: :obj:`A single-step environment for RL with LLMs.`)
+            dependencies (Optional[List[str]]): Additional dependencies for
+                the MCP server. (default: :obj:`None`)
+            host (str): Host to bind to for HTTP transport.
+                (default: :obj:`localhost`)
+            port (int): Port to bind to for HTTP transport.
+                (default: :obj:`8000`)
 
         Returns:
-            Dict[str, Any]: A copy of the environment's metadata.
+            FastMCP: An MCP server instance that can be run.
         """
+        from mcp.server.fastmcp import FastMCP
 
-        return self._metadata.copy()
+        # Combine dependencies
+        all_dependencies = ["camel-ai[all]"]
+        if dependencies:
+            all_dependencies.extend(dependencies)
+
+        mcp_server = FastMCP(
+            name,
+            dependencies=all_dependencies,
+            host=host,
+            port=port,
+        )
+
+        # Store environment reference
+        env_instance = self
+
+        # Define core functions
+        async def setup():
+            r"""Set up the environment."""
+            await env_instance.setup()
+            return {"status": "success", "message": "Environment setup"}
+
+        async def close():
+            r"""Close the environment."""
+            await env_instance.close()
+            return {"status": "success", "message": "Environment closed"}
+
+        async def reset(batch_size: int = 1, seed: Optional[int] = None):
+            r"""Reset the environment."""
+            observations = await env_instance.reset(
+                batch_size=batch_size, seed=seed
+            )
+            return {
+                "status": "success",
+                "observations": [
+                    obs.to_dict() if hasattr(obs, "to_dict") else obs
+                    for obs in (
+                        [observations]
+                        if not isinstance(observations, list)
+                        else observations
+                    )
+                ],
+            }
+
+        async def step(action):
+            r"""Take a step in the environment."""
+            result = await env_instance.step(action)
+            # Convert result to serializable format
+            if isinstance(result, tuple):
+                obs, reward, done, info = result
+                return {
+                    "status": "success",
+                    "observation": (
+                        obs.to_dict() if hasattr(obs, "to_dict") else obs
+                    ),
+                    "reward": reward,
+                    "done": done,
+                    "info": info,
+                }
+            else:
+                # Handle batch results
+                results = []
+                for obs, reward, done, info in result:
+                    results.append(
+                        {
+                            "observation": (
+                                obs.to_dict()
+                                if hasattr(obs, "to_dict")
+                                else obs
+                            ),
+                            "reward": reward,
+                            "done": done,
+                            "info": info,
+                        }
+                    )
+                return {"status": "success", "results": results}
+
+        def get_metadata():
+            r"""Get environment metadata."""
+            return {
+                "status": "success",
+                "metadata": env_instance.metadata,
+            }
+
+        # Register functions with MCP server
+        mcp_server.tool()(setup)
+        mcp_server.tool()(close)
+        mcp_server.tool()(reset)
+        mcp_server.tool()(step)
+        mcp_server.tool()(get_metadata)
+
+        # Register resources
+        mcp_server.resource("metadata://")(get_metadata)
+
+        return mcp_server
