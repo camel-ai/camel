@@ -48,7 +48,10 @@ from camel.toolkits import (
 def test_terminal_and_code(runtime):
     """Test TerminalToolkit and CodeExecutionToolkit sharing filesystem."""
     # check the health endpoint to see loaded toolkits
-    health = requests.get(f"http://localhost:{runtime.port}/health")
+    health = requests.get(
+        f"http://localhost:{runtime.port}/health",
+        headers={"X-API-Key": runtime.api_key},
+    )
     print(f"\nHealth check: {health.json()}")
 
     # get all tools from the runtime
