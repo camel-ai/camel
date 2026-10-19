@@ -27,6 +27,21 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
+def _declared_stream_mode(final_response: Any) -> Optional[str]:
+    """Return the accumulation mode a chunk declares, or None.
+
+    ``ChatAgent`` stamps ``info["stream_accumulate_mode"]`` on every chunk it
+    emits, so the mode never has to be guessed for camel's own streams.
+    ``camel/tasks/task.py`` and ``societies/workforce/workforce.py`` already
+    branch on the same field. Values outside the known set are ignored so an
+    unexpected producer falls back to the heuristic rather than being trusted.
+    """
+
+    info = getattr(final_response, "info", None) or {}
+    mode = info.get("stream_accumulate_mode")
+    return mode if mode in ("delta", "accumulate") else None
+
+
 def _is_cumulative(contents: list[str]) -> bool:
     """Return True if each string is a prefix of the next one.
 
@@ -36,6 +51,10 @@ def _is_cumulative(contents: list[str]) -> bool:
       previous, treat as cumulative (covers ``stream_accumulate=True``) and
       use the last piece.
     - Otherwise concatenate pieces in order (covers delta streaming).
+
+    Only reached for streams that declare no ``stream_accumulate_mode``;
+    camel's own producers always set it, so ``_finalize_stream`` reads the
+    declared mode first and this decides for third-party streams alone.
     """
 
     return all(
@@ -62,6 +81,15 @@ def _finalize_stream(
 
     if len(contents) == 1:
         return final_response, contents[0]
+
+    # Prefer what the stream says about itself; guessing cannot tell a
+    # single-chunk accumulated answer (["Hi", "Hi"]) from a delta stream that
+    # repeats a token, and both shapes really occur.
+    mode = _declared_stream_mode(final_response)
+    if mode == "accumulate":
+        return final_response, contents[-1]
+    if mode == "delta":
+        return final_response, "".join(contents)
 
     if _is_cumulative(contents):
         return final_response, contents[-1]

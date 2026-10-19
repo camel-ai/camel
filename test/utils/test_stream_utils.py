@@ -31,6 +31,18 @@ from camel.utils.stream_utils import (
 )
 
 
+@pytest.fixture(autouse=True)
+def stub_openai_api_key(monkeypatch):
+    r"""Give ModelFactory a key to validate against.
+
+    ``ModelFactory.create`` checks ``OPENAI_API_KEY`` at construction time, and
+    fork pull requests get no repository secrets. Every streamed response in
+    this module is mocked, so no request is ever made with this value.
+    """
+
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+
+
 def _make_chunk(content: str | None) -> ChatAgentResponse:
     if content is None:
         return ChatAgentResponse(msgs=[], terminated=False, info={})
@@ -255,3 +267,187 @@ async def test_consume_response_content_async_callback_exception_is_swallowed(
     assert (
         "stream_callback failed while processing a stream chunk" in caplog.text
     )
+
+
+def _streaming_agent(deltas: list[str], *, accumulate: bool):
+    """Build a real ChatAgent whose backend replays an OpenAI chunk stream.
+
+    Only the model backend's wire response is mocked. The ChatAgentResponse
+    sequence the agent emits — including the duplicated final piece in
+    accumulate mode — is produced by camel's own _stream_response.
+    """
+    from unittest.mock import AsyncMock, MagicMock
+
+    from openai.types.chat import ChatCompletionChunk
+    from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+    from openai.types.completion_usage import CompletionUsage
+
+    from camel.agents import ChatAgent
+    from camel.models import ModelFactory
+    from camel.types import ModelPlatformType, ModelType, RoleType
+
+    def _openai_chunk(content=None, finish_reason=None, usage=None):
+        choices = []
+        if content is not None or finish_reason is not None:
+            choices = [
+                Choice(
+                    index=0,
+                    delta=ChoiceDelta(content=content, role="assistant"),
+                    finish_reason=finish_reason,
+                )
+            ]
+        return ChatCompletionChunk(
+            id="chatcmpl-test",
+            object="chat.completion.chunk",
+            created=0,
+            model="gpt-4o-mini",
+            choices=choices,
+            usage=usage,
+        )
+
+    def _stream():
+        # The standard OpenAI wire order for
+        # stream_options={"include_usage": True}: content deltas, then an
+        # empty delta carrying finish_reason, then a usage-only chunk.
+        for delta in deltas:
+            yield _openai_chunk(content=delta)
+        yield _openai_chunk(content="", finish_reason="stop")
+        yield _openai_chunk(
+            usage=CompletionUsage(
+                completion_tokens=2, prompt_tokens=5, total_tokens=7
+            )
+        )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict={
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        },
+    )
+
+    async def _astream():
+        for chunk in _stream():
+            yield chunk
+
+    model.run = MagicMock(side_effect=lambda *a, **k: _stream())
+    # astep goes through arun, which must be mocked separately; an async
+    # generator matches what a streaming backend hands back.
+    model.arun = AsyncMock(side_effect=lambda *a, **k: _astream())
+
+    agent = ChatAgent(
+        BaseMessage(
+            "Assistant",
+            RoleType.ASSISTANT,
+            meta_dict=None,
+            content="You are a helpful assistant.",
+        ),
+        model=model,
+        stream_accumulate=accumulate,
+    )
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict={},
+        content="Say hello.",
+    )
+    return agent, user_msg
+
+
+@pytest.mark.parametrize(
+    "deltas",
+    [
+        # Provider streams the answer in pieces: the agent emits
+        # ["Hello", "Hello world", "Hello world"].
+        ["Hello", " world"],
+        # Provider sends the whole answer in one content chunk: the agent
+        # emits ["Hello world", "Hello world"], which no length-based
+        # heuristic can tell apart from a delta stream repeating a token.
+        ["Hello world"],
+    ],
+)
+def test_consume_response_content_accumulating_chat_agent_end_to_end(deltas):
+    agent, user_msg = _streaming_agent(deltas, accumulate=True)
+
+    _, content = consume_response_content(agent.step(user_msg))
+
+    assert content == "Hello world"
+
+
+@pytest.mark.parametrize("deltas", [["Hello", " world"], ["Hello world"]])
+def test_consume_response_content_delta_chat_agent_end_to_end(deltas):
+    # The current default must keep concatenating; this is the direction the
+    # fix must not break.
+    agent, user_msg = _streaming_agent(deltas, accumulate=False)
+
+    _, content = consume_response_content(agent.step(user_msg))
+
+    assert content == "Hello world"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("deltas", [["Hello", " world"], ["Hello world"]])
+async def test_consume_response_content_async_accumulating_agent(deltas):
+    # _finalize_stream is shared by both paths, but the async collector is a
+    # separate function, so assert it rather than assume it.
+    agent, user_msg = _streaming_agent(deltas, accumulate=True)
+
+    _, content = await consume_response_content_async(
+        await agent.astep(user_msg)
+    )
+
+    assert content == "Hello world"
+
+
+def test_consume_response_content_declared_mode_beats_the_heuristic():
+    # A declared "delta" stream whose pieces happen to look cumulative must
+    # still be concatenated: the flag is authoritative, the shape is not.
+    chunks = [_make_chunk("a"), _make_chunk("ab")]
+    for chunk in chunks:
+        chunk.info["stream_accumulate_mode"] = "delta"
+
+    _, content = consume_response_content(_sync_stream(chunks))
+
+    assert content == "aab"
+
+
+@pytest.mark.parametrize(
+    "contents,expected",
+    [
+        # Strict growth reads a repeated final piece as delta and joins
+        # everything. That is wrong for a third-party producer that repeats
+        # its full content on a trailing chunk, and it is kept deliberately:
+        # camel's own streams declare their mode, so relaxing the guess here
+        # would only change behaviour for producers nobody can test.
+        (
+            ["Hello", "Hello world", "Hello world"],
+            "HelloHello worldHello world",
+        ),
+        # The other side of that choice, and why it is the safer default: a
+        # delta stream that repeats a piece and then extends it keeps all of
+        # its pieces.
+        (["x", "x", "xy"], "xxxy"),
+        # Plain strictly-growing run is still read as cumulative.
+        (["a", "ab"], "ab"),
+    ],
+)
+def test_consume_response_content_undeclared_stream_keeps_strict_heuristic(
+    contents, expected
+):
+    chunks = [_make_chunk(content) for content in contents]
+
+    _, content = consume_response_content(_sync_stream(chunks))
+
+    assert content == expected
+
+
+def test_consume_response_content_unknown_mode_falls_back_to_heuristic():
+    # An unrecognised value must not be trusted; the length heuristic decides.
+    chunks = [_make_chunk("a"), _make_chunk("ab")]
+    for chunk in chunks:
+        chunk.info["stream_accumulate_mode"] = "something-else"
+
+    _, content = consume_response_content(_sync_stream(chunks))
+
+    assert content == "ab"
