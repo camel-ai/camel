@@ -120,7 +120,10 @@ class FaissStorage(BaseVectorStorage):
         Returns:
             str: Generated collection name.
         """
-        return f"faiss_index_{datetime.now().isoformat()}"
+        timestamp = (
+            datetime.now().isoformat().replace(':', '-').replace('.', '-')
+        )
+        return f"faiss_index_{timestamp}"
 
     def _get_index_path(self) -> str:
         r"""Returns the path to the index file.
