@@ -294,7 +294,7 @@ pip install camel-ai
 | 模块                                                                                                                              | 描述                   |
 | :------------------------------------------------------------------------------------------------------------------------------ | :------------------- |
 | **[Agents](https://docs.camel-ai.org/key_modules/agents)**                                                                 | 核心智能体架构与行为，用于自主运行。   |
-| **[Agent Societies](https://docs.camel-ai.org/key_modules/society)**                                                       | 构建和管理多智能体系统及协作的组件。   |
+| **[Agent Societies](https://docs.camel-ai.org/key_modules/societies**                                                       | 构建和管理多智能体系统及协作的组件。   |
 | **[Data Generation](https://docs.camel-ai.org/key_modules/datagen)**                                                       | 合成数据创建与增强的工具和方法。     |
 | **[Models](https://docs.camel-ai.org/key_modules/models)**                                                                 | 智能体模型架构及定制选项。        |
 | **[Tools](https://docs.camel-ai.org/key_modules/tools)**                                                                   | 用于智能体专用任务的工具集成。      |
@@ -304,7 +304,7 @@ pip install camel-ai
 | **[Interpreters](https://docs.camel-ai.org/key_modules/interpreters)**                                                     | 代码与指令解释能力。           |
 | **[Data Loaders](https://docs.camel-ai.org/key_modules/loaders)**                                                          | 数据导入与预处理工具。          |
 | **[Retrievers](https://docs.camel-ai.org/key_modules/retrievers)**                                                         | 知识检索与 RAG（检索增强生成）组件。 |
-| **[Runtime](https://github.com/camel-ai/camel/tree/master/camel/runtime)**                                                      | 执行环境与进程管理。           |
+| **[Runtime](https://github.com/camel-ai/camel/tree/master/camel/runtimes**                                                      | 执行环境与进程管理。           |
 | **[Human-in-the-Loop](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval)** | 支持人工监督与干预的交互组件。      |
 ---
 
