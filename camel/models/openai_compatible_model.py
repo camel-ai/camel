@@ -548,6 +548,20 @@ class OpenAICompatibleModel(BaseModelBackend):
     def _get_response_chain_session_key(self) -> str:
         return get_current_agent_session_id() or "__default__"
 
+    def reset(self, session_id: Optional[str] = None) -> None:
+        r"""Reset Responses API chaining state.
+
+        Args:
+            session_id (Optional[str]): Session whose chaining state should
+                be reset. If :obj:`None`, reset all sessions.
+                (default: :obj:`None`)
+        """
+        if session_id is None:
+            self._responses_previous_response_id_by_session.clear()
+            self._responses_last_message_count_by_session.clear()
+        else:
+            self._clear_response_chain_state(session_id)
+
     def _clear_response_chain_state(self, session_key: str) -> None:
         self._responses_previous_response_id_by_session.pop(session_key, None)
         self._responses_last_message_count_by_session.pop(session_key, None)

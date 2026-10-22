@@ -98,3 +98,25 @@ def test_openai_compatible_responses_use_agent_session_scope_without_langfuse(
 
     assert chain_state["session_key"] == "agent-b"
     assert chain_state["previous_response_id"] is None
+
+
+def test_openai_compatible_reset_clears_selected_response_session():
+    model = OpenAICompatibleModel(
+        model_type="dummy-model",
+        api_key="dummy",
+        url="https://example.invalid",
+        api_mode="responses",
+        client=MagicMock(),
+        async_client=MagicMock(),
+    )
+    model._save_response_chain_state("agent-a", "resp-a", 2)
+    model._save_response_chain_state("agent-b", "resp-b", 3)
+
+    model.reset("agent-a")
+
+    assert "agent-a" not in model._responses_previous_response_id_by_session
+    assert "agent-a" not in model._responses_last_message_count_by_session
+    assert model._responses_previous_response_id_by_session["agent-b"] == (
+        "resp-b"
+    )
+    assert model._responses_last_message_count_by_session["agent-b"] == 3
