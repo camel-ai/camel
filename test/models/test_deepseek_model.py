@@ -450,3 +450,52 @@ def test_deepseek_chat_agent_preserves_reasoning_across_steps(monkeypatch):
     assert assistant_final_message["reasoning_content"] == (
         "The tool returned the date."
     )
+
+
+@pytest.mark.model_backend
+def test_deepseek_reasoning_cache_cleared_on_agent_reset(monkeypatch):
+    from camel.agents import ChatAgent
+    from camel.utils.agent_context import set_current_agent_id
+
+    model = DeepSeekModel(
+        model_type=ModelType.DEEPSEEK_CHAT,
+        api_key="test",
+    )
+    agent = ChatAgent(
+        system_message="You are a helper.",
+        model=model,
+    )
+    set_current_agent_id(agent.agent_id)
+
+    resp = ChatCompletion(
+        id="resp1",
+        object="chat.completion",
+        created=0,
+        model="deepseek-chat",
+        choices=[
+            Choice(
+                index=0,
+                finish_reason="stop",
+                message=ChatCompletionMessage(
+                    role="assistant",
+                    content="Done.",
+                    reasoning_content="SECRET TASK A REASONING",
+                ),
+            )
+        ],
+    )
+    model.postprocess_response(resp)
+
+    # Before reset: reasoning is attached to matching content
+    msg_before = model.preprocess_messages(
+        [{"role": "assistant", "content": "Done."}]
+    )
+    assert msg_before[0].get("reasoning_content") == "SECRET TASK A REASONING"
+
+    # After agent.reset(): reasoning cache is cleared
+    agent.reset()
+    msg_after = model.preprocess_messages(
+        [{"role": "assistant", "content": "Done."}]
+    )
+    assert "reasoning_content" not in msg_after[0]
+
