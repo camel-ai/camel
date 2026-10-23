@@ -304,7 +304,7 @@ pip install camel-ai
 | **[Interpreters](https://docs.camel-ai.org/key_modules/interpreters)**                                                     | 代码与指令解释能力。           |
 | **[Data Loaders](https://docs.camel-ai.org/key_modules/loaders)**                                                          | 数据导入与预处理工具。          |
 | **[Retrievers](https://docs.camel-ai.org/key_modules/retrievers)**                                                         | 知识检索与 RAG（检索增强生成）组件。 |
-| **[Runtime](https://github.com/camel-ai/camel/tree/master/camel/runtime)**                                                      | 执行环境与进程管理。           |
+| **[Runtime](https://github.com/camel-ai/camel/tree/master/camel/runtimes)**                                                      | 执行环境与进程管理。           |
 | **[Human-in-the-Loop](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval)** | 支持人工监督与干预的交互组件。      |
 ---
 
@@ -551,7 +551,7 @@ We use the CAMEL framework \cite{li2023camel} to develop the agents used in our 
 [star-image]: https://img.shields.io/github/stars/camel-ai/camel?label=stars&logo=github&color=brightgreen
 [star-url]: https://github.com/camel-ai/camel/stargazers
 [package-license-image]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
-[package-license-url]: https://github.com/camel-ai/camel/blob/master/licenses/LICENSE
+[package-license-url]: https://github.com/camel-ai/camel/blob/master/LICENSE
 [package-download-image]: https://img.shields.io/pypi/dm/camel-ai
 
 [colab-url]: https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing

@@ -112,7 +112,7 @@ def extract_tool_call(
     r"""Extract the tool call from the model response, if present.
 
     Args:
-        response (Any): The model's response object.
+        content (str): The model response text to extract the tool call from.
 
     Returns:
         Optional[Dict[str, Any]]: The parsed tool call if present,
