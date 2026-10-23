@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-"""Helper parsers used across the CAMEL project."""
+r"""Helper parsers used across the CAMEL project."""
 
 from .mcp_tool_call_parser import extract_tool_calls_from_text
 
