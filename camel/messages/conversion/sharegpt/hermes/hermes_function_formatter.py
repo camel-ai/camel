@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
 import json
+import logging
 import re
 from typing import Any, Dict, List, Optional
 
@@ -23,6 +24,8 @@ from camel.messages.conversion import (
 from camel.messages.conversion.sharegpt.function_call_formatter import (
     FunctionCallFormatter,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class HermesToolResponse(ToolResponse):
@@ -81,7 +84,7 @@ class HermesFunctionFormatter(
                 call_dict = self._loads(match.group(1))
                 tool_calls.append(HermesToolCall.model_validate(call_dict))
             except Exception as e:
-                print(f"Warning: Failed to parse tool call: {e}")
+                logger.warning(f"Failed to parse tool call: {e}")
                 continue
 
         return tool_calls
@@ -107,7 +110,7 @@ class HermesFunctionFormatter(
                 response_dict = self._loads(match.group(1))
                 return HermesToolResponse.model_validate(response_dict)
             except Exception as e:
-                print(f"Warning: Failed to parse tool response: {e}")
+                logger.warning(f"Failed to parse tool response: {e}")
                 return None
         return None
 
