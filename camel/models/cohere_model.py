@@ -35,16 +35,10 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    observe,
     update_current_observation,
+    with_langfuse_trace,
 )
-
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-else:
-    from camel.utils import observe
 
 try:
     if os.getenv("AGENTOPS_API_KEY") is not None:
@@ -310,6 +304,7 @@ class CohereModel(BaseModelBackend):
 
         return request_config
 
+    @with_langfuse_trace
     @observe(as_type="generation")
     def _run(
         self,
@@ -333,7 +328,6 @@ class CohereModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         from cohere.core.api_error import ApiError
 
@@ -380,6 +374,7 @@ class CohereModel(BaseModelBackend):
 
         return openai_response
 
+    @with_langfuse_trace
     @observe(as_type="generation")
     async def _arun(
         self,
@@ -403,7 +398,6 @@ class CohereModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         from cohere.core.api_error import ApiError
 

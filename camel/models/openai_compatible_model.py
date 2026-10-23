@@ -51,14 +51,10 @@ from camel.utils import (
     OpenAITokenCounter,
     get_current_agent_session_id,
     is_langfuse_available,
+    with_langfuse_trace,
 )
 
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
         from traceroot import trace as observe  # type: ignore[import]
     except ImportError:
@@ -198,6 +194,7 @@ class OpenAICompatibleModel(BaseModelBackend):
                     **kwargs,
                 )
 
+    @with_langfuse_trace
     @observe()
     def _run(
         self,
@@ -226,7 +223,6 @@ class OpenAICompatibleModel(BaseModelBackend):
                 `ChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-        self._log_and_trace()
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
@@ -268,6 +264,7 @@ class OpenAICompatibleModel(BaseModelBackend):
 
         return result
 
+    @with_langfuse_trace
     @observe()
     async def _arun(
         self,
@@ -297,7 +294,6 @@ class OpenAICompatibleModel(BaseModelBackend):
                 or `AsyncChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-        self._log_and_trace()
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
