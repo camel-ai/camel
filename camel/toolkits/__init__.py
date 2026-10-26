@@ -110,6 +110,8 @@ from .planning_worktree_toolkit import PlanningWorktreeToolkit
 from .todo_toolkit import TodoItem, TodoToolkit
 from .web_fetch_toolkit import WebFetchToolkit
 
+from .anysearch_toolkit import AnySearchToolkit
+
 __all__ = [
     'BaseToolkit',
     'manual_timeout',
@@ -209,4 +211,5 @@ __all__ = [
     'TodoItem',
     'TodoToolkit',
     'WebFetchToolkit',
-]
+,
+    'AnySearchToolkit']
