@@ -2259,6 +2259,766 @@ async def test_chat_agent_async_stream_with_async_generator_tool_calls():
     assert tool_calls_found, "Tool calls should be found in responses"
 
 
+def _make_tool_call_stream_chunks(
+    tool_name: str, arguments: str, tool_call_id: str, response_id: str
+):
+    r"""Build mock stream chunks emitting a single complete tool call."""
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+        ChoiceDeltaToolCall,
+        ChoiceDeltaToolCallFunction,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    return [
+        ChatCompletionChunk(
+            id=response_id,
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(
+                        role="assistant",
+                        tool_calls=[
+                            ChoiceDeltaToolCall(
+                                index=0,
+                                id=tool_call_id,
+                                type="function",
+                                function=ChoiceDeltaToolCallFunction(
+                                    name=tool_name,
+                                    arguments=arguments,
+                                ),
+                            )
+                        ],
+                    ),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id=response_id,
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(),
+                    index=0,
+                    finish_reason="tool_calls",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage=CompletionUsage(
+                prompt_tokens=10,
+                completion_tokens=5,
+                total_tokens=15,
+            ),
+        ),
+    ]
+
+
+def _make_content_stream_chunks(content: str, response_id: str):
+    r"""Build mock stream chunks emitting plain content."""
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    return [
+        ChatCompletionChunk(
+            id=response_id,
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content=content, role="assistant"),
+                    index=0,
+                    finish_reason="stop",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage=CompletionUsage(
+                prompt_tokens=12,
+                completion_tokens=6,
+                total_tokens=18,
+            ),
+        ),
+    ]
+
+
+def _streaming_model(streams):
+    r"""Create an OpenAI model whose run returns the given streams
+    in order.
+    """
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+
+    def make_stream(chunks):
+        for chunk in chunks:
+            yield chunk
+
+    model.run = MagicMock(
+        side_effect=[make_stream(chunks) for chunks in streams]
+    )
+    return model
+
+
+def test_chat_agent_stream_unknown_tool_records_error_result(monkeypatch):
+    r"""A streamed tool call for an unregistered tool must be handled like
+    the non-streaming path: an error tool result is recorded in memory so
+    the model can recover, instead of the call being dropped silently.
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+    model = _streaming_model(
+        [
+            _make_tool_call_stream_chunks(
+                "hallucinated_tool",
+                '{"query": "hello"}',
+                "call_mock_unknown",
+                "chatcmpl-mock-unknown-tool",
+            ),
+            _make_content_stream_chunks(
+                "I could not find that tool.", "chatcmpl-mock-unknown-tool-2"
+            ),
+        ]
+    )
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        stream_accumulate=False,
+    )
+    responses = list(agent.step("Use the hallucinated_tool tool"))
+
+    # The step must yield responses instead of dropping the tool call
+    assert len(responses) > 0, "Streaming step dropped the unknown tool call"
+
+    tool_call_records = []
+    for response in responses:
+        tool_call_records.extend(response.info.get("tool_calls") or [])
+    unknown_records = [
+        record
+        for record in tool_call_records
+        if record.tool_name == "hallucinated_tool"
+    ]
+    assert unknown_records, "No tool call record for the unknown tool"
+    assert "not found in registered tools" in str(unknown_records[0].result)
+
+    # The error tool result must be recorded in memory for the model
+    tool_messages = [
+        message for message in agent.chat_history if message["role"] == "tool"
+    ]
+    assert tool_messages, "No tool result message recorded in memory"
+    assert any(
+        "not found in registered tools" in str(message["content"])
+        for message in tool_messages
+    )
+
+
+def test_chat_agent_stream_external_tool_returns_requests(monkeypatch):
+    r"""A streamed tool call for an external tool must be surfaced as
+    external tool call requests in the response info, like the
+    non-streaming path, instead of being dropped silently.
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+
+    def ext_tool(x: int) -> int:
+        r"""Double the input.
+
+        Args:
+            x (int): The input number.
+
+        Returns:
+            int: The doubled number.
+        """
+        return x * 2
+
+    def internal_tool(a: int, b: int) -> int:
+        r"""Add two numbers.
+
+        Args:
+            a (int): First number.
+            b (int): Second number.
+
+        Returns:
+            int: The sum.
+        """
+        return a + b
+
+    model = _streaming_model(
+        [
+            _make_tool_call_stream_chunks(
+                "ext_tool",
+                '{"x": 5}',
+                "call_mock_ext",
+                "chatcmpl-mock-ext-tool",
+            ),
+        ]
+    )
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        tools=[FunctionTool(internal_tool)],
+        external_tools=[FunctionTool(ext_tool)],
+        stream_accumulate=False,
+    )
+    responses = list(agent.step("Use the ext_tool tool"))
+
+    assert len(responses) > 0, "Streaming step dropped the external tool call"
+
+    external_requests = []
+    for response in responses:
+        external_requests.extend(
+            response.info.get("external_tool_requests") or []
+        )
+    assert external_requests, "External tool call requests were not surfaced"
+    assert external_requests[0].tool_name == "ext_tool"
+    assert external_requests[0].args == {"x": 5}
+    assert external_requests[0].tool_call_id == "call_mock_ext"
+
+    # The external tool must not be executed by the agent, and the step
+    # must end so the caller can run it, like the non-streaming path
+    assert model.run.call_count == 1
+    assert not [
+        message for message in agent.chat_history if message["role"] == "tool"
+    ], "External tool must not be executed by the agent"
+
+    # The assistant message with the tool call must be recorded
+    assistant_messages = [
+        message
+        for message in agent.chat_history
+        if message["role"] == "assistant" and message.get("tool_calls")
+    ]
+    assert assistant_messages, "Assistant tool call message not recorded"
+    assert any(
+        tool_call["function"]["name"] == "ext_tool"
+        for tool_call in assistant_messages[0]["tool_calls"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_unknown_tool_records_error_result(
+    monkeypatch,
+):
+    r"""Async counterpart of the unknown-tool streaming regression test."""
+    from typing import AsyncGenerator
+
+    from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+    streams = [
+        _make_tool_call_stream_chunks(
+            "hallucinated_tool",
+            '{"query": "hello"}',
+            "call_mock_unknown",
+            "chatcmpl-mock-unknown-tool",
+        ),
+        _make_content_stream_chunks(
+            "I could not find that tool.", "chatcmpl-mock-unknown-tool-2"
+        ),
+    ]
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+
+    def make_async_stream(chunks):
+        async def _stream() -> AsyncGenerator[ChatCompletionChunk, None]:
+            for chunk in chunks:
+                yield chunk
+
+        return _stream()
+
+    model.arun = AsyncMock(
+        side_effect=[make_async_stream(chunks) for chunks in streams]
+    )
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        stream_accumulate=False,
+    )
+    responses = []
+    streaming_response = await agent.astep("Use the hallucinated_tool tool")
+    async for response in streaming_response:
+        responses.append(response)
+
+    assert len(responses) > 0, "Streaming step dropped the unknown tool call"
+
+    tool_call_records = []
+    for response in responses:
+        tool_call_records.extend(response.info.get("tool_calls") or [])
+    unknown_records = [
+        record
+        for record in tool_call_records
+        if record.tool_name == "hallucinated_tool"
+    ]
+    assert unknown_records, "No tool call record for the unknown tool"
+    assert "not found in registered tools" in str(unknown_records[0].result)
+
+    tool_messages = [
+        message for message in agent.chat_history if message["role"] == "tool"
+    ]
+    assert tool_messages, "No tool result message recorded in memory"
+    assert any(
+        "not found in registered tools" in str(message["content"])
+        for message in tool_messages
+    )
+
+
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_external_tool_returns_requests(
+    monkeypatch,
+):
+    r"""Async counterpart of the external-tool streaming regression test."""
+    from typing import AsyncGenerator
+
+    from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+
+    def ext_tool(x: int) -> int:
+        r"""Double the input.
+
+        Args:
+            x (int): The input number.
+
+        Returns:
+            int: The doubled number.
+        """
+        return x * 2
+
+    streams = [
+        _make_tool_call_stream_chunks(
+            "ext_tool",
+            '{"x": 5}',
+            "call_mock_ext",
+            "chatcmpl-mock-ext-tool",
+        ),
+    ]
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+
+    def make_async_stream(chunks):
+        async def _stream() -> AsyncGenerator[ChatCompletionChunk, None]:
+            for chunk in chunks:
+                yield chunk
+
+        return _stream()
+
+    model.arun = AsyncMock(
+        side_effect=[make_async_stream(chunks) for chunks in streams]
+    )
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        external_tools=[FunctionTool(ext_tool)],
+        stream_accumulate=False,
+    )
+    responses = []
+    streaming_response = await agent.astep("Use the ext_tool tool")
+    async for response in streaming_response:
+        responses.append(response)
+
+    assert len(responses) > 0, "Streaming step dropped the external tool call"
+
+    external_requests = []
+    for response in responses:
+        external_requests.extend(
+            response.info.get("external_tool_requests") or []
+        )
+    assert external_requests, "External tool call requests were not surfaced"
+    assert external_requests[0].tool_name == "ext_tool"
+    assert external_requests[0].args == {"x": 5}
+    assert external_requests[0].tool_call_id == "call_mock_ext"
+
+    assert model.arun.call_count == 1
+    assert not [
+        message for message in agent.chat_history if message["role"] == "tool"
+    ], "External tool must not be executed by the agent"
+
+
+def _make_content_then_tool_call_stream_chunks(
+    content: str,
+    tool_name: str,
+    arguments: str,
+    tool_call_id: str,
+    response_id: str,
+):
+    r"""Build mock stream chunks emitting a content delta followed by a
+    single complete tool call."""
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+        ChoiceDeltaToolCall,
+        ChoiceDeltaToolCallFunction,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    return [
+        ChatCompletionChunk(
+            id=response_id,
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content=content, role="assistant"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id=response_id,
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(
+                        role="assistant",
+                        tool_calls=[
+                            ChoiceDeltaToolCall(
+                                index=0,
+                                id=tool_call_id,
+                                type="function",
+                                function=ChoiceDeltaToolCallFunction(
+                                    name=tool_name,
+                                    arguments=arguments,
+                                ),
+                            )
+                        ],
+                    ),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id=response_id,
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(),
+                    index=0,
+                    finish_reason="tool_calls",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage=CompletionUsage(
+                prompt_tokens=10,
+                completion_tokens=5,
+                total_tokens=15,
+            ),
+        ),
+    ]
+
+
+def _recorded_assistant_tool_call_messages(agent):
+    r"""Return the assistant messages carrying tool calls that were
+    persisted in the agent memory."""
+    return [
+        message
+        for message in agent.chat_history
+        if message["role"] == "assistant" and message.get("tool_calls")
+    ]
+
+
+def test_chat_agent_stream_keeps_content_before_tool_call(monkeypatch):
+    r"""Text streamed before a tool call must be kept on the recorded
+    assistant message, like the non-streaming path.
+
+    The non-streaming path threads the response content into the
+    recorded assistant tool call message, so a turn where the model
+    says something before calling a tool keeps that text in memory.
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+
+    def add_numbers(a: int, b: int) -> int:
+        r"""Add two numbers.
+
+        Args:
+            a (int): First number.
+            b (int): Second number.
+
+        Returns:
+            int: The sum.
+        """
+        return a + b
+
+    content = "Let me add those numbers for you."
+    model = _streaming_model(
+        [
+            _make_content_then_tool_call_stream_chunks(
+                content,
+                "add_numbers",
+                '{"a": 2, "b": 3}',
+                "call_mock_content",
+                "chatcmpl-mock-content-tool",
+            ),
+            _make_content_stream_chunks(
+                "The result is 5.", "chatcmpl-mock-content-tool-2"
+            ),
+        ]
+    )
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        tools=[FunctionTool(add_numbers)],
+        stream_accumulate=False,
+    )
+    responses = list(agent.step("Use the add_numbers tool"))
+
+    # The caller-facing responses carry the streamed content
+    assert any(
+        response.msgs and content in (response.msgs[0].content or "")
+        for response in responses
+    ), "Streamed content was not surfaced to the caller"
+
+    # The persisted assistant message must keep the content preceding
+    # the tool call, like the non-streaming path
+    assistant_messages = _recorded_assistant_tool_call_messages(agent)
+    assert assistant_messages, "Assistant tool call message not recorded"
+    assert (
+        assistant_messages[0]["content"] == content
+    ), "Assistant tool call message lost the streamed content"
+
+
+def test_chat_agent_stream_keeps_content_before_external_tool_call(
+    monkeypatch,
+):
+    r"""Text streamed before an external tool call must be kept on the
+    recorded assistant message, like the non-streaming path."""
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+
+    def ext_tool(x: int) -> int:
+        r"""Double the input.
+
+        Args:
+            x (int): The input number.
+
+        Returns:
+            int: The doubled number.
+        """
+        return x * 2
+
+    content = "Let me double that for you."
+    model = _streaming_model(
+        [
+            _make_content_then_tool_call_stream_chunks(
+                content,
+                "ext_tool",
+                '{"x": 5}',
+                "call_mock_ext_content",
+                "chatcmpl-mock-ext-content",
+            ),
+        ]
+    )
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        external_tools=[FunctionTool(ext_tool)],
+        stream_accumulate=False,
+    )
+    responses = list(agent.step("Use the ext_tool tool"))
+
+    # The caller-facing responses still carry the streamed content
+    assert any(
+        response.msgs and content in (response.msgs[0].content or "")
+        for response in responses
+    ), "Streamed content was not surfaced to the caller"
+
+    # The persisted assistant message must keep the content preceding
+    # the external tool call, like the non-streaming path
+    assistant_messages = _recorded_assistant_tool_call_messages(agent)
+    assert assistant_messages, "Assistant tool call message not recorded"
+    assert (
+        assistant_messages[0]["content"] == content
+    ), "Assistant tool call message lost the streamed content"
+
+
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_keeps_content_before_tool_call(
+    monkeypatch,
+):
+    r"""Async counterpart of the content-before-tool-call regression
+    test."""
+    from typing import AsyncGenerator
+
+    from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+
+    def add_numbers(a: int, b: int) -> int:
+        r"""Add two numbers.
+
+        Args:
+            a (int): First number.
+            b (int): Second number.
+
+        Returns:
+            int: The sum.
+        """
+        return a + b
+
+    content = "Let me add those numbers for you."
+    streams = [
+        _make_content_then_tool_call_stream_chunks(
+            content,
+            "add_numbers",
+            '{"a": 2, "b": 3}',
+            "call_mock_async_content",
+            "chatcmpl-mock-async-content",
+        ),
+        _make_content_stream_chunks(
+            "The result is 5.", "chatcmpl-mock-async-content-2"
+        ),
+    ]
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+
+    def make_async_stream(chunks):
+        async def _stream() -> AsyncGenerator[ChatCompletionChunk, None]:
+            for chunk in chunks:
+                yield chunk
+
+        return _stream()
+
+    model.arun = AsyncMock(
+        side_effect=[make_async_stream(chunks) for chunks in streams]
+    )
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        tools=[FunctionTool(add_numbers)],
+        stream_accumulate=False,
+    )
+    responses = []
+    streaming_response = await agent.astep("Use the add_numbers tool")
+    async for response in streaming_response:
+        responses.append(response)
+
+    # The caller-facing responses carry the streamed content
+    assert any(
+        response.msgs and content in (response.msgs[0].content or "")
+        for response in responses
+    ), "Streamed content was not surfaced to the caller"
+
+    # The persisted assistant message must keep the content preceding
+    # the tool call, like the non-streaming path
+    assistant_messages = _recorded_assistant_tool_call_messages(agent)
+    assert assistant_messages, "Assistant tool call message not recorded"
+    assert (
+        assistant_messages[0]["content"] == content
+    ), "Assistant tool call message lost the streamed content"
+
+
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_keeps_content_before_external_tool_call(
+    monkeypatch,
+):
+    r"""Async counterpart of the content-before-external-tool-call
+    regression test."""
+    from typing import AsyncGenerator
+
+    from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+
+    def ext_tool(x: int) -> int:
+        r"""Double the input.
+
+        Args:
+            x (int): The input number.
+
+        Returns:
+            int: The doubled number.
+        """
+        return x * 2
+
+    content = "Let me double that for you."
+    streams = [
+        _make_content_then_tool_call_stream_chunks(
+            content,
+            "ext_tool",
+            '{"x": 5}',
+            "call_mock_async_ext_content",
+            "chatcmpl-mock-async-ext-content",
+        ),
+    ]
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+
+    def make_async_stream(chunks):
+        async def _stream() -> AsyncGenerator[ChatCompletionChunk, None]:
+            for chunk in chunks:
+                yield chunk
+
+        return _stream()
+
+    model.arun = AsyncMock(
+        side_effect=[make_async_stream(chunks) for chunks in streams]
+    )
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        external_tools=[FunctionTool(ext_tool)],
+        stream_accumulate=False,
+    )
+    responses = []
+    streaming_response = await agent.astep("Use the ext_tool tool")
+    async for response in streaming_response:
+        responses.append(response)
+
+    # The caller-facing responses still carry the streamed content
+    assert any(
+        response.msgs and content in (response.msgs[0].content or "")
+        for response in responses
+    ), "Streamed content was not surfaced to the caller"
+
+    # The persisted assistant message must keep the content preceding
+    # the external tool call, like the non-streaming path
+    assistant_messages = _recorded_assistant_tool_call_messages(agent)
+    assert assistant_messages, "Assistant tool call message not recorded"
+    assert (
+        assistant_messages[0]["content"] == content
+    ), "Assistant tool call message lost the streamed content"
+
+
 @pytest.mark.model_backend
 def test_chat_agent_stream_with_structured_output():
     r"""Test streaming with structured output (response_format).
