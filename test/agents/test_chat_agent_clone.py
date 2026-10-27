@@ -34,6 +34,17 @@ def _stop_response():
     ]
 
 
+def test_clone_preserves_message_window_size():
+    source = ChatAgent(
+        model=StubModel(ModelType.STUB),
+        message_window_size=2,
+    )
+
+    assert source.memory.window_size == 2
+    assert source.clone().memory.window_size == 2
+    assert source.clone(with_memory=True).memory.window_size == 2
+
+
 def test_clone_response_terminators_have_independent_identity():
     source = _make_agent()
     first = source.clone()
