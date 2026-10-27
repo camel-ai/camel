@@ -79,19 +79,51 @@ class FileToolkit(BaseToolkit):
             f": {self.working_directory}, encoding: {default_encoding}"
         )
 
+    def _ensure_within_working_directory(self, path: Path) -> Path:
+        r"""Verify that a resolved path stays inside the working directory.
+
+        ``working_directory`` is the toolkit's confinement boundary: agent
+        callers can influence path arguments, so any resolved path that
+        escapes it (``..`` segments, absolute paths, or symlinks that
+        resolve outward) is rejected instead of being operated on.
+
+        Args:
+            path (Path): A fully resolved candidate path.
+
+        Returns:
+            Path: The same resolved path, when it is contained.
+
+        Raises:
+            ValueError: If the path resolves outside
+                :attr:`working_directory`.
+        """
+        base = Path(os.path.normcase(str(self.working_directory)))
+        candidate = Path(os.path.normcase(str(path)))
+        if candidate != base and not candidate.is_relative_to(base):
+            raise ValueError(
+                f"Refusing to access path outside the working "
+                f"directory: {path} (working directory: "
+                f"{self.working_directory})"
+            )
+        return path
+
     def _resolve_filepath(self, file_path: str) -> Path:
         r"""Convert the given string path to a Path object.
 
         If the provided path is not absolute, it is made relative to the
         default output directory. The filename part is sanitized to replace
         spaces and special characters with underscores, ensuring safe usage
-        in downstream processing.
+        in downstream processing. The resolved path must stay inside
+        :attr:`working_directory`; paths escaping it are rejected.
 
         Args:
             file_path (str): The file path to resolve.
 
         Returns:
             Path: A fully resolved (absolute) and sanitized Path object.
+
+        Raises:
+            ValueError: If the resolved path escapes the working directory.
         """
         path_obj = Path(file_path)
         if not path_obj.is_absolute():
@@ -99,23 +131,78 @@ class FileToolkit(BaseToolkit):
 
         sanitized_filename = self._sanitize_filename(path_obj.name)
         path_obj = path_obj.parent / sanitized_filename
-        return path_obj.resolve()
+        resolved = path_obj.resolve()
+        return self._ensure_within_working_directory(resolved)
 
     def _resolve_search_path(self, path: Optional[str] = None) -> Path:
-        r"""Resolve a search directory without sanitizing it."""
+        r"""Resolve a search directory without sanitizing it.
+
+        The resolved directory must stay inside :attr:`working_directory`;
+        paths escaping it are rejected. Search reads file *content*
+        (``grep_files`` returns matching lines with context by default),
+        so an unguarded absolute or ``..`` path here would be an
+        arbitrary-read escape of the same kind guarded against in the
+        file resolvers.
+
+        Args:
+            path (Optional[str]): The search root to resolve. Relative
+                paths resolve against :attr:`working_directory`.
+
+        Returns:
+            Path: A fully resolved (absolute) search directory.
+
+        Raises:
+            ValueError: If the resolved path escapes the working directory.
+        """
         if path:
             path_obj = Path(path)
             if not path_obj.is_absolute():
-                return (self.working_directory / path_obj).resolve()
-            return path_obj.resolve()
+                path_obj = self.working_directory / path_obj
+            return self._ensure_within_working_directory(path_obj.resolve())
         return self.working_directory
 
+    def _candidate_within_root(self, candidate: Path, root: Path) -> bool:
+        r"""Whether a search candidate stays inside the search root.
+
+        Directories inside the working directory may be symlinks pointing
+        outward; ``rglob``/``glob``/iteration would otherwise surface
+        files resolved through them. Candidates that fail to resolve
+        (races, broken links) are excluded.
+
+        Args:
+            candidate (Path): A candidate path found under ``root``.
+            root (Path): The already-resolved search root.
+
+        Returns:
+            bool: ``True`` when the fully resolved candidate is inside
+                ``root``.
+        """
+        try:
+            resolved = candidate.resolve()
+        except OSError:
+            return False
+        return resolved == root or resolved.is_relative_to(root)
+
     def _resolve_existing_filepath(self, file_path: str) -> Path:
-        r"""Resolve a file path without sanitizing the filename."""
+        r"""Resolve a file path without sanitizing the filename.
+
+        The resolved path must stay inside :attr:`working_directory`;
+        paths escaping it are rejected.
+
+        Args:
+            file_path (str): The file path to resolve.
+
+        Returns:
+            Path: A fully resolved (absolute) Path object.
+
+        Raises:
+            ValueError: If the resolved path escapes the working directory.
+        """
         path_obj = Path(file_path)
         if not path_obj.is_absolute():
             path_obj = self.working_directory / path_obj
-        return path_obj.resolve()
+        resolved = path_obj.resolve()
+        return self._ensure_within_working_directory(resolved)
 
     def _tool_error(self, message: str) -> str:
         logger.warning(message)
@@ -152,6 +239,8 @@ class FileToolkit(BaseToolkit):
             if not candidate.is_file():
                 continue
             if suffix and candidate.suffix.lower() != suffix:
+                continue
+            if not self._candidate_within_root(candidate, root):
                 continue
             candidates.append(candidate)
         return sorted(candidates)
@@ -1100,19 +1189,26 @@ class FileToolkit(BaseToolkit):
         Returns:
             str: A message indicating success or error details.
         """
-        file_path = self._resolve_filepath(filename)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            file_path = self._resolve_filepath(filename)
+            file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Create backup of existing file if backup is enabled
-        if file_path.exists() and self.backup_enabled:
-            self._create_backup(file_path)
+            # Create backup of existing file if backup is enabled
+            if file_path.exists() and self.backup_enabled:
+                self._create_backup(file_path)
 
-        extension = file_path.suffix.lower()
+            extension = file_path.suffix.lower()
 
-        # If no extension is provided, use markdown as default
-        if extension == "":
-            file_path = file_path.with_suffix('.md')
-            extension = '.md'
+            # If no extension is provided, use markdown as default
+            if extension == "":
+                file_path = file_path.with_suffix('.md')
+                # with_suffix mutates the checked path (a filename that
+                # resolves to the working directory itself becomes
+                # <parent>/<name>.md), so containment is verified again.
+                self._ensure_within_working_directory(file_path)
+                extension = '.md'
+        except (ValueError, OSError) as e:
+            return self._tool_error(str(e))
 
         try:
             # Get encoding or use default
@@ -1321,7 +1417,11 @@ class FileToolkit(BaseToolkit):
             if not root.exists():
                 return self._tool_error(f"Search path does not exist: {root}")
 
-            matches = [item for item in root.glob(pattern) if item.is_file()]
+            matches = [
+                item
+                for item in root.glob(pattern)
+                if item.is_file() and self._candidate_within_root(item, root)
+            ]
             matches.sort(
                 key=lambda item: (item.stat().st_mtime, str(item)),
                 reverse=True,
@@ -1504,7 +1604,10 @@ class FileToolkit(BaseToolkit):
         """
         import json
 
-        path = self._resolve_existing_filepath(notebook_path)
+        try:
+            path = self._resolve_existing_filepath(notebook_path)
+        except ValueError as e:
+            return self._tool_error(str(e))
         if not path.exists():
             return self._tool_error(f"Notebook file not found: {path}")
 
@@ -1691,6 +1794,12 @@ class FileToolkit(BaseToolkit):
             files_searched = 0
             pattern_lower = pattern.lower()
 
+            matching_files = [
+                file_path
+                for file_path in matching_files
+                if self._candidate_within_root(file_path, search_path)
+            ]
+
             for file_path in matching_files:
                 files_searched += 1
                 try:
@@ -1719,8 +1828,9 @@ class FileToolkit(BaseToolkit):
                                 }
                             )
 
-                except (UnicodeDecodeError, PermissionError) as e:
-                    # skip files that can't be read
+                except OSError as e:
+                    # skip files that can't be read (permissions,
+                    # directories matched by a file pattern, races, ...)
                     logger.debug(f"Skipping file {file_path}: {e}")
                     continue
 
