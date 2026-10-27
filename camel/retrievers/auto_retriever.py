@@ -138,18 +138,21 @@ class AutoRetriever:
         if isinstance(content, Element):
             content = content.metadata.file_directory or str(uuid.uuid4())
 
-        # For file paths, use a combination of directory hash and filename
+        # For file paths, use a combination of a readable stem and a hash of
+        # the whole path
         if os.path.isfile(content):
-            # Get directory and filename
-            directory = os.path.dirname(content)
-            filename = os.path.basename(content)
-            # Create a short hash of the directory path
-            dir_hash = hashlib.md5(directory.encode()).hexdigest()[:6]
+            # Hash the full path, not just the directory: within one directory
+            # two files can sanitize to the same stem (different extension,
+            # non-ASCII names, or a shared first ten characters), and sharing
+            # a collection makes a query for one return the other's contents
+            path_hash = hashlib.md5(
+                os.path.abspath(content).encode()
+            ).hexdigest()[:6]
             # Get filename without extension and remove special chars
-            base_name = os.path.splitext(filename)[0]
+            base_name = os.path.splitext(os.path.basename(content))[0]
             clean_name = re.sub(r'[^a-zA-Z0-9]', '', base_name)[:10]
             # Combine for a unique name
-            collection_name = f"{clean_name}_{dir_hash}"
+            collection_name = f"{clean_name}_{path_hash}"
         else:
             # For URL content
             content_hash = hashlib.md5(content.encode()).hexdigest()[:6]
