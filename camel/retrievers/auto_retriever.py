@@ -129,6 +129,12 @@ class AutoRetriever:
 
         Returns:
             str: A sanitized, valid collection name suitable for use.
+
+        Note:
+            Local paths hash the whole absolute path. Collections created by
+            earlier versions used a hash of the directory only, so an existing
+            local store keeps those collection names and re-indexes a file once
+            under its new name.
         """
         import hashlib
         import os
@@ -147,7 +153,7 @@ class AutoRetriever:
             # a collection makes a query for one return the other's contents
             path_hash = hashlib.sha256(
                 os.path.abspath(content).encode()
-            ).hexdigest()[:6]
+            ).hexdigest()[:16]
             # Get filename without extension and remove special chars
             base_name = os.path.splitext(os.path.basename(content))[0]
             clean_name = re.sub(r'[^a-zA-Z0-9]', '', base_name)[:10]
