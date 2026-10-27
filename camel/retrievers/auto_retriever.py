@@ -144,8 +144,6 @@ class AutoRetriever:
         if isinstance(content, Element):
             content = content.metadata.file_directory or str(uuid.uuid4())
 
-        # For file paths, use a combination of a readable stem and a hash of
-        # the whole path
         if os.path.isfile(content):
             # Hash the full path, not just the directory: within one directory
             # two files can sanitize to the same stem (different extension,

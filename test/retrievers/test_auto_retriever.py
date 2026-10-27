@@ -108,6 +108,8 @@ def test_collection_name_generator_keeps_distinct_files_apart(tmp_path):
     from camel.embeddings import BaseEmbedding
 
     class FixedEmbedding(BaseEmbedding[str]):
+        """Deterministic embedding, so the test needs no model or API key."""
+
         def embed_list(self, objs, **kwargs):
             return [[1.0, 0.0] for _ in objs]
 
@@ -133,7 +135,7 @@ def test_collection_name_generator_keeps_distinct_files_apart(tmp_path):
         right_name = retriever._collection_name_generator(str(right_path))
 
         assert left_name != right_name, (left, right, left_name)
-        # the name must stay stable for the same file, or every run re-indexes
+        # The name must stay stable, or every run re-indexes the file.
         assert (
             retriever._collection_name_generator(str(left_path)) == left_name
         )
