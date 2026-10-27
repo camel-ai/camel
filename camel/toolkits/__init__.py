@@ -109,6 +109,7 @@ from .agent_toolkit import AgentToolkit
 from .planning_worktree_toolkit import PlanningWorktreeToolkit
 from .todo_toolkit import TodoItem, TodoToolkit
 from .web_fetch_toolkit import WebFetchToolkit
+from .apiverve_toolkit import APIVerveToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -209,4 +210,5 @@ __all__ = [
     'TodoItem',
     'TodoToolkit',
     'WebFetchToolkit',
+    'APIVerveToolkit',
 ]
