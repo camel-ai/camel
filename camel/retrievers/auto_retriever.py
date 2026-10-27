@@ -145,7 +145,7 @@ class AutoRetriever:
             # two files can sanitize to the same stem (different extension,
             # non-ASCII names, or a shared first ten characters), and sharing
             # a collection makes a query for one return the other's contents
-            path_hash = hashlib.md5(
+            path_hash = hashlib.sha256(
                 os.path.abspath(content).encode()
             ).hexdigest()[:6]
             # Get filename without extension and remove special chars
