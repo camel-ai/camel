@@ -61,3 +61,33 @@ def test_key_value_storage(storage: BaseKeyValueStorage):
     storage.clear()
     load_msg = storage.load()
     assert load_msg == []
+
+
+def test_json_storage_enum_round_trip(tmp_path):
+    storage = JsonStorage(tmp_path / "history.jsonl")
+    storage.save([{"role": RoleType.USER}])
+    assert storage.load() == [{"role": RoleType.USER}]
+
+
+def test_json_storage_user_data_with_enum_key_round_trips(tmp_path):
+    storage = JsonStorage(tmp_path / "history.jsonl")
+    record = {
+        "content": "hello",
+        "metadata": {"__enum__": "external-value", "source": "user"},
+    }
+    storage.save([record])
+    assert storage.load() == [record]
+
+
+def test_json_storage_enum_like_value_keeps_extra_fields(tmp_path):
+    storage = JsonStorage(tmp_path / "history.jsonl")
+    record = {"__enum__": "RoleType.USER", "source": "user"}
+    storage.save([record])
+    assert storage.load() == [record]
+
+
+def test_json_storage_invalid_enum_value_returned_as_dict(tmp_path):
+    storage = JsonStorage(tmp_path / "history.jsonl")
+    record = {"__enum__": "NotACamelEnum.member"}
+    storage.save([record])
+    assert storage.load() == [record]
