@@ -13,16 +13,17 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import concurrent.futures
+import hmac
 import importlib
 import io
 import json
 import logging
 import os
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from camel.toolkits import BaseToolkit
@@ -42,7 +43,112 @@ modules_functions = sys.argv[1:]
 
 logger.info(f"Modules and functions: {modules_functions}")
 
-app = FastAPI()
+# API keys clients must present, read from ``CAMEL_RUNTIME_API_KEY`` as a
+# comma-separated list.
+#
+# ``sys.argv`` is consumed in full as toolkit specifications above, so there is
+# no CLI surface left to configure this through, and an environment variable is
+# how the key reaches this process when a runtime starts it in a container.
+#
+# Refuse to start when the variable is absent, rather than inventing a key: a
+# generated key would have to be written somewhere for the operator to use it,
+# and a credential in a log file is its own problem. The runtimes in this
+# package always set the variable, so this only affects starting the server by
+# hand. Setting it to an empty value disables authentication explicitly, for a
+# single-user trusted network.
+_raw_api_key = os.environ.get("CAMEL_RUNTIME_API_KEY")
+
+if _raw_api_key is None:
+    raise RuntimeError(
+        "CAMEL_RUNTIME_API_KEY is not set. This server publishes every "
+        "registered tool as an HTTP endpoint, so it will not start without "
+        "one. Set it to the key clients must present, as a comma-separated "
+        "list for more than one, or to an empty value to serve without "
+        "authentication on a trusted network."
+    )
+
+_API_KEYS: List[str] = [
+    key.strip() for key in _raw_api_key.split(",") if key.strip()
+]
+
+if not _API_KEYS:
+    logger.warning(
+        "CAMEL_RUNTIME_API_KEY is empty: authentication is disabled and "
+        "every registered tool is reachable by any client that can reach "
+        "this port."
+    )
+
+
+def _keys_equal(left: str, right: str) -> bool:
+    r"""Compare two keys without leaking their contents through timing.
+
+    Both operands are encoded to UTF-8 first: ``hmac.compare_digest`` accepts
+    ``str`` only while it stays inside ASCII, and a header value can hold more
+    than that. Anything that will not encode is reported as a mismatch instead
+    of raising.
+
+    Args:
+        left (str): One key value.
+        right (str): The other key value.
+
+    Returns:
+        bool: Whether the two values are the same.
+    """
+    try:
+        return hmac.compare_digest(left.encode("utf-8"), right.encode("utf-8"))
+    except (UnicodeEncodeError, TypeError):
+        return False
+
+
+def verify_api_key(
+    x_api_key: Optional[str] = Header(default=None),
+    authorization: Optional[str] = Header(default=None),
+) -> None:
+    r"""Reject a request that does not carry one of the configured API keys.
+
+    Installed as a dependency on the application, so it guards the generated
+    tool endpoints and ``/health`` alike.
+
+    Args:
+        x_api_key (Optional[str]): The ``X-API-Key`` request header.
+        authorization (Optional[str]): The ``Authorization`` request header,
+            from which a ``Bearer`` scheme is read.
+
+    Raises:
+        HTTPException: 401 if the request presents no key, or one that does
+            not match.
+    """
+    if not _API_KEYS:
+        # Authentication was switched off on purpose by setting
+        # CAMEL_RUNTIME_API_KEY to an empty value.
+        return
+
+    presented: Optional[str] = None
+    if authorization:
+        scheme, _, value = authorization.partition(" ")
+        if scheme.lower() == "bearer" and value.strip():
+            presented = value.strip()
+    if presented is None and x_api_key:
+        presented = x_api_key.strip()
+
+    if presented is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing API key. Pass it via 'Authorization: Bearer "
+            "<key>' or 'X-API-Key: <key>'.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    for key in _API_KEYS:
+        if _keys_equal(key, presented):
+            return
+    raise HTTPException(
+        status_code=401,
+        detail="Invalid API key.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+app = FastAPI(dependencies=[Depends(verify_api_key)])
 
 # global cache for toolkit instances to maintain state across calls
 _toolkit_instances: Dict[str, Any] = {}
