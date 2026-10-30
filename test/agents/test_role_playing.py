@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from unittest.mock import MagicMock
 
 import pytest
@@ -31,6 +32,13 @@ from camel.types import (
     RoleType,
     TaskType,
 )
+
+if not os.environ.get("OPENAI_API_KEY"):
+    pytest.skip(
+        "OPENAI_API_KEY is required to construct the module-level "
+        "OpenAI model fixture",
+        allow_module_level=True,
+    )
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
