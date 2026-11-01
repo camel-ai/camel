@@ -100,7 +100,7 @@ def _coerce_arg(value: Any, annotation: Any) -> Any:
         # JSON strings (e.g. ``"42"``, ``"true"``) even when the declared
         # JSON schema says ``integer``/``boolean``. Coerce parseable string
         # forms to the annotated scalar type so downstream arithmetic works;
-        # unparseable values pass through unchanged to preserve error
+        # unparsable values pass through unchanged to preserve error
         # surfacing.
         if isinstance(annotation, type) and isinstance(value, str):
             if annotation is bool:
