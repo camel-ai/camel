@@ -130,11 +130,11 @@ def test_coerce_scalar_string_arguments():
     assert _coerce_arg("0", bool) is False
 
 
-def test_coerce_scalar_unparseable_passes_through():
-    r"""Test that unparseable or already-typed values pass through
+def test_coerce_scalar_unparsable_passes_through():
+    r"""Test that unparsable or already-typed values pass through
     unchanged.
     """
-    # Unparseable string forms stay as strings (preserving error surfacing).
+    # Unparsable string forms stay as strings (preserving error surfacing).
     assert _coerce_arg("abc", int) == "abc"
     assert _coerce_arg("not-a-number", float) == "not-a-number"
     # Already correctly typed values are left untouched.
