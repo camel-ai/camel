@@ -75,17 +75,17 @@ class SearchAgent(ChatAgent):
         summary_prompt = summary_prompt.format(query=query)
         # Max length of each chunk
         max_len = 3000
-        results = ""
+        results = []
         chunks = create_chunks(text, max_len)
         # Summarize
         for i, chunk in enumerate(chunks, start=1):
-            prompt = summary_prompt + str(i) + ": " + chunk
+            prompt = f"{summary_prompt}{i}: {chunk}"
             user_msg = BaseMessage.make_user_message(
                 role_name="User",
                 content=prompt,
             )
             result = self.step(user_msg).msg.content
-            results += result + "\n"
+            results.append(result)
 
         # Final summarization
         final_prompt = TextPrompt(
@@ -95,7 +95,7 @@ class SearchAgent(ChatAgent):
             explain why.\n Query:\n{query}.\n\nText:\n'''
         )
         final_prompt = final_prompt.format(query=query)
-        prompt = final_prompt + results
+        prompt = final_prompt + "\n".join(results)
 
         user_msg = BaseMessage.make_user_message(
             role_name="User",
