@@ -21,6 +21,7 @@ from .aws_bedrock_converse_model import AWSBedrockConverseModel
 from .aws_bedrock_model import AWSBedrockModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
+from .base_chat_model import BaseChatModel
 from .base_model import BaseModelBackend
 from .cerebras_model import CerebrasModel
 from .cohere_model import CohereModel
@@ -78,6 +79,7 @@ __all__ = [
     'AvianModel',
     'AzureOpenAIModel',
     'BaseAudioModel',
+    'BaseChatModel',
     'BaseModelBackend',
     'CerebrasModel',
     'CohereModel',
