@@ -16,8 +16,6 @@ import re
 from abc import ABC, abstractmethod
 from typing import List
 
-from rouge import Rouge
-
 from camel.models.reward import BaseRewardModel
 
 
@@ -136,6 +134,8 @@ class RougeSimilarityFilter(FilterFunction):
     def __init__(
         self, existing_instructions: List[str], threshold: float = 0.7
     ):
+        from rouge import Rouge
+
         self.existing_instructions = existing_instructions
         self.threshold = threshold
         self.rouge = Rouge()

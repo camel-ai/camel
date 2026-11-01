@@ -18,8 +18,6 @@ from concurrent.futures import ThreadPoolExecutor
 from math import ceil
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
-from tqdm import tqdm
-
 from camel.agents import ChatAgent
 from camel.datagen.evol_instruct.scorer import BaseScorer, GeneralScorer
 from camel.datagen.evol_instruct.templates import EvolInstructTemplates
@@ -413,6 +411,8 @@ class EvolInstructPipeline:
             plan_chunk = evolution_plan[chunk_idx : chunk_idx + chunk_size]
 
             with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                from tqdm import tqdm
+
                 chunk_results = list(
                     tqdm(
                         executor.map(_process_prompt, zip(chunk, plan_chunk)),
