@@ -95,6 +95,25 @@ def _coerce_arg(value: Any, annotation: Any) -> Any:
     args = get_args(annotation)
 
     if origin is None or not args:
+        # --- Plain scalar annotations (int/float/bool) ---
+        # Several LLM providers emit numeric/boolean tool-call arguments as
+        # JSON strings (e.g. ``"42"``, ``"true"``) even when the declared
+        # JSON schema says ``integer``/``boolean``. Coerce parseable string
+        # forms to the annotated scalar type so downstream arithmetic works;
+        # unparsable values pass through unchanged to preserve error
+        # surfacing.
+        if isinstance(annotation, type) and isinstance(value, str):
+            if annotation is bool:
+                lowered = value.strip().lower()
+                if lowered in ("true", "1", "yes", "on"):
+                    return True
+                if lowered in ("false", "0", "no", "off"):
+                    return False
+            elif annotation in (int, float):
+                try:
+                    return annotation(value)
+                except (TypeError, ValueError):
+                    return value
         return value
 
     # --- List[X] / list[X] ---
