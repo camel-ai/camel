@@ -101,11 +101,15 @@ class MathVerifier(BaseVerifier):
         r"""Verify mathematical expressions using Math-Verify.
 
         Args:
-            solution: The solution to verify
-            reference_answer: The expected answer to compare against
+            solution (str): The solution to verify against the reference
+                answer.
+            reference_answer (Optional[str]): The expected answer to compare
+                against. If :obj:`None`, returns an error result.
 
         Returns:
-            VerificationResult containing the verification status and details
+            VerificationResult: A structured result containing the
+                verification status, result string, and error message
+                if applicable.
         """
         from math_verify import parse, verify
         from math_verify.parser import (
