@@ -14,6 +14,7 @@
 import json
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 
 from camel.storages import VectorDBQuery, VectorRecord, WeaviateStorage
@@ -328,3 +329,47 @@ def test_similarity_calculations():
         )
         similarity = storage_hamming._calculate_similarity_from_distance(2.0)
         assert similarity == 0.5  # 1 - (2 / 4)
+
+
+def test_collection_exists_propagates_failure(mock_weaviate_client):
+    r"""A failure to reach Weaviate must not be reported as absence.
+
+    A connection error, an auth rejection or a 5xx cannot answer whether
+    the collection is there. Reporting them as "does not exist" makes
+    ``_check_and_create_collection`` try to create a collection that may
+    already hold data, and the operator sees an "already exists" error
+    instead of the real fault.
+    """
+    mock_client, mock_collection = mock_weaviate_client
+
+    # Deliberately not a weaviate type. A connection dropped mid-request
+    # surfaces as httpx.RemoteProtocolError, and isinstance of
+    # WeaviateBaseError is False for it, so the contract under test is
+    # "any failure propagates" rather than "a weaviate error propagates".
+    # httpx is a base dependency; weaviate-client is only in the rag,
+    # storage and all extras, so importing it here would stop this file
+    # being collectable without them.
+    error = httpx.RemoteProtocolError("server disconnected")
+    mock_client.collections.exists.side_effect = error
+    mock_client.collections.get.side_effect = error
+    mock_collection.config.get.side_effect = error
+
+    with (
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._get_connection_client',
+            return_value=mock_client,
+        ),
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._check_and_create_collection'
+        ),
+    ):
+        storage = WeaviateStorage(
+            vector_dim=4,
+            collection_name="test_collection",
+            connection_type="local",
+        )
+
+    with pytest.raises(httpx.RemoteProtocolError):
+        storage._check_and_create_collection()
+
+    mock_client.collections.create.assert_not_called()

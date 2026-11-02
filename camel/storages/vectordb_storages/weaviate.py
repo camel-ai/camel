@@ -451,13 +451,16 @@ class WeaviateStorage(BaseVectorStorage):
 
         Returns:
             bool: True if collection exists, False otherwise.
+
+        Raises:
+            Exception: If existence cannot be determined, for example
+                because Weaviate rejects the request (401, 403, 429, 5xx)
+                or the connection drops mid-request. Not confined to
+                ``weaviate.exceptions``: a dropped connection surfaces as
+                ``httpx.RemoteProtocolError``, so catching
+                ``WeaviateBaseError`` alone will not see every case.
         """
-        try:
-            collection = self._client.collections.get(collection_name)
-            collection.config.get()
-            return True
-        except Exception:
-            return False
+        return self._client.collections.exists(collection_name)
 
     def _get_vector_index_config(self, **kwargs: Any) -> Any:
         r"""Get vector index configuration based on user settings.
