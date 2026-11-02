@@ -35,6 +35,7 @@ from .bohrium_toolkit import BohriumToolkit
 from .base import BaseToolkit, RegisteredAgentToolkit, manual_timeout
 from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
+from .computer_use_toolkit import ComputerUseToolkit
 from .github_toolkit import GithubToolkit
 from .google_scholar_toolkit import GoogleScholarToolkit
 from .google_calendar_toolkit import GoogleCalendarToolkit
@@ -137,6 +138,7 @@ __all__ = [
     'LinkedInToolkit',
     'RedditToolkit',
     'CodeExecutionToolkit',
+    'ComputerUseToolkit',
     'AskNewsToolkit',
     'AsyncAskNewsToolkit',
     'GoogleScholarToolkit',
