@@ -15,8 +15,8 @@ import asyncio
 import json
 from copy import deepcopy
 from io import BytesIO
-from typing import List, Literal
-from unittest.mock import AsyncMock, MagicMock
+from typing import Any, Dict, List, Literal
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from openai.types.chat import ChatCompletionMessageFunctionToolCall
@@ -2371,3 +2371,61 @@ def test_rate_limit_retry_respects_anthropic_error_when_installed():
         from openai import RateLimitError as OpenAIRateLimitError
 
         assert _RATE_LIMIT_ERRORS == (OpenAIRateLimitError,)
+
+
+def test_sync_stream_tool_timeout_is_logged_and_skipped(
+    caplog,
+) -> None:
+    """A slow streamed tool must be skipped, not abort the whole step.
+
+    The timeout was handed to as_completed(), which raises from the
+    iterator, so the handler around future.result() never ran and the
+    TimeoutError escaped out of the step. The async branch already logged
+    and skipped in the same situation.
+    """
+    import logging
+    import time
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=DummyModel(
+            model_type=ModelType.DEFAULT,
+            model_config_dict={"stream": True},
+        ),
+        tool_execution_timeout=0.2,
+    )
+
+    def slow_tool(_tool_call_data: Any) -> None:
+        time.sleep(2.0)
+        return None
+
+    tool_calls: Dict[str, Any] = {
+        "0": {
+            "id": "call_slow",
+            "type": "function",
+            "function": {"name": "slow_tool", "arguments": "{}"},
+            "complete": True,
+        }
+    }
+
+    records: List[Any] = []
+    # The pieces around the tool call are not what this case is about.
+    with (
+        patch.object(agent, "_record_assistant_tool_calls_message"),
+        patch.object(
+            agent, "_execute_tool_from_stream_data", side_effect=slow_tool
+        ),
+        caplog.at_level(logging.WARNING),
+    ):
+        list(
+            agent._execute_tools_sync_with_status_accumulator(
+                tool_calls, records
+            )
+        )
+
+    assert any(
+        "timed out after 0.2 seconds" in record.getMessage()
+        for record in caplog.records
+    )
+    # The slow call is skipped, so nothing is recorded for it.
+    assert records == []
