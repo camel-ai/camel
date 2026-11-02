@@ -96,3 +96,46 @@ def test_run_vector_retriever_with_element_input(auto_retriever):
         output["Retrieved Context"][0]['content path']
         == 'https://x.com/CamelAIOrg/status/1821970132606058943'
     )
+
+
+def test_collection_name_generator_keeps_distinct_files_apart(tmp_path):
+    r"""Files that sanitize to the same stem must not share a collection.
+
+    Local collection names used to hash only the directory and to truncate the
+    sanitized filename, so two files in one directory could map to the same
+    collection and a query for one returned the other's contents.
+    """
+    from camel.embeddings import BaseEmbedding
+
+    class FixedEmbedding(BaseEmbedding[str]):
+        """Deterministic embedding, so the test needs no model or API key."""
+
+        def embed_list(self, objs, **kwargs):
+            return [[1.0, 0.0] for _ in objs]
+
+        def get_output_dim(self):
+            return 2
+
+    retriever = AutoRetriever(embedding_model=FixedEmbedding())
+
+    pairs = [
+        ('劳动合同.txt', '员工手册.txt'),
+        ('report.txt', 'report.md'),
+        ('a-b.txt', 'a_b.txt'),
+        ('abcdefghij_first.txt', 'abcdefghij_second.txt'),
+    ]
+
+    for left, right in pairs:
+        left_path = tmp_path / left
+        right_path = tmp_path / right
+        left_path.write_text('document', encoding='utf-8')
+        right_path.write_text('document', encoding='utf-8')
+
+        left_name = retriever._collection_name_generator(str(left_path))
+        right_name = retriever._collection_name_generator(str(right_path))
+
+        assert left_name != right_name, (left, right, left_name)
+        # The name must stay stable, or every run re-indexes the file.
+        assert (
+            retriever._collection_name_generator(str(left_path)) == left_name
+        )
