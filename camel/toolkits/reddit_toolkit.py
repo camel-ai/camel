@@ -18,7 +18,12 @@ from typing import Any, Dict, List, Optional, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer, retry_on_error
+from camel.utils import (
+    MCPServer,
+    api_keys_required,
+    dependencies_required,
+    retry_on_error,
+)
 
 
 @MCPServer()
@@ -35,6 +40,14 @@ class RedditToolkit(BaseToolkit):
         reddit (Reddit): An instance of the Reddit client.
     """
 
+    @dependencies_required('praw')
+    @api_keys_required(
+        [
+            (None, 'REDDIT_CLIENT_ID'),
+            (None, 'REDDIT_CLIENT_SECRET'),
+            (None, 'REDDIT_USER_AGENT'),
+        ]
+    )
     def __init__(
         self,
         retries: int = 3,
@@ -115,6 +128,7 @@ class RedditToolkit(BaseToolkit):
 
         return data
 
+    @dependencies_required('textblob')
     def perform_sentiment_analysis(
         self, data: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
