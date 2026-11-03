@@ -115,6 +115,16 @@ class ChatHistoryBlock(MemoryBlock):
                 [] if window_size == 0 else sliding_messages[-window_size:]
             )
 
+            # Drop leading orphan tool/function results whose preceding
+            # assistant tool_calls message was truncated outside the window.
+            while truncated_messages and truncated_messages[0].get(
+                'role_at_backend'
+            ) in {
+                OpenAIBackendRole.FUNCTION.value,
+                OpenAIBackendRole.TOOL.value,
+            }:
+                truncated_messages.pop(0)
+
             # Combine preserved messages with truncated window messages
             final_records = preserved_messages + truncated_messages
         else:
