@@ -13,7 +13,17 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import warnings
-from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    TypeAlias,
+    Union,
+    cast,
+)
 
 import requests
 
@@ -28,6 +38,45 @@ from camel.utils import (
 
 logger = get_logger(__name__)
 
+_KEENABLE_API_BASE = "https://api.keenable.ai/v1"
+# Names the calling app. Keenable's keyless endpoints reject a request
+# without it; it carries no user or installation identifier.
+_KEENABLE_APP_TITLE = "camel-ai"
+
+
+def _keenable_endpoint(path: str) -> Tuple[str, Dict[str, str]]:
+    r"""Return the URL and headers for a Keenable endpoint: the keyed one
+    when `KEENABLE_API_KEY` is set, otherwise its keyless `/public` twin.
+    """
+    headers = {"X-Keenable-Title": _KEENABLE_APP_TITLE}
+    api_key = os.getenv("KEENABLE_API_KEY")
+    if api_key:
+        headers["X-API-Key"] = api_key
+        return f"{_KEENABLE_API_BASE}/{path}", headers
+    return f"{_KEENABLE_API_BASE}/{path}/public", headers
+
+
+def _keenable_error(response: requests.Response, hint: str = "") -> str:
+    r"""Turn a non-200 Keenable response into an error message, preferring
+    the human readable `message` from Keenable's error body.
+    """
+    detail = response.text
+    try:
+        body = response.json()
+    except ValueError:
+        body = None
+    if isinstance(body, dict) and body.get("message"):
+        detail = str(body["message"])
+    if response.status_code == 429:
+        hint = (
+            " Without an API key, requests share a per-IP limit; set "
+            "KEENABLE_API_KEY to raise it."
+        )
+    return (
+        f"Keenable API failed with status {response.status_code}: "
+        f"{detail}{hint}"
+    )
+
 
 @MCPServer()
 class SearchToolkit(BaseToolkit):
@@ -35,7 +84,7 @@ class SearchToolkit(BaseToolkit):
 
     This class provides methods for searching information on the web using
     search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave,
-    Perplexity.
+    Perplexity, Keenable.
     """
 
     def __init__(
@@ -1932,6 +1981,146 @@ class SearchToolkit(BaseToolkit):
                 "error": f"Unexpected error during Perplexity search: {e!s}"
             }
 
+    def search_keenable(
+        self,
+        query: str,
+        max_results: int = 10,
+        site: Optional[str] = None,
+        published_after: Optional[str] = None,
+        published_before: Optional[str] = None,
+        snippet_max_length: int = 1000,
+    ) -> Dict[str, Any]:
+        r"""Use Keenable Search API to retrieve web search results.
+
+        Works without an API key: requests then go to Keenable's public
+        endpoint, which is rate limited per IP. Set `KEENABLE_API_KEY` to use
+        the authenticated endpoint and its higher limits. See
+        https://docs.keenable.ai/api-reference/search for details.
+
+        Args:
+            query (str): The search query.
+            max_results (int): Maximum number of results to return, between
+                1 and 50. (default: :obj:`10`)
+            site (Optional[str]): Restrict results to one site, for example
+                ``"docs.python.org"``. (default: :obj:`None`)
+            published_after (Optional[str]): Only return pages published at
+                or after this point: a date (``"2026-01-15"``), an ISO 8601
+                timestamp, or a relative delta such as ``"7d"`` or ``"6mo"``.
+                (default: :obj:`None`)
+            published_before (Optional[str]): Only return pages published at
+                or before this point, in the same formats as
+                `published_after`. (default: :obj:`None`)
+            snippet_max_length (int): Maximum number of characters of page
+                text per result, between 180 and 10000. Use
+                `fetch_keenable_content` for a full page.
+                (default: :obj:`1000`)
+
+        Returns:
+            Dict[str, Any]: On success, a ``results`` list where each entry
+                has ``title``, ``url`` and ``snippet`` (text extracted from
+                the page), plus ``published_at`` when it is known. On failure,
+                a dictionary with an ``error`` key.
+        """
+        url, headers = _keenable_endpoint("search")
+        payload: Dict[str, Any] = {
+            "query": query,
+            "max_results": max_results,
+            "snippet_max_length": snippet_max_length,
+        }
+        optional_params: Dict[str, Any] = {
+            "site": site,
+            "published_after": published_after,
+            "published_before": published_before,
+        }
+        for key, value in optional_params.items():
+            if value is not None:
+                payload[key] = value
+
+        try:
+            response = requests.post(
+                url, headers=headers, json=payload, timeout=self.timeout
+            )
+            if response.status_code != 200:
+                return {"error": _keenable_error(response)}
+
+            results = []
+            for item in response.json().get("results", []):
+                if not isinstance(item, dict):
+                    continue
+                result: Dict[str, Any] = {
+                    "title": item.get("title") or "",
+                    "url": item.get("url") or "",
+                    # The page text is in `snippet`; `description` is
+                    # usually empty and only a fallback.
+                    "snippet": item.get("snippet")
+                    or item.get("description")
+                    or "",
+                }
+                if item.get("published_at"):
+                    result["published_at"] = item["published_at"]
+                results.append(result)
+            return {"results": results}
+
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Keenable search request failed: {e!s}"}
+        except Exception as e:
+            return {"error": f"Unexpected error during Keenable search: {e!s}"}
+
+    def fetch_keenable_content(
+        self,
+        url: str,
+        max_chars: int = 50000,
+        live: bool = False,
+    ) -> Dict[str, Any]:
+        r"""Use Keenable Fetch API to read a web page as markdown.
+
+        This is typically used after `search_keenable` to read the full page
+        behind a result URL, since search results only carry an excerpt. Like
+        `search_keenable`, it works without an API key. See
+        https://docs.keenable.ai/api-reference/fetch for details.
+
+        Args:
+            url (str): The URL of the page to read.
+            max_chars (int): Maximum number of characters of content to
+                return; longer pages are truncated. (default: :obj:`50000`)
+            live (bool): Fetch the page from the source instead of Keenable's
+                indexed copy. Needed for pages Keenable has not indexed.
+                (default: :obj:`False`)
+
+        Returns:
+            Dict[str, Any]: On success, the page's ``url``, ``title`` and
+                ``content`` (markdown). On failure, a dictionary with an
+                ``error`` key.
+        """
+        endpoint, headers = _keenable_endpoint("fetch")
+        params: Dict[str, Any] = {"url": url, "max_chars": max_chars}
+        if live:
+            params["live"] = "true"
+
+        try:
+            response = requests.get(
+                endpoint, headers=headers, params=params, timeout=self.timeout
+            )
+            if response.status_code != 200:
+                hint = (
+                    " Pass live=True to fetch a page Keenable has not indexed."
+                    if response.status_code == 404 and not live
+                    else ""
+                )
+                return {"error": _keenable_error(response, hint)}
+
+            data = response.json()
+            return {
+                "url": data.get("url") or url,
+                "title": data.get("title") or "",
+                "content": data.get("content") or "",
+            }
+
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Keenable fetch request failed: {e!s}"}
+        except Exception as e:
+            return {"error": f"Unexpected error during Keenable fetch: {e!s}"}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -1958,6 +2147,8 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_querit),
             FunctionTool(self.fetch_querit_content),
             FunctionTool(self.search_perplexity),
+            FunctionTool(self.search_keenable),
+            FunctionTool(self.fetch_keenable_content),
         ]
 
     # Deprecated method alias for backward compatibility

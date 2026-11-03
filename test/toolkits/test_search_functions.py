@@ -1666,3 +1666,202 @@ def test_search_perplexity_missing_api_key(search_toolkit):
 
     assert "PERPLEXITY_API_KEY" in str(exc_info.value)
     assert "https://www.perplexity.ai/account/api" in str(exc_info.value)
+
+
+def _keenable_response(status_code, payload):
+    response = MagicMock()
+    response.status_code = status_code
+    response.json.return_value = payload
+    response.text = str(payload)
+    return response
+
+
+@patch('requests.post')
+def test_search_keenable_keyless(mock_post, search_toolkit):
+    """Without a key, Keenable search goes to the public endpoint."""
+    mock_post.return_value = _keenable_response(
+        200,
+        {
+            "query": "CAMEL-AI",
+            "results": [
+                {
+                    "title": "CAMEL-AI",
+                    "url": "https://www.camel-ai.org/",
+                    "description": "",
+                    "snippet": "CAMEL-AI is an open-source framework...",
+                    "published_at": "2026-01-15T10:30:00Z",
+                    "acquired_at": "2026-01-16T08:12:34Z",
+                },
+                {
+                    "title": "camel-ai/camel",
+                    "url": "https://github.com/camel-ai/camel",
+                    "description": "Multi-agent framework",
+                    "snippet": "",
+                },
+                "not a result",
+            ],
+        },
+    )
+
+    with patch.dict(os.environ, {}, clear=True):
+        result = search_toolkit.search_keenable(query="CAMEL-AI")
+
+    assert result == {
+        "results": [
+            {
+                "title": "CAMEL-AI",
+                "url": "https://www.camel-ai.org/",
+                "snippet": "CAMEL-AI is an open-source framework...",
+                "published_at": "2026-01-15T10:30:00Z",
+            },
+            {
+                "title": "camel-ai/camel",
+                "url": "https://github.com/camel-ai/camel",
+                "snippet": "Multi-agent framework",
+            },
+        ]
+    }
+    args, kwargs = mock_post.call_args
+    assert args[0] == "https://api.keenable.ai/v1/search/public"
+    assert kwargs['headers'] == {'X-Keenable-Title': 'camel-ai'}
+    assert kwargs['json'] == {
+        "query": "CAMEL-AI",
+        "max_results": 10,
+        "snippet_max_length": 1000,
+    }
+    assert 'timeout' in kwargs
+
+
+@patch('requests.post')
+def test_search_keenable_with_key_and_filters(mock_post, search_toolkit):
+    """A key switches to the authenticated endpoint; filters are sent."""
+    mock_post.return_value = _keenable_response(200, {"results": []})
+
+    with patch.dict(os.environ, {'KEENABLE_API_KEY': 'keen_test'}):
+        result = search_toolkit.search_keenable(
+            query="asyncio",
+            max_results=3,
+            site="docs.python.org",
+            published_after="7d",
+            published_before="2026-10-01",
+            snippet_max_length=500,
+        )
+
+    assert result == {"results": []}
+    args, kwargs = mock_post.call_args
+    assert args[0] == "https://api.keenable.ai/v1/search"
+    assert kwargs['headers']['X-API-Key'] == 'keen_test'
+    assert kwargs['headers']['X-Keenable-Title'] == 'camel-ai'
+    assert kwargs['json'] == {
+        "query": "asyncio",
+        "max_results": 3,
+        "snippet_max_length": 500,
+        "site": "docs.python.org",
+        "published_after": "7d",
+        "published_before": "2026-10-01",
+    }
+
+
+@patch('requests.post')
+def test_search_keenable_rate_limited(mock_post, search_toolkit):
+    """A 429 surfaces Keenable's message and points at the API key."""
+    mock_post.return_value = _keenable_response(
+        429,
+        {
+            "error": "Rate limit exceeded",
+            "message": "Public API hourly limit reached",
+        },
+    )
+
+    with patch.dict(os.environ, {}, clear=True):
+        result = search_toolkit.search_keenable(query="CAMEL-AI")
+
+    assert "Public API hourly limit reached" in result["error"]
+    assert "set KEENABLE_API_KEY" in result["error"]
+
+
+@patch('requests.post')
+def test_search_keenable_request_error(mock_post, search_toolkit):
+    mock_post.side_effect = requests.exceptions.ConnectionError("down")
+
+    result = search_toolkit.search_keenable(query="CAMEL-AI")
+
+    assert result == {"error": "Keenable search request failed: down"}
+
+
+@patch('requests.get')
+def test_fetch_keenable_content_keyless(mock_get, search_toolkit):
+    """Without a key, Keenable fetch goes to the public endpoint."""
+    mock_get.return_value = _keenable_response(
+        200,
+        {
+            "url": "https://www.camel-ai.org/",
+            "title": "CAMEL-AI",
+            "description": "",
+            "content": "# CAMEL-AI\n\nFinding the scaling laws of agents.",
+        },
+    )
+
+    with patch.dict(os.environ, {}, clear=True):
+        result = search_toolkit.fetch_keenable_content(
+            "https://www.camel-ai.org/"
+        )
+
+    assert result == {
+        "url": "https://www.camel-ai.org/",
+        "title": "CAMEL-AI",
+        "content": "# CAMEL-AI\n\nFinding the scaling laws of agents.",
+    }
+    args, kwargs = mock_get.call_args
+    assert args[0] == "https://api.keenable.ai/v1/fetch/public"
+    assert kwargs['headers'] == {'X-Keenable-Title': 'camel-ai'}
+    assert kwargs['params'] == {
+        "url": "https://www.camel-ai.org/",
+        "max_chars": 50000,
+    }
+
+
+@patch('requests.get')
+def test_fetch_keenable_content_live_with_key(mock_get, search_toolkit):
+    mock_get.return_value = _keenable_response(
+        200, {"url": "https://example.org/", "content": "Example Domain"}
+    )
+
+    with patch.dict(os.environ, {'KEENABLE_API_KEY': 'keen_test'}):
+        result = search_toolkit.fetch_keenable_content(
+            "https://example.org/", max_chars=100, live=True
+        )
+
+    assert result["content"] == "Example Domain"
+    assert result["title"] == ""
+    args, kwargs = mock_get.call_args
+    assert args[0] == "https://api.keenable.ai/v1/fetch"
+    assert kwargs['headers']['X-API-Key'] == 'keen_test'
+    assert kwargs['params'] == {
+        "url": "https://example.org/",
+        "max_chars": 100,
+        "live": "true",
+    }
+
+
+@patch('requests.get')
+def test_fetch_keenable_content_not_indexed(mock_get, search_toolkit):
+    """A 404 on the indexed copy suggests a live fetch."""
+    mock_get.return_value = _keenable_response(
+        404,
+        {
+            "error": "Not found",
+            "message": "The page does not exist at this URL.",
+        },
+    )
+
+    result = search_toolkit.fetch_keenable_content("https://example.org/x")
+
+    assert "The page does not exist at this URL." in result["error"]
+    assert "live=True" in result["error"]
+
+    result = search_toolkit.fetch_keenable_content(
+        "https://example.org/x", live=True
+    )
+
+    assert "live=True" not in result["error"]
