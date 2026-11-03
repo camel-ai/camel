@@ -266,7 +266,9 @@ class AutoRetriever:
         ]
         # Sort only the list with scores
         with_score_sorted = sorted(
-            with_score, key=lambda x: x['similarity score'], reverse=True
+            with_score,
+            key=lambda x: float(x['similarity score']),
+            reverse=True,
         )
         # Merge back the sorted scored items with the non-scored items
         all_retrieved_info_sorted = with_score_sorted + without_score

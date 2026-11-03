@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -95,3 +95,34 @@ def test_query_with_reranker(mock_hybrid_retriever):
     assert len(context) == 2
     assert context[0]['text'] == 'Document 3'
     assert context[1]['text'] == 'Document 1'
+
+
+def test_query_sorts_similarity_scores_numerically():
+    hybrid_retriever = HybridRetriever(
+        embedding_model=Mock(), vector_storage=Mock()
+    )
+    hybrid_retriever.vr.query = MagicMock(
+        return_value=[
+            {'text': 'best', 'similarity score': '0.9'},
+            {'text': 'tiny', 'similarity score': '1e-05'},
+            {'text': 'closer', 'similarity score': '-0.1'},
+            {'text': 'further', 'similarity score': '-0.5'},
+        ]
+    )
+    hybrid_retriever.bm25.query = MagicMock(return_value=[])
+
+    results = hybrid_retriever.query(
+        query="anything",
+        top_k=4,
+        vector_weight=1.0,
+        bm25_weight=0.0,
+        vector_retriever_top_k=50,
+        vector_retriever_similarity_threshold=-1.0,
+        bm25_retriever_top_k=50,
+        return_detailed_info=True,
+    )
+
+    texts = [item['text'] for item in results['Retrieved Context']]
+    # '1e-05' and the negative scores must not rank above '0.9' as they
+    # would under lexicographic ordering.
+    assert texts == ['best', 'tiny', 'closer', 'further']
