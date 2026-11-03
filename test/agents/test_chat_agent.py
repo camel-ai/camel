@@ -21,6 +21,13 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from openai.types.chat import ChatCompletionMessageFunctionToolCall
 from openai.types.chat.chat_completion import Choice
+from openai.types.chat.chat_completion_chunk import (
+    ChatCompletionChunk,
+    ChoiceDelta,
+)
+from openai.types.chat.chat_completion_chunk import (
+    Choice as ChunkChoice,
+)
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_function_tool_call import (
     Function,
@@ -115,6 +122,79 @@ class DummyNativeStructuredOutputToolModel(DummyModel):
     @property
     def supports_tool_response_format(self) -> bool:
         return True
+
+
+class StubTokenCounter:
+    r"""Lightweight token counter to avoid tiktoken in stream tests."""
+
+    def encode(self, text: str) -> List[int]:
+        return list(range(len(text) // 3))
+
+    def count_tokens(self, text: str, **kwargs) -> int:
+        return max(1, len(text.split()))
+
+    def count_tokens_from_messages(self, messages, **kwargs) -> int:
+        return 10
+
+
+def make_stream_chunks(content: str):
+    r"""Build a mock chunk stream assembling into `content`."""
+    yield ChatCompletionChunk(
+        id="chatcmpl-test",
+        choices=[ChunkChoice(index=0, delta=ChoiceDelta(content=content))],
+        created=1730000000,
+        model="gpt-4o-mini",
+        object="chat.completion.chunk",
+    )
+    yield ChatCompletionChunk(
+        id="chatcmpl-test",
+        choices=[
+            ChunkChoice(index=0, delta=ChoiceDelta(), finish_reason="stop")
+        ],
+        created=1730000000,
+        model="gpt-4o-mini",
+        object="chat.completion.chunk",
+    )
+    yield ChatCompletionChunk(
+        id="chatcmpl-test",
+        choices=[ChunkChoice(index=0, delta=ChoiceDelta())],
+        created=1730000000,
+        model="gpt-4o-mini",
+        object="chat.completion.chunk",
+        usage=CompletionUsage(
+            prompt_tokens=10, completion_tokens=2, total_tokens=12
+        ),
+    )
+
+
+async def make_async_stream_chunks(content: str):
+    r"""Build a mock async chunk stream assembling into `content`."""
+    yield ChatCompletionChunk(
+        id="chatcmpl-test",
+        choices=[ChunkChoice(index=0, delta=ChoiceDelta(content=content))],
+        created=1730000000,
+        model="gpt-4o-mini",
+        object="chat.completion.chunk",
+    )
+    yield ChatCompletionChunk(
+        id="chatcmpl-test",
+        choices=[
+            ChunkChoice(index=0, delta=ChoiceDelta(), finish_reason="stop")
+        ],
+        created=1730000000,
+        model="gpt-4o-mini",
+        object="chat.completion.chunk",
+    )
+    yield ChatCompletionChunk(
+        id="chatcmpl-test",
+        choices=[ChunkChoice(index=0, delta=ChoiceDelta())],
+        created=1730000000,
+        model="gpt-4o-mini",
+        object="chat.completion.chunk",
+        usage=CompletionUsage(
+            prompt_tokens=10, completion_tokens=2, total_tokens=12
+        ),
+    )
 
 
 class TripSchema(BaseModel):
@@ -1789,6 +1869,193 @@ def test_response_words_termination(step_call_count=3):
         assert (
             "goodbye" in agent_response.info['termination_reasons'][0]
         ), f"Error in calling round {i + 1}"
+
+
+def test_chat_agent_stream_response_terminators():
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    response_terminator = ResponseWordsTerminator(words_dict=dict(goodbye=1))
+    agent = ChatAgent(
+        system_message=system_message,
+        model=DummyModel(
+            ModelType.GPT_4O_MINI,
+            {"stream": True},
+            token_counter=StubTokenCounter(),
+        ),
+        response_terminators=[response_terminator],
+        stream_accumulate=True,
+    )
+    response_terminator.is_terminated = MagicMock(
+        side_effect=response_terminator.is_terminated
+    )
+    agent.model_backend.run = MagicMock(
+        return_value=make_stream_chunks("Goodbye!")
+    )
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Just say 'goodbye' once.",
+    )
+
+    streaming_response = agent.step(user_msg)
+    responses = list(streaming_response)
+
+    assert responses, "Should receive streaming responses"
+    final_response = responses[-1]
+    assert final_response.info["partial"] is False
+    assert final_response.msgs[0].content == "Goodbye!"
+
+    # The terminator must be consulted on the streamed response, and the
+    # termination status must be reported like in non-streaming mode
+    response_terminator.is_terminated.assert_called_once()
+    assert agent.terminated
+    assert final_response.terminated
+
+
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_response_terminators():
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    response_terminator = ResponseWordsTerminator(words_dict=dict(goodbye=1))
+    agent = ChatAgent(
+        system_message=system_message,
+        model=DummyModel(
+            ModelType.GPT_4O_MINI,
+            {"stream": True},
+            token_counter=StubTokenCounter(),
+        ),
+        response_terminators=[response_terminator],
+        stream_accumulate=True,
+    )
+    response_terminator.is_terminated = MagicMock(
+        side_effect=response_terminator.is_terminated
+    )
+    agent.model_backend.arun = AsyncMock(
+        return_value=make_async_stream_chunks("Goodbye!")
+    )
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Just say 'goodbye' once.",
+    )
+
+    streaming_response = await agent.astep(user_msg)
+    responses = [response async for response in streaming_response]
+
+    assert responses, "Should receive streaming responses"
+    final_response = responses[-1]
+    assert final_response.info["partial"] is False
+    assert final_response.msgs[0].content == "Goodbye!"
+
+    # The terminator must be consulted on the streamed response, and the
+    # termination status must be reported like in non-streaming mode
+    response_terminator.is_terminated.assert_called_once()
+    assert agent.terminated
+    assert final_response.terminated
+
+
+def test_chat_agent_stream_response_terminator_continuation():
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    response_terminator = ResponseWordsTerminator(words_dict=dict(goodbye=1))
+    agent = ChatAgent(
+        system_message=system_message,
+        model=DummyModel(
+            ModelType.GPT_4O_MINI,
+            {"stream": True},
+            token_counter=StubTokenCounter(),
+        ),
+        response_terminators=[response_terminator],
+        stream_accumulate=True,
+    )
+    agent.model_backend.run = MagicMock(
+        side_effect=[
+            make_stream_chunks("Hello there friend."),
+            make_stream_chunks("Goodbye!"),
+        ]
+    )
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Keep talking until you say goodbye.",
+    )
+
+    responses = list(agent.step(user_msg))
+
+    # The agent should prompt the model to continue after the first
+    # response fails to trigger the terminator
+    assert agent.model_backend.run.call_count == 2
+    context, _ = agent.memory.get_context()
+    assert any(
+        message.get("content") == "Please continue." for message in context
+    )
+
+    # The second response terminates the agent
+    assert agent.terminated
+    assert responses[-1].terminated
+
+
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_response_terminator_continuation():
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    response_terminator = ResponseWordsTerminator(words_dict=dict(goodbye=1))
+    agent = ChatAgent(
+        system_message=system_message,
+        model=DummyModel(
+            ModelType.GPT_4O_MINI,
+            {"stream": True},
+            token_counter=StubTokenCounter(),
+        ),
+        response_terminators=[response_terminator],
+        stream_accumulate=True,
+    )
+    agent.model_backend.arun = AsyncMock(
+        side_effect=[
+            make_async_stream_chunks("Hello there friend."),
+            make_async_stream_chunks("Goodbye!"),
+        ]
+    )
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Keep talking until you say goodbye.",
+    )
+
+    streaming_response = await agent.astep(user_msg)
+    responses = [response async for response in streaming_response]
+
+    # The agent should prompt the model to continue after the first
+    # response fails to trigger the terminator
+    assert agent.model_backend.arun.call_count == 2
+    context, _ = agent.memory.get_context()
+    assert any(
+        message.get("content") == "Please continue." for message in context
+    )
+
+    # The second response terminates the agent
+    assert agent.terminated
+    assert responses[-1].terminated
 
 
 def test_chat_agent_vision(step_call_count=3):
