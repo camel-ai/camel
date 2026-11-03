@@ -119,7 +119,15 @@ class BM25Retriever(BaseRetriever):
         # Retrieve documents based on BM25 scores
         scores = self.bm25.get_scores(processed_query)
 
-        top_k_indices = np.argpartition(scores, -top_k)[-top_k:]
+        # Clamp top_k to the number of scored chunks: np.argpartition
+        # raises ValueError when kth falls outside the score array,
+        # which happens whenever top_k exceeds the corpus size (e.g.
+        # HybridRetriever's default bm25_retriever_top_k=50 on a
+        # document chunked into fewer than 50 pieces).
+        effective_top_k = min(top_k, len(scores))
+        top_k_indices = np.argpartition(scores, -effective_top_k)[
+            -effective_top_k:
+        ]
 
         formatted_results = []
         for i in top_k_indices:
