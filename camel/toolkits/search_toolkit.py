@@ -1105,9 +1105,14 @@ class SearchToolkit(BaseToolkit):
         from exa_py import Exa
 
         EXA_API_KEY = os.getenv("EXA_API_KEY")
+        EXA_API_BASE_URL = os.getenv("EXA_API_BASE_URL")
 
         try:
-            exa = Exa(EXA_API_KEY)
+            exa = (
+                Exa(EXA_API_KEY, base_url=EXA_API_BASE_URL)
+                if EXA_API_BASE_URL
+                else Exa(EXA_API_KEY)
+            )
 
             if (
                 number_of_result_pages is not None
