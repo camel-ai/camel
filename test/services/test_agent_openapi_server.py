@@ -12,6 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from unittest.mock import Mock
+
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
@@ -19,16 +21,24 @@ from httpx import ASGITransport, AsyncClient
 from pydantic import BaseModel
 
 from camel.messages import BaseMessage
+from camel.services import agent_openapi_server as server_module
 from camel.services.agent_openapi_server import ChatAgentOpenAPIServer
 from camel.toolkits import FunctionTool, SearchToolkit
+
+TEST_TOKEN = 'test-only-' + 'x' * 32
 
 
 @pytest.fixture
 def client_with_tool():
     r"""Creates a FastAPI test client with a registered tool."""
     tool = FunctionTool(SearchToolkit().search_wiki)
-    server = ChatAgentOpenAPIServer(tool_registry={"search_wiki": [tool]})
-    client = TestClient(server.get_app())
+    server = ChatAgentOpenAPIServer(
+        tool_registry={"search_wiki": [tool]},
+        api_keys={TEST_TOKEN: 'test-user'},
+    )
+    client = TestClient(
+        server.get_app(), headers={'Authorization': f'Bearer {TEST_TOKEN}'}
+    )
     return client
 
 
@@ -89,8 +99,10 @@ def test_get_history(client_with_tool):
     assert isinstance(history.json(), list)
 
 
-def test_reset_agent(client_with_tool):
+def test_reset_agent(client_with_tool, monkeypatch):
     r"""Tests /v1/agents/reset resets the agent successfully."""
+    monkeypatch.setattr(server_module.ModelFactory, 'create', Mock())
+    monkeypatch.setattr(server_module, 'ChatAgent', Mock())
     client_with_tool.post("/v1/agents/init", json={"agent_id": "test_agent"})
     response = client_with_tool.post("/v1/agents/reset/test_agent")
     assert response.status_code == 200
@@ -110,12 +122,18 @@ async def test_async_step_route_with_tool():
     tool_registry = {
         "search_wiki": [FunctionTool(SearchToolkit().search_wiki)]
     }
-    server = ChatAgentOpenAPIServer(tool_registry=tool_registry)
+    server = ChatAgentOpenAPIServer(
+        tool_registry=tool_registry, api_keys={TEST_TOKEN: 'test-user'}
+    )
     app = server.get_app()
 
     transport = ASGITransport(app=app)
 
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={'Authorization': f'Bearer {TEST_TOKEN}'},
+    ) as ac:
         # Step 1: Init
         resp = await ac.post(
             "/v1/agents/init",

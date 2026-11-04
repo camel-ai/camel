@@ -1,5 +1,8 @@
 <a id="camel.services.agent_openapi_server"></a>
 
+All agent routes require configured Bearer tokens. See the
+[authentication and ownership migration guide](../key_modules/agent_openapi_server_auth.md).
+
 <a id="camel.services.agent_openapi_server.InitRequest"></a>
 
 ## InitRequest
@@ -74,7 +77,8 @@ agent behavior or output schemas.
 def __init__(
     self,
     tool_registry: Optional[Dict[str, List[FunctionTool]]] = None,
-    response_format_registry: Optional[Dict[str, Type[BaseModel]]] = None
+    response_format_registry: Optional[Dict[str, Type[BaseModel]]] = None,
+    api_keys: Optional[Dict[str, str]] = None
 ):
 ```
 
