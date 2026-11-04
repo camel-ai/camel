@@ -71,6 +71,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **PPIO**         | [supported models](https://ppio.com/model-api/console) |
 | **LiteLLM**      | [supported models](https://docs.litellm.ai/docs/providers) |
 | **OpenAI Compatible** | custom OpenAI-compatible endpoints via `OPENAI_COMPATIBLE_MODEL` |
+| **DemonRoute**   | [supported models](https://demonroute.com/models) |
 | **LMStudio**     | [supported models](https://lmstudio.ai/models) |
 | **vLLM**         | [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
 | **SGLANG**       | [supported models](https://docs.sglang.ai/supported_models/generative_models.html ) |
@@ -493,6 +494,43 @@ print(response.msg.content)
 <Note type="info">
   Replace the model name, base URL, and API key with values provided by your
   OpenAI-compatible service.
+</Note>
+
+### Verified OpenAI-Compatible Providers
+
+| Provider | Base URL | Supported Models |
+| :------- | :------- | :--------------- |
+| **DemonRoute** | `https://api.demonroute.com/v1` | [supported models](https://demonroute.com/models) |
+
+### Example: DemonRoute
+
+[DemonRoute](https://demonroute.com/) is an OpenAI-compatible gateway providing access to open-weight models. You can connect to DemonRoute by setting the endpoint URL and passing any model ID from the catalog:
+
+```python
+import os
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+    model_type="NousResearch/Hermes-3-Llama-3.1-70B",
+    url="https://api.demonroute.com/v1",
+    api_key=os.getenv("DEMONROUTE_API_KEY"),
+    model_config_dict={"temperature": 0.2},
+)
+
+agent = ChatAgent(
+    system_message="You are a helpful assistant.",
+    model=model,
+)
+
+response = agent.step("Say hi to CAMEL AI community.")
+print(response.msg.content)
+```
+
+<Note type="info">
+  Refer to the [DemonRoute model catalog](https://demonroute.com/models) for available model IDs and their respective context window limits.
 </Note>
 
 
