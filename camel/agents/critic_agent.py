@@ -94,7 +94,7 @@ class CriticAgent(ChatAgent):
             message_window_size=message_window_size,
         )
         self.options_dict: Dict[str, str] = dict()
-        self.retry_attempts = retry_attempts
+        self.retry_attempts = max(1, retry_attempts)
         self.verbose = verbose
         self.logger_color = logger_color
 
