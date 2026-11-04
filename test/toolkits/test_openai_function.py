@@ -209,6 +209,60 @@ def test_open_mapping_parameter_disables_strict_mode():
     assert mapping_schema["additionalProperties"] == {"type": "string"}
 
 
+def test_default_open_mapping_parameter_disables_strict_mode():
+    def configure_agent(
+        agent_id: str,
+        metadata: Dict[str, str] = {"env": "prod"},  # noqa: B006
+    ) -> None:
+        r"""Configure agent deployment settings.
+
+        Args:
+            agent_id: Unique agent identifier.
+            metadata: Environment metadata.
+        """
+
+    schema = get_openai_tool_schema(configure_agent)
+    function_schema = schema["function"]
+    metadata_schema = function_schema["parameters"]["properties"]["metadata"]
+
+    assert function_schema["strict"] is False
+    assert metadata_schema["type"] == ["object", "null"]
+    assert metadata_schema["additionalProperties"] == {"type": "string"}
+
+
+def test_nullable_object_schema_adds_additional_properties_false():
+    from camel.toolkits.function_tool import sanitize_and_enforce_required
+
+    raw_schema = {
+        "type": "function",
+        "function": {
+            "name": "update_config",
+            "strict": True,
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "options": {
+                        "type": "object",
+                        "properties": {"retries": {"type": "integer"}},
+                        "required": ["retries"],
+                        "default": {"retries": 3},
+                    }
+                },
+                "additionalProperties": False,
+            },
+        },
+    }
+
+    sanitized = sanitize_and_enforce_required(raw_schema)
+    options_schema = sanitized["function"]["parameters"]["properties"][
+        "options"
+    ]
+
+    assert sanitized["function"]["strict"] is True
+    assert options_schema["type"] == ["object", "null"]
+    assert options_schema["additionalProperties"] is False
+
+
 def test_different_docstring_style():
     def rest_style(a: int, b: int):
         """
