@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import inspect
 import json
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
 
 from pydantic import BaseModel, Field, create_model
 
@@ -73,6 +73,22 @@ TYPE_MAPPING = {
 }
 
 
+def _literal_from_enum(values: List[Any]) -> Any:
+    r"""Build a validation-ready type from a JSON schema ``enum`` list.
+
+    Pydantic v2 silently ignores unknown ``Field`` keyword arguments, so an
+    ``enum`` cannot be enforced through ``Field``; restricting the annotated
+    type to ``Literal`` is what actually validates the allowed values.
+
+    Args:
+        values (List[Any]): The values declared by the JSON schema ``enum``.
+
+    Returns:
+        Any: The ``Literal`` type accepting exactly ``values``.
+    """
+    return Literal[tuple(values)]  # type: ignore[valid-type]
+
+
 def model_from_json_schema(
     name: str,
     schema: Dict[str, Any],
@@ -114,6 +130,14 @@ def model_from_json_schema(
         else:
             py_type = TYPE_MAPPING.get(json_type, str)
 
+        # Enforce ``enum`` through the annotated type. Pydantic v2 ignores
+        # unknown ``Field`` keyword arguments, so passing ``enum=`` to
+        # ``Field`` only echoes the values back in the JSON schema without
+        # ever validating them.
+        enum_values = field_schema.get("enum")
+        if isinstance(enum_values, (list, tuple)) and len(enum_values) > 0:
+            py_type = _literal_from_enum(list(enum_values))
+
         # Handle nullable fields.
         if field_schema.get("nullable", False):
             py_type = Optional[py_type]  # type: ignore[assignment]
@@ -128,8 +152,6 @@ def model_from_json_schema(
             constraints["ge"] = field_schema["minimum"]
         if "maximum" in field_schema:
             constraints["le"] = field_schema["maximum"]
-        if "enum" in field_schema:
-            constraints["enum"] = field_schema["enum"]
         if "description" in field_schema:
             constraints["description"] = field_schema["description"]
 
