@@ -27,6 +27,7 @@ from pydantic import BaseModel
 from tqdm import tqdm
 
 from camel.runtimes import BaseRuntime, TaskConfig
+from camel.runtimes.base import _auth_headers, _resolve_api_key
 from camel.toolkits import FunctionTool
 
 if TYPE_CHECKING:
@@ -46,12 +47,23 @@ class DockerRuntime(BaseRuntime):
             `8000`)
         remove (bool): Whether to remove the container after stopping it. '
             (default: :obj:`True`)
+        api_key (Optional[str]): The API key to share with the API server
+            running inside the container, which rejects requests that do not
+            present it. Defaults to ``CAMEL_RUNTIME_API_KEY`` if set, and to a
+            generated key otherwise. Pass an empty string to run the server
+            with authentication disabled.
+            (default: :obj:`None`)
         kwargs (dict): Additional keyword arguments to pass to the
             Docker client.
     """
 
     def __init__(
-        self, image: str, port: int = 8000, remove: bool = True, **kwargs
+        self,
+        image: str,
+        port: int = 8000,
+        remove: bool = True,
+        api_key: Optional[str] = None,
+        **kwargs,
     ):
         super().__init__()
 
@@ -70,6 +82,7 @@ class DockerRuntime(BaseRuntime):
         self.image = image
         self.port = port if port > 0 else randint(10000, 20000)
         self.remove = remove
+        self.api_key = _resolve_api_key(api_key)
 
         if not self.client.images.list(name=self.image):
             logger.warning(
@@ -240,7 +253,12 @@ class DockerRuntime(BaseRuntime):
 
         exec = ["python3", "api.py", *list(self.entrypoint.values())]
 
-        self.container.exec_run(exec, workdir="/home", detach=True)
+        self.container.exec_run(
+            exec,
+            workdir="/home",
+            detach=True,
+            environment={"CAMEL_RUNTIME_API_KEY": self.api_key},
+        )
 
         logger.info(f"Container started on port {self.port}")
         return self
@@ -292,6 +310,7 @@ class DockerRuntime(BaseRuntime):
                         kwargs=kwargs,
                         redirect_stdout=redirect_stdout,
                     ),
+                    headers=_auth_headers(self.api_key),
                 )
                 if resp.status_code != 200:
                     logger.error(
