@@ -421,7 +421,7 @@ class PipelineTaskBuilder:
     r"""Helper class for building pipeline tasks with dependencies."""
 
     def __init__(self):
-        """Initialize an empty pipeline task builder."""
+        r"""Initialize an empty pipeline task builder."""
         from camel.tasks import Task
 
         self._TaskClass = Task
@@ -442,7 +442,7 @@ class PipelineTaskBuilder:
         additional_info: Optional[dict] = None,
         auto_depend: bool = True,
     ) -> 'PipelineTaskBuilder':
-        """Add a task to the pipeline with support for chaining.
+        r"""Add a task to the pipeline with support for chaining.
 
         Args:
             content (str): The content/description of the task.
@@ -514,7 +514,7 @@ class PipelineTaskBuilder:
         task_id_prefix: str = "parallel",
         auto_depend: bool = True,
     ) -> 'PipelineTaskBuilder':
-        """Add multiple parallel tasks that can execute simultaneously.
+        r"""Add multiple parallel tasks that can execute simultaneously.
 
         Args:
             task_contents (List[str]): List of task content strings.
@@ -575,7 +575,7 @@ class PipelineTaskBuilder:
         wait_for: Optional[List[str]] = None,
         task_id: Optional[str] = None,
     ) -> 'PipelineTaskBuilder':
-        """Add a synchronization task that waits for multiple tasks.
+        r"""Add a synchronization task that waits for multiple tasks.
 
         Args:
             content (str): Content of the synchronization task.
@@ -618,7 +618,7 @@ class PipelineTaskBuilder:
         )
 
     def build(self) -> List:
-        """Build and return the complete task list with dependencies.
+        r"""Build and return the complete task list with dependencies.
 
         Returns:
             List[Task]: List of tasks with proper dependency relationships.
@@ -636,7 +636,7 @@ class PipelineTaskBuilder:
         return self.task_list.copy()
 
     def clear(self) -> None:
-        """Clear all tasks from the builder."""
+        r"""Clear all tasks from the builder."""
         self.task_list.clear()
         self._task_registry.clear()
         self.task_counter = 0
@@ -644,7 +644,7 @@ class PipelineTaskBuilder:
         self._last_parallel_tasks = []
 
     def fork(self, task_contents: List[str]) -> 'PipelineTaskBuilder':
-        """Create parallel branches from the current task (alias for
+        r"""Create parallel branches from the current task (alias for
         add_parallel_tasks).
 
         Args:
@@ -664,7 +664,7 @@ class PipelineTaskBuilder:
     def join(
         self, content: str, task_id: Optional[str] = None
     ) -> 'PipelineTaskBuilder':
-        """Join parallel branches with a synchronization task (alias for
+        r"""Join parallel branches with a synchronization task (alias for
         add_sync_task).
 
         Args:
@@ -680,7 +680,7 @@ class PipelineTaskBuilder:
         return self.add_sync_task(content, task_id=task_id)
 
     def _validate_dependencies(self) -> None:
-        """Validate that there are no circular dependencies.
+        r"""Validate that there are no circular dependencies.
 
         Raises:
             ValueError: If circular dependencies are detected.
@@ -713,7 +713,7 @@ class PipelineTaskBuilder:
                     )
 
     def get_task_info(self) -> dict:
-        """Get information about all tasks in the pipeline.
+        r"""Get information about all tasks in the pipeline.
 
         Returns:
             dict: Dictionary containing task count and task details.
