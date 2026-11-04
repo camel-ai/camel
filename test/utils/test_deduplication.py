@@ -228,3 +228,41 @@ def test_deduplicate_internally_with_inconsistent_embeddings():
             # but the length of embeddings is 2.
             strategy="top1",
         )
+
+
+@pytest.mark.parametrize("batch_size", [1, 2, 3, 4, 5, 100])
+def test_deduplicate_internally_is_batch_size_invariant(batch_size):
+    r"""Test that ``batch_size`` does not change the deduplication result.
+
+    ``batch_size`` only bounds how many similarity rows are computed at the
+    same time to save memory, so every duplicate has to be detected no matter
+    where the batch boundaries fall. Index 3 duplicates index 2 and both are
+    located in the second half of the input, so they are only compared when
+    the duplicate mask is built with global row and column indices.
+    """
+    texts = ["A", "B", "C", "D", "E", "F"]
+    embeddings = [
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0],
+        [0.0, 0.0, 0.99],  # duplicate of index 2
+        [0.7, 0.7, 0.0],
+        [0.0, 0.7, 0.7],
+    ]
+
+    expected = deduplicate_internally(
+        texts=texts,
+        threshold=0.9,
+        embeddings=embeddings,
+        batch_size=len(texts),
+    )
+    result = deduplicate_internally(
+        texts=texts,
+        threshold=0.9,
+        embeddings=embeddings,
+        batch_size=batch_size,
+    )
+
+    assert result.duplicate_to_target_map == {3: 2}
+    assert result.unique_ids == expected.unique_ids
+    assert result.duplicate_to_target_map == expected.duplicate_to_target_map
