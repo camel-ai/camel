@@ -352,7 +352,11 @@ def sanitize_and_enforce_required(parameters_dict):
         r"""Close unspecified objects and report strict compatibility."""
         strict_compatible = True
         if isinstance(obj, dict):
-            if obj.get("type") == "object":
+            obj_type = obj.get("type")
+            is_object = obj_type == "object" or (
+                isinstance(obj_type, (list, tuple)) and "object" in obj_type
+            )
+            if is_object:
                 if "additionalProperties" not in obj:
                     obj["additionalProperties"] = False
                 elif obj["additionalProperties"] is not False:
