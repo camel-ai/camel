@@ -209,6 +209,11 @@ class SQLToolkit(BaseToolkit):
         query_no_comments = re.sub(
             r"/\*.*?\*/", "", query_no_comments, flags=re.DOTALL
         )
+        # Remove string literals and quoted identifiers so that keywords
+        # mentioned inside them (e.g. ``WHERE note = 'delete me'``) are not
+        # misinterpreted as write operations.
+        query_no_comments = re.sub(r"'(?:''|[^'])*'", " ", query_no_comments)
+        query_no_comments = re.sub(r'"(?:""|[^"])*"', " ", query_no_comments)
 
         # Normalize whitespace and convert to uppercase for keyword matching
         query_normalized = " ".join(query_no_comments.split()).upper()
