@@ -29,9 +29,7 @@ def test_to_string_from_string_roundtrip(
 ):
     r"""A serialized item must parse back into an equal item, including the
     documented case where the input is an empty string."""
-    item = AlpacaItem(
-        instruction=instruction, input=item_input, output=output
-    )
+    item = AlpacaItem(instruction=instruction, input=item_input, output=output)
 
     assert AlpacaItem.from_string(item.to_string()) == item
 
@@ -39,10 +37,7 @@ def test_to_string_from_string_roundtrip(
 def test_from_string_accepts_missing_input_section():
     r"""The format without an ``### Input:`` section is documented, so it
     must keep parsing to an empty input."""
-    text = (
-        "### Instruction:\nDo the thing\n"
-        "### Response:\nDone"
-    )
+    text = "### Instruction:\nDo the thing\n### Response:\nDone"
 
     item = AlpacaItem.from_string(text)
 
