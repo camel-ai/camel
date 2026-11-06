@@ -41,6 +41,17 @@ from camel.parsers.mcp_tool_call_parser import extract_tool_calls_from_text
             ],
         ),
         (
+            """```json
+Here is the call: {"tool_name": "add", "arguments": {"a": 1, "b": 2}}
+```""",
+            [
+                {
+                    "tool_name": "add",
+                    "arguments": {"a": 1, "b": 2},
+                }
+            ],
+        ),
+        (
             """Please run this: {\"server_idx\": 1, \"tool_name\": \"math\",
             \"tool_args\": {\"a\": 1, \"b\": 2}}""",
             [
