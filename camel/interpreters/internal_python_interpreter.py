@@ -18,7 +18,7 @@ import operator
 import os
 import subprocess
 import typing
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
@@ -87,12 +87,12 @@ class InternalPythonInterpreter(BaseInterpreter):
             (default: :obj:`True`)
     """
 
-    _CODE_TYPES: ClassVar[List[str]] = ["python", "py", "python3", "python2"]
+    _CODE_TYPES: ClassVar[list[str]] = ["python", "py", "python3", "python2"]
 
     def __init__(
         self,
-        action_space: Optional[Dict[str, Any]] = None,
-        import_white_list: Optional[List[str]] = None,
+        action_space: dict[str, Any] | None = None,
+        import_white_list: list[str] | None = None,
         unsafe_mode: bool = False,
         require_confirm: bool = True,
         raise_error: bool = False,
@@ -100,7 +100,7 @@ class InternalPythonInterpreter(BaseInterpreter):
     ) -> None:
         self.action_space = action_space or dict()
         self.state = self.action_space.copy()
-        self.fuzz_state: Dict[str, Any] = dict()
+        self.fuzz_state: dict[str, Any] = dict()
         self.import_white_list = import_white_list or list()
         self.raise_error = raise_error
         self.unsafe_mode = unsafe_mode
@@ -202,19 +202,19 @@ class InternalPythonInterpreter(BaseInterpreter):
         else:
             return str(self.execute(code))
 
-    def update_action_space(self, action_space: Dict[str, Any]) -> None:
+    def update_action_space(self, action_space: dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter."""
         self.action_space.update(action_space)
 
-    def supported_code_types(self) -> List[str]:
+    def supported_code_types(self) -> list[str]:
         r"""Provides supported code types by the interpreter."""
         return self._CODE_TYPES
 
     def execute(
         self,
         code: str,
-        state: Optional[Dict[str, Any]] = None,
-        fuzz_state: Optional[Dict[str, Any]] = None,
+        state: dict[str, Any] | None = None,
+        fuzz_state: dict[str, Any] | None = None,
         keep_state: bool = True,
     ) -> Any:
         r"""Execute the input python codes in a security environment.
@@ -259,9 +259,15 @@ class InternalPythonInterpreter(BaseInterpreter):
         for idx, node in enumerate(expression.body):
             try:
                 line_result = self._execute_ast(node)
-            except InterpreterError as e:
+            except Exception as e:
                 if not keep_state:
                     self.clear_state()
+                if not isinstance(e, InterpreterError):
+                    # Native exceptions raised by the evaluated code (e.g.
+                    # `ZeroDivisionError`, `TypeError`) must be reported like
+                    # any other interpreter failure instead of escaping to
+                    # the caller.
+                    e = InterpreterError(f"{type(e).__name__}: {e}")
                 msg = (
                     f"Evaluation of the code stopped at node {idx}. "
                     f"See:\n{e}"
@@ -269,7 +275,7 @@ class InternalPythonInterpreter(BaseInterpreter):
                 # More information can be provided by `ast.unparse()`,
                 # which is new in python 3.9.
                 if self.raise_error:
-                    raise InterpreterError(msg)
+                    raise InterpreterError(msg) from e
                 else:
                     import traceback
 
@@ -317,7 +323,7 @@ class InternalPythonInterpreter(BaseInterpreter):
             return expression.value
         elif isinstance(expression, ast.Dict):
             # Dict -> evaluate all keys and values
-            result: Dict = {}
+            result: dict = {}
             for k, v in zip(expression.keys, expression.values):
                 if k is not None:
                     result[self._execute_ast(k)] = self._execute_ast(v)
