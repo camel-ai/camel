@@ -547,6 +547,9 @@ def create_chunks(text: str, n: int) -> List[str]:
         List[str]: A list of split texts.
     """
 
+    if n <= 0:
+        raise ValueError(f"`n` must be greater than 0, got {n}")
+
     chunks = []
     i = 0
     while i < len(text):
