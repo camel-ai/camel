@@ -15,6 +15,7 @@ import pytest
 from PIL import Image
 
 from camel.types import ModelType, OpenAIVisionDetailType
+from camel.messages import OpenAIMessage
 from camel.utils import OpenAITokenCounter
 
 
@@ -37,3 +38,45 @@ def test_openai_count_token_from_image(
         )
         == token_cost
     )
+
+
+def test_openai_count_token_from_messages_tool_calls():
+    r"""Tool-call payloads (function name + arguments) must contribute to the
+    token count instead of being silently dropped."""
+    counter = OpenAITokenCounter(ModelType.GPT_4O)
+
+    arguments = (
+        '{"location": "San Francisco, CA", "unit": "celsius",'
+        ' "detail": "extended forecast for the week ahead"}'
+    )
+    tool_call_message: OpenAIMessage = {
+        "role": "assistant",
+        "content": None,
+        "tool_calls": [
+            {
+                "id": "call_1",
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "arguments": arguments,
+                },
+            }
+        ],
+    }
+    counted = counter.count_tokens_from_messages([tool_call_message])
+
+    arguments_tokens = len(
+        counter.encoding.encode(arguments, disallowed_special=())
+    )
+    # The arguments alone already cost this much; the message must count at
+    # least them (previously the whole tool_calls field counted as zero).
+    assert counted > arguments_tokens
+
+    # An unknown structured list item must not silently count as zero either.
+    unknown_message: OpenAIMessage = {
+        "role": "assistant",
+        "content": [{"type": "unknown_kind", "payload": "x" * 100}],
+    }
+    unknown_tokens = counter.count_tokens_from_messages([unknown_message])
+    payload_tokens = len(counter.encoding.encode("x" * 100, disallowed_special=()))
+    assert unknown_tokens > payload_tokens
