@@ -11,6 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import importlib
+
+import pytest
 
 
 def test_all_exports_from_camel():
@@ -31,3 +34,17 @@ def test_all_exports_type():
 
     for item in camel.__all__:
         assert isinstance(item, str)
+
+
+@pytest.mark.parametrize(
+    "module_name",
+    [
+        "camel.prompts",
+        "camel.datagen.evol_instruct",
+        "camel.utils",
+    ],
+)
+def test_submodule_all_exports_are_bound(module_name: str):
+    mod = importlib.import_module(module_name)
+    for name in mod.__all__:
+        assert hasattr(mod, name), f"{module_name}.__all__ lists unbound name {name!r}"
