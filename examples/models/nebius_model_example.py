@@ -15,11 +15,13 @@
 from camel.agents import ChatAgent
 from camel.configs import NebiusConfig
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.NEBIUS,
-    model_type=ModelType.NEBIUS_GPT_OSS_120B,
+    # The public catalog is the source of truth for current model IDs:
+    # https://tokenfactory.nebius.com/model-catalog.md
+    model_type="openai/gpt-oss-120b",
     model_config_dict=NebiusConfig(temperature=0.2).as_dict(),
 )
 

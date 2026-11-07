@@ -54,16 +54,6 @@ def __init__(
 
 Initialize the FAISS vector storage.
 
-**Parameters:**
-
-- **vector_dim**: Dimension of vectors to be stored
-- **index_type**: FAISS index type ('Flat', 'IVF', 'HNSW', etc.)
-- **collection_name**: Name of the collection (defaults to timestamp) (default: timestamp)
-- **storage_path**: Directory to save the index (None for in-memory only)
-- **distance**: Vector distance metric
-- **nlist**: Number of clusters for IVF indexes
-- **m**: HNSW parameter for connections per node **kwargs: Additional parameters
-
 <a id="camel.storages.vectordb_storages.faiss.FaissStorage._generate_collection_name"></a>
 
 ### _generate_collection_name
@@ -72,7 +62,9 @@ Initialize the FAISS vector storage.
 def _generate_collection_name(self):
 ```
 
-Generates a collection name if user doesn't provide
+**Returns:**
+
+  str: Generated collection name.
 
 <a id="camel.storages.vectordb_storages.faiss.FaissStorage._get_index_path"></a>
 
@@ -82,7 +74,9 @@ Generates a collection name if user doesn't provide
 def _get_index_path(self):
 ```
 
-Returns the path to the index file
+**Returns:**
+
+  str: The path to the index file.
 
 <a id="camel.storages.vectordb_storages.faiss.FaissStorage._get_metadata_path"></a>
 
@@ -92,7 +86,9 @@ Returns the path to the index file
 def _get_metadata_path(self):
 ```
 
-Returns the path to the metadata file
+**Returns:**
+
+  str: The path to the metadata file.
 
 <a id="camel.storages.vectordb_storages.faiss.FaissStorage._create_index"></a>
 
@@ -104,7 +100,7 @@ def _create_index(self):
 
 **Returns:**
 
-  A FAISS index object configured according to the parameters.
+  Any: A FAISS index object configured according to the parameters.
 
 <a id="camel.storages.vectordb_storages.faiss.FaissStorage._save_to_disk"></a>
 
@@ -125,6 +121,9 @@ def _load_from_disk(self):
 ```
 
 Loads the index and metadata from disk if they exist.
+
+If loading fails, including when metadata is missing required keys,
+logs the error and attempts to create a new index.
 
 <a id="camel.storages.vectordb_storages.faiss.FaissStorage.add"></a>
 
@@ -265,7 +264,9 @@ Load the index from disk if storage_path is provided.
 def client(self):
 ```
 
-Provides access to the underlying FAISS client.
+**Returns:**
+
+  Any: The FAISS client module or instance.
 
 <a id="camel.storages.vectordb_storages.faiss.FaissStorage._matches_filter"></a>
 

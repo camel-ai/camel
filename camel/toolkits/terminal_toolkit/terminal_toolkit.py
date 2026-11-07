@@ -21,7 +21,7 @@ import threading
 import time
 import uuid
 from queue import Empty, Full, Queue
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from camel.logger import get_logger
 from camel.toolkits import manual_timeout
@@ -66,6 +66,27 @@ def _to_plain(text: str) -> str:
         return text
 
 
+def _default_console_approval(command: str) -> bool:
+    r"""Ask for approval in a terminal; deny non-interactive input.
+
+    Args:
+        command (str): The command or process input requesting approval.
+
+    Returns:
+        bool: Whether the user explicitly approved the input.
+    """
+    if sys.stdin is None or not sys.stdin.isatty():
+        return False
+    try:
+        response = input(
+            f"\n[TerminalToolkit] Approve command or process input:\n"
+            f"  {command}\nApprove? (y/N): "
+        )
+        return response.strip().lower() in ("y", "yes")
+    except EOFError:
+        return False
+
+
 @MCPServer()
 class TerminalToolkit(BaseToolkit):
     r"""A toolkit for LLM agents to execute and interact with terminal commands
@@ -100,6 +121,16 @@ class TerminalToolkit(BaseToolkit):
             ``Runtime.GO`` and ``Runtime.JAVA``. If empty (the default),
             only the Python runtime is configured. Example:
             ``enable_other_runtimes=[Runtime.GO, Runtime.JAVA]``.
+        require_approval (Optional[Callable[[str], bool]], optional): Callback
+            checked before starting a shell command or sending process input.
+            Receives the sanitized command for :obj:`shell_exec`, or the raw
+            input for :obj:`shell_write_to_process`. Return True to allow it;
+            exceptions propagate without executing the command or input.
+            None disables approval. Pass :obj:`_default_console_approval` for
+            interactive approval; non-interactive applications should provide
+            their own callback. This does not restrict actions performed
+            internally by an approved program or replace sandbox isolation.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -114,6 +145,7 @@ class TerminalToolkit(BaseToolkit):
         clone_current_env: bool = False,
         install_dependencies: Optional[List[str]] = None,
         enable_other_runtimes: list[Runtime] | None = None,
+        require_approval: Optional[Callable[[str], bool]] = None,
     ):
         # auto-detect if running inside a CAMEL runtime container
         # when inside a runtime, use local execution (already sandboxed)
@@ -166,6 +198,7 @@ class TerminalToolkit(BaseToolkit):
         if not os.path.exists(self.working_dir):
             os.makedirs(self.working_dir, exist_ok=True)
         self.safe_mode = safe_mode
+        self._require_approval = require_approval
 
         # Initialize whitelist of allowed commands if provided
         self.allowed_commands = (
@@ -530,6 +563,12 @@ class TerminalToolkit(BaseToolkit):
         except (APIError, NotFound) as e:
             raise RuntimeError(f"Docker API error: {e}") from e
 
+    def _approve_command(self, command: str) -> bool:
+        r"""Check approval for a command or process input."""
+        return self._require_approval is None or self._require_approval(
+            command
+        )
+
     def _sanitize_command(self, command: str) -> tuple[bool, str]:
         r"""A comprehensive command sanitizer for both local and
         Docker backends."""
@@ -761,6 +800,9 @@ class TerminalToolkit(BaseToolkit):
                     f"{message}"
                 )
             command = message
+
+        if not self._approve_command(command):
+            return "Command rejected by approval policy."
 
         if self.use_docker_backend:
             # For Docker, we always run commands in a shell
@@ -1084,6 +1126,9 @@ class TerminalToolkit(BaseToolkit):
                     f"session found with ID '{id}'."
                 )
             session = self.shell_sessions[id]
+
+        if not self._approve_command(command):
+            return "Input rejected by approval policy."
 
         # Flush any lingering output from previous commands.
         self._collect_output_until_idle(id, idle_duration=0.3, max_wait=2.0)

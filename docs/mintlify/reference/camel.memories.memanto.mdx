@@ -1,0 +1,152 @@
+<a id="camel.memories.memanto"></a>
+
+<a id="camel.memories.memanto._MemantoRESTClient"></a>
+
+## _MemantoRESTClient
+
+```python
+class _MemantoRESTClient:
+```
+
+Session-aware client for Memanto memory writes and semantic recall.
+
+<a id="camel.memories.memanto._MemantoRESTClient.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    agent_id: str,
+    base_url: str,
+    timeout: float
+):
+```
+
+<a id="camel.memories.memanto._MemantoRESTClient._activate"></a>
+
+### _activate
+
+```python
+def _activate(self):
+```
+
+<a id="camel.memories.memanto._MemantoRESTClient._request"></a>
+
+### _request
+
+```python
+def _request(self, operation: str, payload: Dict[str, Any]):
+```
+
+<a id="camel.memories.memanto._MemantoRESTClient.remember"></a>
+
+### remember
+
+```python
+def remember(self, content: str, record_id: str):
+```
+
+<a id="camel.memories.memanto._MemantoRESTClient.recall"></a>
+
+### recall
+
+```python
+def recall(self, query: str, limit: int):
+```
+
+<a id="camel.memories.memanto._MemantoRESTClient.close"></a>
+
+### close
+
+```python
+def close(self):
+```
+
+<a id="camel.memories.memanto.MemantoMemory"></a>
+
+## MemantoMemory
+
+```python
+class MemantoMemory(ChatHistoryMemory):
+```
+
+Chat history augmented with automatic Memanto semantic memory.
+
+Complete conversation records remain in the chat-history storage. User
+and assistant text is also stored in Memanto. Retrieval searches Memanto
+using the latest user message and adds matching text as recalled context.
+System instructions, tool-call metadata, and attachments are kept in chat
+history; Memanto is not a lossless backup of that history.
+
+Clearing or rolling back this memory only changes chat history. Archived
+Memanto memories survive agent initialization and conversation resets.
+HTTP errors propagate to the caller; a failed remote write leaves the
+original records in chat history.
+
+**Parameters:**
+
+- **context_creator** (BaseContextCreator): Creates model context.
+- **agent_id** (Optional[str], optional): Existing Memanto agent identifier. Defaults to the MEMANTO_AGENT_ID environment variable.
+- **base_url** (Optional[str], optional): Memanto server URL. Defaults to MEMANTO_BASE_URL or http://localhost:8000.
+- **storage** (Optional[BaseKeyValueStorage], optional): Chat-history storage. Defaults to in-memory storage.
+- **window_size** (Optional[int], optional): Recent chat-history window. Defaults to the complete current conversation.
+- **retrieve_limit** (int, optional): Maximum semantic recall results, between 1 and 100. (default: :obj:`3`)
+- **timeout** (float, optional): HTTP timeout in seconds. (default: :obj:`30.0`)
+
+<a id="camel.memories.memanto.MemantoMemory.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    context_creator: BaseContextCreator,
+    agent_id: Optional[str] = None,
+    base_url: Optional[str] = None,
+    storage: Optional[BaseKeyValueStorage] = None,
+    window_size: Optional[int] = None,
+    retrieve_limit: int = 3,
+    timeout: float = 30.0
+):
+```
+
+<a id="camel.memories.memanto.MemantoMemory.write_records"></a>
+
+### write_records
+
+```python
+def write_records(self, records: List[MemoryRecord]):
+```
+
+Keep complete chat records and archive conversational text.
+
+<a id="camel.memories.memanto.MemantoMemory.retrieve"></a>
+
+### retrieve
+
+```python
+def retrieve(self):
+```
+
+Combine recent chat history with relevant long-term memories.
+
+<a id="camel.memories.memanto.MemantoMemory.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Clear current chat history while retaining Memanto memories.
+
+<a id="camel.memories.memanto.MemantoMemory.close"></a>
+
+### close
+
+```python
+def close(self):
+```
+
+Close the HTTP client without deleting any memories.

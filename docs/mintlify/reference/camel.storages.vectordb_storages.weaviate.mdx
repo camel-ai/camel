@@ -101,7 +101,9 @@ def __init__(
 def _get_connection_client(self):
 ```
 
-Get Weaviate client based on connection type and user settings.
+**Returns:**
+
+  WeaviateClient: The created Weaviate client instance.
 
 <a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._create_cloud_client"></a>
 
@@ -113,6 +115,14 @@ def _create_cloud_client(self, weaviate_module: Any):
 
 Create a Weaviate Cloud client.
 
+**Parameters:**
+
+- **weaviate_module** (Any): The imported weaviate package module.
+
+**Returns:**
+
+  WeaviateClient: Connected Weaviate Cloud client.
+
 <a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._create_local_client"></a>
 
 ### _create_local_client
@@ -122,6 +132,14 @@ def _create_local_client(self, weaviate_module: Any):
 ```
 
 Create a local Weaviate client.
+
+**Parameters:**
+
+- **weaviate_module** (Any): The imported weaviate package module.
+
+**Returns:**
+
+  WeaviateClient: Connected local Weaviate client.
 
 <a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._create_embedded_client"></a>
 
@@ -133,6 +151,14 @@ def _create_embedded_client(self, weaviate_module: Any):
 
 Create an embedded Weaviate client.
 
+**Parameters:**
+
+- **weaviate_module** (Any): The imported weaviate package module.
+
+**Returns:**
+
+  WeaviateClient: Connected embedded Weaviate client.
+
 <a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._create_custom_client"></a>
 
 ### _create_custom_client
@@ -142,6 +168,14 @@ def _create_custom_client(self, weaviate_module: Any):
 ```
 
 Create a custom Weaviate client.
+
+**Parameters:**
+
+- **weaviate_module** (Any): The imported weaviate package module.
+
+**Returns:**
+
+  WeaviateClient: Connected custom Weaviate client.
 
 <a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.__del__"></a>
 
@@ -171,7 +205,9 @@ Explicitly close the client connection.
 def _generate_collection_name(self):
 ```
 
-Generate a collection name if user doesn't provide one.
+**Returns:**
+
+  str: Generated collection name.
 
 <a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._check_and_create_collection"></a>
 
@@ -193,6 +229,14 @@ def _collection_exists(self, collection_name: str):
 
 Check if the collection exists.
 
+**Parameters:**
+
+- **collection_name** (str): Name of the collection to check.
+
+**Returns:**
+
+  bool: True if collection exists, False otherwise.
+
 <a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._get_vector_index_config"></a>
 
 ### _get_vector_index_config
@@ -202,6 +246,10 @@ def _get_vector_index_config(self, **kwargs: Any):
 ```
 
 Get vector index configuration based on user settings.
+
+**Returns:**
+
+  Any: The configured vector index configuration object.
 
 <a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._create_collection"></a>
 
@@ -299,8 +347,6 @@ storage based on similarity to the query vector.
 def clear(self):
 ```
 
-Remove all vectors from the storage.
-
 <a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.load"></a>
 
 ### load
@@ -319,4 +365,6 @@ Load the collection hosted on cloud service.
 def client(self):
 ```
 
-Provides access to the underlying vector database client.
+**Returns:**
+
+  WeaviateClient: The underlying Weaviate client instance.

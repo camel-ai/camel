@@ -47,7 +47,7 @@ class MilvusStorage(BaseVectorStorage):
             the Milvus. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
         **kwargs (Any): Additional keyword arguments for initializing
-            `MilvusClient`.
+            :obj:`MilvusClient`.
 
     Raises:
         ImportError: If `pymilvus` package is not installed.
@@ -81,7 +81,8 @@ class MilvusStorage(BaseVectorStorage):
         Args:
             url_and_api_key (Tuple[str, str]): The URL and API key for the
                 Milvus server.
-            **kwargs: Additional keyword arguments passed to the Milvus client.
+            **kwargs (Any): Additional keyword arguments passed to the Milvus
+                client.
         """
         from pymilvus import MilvusClient
 
@@ -94,6 +95,10 @@ class MilvusStorage(BaseVectorStorage):
     def _check_and_create_collection(self) -> None:
         r"""Checks if the specified collection exists in Milvus and creates it
         if it doesn't, ensuring it matches the specified vector dimensionality.
+
+        Raises:
+            ValueError: If vector dimension of the existing collection is
+                different from the given embedding dimension.
         """
         if self._collection_exists(self.collection_name):
             in_dim = self._get_collection_info(self.collection_name)[
@@ -120,7 +125,7 @@ class MilvusStorage(BaseVectorStorage):
 
         Args:
             collection_name (str): Name of the collection to be created.
-            **kwargs (Any): Additional keyword arguments pass to create
+            **kwargs (Any): Additional keyword arguments passed to create
                 collection.
         """
 
@@ -184,7 +189,7 @@ class MilvusStorage(BaseVectorStorage):
         r"""Deletes an existing collection from the database.
 
         Args:
-            collection (str): Name of the collection to be deleted.
+            collection_name (str): Name of the collection to be deleted.
         """
         self._client.drop_collection(collection_name=collection_name)
 
@@ -282,7 +287,7 @@ class MilvusStorage(BaseVectorStorage):
 
         Args:
             records (List[VectorRecord]): List of vectors to be added.
-            **kwargs (Any): Additional keyword arguments pass to insert.
+            **kwargs (Any): Additional keyword arguments passed to insert.
 
         Raises:
             RuntimeError: If there was an error in the addition process.

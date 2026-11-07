@@ -15,7 +15,7 @@ to vector storage.
 **Parameters:**
 
 - **vector** (List[float]): The numerical representation of the vector.
-- **id** (str, optional): A unique identifier for the vector. If not provided, an random uuid will be assigned.
+- **id** (str, optional): A unique identifier for the vector. If not provided, a random uuid will be assigned.
 - **payload** (Optional[Dict[str, Any]], optional): Any additional metadata or information related to the vector. (default: :obj:`None`)
 
 <a id="camel.storages.vectordb_storages.base.VectorDBQuery"></a>
@@ -46,7 +46,7 @@ def __init__(
 ):
 ```
 
-Pass in query_vector and tok_k as positional arg.
+Pass in query_vector and top_k as positional arg.
 
 **Parameters:**
 
@@ -83,6 +83,17 @@ def create(
 ```
 
 A class method to construct a `VectorDBQueryResult` instance.
+
+**Parameters:**
+
+- **similarity** (float): The similarity score.
+- **vector** (List[float]): The numerical representation of the vector.
+- **id** (str): A unique identifier for the vector.
+- **payload** (Optional[Dict[str, Any]], optional): Any additional metadata or information related to the vector. (default: :obj:`None`)
+
+**Returns:**
+
+  VectorDBQueryResult: The constructed query result instance.
 
 <a id="camel.storages.vectordb_storages.base.VectorDBStatus"></a>
 
@@ -219,5 +230,5 @@ This function is a wrapper of `BaseVectorStorage.query`.
 
 **Returns:**
 
-  List[List[Dict[str, Any]]]: A list of vector payloads retrieved
+  List[Dict[str, Any]]: A list of vector payloads retrieved
 from the storage based on similarity to the query vector.

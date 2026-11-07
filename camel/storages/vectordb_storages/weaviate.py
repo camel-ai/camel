@@ -228,7 +228,14 @@ class WeaviateStorage(BaseVectorStorage):
         self._check_and_create_collection(**kwargs)
 
     def _get_connection_client(self) -> "WeaviateClient":
-        r"""Get Weaviate client based on connection type and user settings."""
+        r"""Get Weaviate client based on connection type and user settings.
+
+        Returns:
+            WeaviateClient: The created Weaviate client instance.
+
+        Raises:
+            Exception: If creating the client fails.
+        """
         import weaviate
 
         # Map connection types to handler methods
@@ -251,7 +258,17 @@ class WeaviateStorage(BaseVectorStorage):
             raise
 
     def _create_cloud_client(self, weaviate_module: Any) -> "WeaviateClient":
-        r"""Create a Weaviate Cloud client."""
+        r"""Create a Weaviate Cloud client.
+
+        Args:
+            weaviate_module (Any): The imported weaviate package module.
+
+        Returns:
+            WeaviateClient: Connected Weaviate Cloud client.
+
+        Raises:
+            ValueError: If cluster URL or API key is missing.
+        """
         cluster_url = self._connection_params.get('wcd_cluster_url')
         api_key = self._connection_params.get('wcd_api_key')
 
@@ -273,7 +290,14 @@ class WeaviateStorage(BaseVectorStorage):
         )
 
     def _create_local_client(self, weaviate_module: Any) -> "WeaviateClient":
-        r"""Create a local Weaviate client."""
+        r"""Create a local Weaviate client.
+
+        Args:
+            weaviate_module (Any): The imported weaviate package module.
+
+        Returns:
+            WeaviateClient: Connected local Weaviate client.
+        """
         return weaviate_module.connect_to_local(
             host=self._connection_params.get('local_host', 'localhost'),
             port=self._connection_params.get('local_port', 8080),
@@ -291,7 +315,14 @@ class WeaviateStorage(BaseVectorStorage):
     def _create_embedded_client(
         self, weaviate_module: Any
     ) -> "WeaviateClient":
-        r"""Create an embedded Weaviate client."""
+        r"""Create an embedded Weaviate client.
+
+        Args:
+            weaviate_module (Any): The imported weaviate package module.
+
+        Returns:
+            WeaviateClient: Connected embedded Weaviate client.
+        """
         embedded_kwargs = {
             'hostname': self._connection_params.get(
                 'embedded_hostname', '127.0.0.1'
@@ -333,7 +364,17 @@ class WeaviateStorage(BaseVectorStorage):
         return weaviate_module.connect_to_embedded(**embedded_kwargs)
 
     def _create_custom_client(self, weaviate_module: Any) -> "WeaviateClient":
-        r"""Create a custom Weaviate client."""
+        r"""Create a custom Weaviate client.
+
+        Args:
+            weaviate_module (Any): The imported weaviate package module.
+
+        Returns:
+            WeaviateClient: Connected custom Weaviate client.
+
+        Raises:
+            ValueError: If any required custom connection parameter is missing.
+        """
         # Validate required custom parameters
         required_params = [
             'custom_http_host',
@@ -381,7 +422,11 @@ class WeaviateStorage(BaseVectorStorage):
             logger.info("Explicitly closed Weaviate client connection")
 
     def _generate_collection_name(self) -> str:
-        r"""Generate a collection name if user doesn't provide one."""
+        r"""Generate a collection name if user doesn't provide one.
+
+        Returns:
+            str: Generated collection name.
+        """
         timestamp = datetime.now().isoformat()
         # Weaviate collection names must start with uppercase and be valid
         # GraphQL names
@@ -389,12 +434,24 @@ class WeaviateStorage(BaseVectorStorage):
         return valid_name
 
     def _check_and_create_collection(self, **kwargs: Any) -> None:
-        r"""Check if collection exists and create if it doesn't."""
+        r"""Check if collection exists and create if it doesn't.
+
+        Args:
+            **kwargs (Any): Additional keyword arguments for collection
+                creation.
+        """
         if not self._collection_exists(self.collection_name):
             self._create_collection(**kwargs)
 
     def _collection_exists(self, collection_name: str) -> bool:
-        r"""Check if the collection exists."""
+        r"""Check if the collection exists.
+
+        Args:
+            collection_name (str): Name of the collection to check.
+
+        Returns:
+            bool: True if collection exists, False otherwise.
+        """
         try:
             collection = self._client.collections.get(collection_name)
             collection.config.get()
@@ -403,7 +460,14 @@ class WeaviateStorage(BaseVectorStorage):
             return False
 
     def _get_vector_index_config(self, **kwargs: Any) -> Any:
-        r"""Get vector index configuration based on user settings."""
+        r"""Get vector index configuration based on user settings.
+
+        Args:
+            **kwargs (Any): Additional keyword arguments for vector index.
+
+        Returns:
+            Any: The configured vector index configuration object.
+        """
         import weaviate.classes.config as wvc
 
         # Map distance metrics - type safety guaranteed by Literal
@@ -431,7 +495,12 @@ class WeaviateStorage(BaseVectorStorage):
             )
 
     def _create_collection(self, **kwargs: Any) -> None:
-        r"""Create a new collection in Weaviate."""
+        r"""Create a new collection in Weaviate.
+
+        Args:
+            **kwargs (Any): Additional keyword arguments for creating
+                collection.
+        """
         import weaviate.classes.config as wvc
 
         # Separate vector index kwargs from general kwargs to avoid conflicts
@@ -627,6 +696,9 @@ class WeaviateStorage(BaseVectorStorage):
         Returns:
             List[VectorDBQueryResult]: A list of vectors retrieved from the
                 storage based on similarity to the query vector.
+
+        Raises:
+            RuntimeError: If querying vectors fails.
         """
         from weaviate.classes.query import MetadataQuery
 
@@ -695,7 +767,11 @@ class WeaviateStorage(BaseVectorStorage):
             raise RuntimeError(f"Failed to query vectors from Weaviate: {e}")
 
     def clear(self) -> None:
-        r"""Remove all vectors from the storage."""
+        r"""Remove all vectors from the storage.
+
+        Raises:
+            RuntimeError: If clearing collection fails.
+        """
         try:
             self._client.collections.delete(self.collection_name)
             self._create_collection(**self._original_collection_kwargs)
@@ -710,5 +786,9 @@ class WeaviateStorage(BaseVectorStorage):
 
     @property
     def client(self) -> "WeaviateClient":
-        r"""Provides access to the underlying vector database client."""
+        r"""Provides access to the underlying vector database client.
+
+        Returns:
+            WeaviateClient: The underlying Weaviate client instance.
+        """
         return self._client

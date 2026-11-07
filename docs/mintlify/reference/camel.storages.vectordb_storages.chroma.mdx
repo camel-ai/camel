@@ -112,7 +112,9 @@ def _validate_client_config(self):
 def _get_connection_client(self):
 ```
 
-Get ChromaDB client based on client type and user settings.
+**Returns:**
+
+  ClientAPI: The ChromaDB client instance.
 
 <a id="camel.storages.vectordb_storages.chroma.ChromaStorage._create_ephemeral_client"></a>
 
@@ -124,6 +126,14 @@ def _create_ephemeral_client(self, chromadb_module: Any):
 
 Create an ephemeral ChromaDB client (in-memory).
 
+**Parameters:**
+
+- **chromadb_module** (Any): The imported chromadb module.
+
+**Returns:**
+
+  ClientAPI: The ephemeral ChromaDB client instance.
+
 <a id="camel.storages.vectordb_storages.chroma.ChromaStorage._create_persistent_client"></a>
 
 ### _create_persistent_client
@@ -133,6 +143,14 @@ def _create_persistent_client(self, chromadb_module: Any):
 ```
 
 Create a persistent ChromaDB client (local file storage).
+
+**Parameters:**
+
+- **chromadb_module** (Any): The imported chromadb module.
+
+**Returns:**
+
+  ClientAPI: The persistent ChromaDB client instance.
 
 <a id="camel.storages.vectordb_storages.chroma.ChromaStorage._create_http_client"></a>
 
@@ -144,6 +162,14 @@ def _create_http_client(self, chromadb_module: Any):
 
 Create an HTTP ChromaDB client (remote server).
 
+**Parameters:**
+
+- **chromadb_module** (Any): The imported chromadb module.
+
+**Returns:**
+
+  ClientAPI: The HTTP ChromaDB client instance.
+
 <a id="camel.storages.vectordb_storages.chroma.ChromaStorage._create_cloud_client"></a>
 
 ### _create_cloud_client
@@ -154,6 +180,14 @@ def _create_cloud_client(self, chromadb_module: Any):
 
 Create a cloud ChromaDB client.
 
+**Parameters:**
+
+- **chromadb_module** (Any): The imported chromadb module.
+
+**Returns:**
+
+  ClientAPI: The cloud ChromaDB client instance.
+
 <a id="camel.storages.vectordb_storages.chroma.ChromaStorage._get_common_client_kwargs"></a>
 
 ### _get_common_client_kwargs
@@ -162,7 +196,10 @@ Create a cloud ChromaDB client.
 def _get_common_client_kwargs(self):
 ```
 
-Get common kwargs for all ChromaDB clients.
+**Returns:**
+
+  Dict[str, Any]: Common keyword arguments for client
+initialization.
 
 <a id="camel.storages.vectordb_storages.chroma.ChromaStorage._generate_collection_name"></a>
 
@@ -201,7 +238,7 @@ def _get_or_create_collection(self):
 
 **Returns:**
 
-  ChromaDB collection object.
+  Collection: The ChromaDB collection object.
 
 <a id="camel.storages.vectordb_storages.chroma.ChromaStorage.add"></a>
 
@@ -333,4 +370,4 @@ def collection(self):
 
 **Returns:**
 
-  ChromaDB collection instance.
+  Collection: The ChromaDB collection instance.

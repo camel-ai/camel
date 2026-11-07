@@ -10,6 +10,24 @@ def _to_plain(text: str):
 
 Convert ANSI text to plain text using rich if available.
 
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit._default_console_approval"></a>
+
+## _default_console_approval
+
+```python
+def _default_console_approval(command: str):
+```
+
+Ask for approval in a terminal; deny non-interactive input.
+
+**Parameters:**
+
+- **command** (str): The command or process input requesting approval.
+
+**Returns:**
+
+  bool: Whether the user explicitly approved the input.
+
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit"></a>
 
 ## TerminalToolkit
@@ -33,6 +51,7 @@ in either a local or a sandboxed Docker environment.
 - **clone_current_env** (bool): Whether to clone the current Python environment for local execution. Defaults to False.
 - **install_dependencies** (List): A list of user specified libraries to install.
 - **enable_other_runtimes** (list[Runtime]): List of additional language runtimes to auto-install. Supported values are `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4__`.
+- **require_approval** (Optional[Callable[[str], bool]], optional): Callback checked before starting a shell command or sending process input. Receives the sanitized command for :obj:`shell_exec`, or the raw input for :obj:`shell_write_to_process`. Return True to allow it; exceptions propagate without executing the command or input. None disables approval. Pass :obj:`_default_console_approval` for interactive approval; non-interactive applications should provide their own callback. This does not restrict actions performed internally by an approved program or replace sandbox isolation. (default: :obj:`None`)
 
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.__init__"></a>
 
@@ -50,7 +69,8 @@ def __init__(
     allowed_commands: Optional[List[str]] = None,
     clone_current_env: bool = False,
     install_dependencies: Optional[List[str]] = None,
-    enable_other_runtimes: list[Runtime] | None = None
+    enable_other_runtimes: list[Runtime] | None = None,
+    require_approval: Optional[Callable[[str], bool]] = None
 ):
 ```
 
@@ -162,6 +182,16 @@ error handling consistency.
 
   A tuple of (exit_code, output_bytes). The exit code is `__INLINE_CODE_0__`
 when `__INLINE_CODE_1__` is False.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._approve_command"></a>
+
+### _approve_command
+
+```python
+def _approve_command(self, command: str):
+```
+
+Check approval for a command or process input.
 
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._sanitize_command"></a>
 

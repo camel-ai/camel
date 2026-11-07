@@ -624,6 +624,9 @@ class AWSBedrockConverseModel(BaseModelBackend):
             "max_tokens": "length",
             "stop_sequence": "stop",
             "tool_use": "tool_calls",
+            "content_filtered": "content_filter",
+            "guardrail_intervened": "content_filter",
+            "model_context_window_exceeded": "length",
         }.get(stop_reason or "", "stop")
 
     @staticmethod

@@ -54,7 +54,7 @@ class OceanBaseStorage(BaseVectorStorage):
             table should be deleted upon object destruction.
             (default: :obj:`False`)
         **kwargs (Any): Additional keyword arguments for initializing
-            `ObVecClient`.
+            :obj:`ObVecClient`.
 
     Raises:
         ImportError: If `pyobvector` package is not installed.
@@ -168,7 +168,8 @@ class OceanBaseStorage(BaseVectorStorage):
 
         Raises:
             RuntimeError: If there is an error during the saving process.
-            ValueError: If any vector dimension doesn't match vector_dim.
+            ValueError: If any vector dimension doesn't match
+                :obj:`vector_dim`.
         """
 
         if not records:
@@ -271,6 +272,9 @@ class OceanBaseStorage(BaseVectorStorage):
 
         Returns:
             VectorDBStatus: The vector database status.
+
+        Raises:
+            RuntimeError: If there is an error getting status from OceanBase.
         """
         try:
             # Get count of records
@@ -494,7 +498,11 @@ class OceanBaseStorage(BaseVectorStorage):
             return max(0.0, min(1.0, 1.0 - min(1.0, distance)))
 
     def clear(self) -> None:
-        r"""Remove all vectors from the storage."""
+        r"""Remove all vectors from the storage.
+
+        Raises:
+            RuntimeError: If there is an error clearing records from OceanBase.
+        """
         try:
             self._client.delete(self.table_name)
             logger.info(f"Cleared all records from table {self.table_name}")
@@ -510,5 +518,9 @@ class OceanBaseStorage(BaseVectorStorage):
 
     @property
     def client(self) -> "ObVecClient":
-        r"""Provides access to underlying OceanBase vector database client."""
+        r"""Provides access to underlying OceanBase vector database client.
+
+        Returns:
+            ObVecClient: The underlying OceanBase client instance.
+        """
         return self._client

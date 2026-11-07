@@ -40,7 +40,7 @@ class PgVectorStorage(BaseVectorStorage):
     Args:
         vector_dim (int): The dimension of the vectors to be stored.
         conn_info (Dict[str, Any]): Connection information for
-            psycopg2.connect.
+            :obj:`psycopg2.connect`.
         table_name (str, optional): Name of the table to store vectors.
             (default: :obj:`None`)
         distance (VectorDistance, optional): Distance metric for vector
@@ -56,15 +56,7 @@ class PgVectorStorage(BaseVectorStorage):
         distance: VectorDistance = VectorDistance.COSINE,
         **kwargs: Any,
     ) -> None:
-        r"""Initialize PgVectorStorage.
-
-        Args:
-            vector_dim (int): The dimension of the vectors.
-            conn_info (Dict[str, Any]): Connection info for psycopg2.connect.
-            table_name (str, optional): Table name. (default: :obj:`None`)
-            distance (VectorDistance, optional): Distance metric.
-                (default: :obj:`VectorDistance.COSINE`)
-        """
+        r"""Initialize PgVectorStorage."""
         import psycopg
         from pgvector.psycopg import register_vector
 
@@ -88,6 +80,9 @@ class PgVectorStorage(BaseVectorStorage):
     def _ensure_table(self) -> None:
         r"""Ensure the vector table exists in the database.
         Creates the table if it does not exist.
+
+        Raises:
+            Exception: If creating the table fails.
         """
         try:
             from psycopg.sql import SQL, Identifier, Literal
@@ -137,6 +132,11 @@ class PgVectorStorage(BaseVectorStorage):
         Args:
             records (List[VectorRecord]): List of vector records to
                 add or update.
+            **kwargs (Any): Additional keyword arguments.
+
+        Raises:
+            ValueError: If there is a vector dimension mismatch.
+            Exception: If adding or updating records fails.
         """
         if not records:
             return
@@ -185,6 +185,10 @@ class PgVectorStorage(BaseVectorStorage):
 
         Args:
             ids (List[str]): List of record IDs to delete.
+            **kwargs (Any): Additional keyword arguments.
+
+        Raises:
+            Exception: If deleting records fails.
         """
         from psycopg.sql import SQL, Identifier
 
@@ -217,6 +221,10 @@ class PgVectorStorage(BaseVectorStorage):
         Returns:
             List[VectorDBQueryResult]: List of query results sorted by
                 similarity.
+
+        Raises:
+            ValueError: If vector dimension mismatches or unsupported distance
+                metric is used.
         """
         if len(query.query_vector) != self.vector_dim:
             raise ValueError(
@@ -277,7 +285,17 @@ class PgVectorStorage(BaseVectorStorage):
             raise
 
     def _score_to_similarity(self, score: float) -> float:
-        r"""Convert a pgvector operator result to high-is-better similarity."""
+        r"""Convert a pgvector operator result to high-is-better similarity.
+
+        Args:
+            score (float): The distance or score returned by pgvector.
+
+        Returns:
+            float: The similarity score.
+
+        Raises:
+            ValueError: If an unsupported distance metric is specified.
+        """
         if self.distance == VectorDistance.COSINE:
             return max(0.0, min(1.0, 1.0 - score))
         if self.distance == VectorDistance.EUCLIDEAN:
@@ -295,6 +313,9 @@ class PgVectorStorage(BaseVectorStorage):
 
         Returns:
             VectorDBStatus: Status object with vector dimension and count.
+
+        Raises:
+            Exception: If querying database status fails.
         """
         try:
             with self._conn.cursor() as cur:
@@ -314,7 +335,11 @@ class PgVectorStorage(BaseVectorStorage):
             raise
 
     def clear(self) -> None:
-        r"""Remove all vectors from the storage by truncating the table."""
+        r"""Remove all vectors from the storage by truncating the table.
+
+        Raises:
+            Exception: If clearing table fails.
+        """
         try:
             with self._conn.cursor() as cur:
                 from psycopg.sql import SQL, Identifier

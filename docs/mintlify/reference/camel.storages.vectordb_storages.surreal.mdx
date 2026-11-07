@@ -17,14 +17,14 @@ SurrealDB official site and documentation can be found at:
 
 **Parameters:**
 
-- **url** (str): WebSocket URL for connecting to SurrealDB (default: "ws://localhost:8000/rpc").
-- **table** (str): Name of the table used for storing vectors (default: "vector_store").
+- **url** (str): WebSocket URL for connecting to SurrealDB. (default: :obj:`"ws://localhost:8000/rpc"`)
+- **table** (str): Name of the table used for storing vectors. (default: :obj:`"vector_store"`)
 - **vector_dim** (int): Dimensionality of the stored vectors.
-- **distance** (VectorDistance): Distance metric used for similarity comparisons (default: VectorDistance.COSINE).
-- **namespace** (str): SurrealDB namespace to use (default: "default"). (default: `"default"`)
-- **database** (str): SurrealDB database name (default: "demo"). (default: `"demo"`)
-- **user** (str): Username for authentication (default: "root"). (default: `"root"`)
-- **password** (str): Password for authentication (default: "root"). (default: `"root"`)
+- **distance** (VectorDistance): Distance metric used for similarity comparisons. (default: :obj:`VectorDistance.COSINE`)
+- **namespace** (str): SurrealDB namespace to use. (default: :obj:`"default"`)
+- **database** (str): SurrealDB database name. (default: :obj:`"demo"`) (default: `"demo"`)
+- **user** (str): Username for authentication. (default: :obj:`"root"`) (default: `"root"`)
+- **password** (str): Password for authentication. (default: :obj:`"root"`) (default: `"root"`)
 
 **Note:**
 
@@ -43,19 +43,7 @@ search with real-time updates.
 def __init__(self):
 ```
 
-Initialize SurrealStorage with connection settings and ensure
-the target table exists.
-
-**Parameters:**
-
-- **url** (str): WebSocket URL for connecting to SurrealDB. (default: :obj:`"ws://localhost:8000/rpc"`)
-- **table** (str): Name of the table used for vector storage. (default: :obj:`"vector_store"`)
-- **vector_dim** (int): Dimensionality of the stored vectors. (default: :obj:`786`)
-- **distance** (VectorDistance): Distance metric for similarity searches. (default: :obj:`VectorDistance.COSINE`)
-- **namespace** (str): SurrealDB namespace to use. (default: :obj:`"default"`)
-- **database** (str): SurrealDB database name. (default: :obj:`"demo"`)
-- **user** (str): Username for authentication. (default: :obj:`"root"`)
-- **password** (str): Password for authentication. (default: :obj:`"root"`)
+Initialize SurrealStorage with connection settings.
 
 <a id="camel.storages.vectordb_storages.surreal.SurrealStorage._table_exists"></a>
 
@@ -89,11 +77,6 @@ def _get_table_info(self):
 def _create_table(self):
 ```
 
-Define and create the vector storage table with HNSW index.
-
-Documentation: https://surrealdb.com/docs/surrealdb/reference-guide/
-vector-search#vector-search-cheat-sheet
-
 <a id="camel.storages.vectordb_storages.surreal.SurrealStorage._drop_table"></a>
 
 ### _drop_table
@@ -111,9 +94,6 @@ Drop the vector storage table if it exists.
 ```python
 def _check_and_create_table(self):
 ```
-
-Check if the table exists and matches the expected vector
-dimension. If not, create a new table.
 
 <a id="camel.storages.vectordb_storages.surreal.SurrealStorage._validate_and_convert_records"></a>
 
@@ -147,7 +127,7 @@ metric.
 
 **Parameters:**
 
-- **query** (VectorDBQuery): Query containing the query vector and top_k value.
+- **query** (VectorDBQuery): Query containing the query vector and top_k value. **kwargs (Any): Additional keyword arguments.
 
 **Returns:**
 
@@ -164,6 +144,14 @@ def _distance_to_similarity(self, distance: float):
 
 Convert a SurrealDB distance value to high-is-better similarity.
 
+**Parameters:**
+
+- **distance** (float): The distance value returned by SurrealDB.
+
+**Returns:**
+
+  float: The similarity score.
+
 <a id="camel.storages.vectordb_storages.surreal.SurrealStorage.add"></a>
 
 ### add
@@ -176,7 +164,7 @@ Insert validated vector records into the SurrealDB table.
 
 **Parameters:**
 
-- **records** (List[VectorRecord]): List of vector records to add.
+- **records** (List[VectorRecord]): List of vector records to add. **kwargs (Any): Additional keyword arguments.
 
 <a id="camel.storages.vectordb_storages.surreal.SurrealStorage.delete"></a>
 
@@ -196,7 +184,7 @@ Delete specific records by ID or clear the entire table.
 **Parameters:**
 
 - **ids** (Optional[List[str]]): List of record IDs to delete.
-- **if_all** (bool): Whether to delete all records in the table.
+- **if_all** (bool): Whether to delete all records in the table. **kwargs (Any): Additional keyword arguments.
 
 <a id="camel.storages.vectordb_storages.surreal.SurrealStorage.status"></a>
 
@@ -228,8 +216,6 @@ Reset the vector table by dropping and recreating it.
 def load(self):
 ```
 
-Load the collection hosted on cloud service.
-
 <a id="camel.storages.vectordb_storages.surreal.SurrealStorage.client"></a>
 
 ### client
@@ -238,4 +224,6 @@ Load the collection hosted on cloud service.
 def client(self):
 ```
 
-Provides access to the underlying SurrealDB client.
+**Returns:**
+
+  Any: The underlying SurrealDB client instance.
