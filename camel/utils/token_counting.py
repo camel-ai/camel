@@ -235,10 +235,12 @@ class OpenAITokenCounter(BaseTokenCounter):
         resolution model will be treated as :obj:`"high"`. All images with
         :obj:`"low"` detail cost 85 tokens each. Images with :obj:`"high"` detail
         are first scaled to fit within a 2048 x 2048 square, maintaining their
-        aspect ratio. Then, they are scaled such that the shortest side of the
-        image is 768px long. Finally, we count how many 512px squares the image
-        consists of. Each of those squares costs 170 tokens. Another 85 tokens are
-        always added to the final total. For more details please refer to `OpenAI
+        aspect ratio. Then, if the shortest side of the image exceeds 768px,
+        they are scaled down such that the shortest side is 768px long (smaller
+        images are not upscaled). Finally, we count how many 512px squares the
+        image consists of. Each of those squares costs 170 tokens. Another 85
+        tokens are always added to the final total. For more details please
+        refer to `OpenAI
         vision docs <https://platform.openai.com/docs/guides/vision>`_
 
         Args:
@@ -258,9 +260,15 @@ class OpenAITokenCounter(BaseTokenCounter):
             width = int(width / scaling_factor)
             height = int(height / scaling_factor)
 
-        scaling_factor = min(width, height) / SHORTEST_SIDE_PIXELS
-        scaled_width = int(width / scaling_factor)
-        scaled_height = int(height / scaling_factor)
+        # OpenAI only scales images DOWN to a 768px shortest side; smaller
+        # images are not upscaled (which would inflate the tile count).
+        if min(width, height) > SHORTEST_SIDE_PIXELS:
+            scaling_factor = min(width, height) / SHORTEST_SIDE_PIXELS
+            scaled_width = int(width / scaling_factor)
+            scaled_height = int(height / scaling_factor)
+        else:
+            scaled_width = width
+            scaled_height = height
 
         h = ceil(scaled_height / SQUARE_PIXELS)
         w = ceil(scaled_width / SQUARE_PIXELS)
