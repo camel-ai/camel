@@ -114,6 +114,10 @@ class SubprocessInterpreter(BaseInterpreter):
                 source = f.read()
 
             # Parse the source code
+            # Run the file as-is by default; the AST rewrite below only
+            # replaces this command when the parse produced a non-empty
+            # body (a comment-only script parses to an empty AST).
+            cmd = ["python", str(file)]
             try:
                 tree = ast.parse(source)
                 # Get the last node
