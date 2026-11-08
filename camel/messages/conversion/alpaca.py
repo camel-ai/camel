@@ -83,8 +83,11 @@ class AlpacaItem(BaseModel):
         instruction_match = re.search(
             r'###\s*Instruction:[^\S\n]*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
         )
+        # The input section may be empty ('### Input:' followed by a blank
+        # line), so its capture must allow zero characters; '(.+?)' would
+        # otherwise run until the next header and swallow '### Response:'.
         input_match = re.search(
-            r'###\s*Input:[^\S\n]*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
+            r'###\s*Input:[^\S\n]*\n(.*?)(?=\n###|\Z)', text, re.DOTALL
         )
         response_match = re.search(
             r'###\s*Response:[^\S\n]*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
