@@ -274,6 +274,24 @@ class InternalPythonInterpreter(BaseInterpreter):
                     import traceback
 
                     return traceback.format_exc()
+            except Exception as e:
+                # Native exceptions raised by the evaluated code (e.g.
+                # `ZeroDivisionError`) must respect the same contracts as
+                # interpreter errors: report instead of escaping when
+                # `raise_error` is off, and wrap into `InterpreterError`
+                # when it is on.
+                if not keep_state:
+                    self.clear_state()
+                msg = (
+                    f"Evaluation of the code stopped at node {idx}. "
+                    f"See:\n{type(e).__name__}: {e}"
+                )
+                if self.raise_error:
+                    raise InterpreterError(msg)
+                else:
+                    import traceback
+
+                    return traceback.format_exc()
             if line_result is not None:
                 result = line_result
 
