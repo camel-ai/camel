@@ -81,13 +81,13 @@ class AlpacaItem(BaseModel):
 
         # Try to extract sections using regex
         instruction_match = re.search(
-            r'###\s*Instruction:\s*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
+            r'###\s*Instruction:[^\S\n]*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
         )
         input_match = re.search(
-            r'###\s*Input:\s*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
+            r'###\s*Input:[^\S\n]*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
         )
         response_match = re.search(
-            r'###\s*Response:\s*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
+            r'###\s*Response:[^\S\n]*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
         )
 
         if not instruction_match or not response_match:
