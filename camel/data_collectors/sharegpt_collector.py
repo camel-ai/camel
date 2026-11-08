@@ -106,9 +106,9 @@ class ShareGPTDataCollector(BaseDataCollector):
         data = dict(
             system=self.system_message.content if self.system_message else "",
             tools=json.dumps(
-                [t.get_openai_tool_schema()["function"] for t in self.tools]
+                [t.get_openai_tool_schema()["function"] for t in self.tools],
+                ensure_ascii=False,
             ),
-            ensure_ascii=False,
             conversations=[],
         )
 
