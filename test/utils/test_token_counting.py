@@ -43,9 +43,7 @@ def test_openai_count_token_from_image(
     )
 
 
-def _image_message(
-    url: str, detail: Optional[str] = None
-) -> Dict[str, Any]:
+def _image_message(url: str, detail: Optional[str] = None) -> Dict[str, Any]:
     r"""Build an OpenAI message holding a single image part."""
     image_url: Dict[str, Any] = {"url": url}
     if detail is not None:
