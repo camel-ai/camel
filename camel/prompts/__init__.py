@@ -50,6 +50,5 @@ __all__ = [
     'ObjectRecognitionPromptTemplateDict',
     'ImageCraftPromptTemplateDict',
     'MultiConditionImageCraftPromptTemplateDict',
-    'DescriptionVideoPromptTemplateDict',
     'VideoDescriptionPromptTemplateDict',
 ]
