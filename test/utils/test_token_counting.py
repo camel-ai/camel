@@ -21,10 +21,12 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "width,height,detail,token_cost",
     [
-        # Small images are not upscaled to the 768px shortest side.
+        # Small images are not upscaled to the 768px shortest side. The
+        # non-square cases pin that only the shortest side drives upscaling.
         (100, 100, OpenAIVisionDetailType.HIGH, 255),
         (512, 512, OpenAIVisionDetailType.HIGH, 255),
         (400, 800, OpenAIVisionDetailType.HIGH, 425),
+        (300, 900, OpenAIVisionDetailType.HIGH, 425),
         # Images larger than the thresholds are scaled down as documented.
         (1024, 1024, OpenAIVisionDetailType.HIGH, 765),
         (1024, 1024, OpenAIVisionDetailType.AUTO, 765),
