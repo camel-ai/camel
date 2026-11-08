@@ -228,3 +228,20 @@ def test_deduplicate_internally_with_inconsistent_embeddings():
             # but the length of embeddings is 2.
             strategy="top1",
         )
+
+
+@pytest.mark.parametrize("batch_size", [1, 2, 3, 4])
+def test_deduplicate_internally_batch_size_does_not_change_result(batch_size):
+    r"""Batching is a memory optimisation: it must not hide duplicates."""
+    texts = ["A", "B", "C", "D"]
+    embeddings = [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.0, 1.0]]
+
+    result = deduplicate_internally(
+        texts=texts,
+        threshold=0.9,
+        embeddings=embeddings,
+        batch_size=batch_size,
+    )
+
+    assert result.duplicate_to_target_map == {1: 0, 3: 2}
+    assert result.unique_ids == [0, 2]
