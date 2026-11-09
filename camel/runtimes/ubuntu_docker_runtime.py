@@ -195,6 +195,7 @@ class UbuntuDockerRuntime(DockerRuntime):
                         / "lib/python3.10/site-packages"
                     ),
                     "PYTHON_EXECUTABLE": self.python_path,
+                    "CAMEL_RUNTIME_API_KEY": self.api_key,
                 },
             )
             logger.info("API server start result: %s", exec_result)
