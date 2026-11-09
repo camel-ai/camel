@@ -298,7 +298,7 @@ class ContextUtility:
             max_length = ContextUtility.MAX_WORKFLOW_FILENAME_LENGTH
 
         # sanitize: lowercase, spaces to underscores, remove special chars
-        clean_name = name.lower().replace(" ", "_")
+        clean_name = name.strip().lower().replace(" ", "_")
         clean_name = re.sub(r'[^a-z0-9_]', '', clean_name)
 
         # truncate if too long
