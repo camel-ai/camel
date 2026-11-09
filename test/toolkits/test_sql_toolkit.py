@@ -999,3 +999,19 @@ def test_sqlite_readonly_mode():
         # Cleanup
         if os.path.exists(db_path):
             os.unlink(db_path)
+
+
+def test_select_with_write_keyword_in_string_literal(sql_toolkit_sqlite):
+    r"""Write keywords inside string literals must not mark a query as a
+    write operation."""
+    sql_toolkit_sqlite.execute_query("CREATE TABLE notes (body TEXT)")
+    sql_toolkit_sqlite.execute_query(
+        "INSERT INTO notes VALUES ('please delete the draft')"
+    )
+
+    result = sql_toolkit_sqlite.execute_query(
+        "SELECT body FROM notes WHERE body = 'please delete the draft'"
+    )
+
+    assert isinstance(result, list)
+    assert result == [{'body': 'please delete the draft'}]
