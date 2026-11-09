@@ -461,6 +461,20 @@ class PhysicsSolutionComparator:
 
     @staticmethod
     def _detect_tolerance(default_tolerance: float, value: str) -> float:
+        r"""Detect an appropriate relative tolerance based on the value's
+        precision.
+
+        Args:
+            default_tolerance (float): The default tolerance to use as a
+                lower bound.
+            value (str): The string representation of the numeric value
+                used to infer precision.
+
+        Returns:
+            float: The detected relative tolerance, clamped between
+                :obj:`default_tolerance` and
+                :obj:`10 * default_tolerance`.
+        """
         if 'e' in value:
             match = re.match(r'(-?\d*\.?\d*)[eE]', value)
             significant_part = match.group(1) if match else value
@@ -493,7 +507,11 @@ class PhysicsSolutionComparator:
         return rel_tol
 
     def _convert_units(self) -> None:
-        r"""Convert the solution units to match gt units"""
+        r"""Convert the solution units to match gt units
+        Updates :attr:`sol_value` and :attr:`sol_unit_expr` in place
+        after converting to the ground truth unit system. Logs a warning
+        if conversion fails.
+        """
         import sympy as sp
         from sympy.physics import units
 
@@ -546,6 +564,17 @@ class PhysicsSolutionComparator:
 
     @staticmethod
     def verify_unit(sol_unit_expr: Any, gt_unit_expr: Any) -> bool:
+        r"""Verify that two unit expressions are equivalent.
+
+        Args:
+            sol_unit_expr (Any): The unit expression from the solution.
+            gt_unit_expr (Any): The unit expression from the ground
+                truth reference answer.
+
+        Returns:
+            bool: :obj:`True` if the units are equivalent,
+                :obj:`False` otherwise.
+        """
         try:
             import sympy as sp
             from sympy.physics import units
@@ -664,6 +693,14 @@ class PhysicsSolutionComparator:
             )
 
     def _get_value_unit_pairs(self) -> None:
+        r"""Extract and store value-unit pairs from solution and reference.
+
+        Parses :attr:`solution` and :attr:`reference_answer` into their
+        numeric value and unit components, storing results in
+        :attr:`gt_value`, :attr:`gt_unit`, :attr:`sol_value`,
+        :attr:`sol_unit`, :attr:`gt_unit_expr`, and
+        :attr:`sol_unit_expr`.
+        """
         self.gt_value, self.gt_unit = self._split_value_unit(
             self.reference_answer
         )
@@ -686,7 +723,15 @@ class PhysicsSolutionComparator:
             self.sol_unit_expr = self.unit_parser.parse_unit(self.sol_unit)
 
     def _compare_numeric_values(self) -> bool:
-        r"""Compare numerical values, with unit conversion if needed."""
+        r"""Compare numerical values, with unit conversion if needed.
+        Converts the solution value to match ground truth units if they
+        differ, then compares numerically using a detected relative
+        tolerance.
+
+        Returns:
+            bool: :obj:`True` if the values are numerically close within
+                the detected tolerance, :obj:`False` otherwise.
+                """
         rel_tol = self._detect_tolerance(self.tolerance, self.gt_value)
         self.gt_value = float(self.gt_value)
 
@@ -722,7 +767,15 @@ class PhysicsSolutionComparator:
         return math.isclose(self.sol_value, self.gt_value, rel_tol=rel_tol)
 
     def _compare_symbolic_values(self) -> bool:
-        r"""Compare symbolic expressions for equivalence."""
+        r"""Compare symbolic expressions for equivalence.
+        Parses both solution and reference answer as SymPy expressions
+        and attempts symbolic or numeric comparison. Handles equations
+        (:obj:`sympy.Eq`) and plain expressions.
+
+        Returns:
+            bool: :obj:`True` if the expressions are equivalent,
+                :obj:`False` otherwise.
+        """
 
         import sympy as sp
 
@@ -816,6 +869,21 @@ class PhysicsVerifier(PythonVerifier):
     async def _verify_implementation(
         self, solution: str, reference_answer: Optional[str]
     ) -> VerificationResult:
+        r"""Execute the solution code and verify its output against the
+        reference answer using physics-aware unit comparison.
+
+        Args:
+            solution (str): The Python code block to execute. Should
+                include a :obj:`print()` statement at the end.
+            reference_answer (Optional[str]): The expected output
+                including value and unit (e.g., ``"9.8 m/s**2"``).
+                If :obj:`None`, returns an error result.
+
+        Returns:
+            VerificationResult: A structured result containing the
+                verification status, result string, and error message
+                if applicable.
+        """
         # Check for virtual environment setup
         if not self.venv_path:
             return VerificationResult(
