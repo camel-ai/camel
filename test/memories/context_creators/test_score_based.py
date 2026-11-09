@@ -148,3 +148,107 @@ def test_score_based_context_creator_with_system_message():
     ]
     output, _ = context_creator.create_context(records=context_records)
     assert expected_output == output
+
+
+def _make_record(content, ts):
+    return ContextRecord(
+        memory_record=MemoryRecord(
+            message=BaseMessage(
+                "test",
+                RoleType.USER,
+                meta_dict=None,
+                content=content,
+            ),
+            role_at_backend=OpenAIBackendRole.USER,
+        ),
+        timestamp=ts,
+        score=1.0,
+    )
+
+
+def test_cache_reused_for_identical_messages():
+    context_creator = ScoreBasedContextCreator(
+        OpenAITokenCounter(ModelType.GPT_4O_MINI), 100_000
+    )
+    records = [_make_record("hi", 1.0), _make_record("hello", 2.0)]
+
+    messages, real_tokens = context_creator.create_context(records)
+    context_creator.set_cached_token_count(real_tokens, len(records))
+
+    cached_messages, cached_tokens = context_creator.create_context(records)
+    assert cached_messages == messages
+    assert cached_tokens == real_tokens
+
+
+def test_cache_invalidated_when_window_slides_with_constant_count():
+    r"""A sliding memory window keeps the message count constant while
+    replacing messages, and the cached total must not be returned for a
+    different message set (issue #4328)."""
+    context_creator = ScoreBasedContextCreator(
+        OpenAITokenCounter(ModelType.GPT_4O_MINI), 100_000
+    )
+    turn1 = [
+        _make_record("hi", 1.0),
+        _make_record("hello", 2.0),
+        _make_record("ok", 3.0),
+        _make_record("yes", 4.0),
+    ]
+    _, real_tokens1 = context_creator.create_context(turn1)
+    context_creator.set_cached_token_count(real_tokens1, len(turn1))
+
+    huge = "TOKEN " * 5000
+    turn2 = [
+        _make_record("hello", 2.0),
+        _make_record("ok", 3.0),
+        _make_record("yes", 4.0),
+        _make_record(huge, 5.0),
+    ]
+    messages2, tokens2 = context_creator.create_context(turn2)
+
+    real_tokens2 = context_creator.token_counter.count_tokens_from_messages(
+        messages2
+    )
+    assert tokens2 == real_tokens2
+    assert tokens2 != real_tokens1
+
+
+def test_cache_exact_when_context_grows_by_calibrated_response():
+    r"""Mirrors the ``ChatAgent`` protocol: the cached count describes the
+    calibrated message set plus one assistant response, so the next context
+    that strictly appends that response reuses the exact cached value."""
+    context_creator = ScoreBasedContextCreator(
+        OpenAITokenCounter(ModelType.GPT_4O_MINI), 100_000
+    )
+    records1 = [
+        _make_record("hi", 1.0),
+        _make_record("hello", 2.0),
+        _make_record("ok", 3.0),
+    ]
+    messages1, real_tokens1 = context_creator.create_context(records1)
+    context_creator.set_cached_token_count(real_tokens1, len(messages1) + 1)
+
+    records2 = [*records1, _make_record("appended reply", 4.0)]
+    _, tokens2 = context_creator.create_context(records2)
+
+    assert tokens2 == real_tokens1
+
+
+def test_cache_estimates_only_strictly_appended_messages():
+    context_creator = ScoreBasedContextCreator(
+        OpenAITokenCounter(ModelType.GPT_4O_MINI), 100_000
+    )
+    records1 = [
+        _make_record("hi", 1.0),
+        _make_record("hello", 2.0),
+        _make_record("ok", 3.0),
+    ]
+    messages1, real_tokens1 = context_creator.create_context(records1)
+    context_creator.set_cached_token_count(real_tokens1, len(messages1))
+
+    records2 = [*records1, _make_record("newly appended", 4.0)]
+    messages2, tokens2 = context_creator.create_context(records2)
+
+    expected = real_tokens1 + context_creator._estimate_message_tokens(
+        messages2[-1]
+    )
+    assert tokens2 == expected
