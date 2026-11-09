@@ -5062,13 +5062,34 @@ class ChatAgent(BaseAgent):
                 )
                 futures_map[future] = (function_name, tool_call_data)
 
-            # Wait for all futures to complete (or timeout)
-            for future in concurrent.futures.as_completed(
+            # Wait for all futures to complete (or timeout).
+            # as_completed raises its TimeoutError from the iterator, not
+            # from future.result(), so the old handler never ran and the
+            # timeout escaped through step() instead of skipping the tool.
+            completed = concurrent.futures.as_completed(
                 futures_map.keys(),
                 timeout=self.tool_execution_timeout
                 if self.tool_execution_timeout
                 else None,
-            ):
+            )
+            while True:
+                try:
+                    future = next(completed)
+                except StopIteration:
+                    break
+                except concurrent.futures.TimeoutError:
+                    # The budget is spent: report and cancel whatever is still
+                    # running, exactly as the async branch does per task.
+                    for pending, (name, _) in futures_map.items():
+                        if pending.done():
+                            continue
+                        logger.warning(
+                            f"Function '{name}' timed out after "
+                            f"{self.tool_execution_timeout} seconds"
+                        )
+                        pending.cancel()
+                    break
+
                 function_name, tool_call_data = futures_map[future]
 
                 try:
