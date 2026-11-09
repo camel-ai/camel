@@ -80,11 +80,10 @@ print(output)
 </Tab>
 <Tab title="Running a Python Script">
 ```python
-# First, create a python script inside the workspace
-write_script_cmd = """
-echo 'print("Hello from a sandboxed CAMEL environment!")' > hello.py
-"""
-terminal_toolkit.shell_exec(id='session_1', command=write_script_cmd)
+# Interpreter execution requires an explicit opt-out. Only do this for trusted
+# code in an appropriately isolated environment.
+terminal_toolkit = TerminalToolkit(safe_mode=False)
+terminal_toolkit.shell_write_content_to_file('print("Hello!")', 'hello.py')
 
 # Now, execute the script
 output = terminal_toolkit.shell_exec(id='session_1', command='python hello.py')
@@ -162,7 +161,7 @@ should be allowed.
 ```python
 terminal_toolkit = TerminalToolkit(
     safe_mode=True,
-    allowed_commands=["ls", "cat", "python", "pip", "uv"]
+    allowed_commands=["ls", "cat", "echo"]
 )
 ```
 
@@ -235,6 +234,25 @@ When `safe_mode` is enabled (default), the toolkit blocks commands that could be
 It also prevents local `cd`/`pushd` operations from escaping the configured
 `working_directory`, including chained directory changes that cannot be safely
 validated.
+
+Safe mode validates each simple command in a chain, including quoted command
+names. It rejects command/parameter/process substitution, unquoted redirection,
+globs, multiline shell syntax, path-qualified executables, execution wrappers
+and arbitrary interpreter execution (for example `python -c`, `python -m`,
+`node -e`, `bash -c`, or running a script). Interpreter version/help queries
+remain available. Adding an interpreter to `allowed_commands` does not bypass
+these checks. An empty allowlist denies all commands.
+
+Local path operands, including `--option=path` forms, are resolved with
+`realpath` before checking containment, so symlinks cannot disguise paths
+outside the working directory. Docker paths are not resolved on the host.
+Windows environment expansion and caret escapes are rejected as well.
+
+These are conservative static checks, not an OS sandbox or a guarantee about
+what an allowed program does internally. Program-specific executable options,
+PATH configuration and filesystem races still require isolation and an
+appropriate approval policy. Use `safe_mode=False` only for trusted commands
+when the environment is appropriately isolated.
 
 <Card title="Example of a Blocked Command" icon="shield-halved">
 ```python
