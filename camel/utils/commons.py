@@ -545,7 +545,12 @@ def create_chunks(text: str, n: int) -> List[str]:
 
     Returns:
         List[str]: A list of split texts.
+
+    Raises:
+        ValueError: If :obj:`n` is not a positive integer.
     """
+    if n <= 0:
+        raise ValueError(f"`n` must be greater than 0, got {n}")
 
     chunks = []
     i = 0

@@ -24,6 +24,7 @@ from camel.toolkits.base import BaseToolkit
 from camel.utils import (
     BatchProcessor,
     api_keys_required,
+    create_chunks,
     dependencies_required,
     get_system_information,
     get_task_list,
@@ -512,3 +513,24 @@ def test_safe_extract_parsed_returns_none_when_parsed_is_none():
     response = _make_response(None)
     result = safe_extract_parsed(response, _DummySchema)
     assert result is None
+
+
+def test_create_chunks_splits_text_into_bounded_chunks():
+    chunks = create_chunks("a" * 25, 10)
+
+    assert chunks == ["a" * 10, "a" * 10, "a" * 5]
+
+
+def test_create_chunks_prefers_sentence_boundaries():
+    # The full stop sits between 0.8 * n and 1.2 * n, so the chunk ends there
+    # instead of at the hard `n` boundary.
+    text = "0123456789abcdef." + "ghijklmnop"
+
+    assert create_chunks(text, 20) == ["0123456789abcdef.", "ghijklmnop"]
+
+
+@pytest.mark.parametrize("size", [0, -1, -10])
+def test_create_chunks_rejects_non_positive_size(size):
+    """A non-positive size used to loop forever instead of failing."""
+    with pytest.raises(ValueError, match="must be greater than 0"):
+        create_chunks("some text", size)
