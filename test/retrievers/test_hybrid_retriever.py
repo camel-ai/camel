@@ -95,3 +95,31 @@ def test_query_with_reranker(mock_hybrid_retriever):
     assert len(context) == 2
     assert context[0]['text'] == 'Document 3'
     assert context[1]['text'] == 'Document 1'
+
+
+def test_sort_rrf_scores_keeps_best_rank_for_duplicate_results():
+    r"""A chunk returned twice by the vector retriever must keep its best
+    rank, exactly like the bm25 branch does."""
+    # `_sort_rrf_scores` is pure, so the retriever needs no models here.
+    mock_hybrid_retriever = HybridRetriever.__new__(HybridRetriever)
+    duplicated = [
+        {'text': 'Document 1', 'similarity score': 0.9},
+        {'text': 'Document 2', 'similarity score': 0.8},
+        {'text': 'Document 1', 'similarity score': 0.7},
+    ]
+
+    as_vector = mock_hybrid_retriever._sort_rrf_scores(
+        duplicated, [], 3, 1.0, 0.0, 60
+    )
+    as_bm25 = mock_hybrid_retriever._sort_rrf_scores(
+        [], duplicated, 3, 0.0, 1.0, 60
+    )
+
+    assert [result['text'] for result in as_vector] == [
+        'Document 1',
+        'Document 2',
+    ]
+    assert [result['text'] for result in as_bm25] == [
+        'Document 1',
+        'Document 2',
+    ]
