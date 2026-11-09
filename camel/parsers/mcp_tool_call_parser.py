@@ -67,7 +67,14 @@ def extract_tool_calls_from_text(content: str) -> List[Dict[str, Any]]:
             )
             continue
 
+        collected = len(tool_calls)
         _collect_tool_calls(parsed, tool_calls)
+        if len(tool_calls) == collected:
+            # The block parsed into something that is not a tool call
+            # (e.g. YAML turns prose with an embedded JSON object into a
+            # mapping keyed by that prose). Leave it unmasked so the
+            # plain-JSON scan below can still inspect its content.
+            continue
         seen_ranges.append((match.start(1), match.end(1)))
 
     for start_match in JSON_START_PATTERN.finditer(content):
