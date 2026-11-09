@@ -18,8 +18,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from camel.memories.records import MemoryRecord
+from camel.messages import BaseMessage
 from camel.storages.key_value_storages import BaseKeyValueStorage, Mem0Storage
-from camel.types import OpenAIBackendRole
+from camel.types import OpenAIBackendRole, RoleType
 
 
 class TestMem0Storage(unittest.TestCase):
@@ -240,6 +242,39 @@ class TestMem0Storage(unittest.TestCase):
         ]
 
         self.assertEqual(messages, expected_messages)
+
+    def test_save_with_serialized_records(self):
+        r"""Records serialized via MemoryRecord.to_dict() must still persist.
+
+        Regression test for
+        https://github.com/camel-ai/camel/issues/4389:
+        ``to_dict()`` stores ``role_at_backend`` as a plain string, and
+        ``_prepare_messages`` used to read ``.value`` off it, raising
+        ``AttributeError`` that ``save()`` swallowed — so nothing was ever
+        sent to Mem0.
+        """
+        record = MemoryRecord(
+            message=BaseMessage(
+                role_name="user",
+                role_type=RoleType.USER,
+                meta_dict={},
+                content="remember this",
+            ),
+            role_at_backend=OpenAIBackendRole.USER,
+            agent_id=self.agent_id,
+        )
+
+        # to_dict() serializes the enum to a string, as the real save path does
+        serialized = record.to_dict()
+        assert isinstance(serialized["role_at_backend"], str)
+
+        self.storage.save([serialized])
+
+        self.mock_mem0_client.add.assert_called_once()
+        args, _ = self.mock_mem0_client.add.call_args
+        self.assertEqual(
+            args[0], [{"role": "user", "content": "remember this"}]
+        )
 
     def test_load_with_only_agent_id(self):
         r"""Test loading records when only agent_id is set (no user_id)."""
