@@ -193,10 +193,14 @@ def deduplicate_internally(
             embeddings_array[i:batch_end], embeddings_array[:batch_end]
         )
 
-        # Create mask for lower triangle (avoid self-comparison and redundant
+        # Keep only comparisons against earlier texts, using the global
+        # indices of the batch rows (avoid self-comparison and redundant
         # checks)
-        tril_mask = np.tril(np.ones_like(batch_similarities), k=-1)
-        batch_similarities = batch_similarities * tril_mask
+        row_indices = np.arange(i, batch_end)[:, None]
+        column_indices = np.arange(batch_end)[None, :]
+        batch_similarities = np.where(
+            column_indices < row_indices, batch_similarities, 0
+        )
 
         # Find duplicates in current batch
         masked_similarities = np.where(
