@@ -81,8 +81,11 @@ class SearchToolkit(BaseToolkit):
                 'peopleAlsoAsk', etc.
         """
         SERPER_API_KEY = os.getenv("SERPER_API_KEY")
+        SERPER_API_BASE = os.getenv(
+            "SERPER_API_BASE", "https://google.serper.dev"
+        ).rstrip("/")
 
-        url = "https://google.serper.dev/search"
+        url = f"{SERPER_API_BASE}/search"
 
         payload = {
             "q": query,
