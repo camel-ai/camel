@@ -47,6 +47,6 @@ def test_all_exports_type():
 def test_submodule_all_exports_are_bound(module_name: str):
     mod = importlib.import_module(module_name)
     for name in mod.__all__:
-        assert hasattr(mod, name), (
-            f'{module_name}.__all__ lists unbound name {name!r}'
-        )
+        assert hasattr(
+            mod, name
+        ), f'{module_name}.__all__ lists unbound name {name!r}'
