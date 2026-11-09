@@ -1666,3 +1666,34 @@ def test_search_perplexity_missing_api_key(search_toolkit):
 
     assert "PERPLEXITY_API_KEY" in str(exc_info.value)
     assert "https://www.perplexity.ai/account/api" in str(exc_info.value)
+
+
+@patch('exa_py.Exa')
+def test_search_exa_default_base_url(mock_exa, search_toolkit):
+    """Test that Exa client is built without base_url by default."""
+    mock_exa.return_value.search.return_value = {"results": []}
+
+    with patch.dict(os.environ, {'EXA_API_KEY': 'fake_api_key'}, clear=True):
+        search_toolkit.search_exa(query="test query")
+
+    mock_exa.assert_called_once_with('fake_api_key')
+
+
+@patch('exa_py.Exa')
+def test_search_exa_custom_base_url(mock_exa, search_toolkit):
+    """Test that EXA_API_BASE_URL overrides the Exa API endpoint."""
+    mock_exa.return_value.search.return_value = {"results": []}
+
+    with patch.dict(
+        os.environ,
+        {
+            'EXA_API_KEY': 'fake_api_key',
+            'EXA_API_BASE_URL': 'http://localhost:9999',
+        },
+        clear=True,
+    ):
+        search_toolkit.search_exa(query="test query")
+
+    mock_exa.assert_called_once_with(
+        'fake_api_key', base_url='http://localhost:9999'
+    )
