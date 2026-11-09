@@ -83,6 +83,96 @@ class TestChatHistoryBlock:
         records = chat_history.retrieve(window_size=0)
         assert records == []
 
+    def test_retrieve_with_window_size_drops_leading_orphan_tool_messages(
+        self,
+    ):
+        from camel.messages import FunctionCallingMessage
+
+        chat_history = ChatHistoryBlock()
+        call_msg = FunctionCallingMessage(
+            role_name="assistant",
+            role_type=RoleType.ASSISTANT,
+            meta_dict=None,
+            content="",
+            func_name="add",
+            args={"a": 2, "b": 3},
+            tool_call_id="call_1",
+        )
+        result_msg_1 = FunctionCallingMessage(
+            role_name="assistant",
+            role_type=RoleType.ASSISTANT,
+            meta_dict=None,
+            content="",
+            func_name="add",
+            result=5,
+            tool_call_id="call_1",
+        )
+        result_msg_2 = FunctionCallingMessage(
+            role_name="assistant",
+            role_type=RoleType.ASSISTANT,
+            meta_dict=None,
+            content="",
+            func_name="mul",
+            result=6,
+            tool_call_id="call_2",
+        )
+        chat_history.write_records(
+            [
+                MemoryRecord(
+                    message=BaseMessage.make_system_message(
+                        "You are helpful."
+                    ),
+                    role_at_backend=OpenAIBackendRole.SYSTEM,
+                ),
+                MemoryRecord(
+                    message=BaseMessage.make_user_message("user", "Compute"),
+                    role_at_backend=OpenAIBackendRole.USER,
+                ),
+                MemoryRecord(
+                    message=call_msg,
+                    role_at_backend=OpenAIBackendRole.ASSISTANT,
+                ),
+                MemoryRecord(
+                    message=result_msg_1,
+                    role_at_backend=OpenAIBackendRole.FUNCTION,
+                ),
+                MemoryRecord(
+                    message=result_msg_2,
+                    role_at_backend=OpenAIBackendRole.TOOL,
+                ),
+                MemoryRecord(
+                    message=BaseMessage.make_assistant_message(
+                        "assistant", "Done"
+                    ),
+                    role_at_backend=OpenAIBackendRole.ASSISTANT,
+                ),
+            ]
+        )
+
+        # Window cuts right after the assistant tool_calls message, leaving
+        # two leading orphan FUNCTION/TOOL records before the final reply.
+        records = chat_history.retrieve(window_size=3)
+        roles = [r.memory_record.role_at_backend for r in records]
+        assert roles == [
+            OpenAIBackendRole.SYSTEM,
+            OpenAIBackendRole.ASSISTANT,
+        ]
+        assert records[-1].memory_record.message.content == "Done"
+
+        # When the window is large enough to include the assistant tool_calls
+        # message, the following FUNCTION/TOOL results are preserved.
+        records_full_turn = chat_history.retrieve(window_size=4)
+        roles_full_turn = [
+            r.memory_record.role_at_backend for r in records_full_turn
+        ]
+        assert roles_full_turn == [
+            OpenAIBackendRole.SYSTEM,
+            OpenAIBackendRole.ASSISTANT,
+            OpenAIBackendRole.FUNCTION,
+            OpenAIBackendRole.TOOL,
+            OpenAIBackendRole.ASSISTANT,
+        ]
+
     def test_retrieve_without_window_size(self, mock_storage):
         mock_records = generate_mock_records(10)
         mock_storage.load.return_value = mock_records
