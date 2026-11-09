@@ -92,6 +92,22 @@ class TestChatHistoryBlock:
         assert all(isinstance(record, ContextRecord) for record in records)
         assert len(records) == 10
 
+    def test_retrieve_window_drops_orphan_tool_result(self, mock_storage):
+        mock_records = generate_mock_records(5)
+        mock_records[0]["role_at_backend"] = "system"
+        mock_records[2]["role_at_backend"] = "assistant"  # tool call
+        mock_records[3]["role_at_backend"] = "function"  # tool result
+        mock_records[4]["role_at_backend"] = "assistant"
+        mock_storage.load.return_value = mock_records
+        chat_history = ChatHistoryBlock(storage=mock_storage)
+
+        # Window of 2 would start at the tool result, cutting its call.
+        records = chat_history.retrieve(window_size=2)
+        roles = [r.memory_record.role_at_backend for r in records]
+        assert OpenAIBackendRole.FUNCTION not in roles
+        assert OpenAIBackendRole.SYSTEM in roles
+        assert len(records) == 2
+
     def test_retrieve_empty_history(self, mock_storage):
         mock_storage.load.return_value = []
         chat_history = ChatHistoryBlock(storage=mock_storage)
