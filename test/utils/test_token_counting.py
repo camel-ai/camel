@@ -22,6 +22,11 @@ from camel.utils import OpenAITokenCounter
     "width,height,detail,token_cost",
     [
         (1024, 1024, OpenAIVisionDetailType.HIGH, 765),
+        # Images below the 768px bound are only ever scaled down, so their
+        # tile count must follow their real size.
+        (256, 256, OpenAIVisionDetailType.HIGH, 255),
+        (512, 512, OpenAIVisionDetailType.HIGH, 255),
+        (300, 900, OpenAIVisionDetailType.HIGH, 425),
         (1024, 1024, OpenAIVisionDetailType.AUTO, 765),
         (2048, 4096, OpenAIVisionDetailType.HIGH, 1105),
         (2048, 4096, OpenAIVisionDetailType.LOW, 85),
