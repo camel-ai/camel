@@ -341,7 +341,7 @@ CAMEL-AIエージェントと社会を構築、運用、強化するためのコ
 | モジュール | 説明 |
 |:---|:---|
 | **[エージェント](https://docs.camel-ai.org/key_modules/agents)** | 自律運用のためのコアエージェントアーキテクチャと動作。 |
-| **[エージェント社会](https://docs.camel-ai.org/key_modules/society)** | マルチエージェントシステムと協力の構築と管理のためのコンポーネント。 |
+| **[エージェント社会](https://docs.camel-ai.org/key_modules/societies** | マルチエージェントシステムと協力の構築と管理のためのコンポーネント。 |
 | **[データ生成](https://docs.camel-ai.org/key_modules/datagen)** | 合成データの作成と拡張のためのツールと方法。 |
 | **[モデル](https://docs.camel-ai.org/key_modules/models)** | エージェントインテリジェンスのためのモデルアーキテクチャとカスタマイズオプション。 |
 | **[ツール](https://docs.camel-ai.org/key_modules/tools)** | 専門的なエージェントタスクのためのツール統合。 |
@@ -351,7 +351,7 @@ CAMEL-AIエージェントと社会を構築、運用、強化するためのコ
 | **[インタープリタ](https://docs.camel-ai.org/key_modules/interpreters)** | コードとコマンドの解釈機能。 |
 | **[データローダー](https://docs.camel-ai.org/key_modules/loaders)** | データ取り込みと前処理ツール。 |
 | **[リトリーバー](https://docs.camel-ai.org/key_modules/retrievers)** | 知識検索とRAGコンポーネント。 |
-| **[ランタイム](https://github.com/camel-ai/camel/tree/master/camel/runtime)** | 実行環境とプロセス管理。 |
+| **[ランタイム](https://github.com/camel-ai/camel/tree/master/camel/runtimes** | 実行環境とプロセス管理。 |
 | **[ヒューマン・イン・ザ・ループ](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval)** | 人間による監視と介入のための対話型コンポーネント。 |
 ---
 
@@ -532,7 +532,7 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
 
 | 名前 | 説明 |
 |:---|:---|
-| **[ChatDev](https://github.com/OpenBMB/ChatDev/tree/main/camel)** | ソフトウェア開発のための通信エージェント |
+| **[ChatDev](https://github.com/OpenBMB/ChatDev** | ソフトウェア開発のための通信エージェント |
 | **[Paper2Poster](https://github.com/Paper2Poster/Paper2Poster)** | 科学論文からのマルチモーダルポスター自動化 |
 
 ### 製品プロジェクト
