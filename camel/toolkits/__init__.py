@@ -52,6 +52,7 @@ from .retrieval_toolkit import RetrievalToolkit
 from .notion_toolkit import NotionToolkit
 from .human_toolkit import HumanToolkit
 from .stripe_toolkit import StripeToolkit
+from .usdctofiat_toolkit import UsdctoFiatToolkit
 from .video_download_toolkit import VideoDownloaderToolkit
 from .dappier_toolkit import DappierToolkit
 from .networkx_toolkit import NetworkXToolkit
@@ -147,6 +148,7 @@ __all__ = [
     'HumanToolkit',
     'VideoDownloaderToolkit',
     'StripeToolkit',
+    'UsdctoFiatToolkit',
     'MeshyToolkit',
     'OpenBBToolkit',
     'DappierToolkit',
