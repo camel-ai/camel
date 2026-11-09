@@ -44,6 +44,7 @@ from camel.models import (
     BaseModelBackend,
     ModelFactory,
     OpenAIModel,
+    StubModel,
 )
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
@@ -717,6 +718,153 @@ def _assert_request_usage_event(
     assert event["response_id"] == response_id
     assert event["request_usage"]["total_tokens"] == request_total_tokens
     assert event["step_usage"]["total_tokens"] == step_total_tokens
+
+
+def _mock_parallel_tool_response(
+    response_id: str,
+    tool_calls: List[ChatCompletionMessageFunctionToolCall],
+) -> ChatCompletion:
+    return ChatCompletion(
+        id=response_id,
+        choices=[
+            Choice(
+                finish_reason="tool_calls",
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content=None,
+                    role="assistant",
+                    function_call=None,
+                    tool_calls=tool_calls,
+                ),
+            )
+        ],
+        created=123456789,
+        model="gpt-5-mini",
+        object="chat.completion",
+        usage=CompletionUsage(
+            completion_tokens=1,
+            prompt_tokens=1,
+            total_tokens=2,
+        ),
+    )
+
+
+@pytest.mark.model_backend
+def test_chat_agent_max_tool_calls_limits_parallel_executions():
+    model = StubModel(ModelType.STUB)
+    executions = []
+
+    def record(value: int) -> int:
+        executions.append(value)
+        return value
+
+    tool_response = _mock_parallel_tool_response(
+        "tool-response",
+        [
+            ChatCompletionMessageFunctionToolCall(
+                id=f"call-{value}",
+                function=Function(
+                    arguments=json.dumps({"value": value}), name="record"
+                ),
+                type="function",
+            )
+            for value in range(3)
+        ],
+    )
+    final_response = _mock_completion_with_usage(
+        "final-response",
+        finish_reason="stop",
+        content="Finished with the available results.",
+        created=123456790,
+        prompt_tokens=1,
+        completion_tokens=1,
+        total_tokens=2,
+    )
+    model.run = MagicMock(side_effect=[tool_response, final_response])
+
+    agent = ChatAgent(
+        model=model,
+        tools=[FunctionTool(record)],
+        max_iteration=None,
+        max_tool_calls=2,
+    )
+    response = agent.step("Run the tool three times.")
+
+    assert executions == [0, 1]
+    assert response.msg.content == "Finished with the available results."
+    assert model.run.call_count == 2
+    assert model.run.call_args_list[1].args[2] in (None, [])
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_max_tool_calls_limits_async_executions():
+    model = StubModel(ModelType.STUB)
+    executions = []
+
+    async def record(value: int) -> int:
+        executions.append(value)
+        return value
+
+    first_tool_response = _mock_parallel_tool_response(
+        "first-tool-response",
+        [
+            ChatCompletionMessageFunctionToolCall(
+                id="call-1",
+                function=Function(
+                    arguments='{"value": 1}', name="record"
+                ),
+                type="function",
+            )
+        ],
+    )
+    second_tool_response = _mock_parallel_tool_response(
+        "second-tool-response",
+        [
+            ChatCompletionMessageFunctionToolCall(
+                id="call-2",
+                function=Function(
+                    arguments='{"value": 2}', name="record"
+                ),
+                type="function",
+            )
+        ],
+    )
+    final_response = _mock_completion_with_usage(
+        "async-final-response",
+        finish_reason="stop",
+        content="Finished asynchronously.",
+        created=123456791,
+        prompt_tokens=1,
+        completion_tokens=1,
+        total_tokens=2,
+    )
+    model.arun = AsyncMock(
+        side_effect=[
+            first_tool_response,
+            second_tool_response,
+            final_response,
+        ]
+    )
+
+    agent = ChatAgent(
+        model=model,
+        tools=[FunctionTool(record)],
+        max_iteration=None,
+        max_tool_calls=2,
+    )
+    response = await agent.astep("Run the tool twice.")
+
+    assert executions == [1, 2]
+    assert response.msg.content == "Finished asynchronously."
+    assert model.arun.call_count == 3
+    assert model.arun.call_args_list[2].args[2] in (None, [])
+
+
+def test_chat_agent_rejects_invalid_max_tool_calls():
+    with pytest.raises(ValueError, match="max_tool_calls"):
+        ChatAgent(model=StubModel(ModelType.STUB), max_tool_calls=0)
 
 
 @pytest.mark.model_backend
