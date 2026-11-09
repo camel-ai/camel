@@ -1,0 +1,47 @@
+name: Offline Security Regressions
+
+on:
+  pull_request:
+    branches: [master, qa]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security-regressions:
+    name: Security regressions (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.11']
+    env:
+      # Skip automatic workstation environment provisioning, not validation.
+      CAMEL_RUNTIME: 'true'
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install base dependencies and local test tools
+        run: >-
+          python -m pip install -e . 'pytest>=7,<8'
+          'pytest-asyncio>=0.23,<0.24' mock python-dotenv fastapi
+      - name: Run security regression suites without provider credentials
+        shell: bash
+        run: |
+          suites=()
+          if [ -f test/toolkits/test_terminal_toolkit_safe_mode.py ]; then
+            suites+=(test/toolkits/test_terminal_toolkit_safe_mode.py test/toolkits/test_terminal_toolkit.py)
+          fi
+          if [ -f test/services/test_agent_openapi_server_auth.py ]; then
+            suites+=(test/services/test_agent_openapi_server_auth.py test/services/test_agent_openapi_server.py)
+          fi
+          if [ "${#suites[@]}" -eq 0 ]; then
+            echo 'No security regression suite found in this branch.' >&2
+            exit 1
+          fi
+          python -m pytest "${suites[@]}" -q -ra -m 'not model_backend'
