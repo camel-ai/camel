@@ -1,0 +1,103 @@
+---
+title: AnySearch Toolkit
+description: Web search and page extraction for agents, powered by AnySearch.
+---
+
+# AnySearch Toolkit
+
+`AnySearchToolkit` gives CAMEL agents web search and page extraction through
+[AnySearch](https://anysearch.com), a search infrastructure built for AI
+agents. It covers the full capability set:
+
+- **General search** — works anonymously, no API key required.
+- **Parallel search** — several queries issued concurrently.
+- **Vertical domain search** — a `tag` plus its `params`
+  (for example `code.doc` with `{"library": "golang"}`).
+- **Extract** — fetch a URL and return its parsed readable content.
+
+## Installation
+
+AnySearch needs no extra package. `requests` is already a CAMEL dependency.
+
+```bash
+export ANYSEARCH_API_KEY="your-key"   # optional, anonymous access works
+```
+
+## Basic usage
+
+```python
+from camel.toolkits import AnySearchToolkit
+
+toolkit = AnySearchToolkit()          # anonymous
+results = toolkit.search("CAMEL-AI multi-agent framework", num_results=5)
+
+for item in results:
+    print(item["title"], item["link"])
+    print(item["content"][:200])      # parsed page body
+```
+
+## Vertical domain search
+
+```python
+docs = toolkit.search_vertical(
+    "generics",
+    tag="code.doc",
+    params={"library": "golang"},
+    num_results=5,
+)
+```
+
+Some tags require `params`. When they are missing, the API answers with a
+business error and the toolkit returns an empty list rather than raising, so
+an agent loop keeps running.
+
+## Parallel search
+
+```python
+batch = toolkit.search_parallel(["python", "rust", "go"], num_results=3)
+batch["python"]  # -> list of results
+```
+
+AnySearch exposes no batch endpoint, so parallel search issues one request
+per query from a thread pool. Duplicated queries are collapsed.
+
+## Extract
+
+```python
+page = toolkit.extract("https://example.com")
+page["title"], page["content"]
+```
+
+`extract` validates that the URL is an absolute HTTP/HTTPS URL and raises
+`ValueError` otherwise.
+
+## Configuration
+
+| Argument | Env var | Default | Notes |
+| --- | --- | --- | --- |
+| `api_key` | `ANYSEARCH_API_KEY` | `None` | `None` means anonymous access |
+| `zone` | — | `None` (server default) | `cn` or `intl` |
+| `language` | — | `None` (server default) | language code, e.g. `en` |
+| `base_url` | — | `https://api.anysearch.com` | API base URL |
+| `timeout` | — | `None` | seconds, forwarded to `requests` |
+
+`zone` and `language` can be overridden per call on `search` and
+`search_vertical`.
+
+## Behaviour on failure
+
+Every network and business failure is logged and degraded: `search` returns
+an empty list and `extract` returns an empty dict. A single failing query
+never raises out of an agent loop.
+
+## API contract (for maintainers)
+
+- `POST /v1/search` — body `query`, `max_results` (1–10), `format`
+  (`markdown` | `json`), `tag`, `params`, `zone`, `language`. Response
+  envelope `{code, message, request_id, data:{results:[{title, url, snippet,
+  content}]}}`; `code != 0` is a business error even on HTTP 200.
+- `POST /v1/extract` — body `url`. Response
+  `{code, message, request_id, data:{url, title, content}}`. Invalid URLs
+  return HTTP 400 with `error_code: invalid_extract_url`.
+- Authentication: `Authorization: Bearer <key>` when a key is configured;
+  anonymous requests are permitted and rate limited per IP.
