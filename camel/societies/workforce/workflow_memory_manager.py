@@ -903,7 +903,7 @@ class WorkflowMemoryManager:
         """
 
         def _create_error_result(message: str) -> Dict[str, Any]:
-            """helper to create error result dict."""
+            r"""Helper to create an error result dict."""
             return {
                 "status": "error",
                 "summary": "",
