@@ -67,8 +67,10 @@ def extract_tool_calls_from_text(content: str) -> List[Dict[str, Any]]:
             )
             continue
 
+        before_count = len(tool_calls)
         _collect_tool_calls(parsed, tool_calls)
-        seen_ranges.append((match.start(1), match.end(1)))
+        if len(tool_calls) > before_count:
+            seen_ranges.append((match.start(1), match.end(1)))
 
     for start_match in JSON_START_PATTERN.finditer(content):
         start_idx = start_match.start()
@@ -92,8 +94,10 @@ def extract_tool_calls_from_text(content: str) -> List[Dict[str, Any]]:
             )
             continue
 
+        before_count = len(tool_calls)
         _collect_tool_calls(parsed, tool_calls)
-        seen_ranges.append((start_idx, end_idx))
+        if len(tool_calls) > before_count:
+            seen_ranges.append((start_idx, end_idx))
 
     return tool_calls
 
