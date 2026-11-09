@@ -194,9 +194,15 @@ def deduplicate_internally(
         )
 
         # Create mask for lower triangle (avoid self-comparison and redundant
-        # checks)
-        tril_mask = np.tril(np.ones_like(batch_similarities), k=-1)
-        batch_similarities = batch_similarities * tril_mask
+        # checks). The mask is built from the global row ids, not from the
+        # position of the row inside the batch: for every batch after the
+        # first, the batch-relative position would hide the columns that hold
+        # the texts compared most recently.
+        column_ids = np.arange(batch_end)
+        row_ids = np.arange(i, batch_end)
+        batch_similarities = np.where(
+            column_ids[None, :] < row_ids[:, None], batch_similarities, 0.0
+        )
 
         # Find duplicates in current batch
         masked_similarities = np.where(
