@@ -35,7 +35,9 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
+    observe,
     update_current_observation,
+    with_langfuse_trace,
 )
 
 logger = get_logger(__name__)
@@ -47,14 +49,6 @@ try:
         raise ImportError
 except (ImportError, AttributeError):
     LLMEvent = None
-
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-else:
-    from camel.utils import observe
 
 
 # "model_length" is Mistral's own length stop, which OpenAI expresses as
@@ -283,6 +277,7 @@ class MistralModel(BaseModelBackend):
             )
         return self._token_counter
 
+    @with_langfuse_trace
     @observe(as_type="generation")
     async def _arun(
         self,
@@ -303,7 +298,6 @@ class MistralModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools
@@ -339,6 +333,7 @@ class MistralModel(BaseModelBackend):
 
         return openai_response
 
+    @with_langfuse_trace
     @observe(as_type="generation")
     def _run(
         self,
@@ -367,7 +362,6 @@ class MistralModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools

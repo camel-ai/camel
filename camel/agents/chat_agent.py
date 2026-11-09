@@ -143,13 +143,10 @@ try:
 except (ImportError, AttributeError):
     from camel.utils import track_agent
 
-# Langfuse decorator setting
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+# Langfuse's @observe() decorator is imported unconditionally via
+# camel.utils (it degrades to a no-op automatically when Langfuse isn't
+# installed or configured); TraceRoot remains opt-in via env var.
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
         from traceroot import trace as observe  # type: ignore[import]
     except ImportError:

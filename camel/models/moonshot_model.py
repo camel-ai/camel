@@ -33,16 +33,12 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
+    with_langfuse_trace,
 )
 
 logger = get_logger(__name__)
 
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
         from traceroot import trace as observe  # type: ignore[import]
     except ImportError:
@@ -239,6 +235,7 @@ class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
 
         return cleaned_tools
 
+    @with_langfuse_trace
     @observe()
     def _run(
         self,
@@ -261,7 +258,6 @@ class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools
@@ -274,6 +270,7 @@ class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
             **request_config,
         )
 
+    @with_langfuse_trace
     @observe()
     async def _arun(
         self,
@@ -296,8 +293,6 @@ class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-
-        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools

@@ -36,7 +36,9 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    observe,
     update_current_observation,
+    with_langfuse_trace,
 )
 
 try:
@@ -46,14 +48,6 @@ try:
         raise ImportError
 except (ImportError, AttributeError):
     LLMEvent = None
-
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-else:
-    from camel.utils import observe
 
 
 class SambaModel(BaseModelBackend):
@@ -171,6 +165,7 @@ class SambaModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
+    @with_langfuse_trace
     @observe(as_type="generation")
     async def _arun(  # type: ignore[misc]
         self,
@@ -199,8 +194,6 @@ class SambaModel(BaseModelBackend):
             model_parameters=self.model_config_dict,
         )
 
-        self._log_and_trace()
-
         if self.model_config_dict.get("stream") is True:
             return await self._arun_streaming(messages, tools)
         else:
@@ -210,6 +203,7 @@ class SambaModel(BaseModelBackend):
             )
             return response
 
+    @with_langfuse_trace
     @observe(as_type="generation")
     def _run(  # type: ignore[misc]
         self,
@@ -236,7 +230,6 @@ class SambaModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        self._log_and_trace()
 
         if self.model_config_dict.get("stream") is True:
             return self._run_streaming(messages, tools)
