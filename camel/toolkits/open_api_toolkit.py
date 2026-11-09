@@ -150,12 +150,20 @@ class OpenAPIToolkit:
                             ]
 
                         if 'schema' in param:
+                            # Copy rather than edit the spec: the caller keeps
+                            # owning `param['schema']`, and the same spec is
+                            # often reused across calls.
+                            param_schema = param['schema']
                             if (
                                 properties[param_name].get('description')
-                                and 'description' in param['schema']
+                                and 'description' in param_schema
                             ):
-                                param['schema'].pop('description')
-                            properties[param_name].update(param['schema'])
+                                param_schema = {
+                                    key: value
+                                    for key, value in param_schema.items()
+                                    if key != 'description'
+                                }
+                            properties[param_name].update(param_schema)
 
                         if param.get('required'):
                             required.append(param_name)
@@ -182,7 +190,9 @@ class OpenAPIToolkit:
                     json_content = content.get('application/json', {})
                     json_schema = json_content.get('schema', {})
                     if json_schema:
-                        properties['requestBody'] = json_schema
+                        # Copy the top level so the description added below
+                        # does not leak into the caller's specification.
+                        properties['requestBody'] = dict(json_schema)
                     if 'description' not in properties['requestBody']:
                         properties['requestBody']['description'] = (
                             "The request body, with parameters specifically "
