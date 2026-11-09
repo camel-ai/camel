@@ -594,3 +594,304 @@ def test_console_approval_interactive(monkeypatch, response, expected):
         terminal_toolkit_module._default_console_approval("echo test")
         is expected
     )
+
+
+# ----------------------------------------------
+# Code-interpreter blocking in safe mode
+# (issue #4347)
+# ----------------------------------------------
+@pytest.mark.parametrize(
+    "command",
+    [
+        'python -c "import os; os.system(\'echo pwned > /tmp/x\')"',
+        'python3 -c "import os; os.system(\'echo pwned\')"',
+        'node -e "require(\'fs\').writeFileSync(\'/tmp/x\', \'pwned\')"',
+        'perl -e \'print "pwned"\'',
+        'ruby -e "puts \'pwned\'"',
+        'php -r "echo \'pwned\';"',
+        'python script.py',
+        'pwsh -Command "Write-Output pwned"',
+    ],
+)
+def test_sanitize_command_blocks_code_interpreters(temp_dir, command):
+    """Script interpreters can execute arbitrary unscreenable code and
+    must be rejected by safe mode (issue #4347)."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe
+    assert "blocked for safety" in message.lower()
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'bash -c "python -c \'import os; os.system("id")\'"',
+        'sh -c "python3 -c \'import os\'"',
+    ],
+)
+def test_sanitize_command_blocks_nested_interpreter_payloads(
+    temp_dir, command
+):
+    """Interpreters hidden inside shell -c wrappers must be rejected too."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe
+
+
+def test_sanitize_command_blocks_interpreter_after_operator(temp_dir):
+    """Chained interpreters (e.g. `ls && python -c ...`) must be blocked."""
+    is_safe, _ = sanitize_command(
+        'ls && python -c "import os"',
+        working_dir=str(temp_dir),
+    )
+    assert not is_safe
+
+
+def test_sanitize_command_allows_python_as_argument(temp_dir):
+    """Mentioning an interpreter as an argument must not be a false
+    positive (quote-stripped and mid-segment occurrences stay allowed)."""
+    for command in [
+        "echo 'python'",
+        "grep python requirements.txt",
+        "cat interpreter_list.txt",
+    ]:
+        is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+        assert is_safe, (command, message)
+
+
+def test_interpreter_allowed_in_whitelist_mode(temp_dir):
+    """Whitelist mode keeps its own semantics: an explicitly allowed
+    interpreter stays allowed."""
+    is_safe, _ = sanitize_command(
+        'python -c "print(1)"',
+        working_dir=str(temp_dir),
+        allowed_commands={"python"},
+    )
+    assert is_safe
+
+
+def test_interpreter_in_dangerous_commands_public_list():
+    """The public DANGEROUS_COMMANDS list carries the interpreters."""
+    for name in ("python", "python3", "node", "perl", "ruby", "php"):
+        assert name in DANGEROUS_COMMANDS
+
+
+# ----------------------------------------------
+# Segment-head matching hardening (subagent review on #4364)
+# ----------------------------------------------
+@pytest.mark.parametrize(
+    "command",
+    [
+        '/usr/bin/python -c "import os; os.system(\'id\')"',
+        './venv/bin/python script.py',
+        'echo hi; /usr/bin/python -c "import os"',
+        'ls && ./venv/bin/python -c "import os"',
+        "echo hi\npython -c \"import os; os.system('id')\"",
+        'ls & python -c "import os; os.system(\'id\')"',
+        'py -3 -c "import os; os.system(\'id\')"',
+        "awk 'BEGIN{system(\"id\")}'",
+        "osascript -e 'do shell script \"id\"'",
+        "echo $(python -c \"import os; os.system('id')\")",
+        "echo `python -c \"import os\"`",
+        'x=python; $x -c "import os"',
+    ],
+)
+def test_sanitize_command_blocks_review_bypasses(temp_dir, command):
+    """Bypass variants surfaced by the adversarial review of #4364 must
+    be rejected: pathed interpreters, newline separators, single `&`,
+    the Windows py launcher, awk/osascript, command substitution, and
+    variable-dereference heads."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe, (command, message)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "python3.11 -c \"import os\"",  # versioned interpreter: blocked
+        "python.exe -c \"import os\"",  # .exe suffix: blocked
+        "node18 --version",  # trailing-version binaries too
+    ],
+)
+def test_sanitize_command_versioned_interpreters_blocked(temp_dir, command):
+    """Trailing version components resolve to the base interpreter."""
+    is_safe, _ = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "python3-config --help",  # hyphenated tool name, not python
+        "echo 'python'",
+        "grep python requirements.txt",
+    ],
+)
+def test_sanitize_command_non_command_mentions_stay_allowed(temp_dir, command):
+    """Hyphenated tool names and mid-segment mentions stay allowed."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert is_safe, (command, message)
+
+
+def test_unparsable_quoting_fails_closed(temp_dir):
+    """A command shlex cannot parse is refused instead of guessed."""
+    is_safe, message = sanitize_command(
+        "echo 'unterminated", working_dir=str(temp_dir)
+    )
+    assert not is_safe
+    assert "could not be safely parsed" in message
+
+
+# ----------------------------------------------
+# Segment-head skip hardening (delta review on #4364)
+# ----------------------------------------------
+@pytest.mark.parametrize(
+    "command",
+    [
+        'FOO=1 python -c "import os; os.system(\'id\')"',
+        'PYTHONUNBUFFERED=1 python3 -c "import os"',
+        'A=1 B=2 node -e "require(\'fs\')"',
+        'PYTHONPATH=/tmp python -c "import os"',
+        '> /tmp/out python -c "import os; os.system(\'id\')"',
+        '2>/dev/null python -c "import os; os.system(\'id\')"',
+        '< /dev/null python -c "import os"',
+        '>> log ruby -e "puts 1"',
+        "(python -c \"import os; os.system('id')\")",
+        "(bash -c \"rm -rf /\")",
+    ],
+)
+def test_sanitize_command_blocks_skip_prefix_bypasses(temp_dir, command):
+    """Assignment prefixes, redirection prefixes, and subshell
+    parentheses must not hide the command that actually runs."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe, (command, message)
+
+
+def test_sanitize_command_variable_head_message_pinned(temp_dir):
+    """The variable-dereference rejection carries its own reason, so a
+    regression in the skip logic cannot pass by coincidence."""
+    is_safe, message = sanitize_command(
+        'x=python; $x -c "import os"',
+        working_dir=str(temp_dir),
+    )
+    assert not is_safe
+    assert "variable dereference" in message
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "mawk 'BEGIN{system(\"id\")}'",
+        "nawk 'BEGIN{system(\"id\")}'",
+        "pythonw -c \"import os\"",
+    ],
+)
+def test_sanitize_command_blocks_awk_family_and_pythonw(temp_dir, command):
+    """mawk/nawk/pythonw are single-call code interpreters too."""
+    is_safe, _ = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "r2 /bin/ls",  # radare2 — version-strip must not map to 'r'
+        "sha256sum file.txt",
+        "FOO=1",  # a lone assignment sets state only
+        "echo hi > out.txt",  # benign redirection of a safe command
+    ],
+)
+def test_sanitize_command_assignment_and_name_false_positives(
+    temp_dir, command
+):
+    """Pure assignments, benign redirections, and names whose version
+    strip lands on a blacklisted single letter stay allowed."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert is_safe, (command, message)
+
+
+# ----------------------------------------------
+# Final delta: parens/redirect/here-string/process-substitution
+# ----------------------------------------------
+@pytest.mark.parametrize(
+    "command",
+    [
+        "( python -c \"import os\" )",  # spaced subshell
+        "( ( python -c \"import os\" ) )",  # nested spaced subshell
+        "2>&1 python -c \"import os\"",  # dup then command
+        "cat <(python -c \"import os\")",  # process substitution
+        "diff <(echo a) <(python -c \"import os\")",
+        "python -c \"import os\" <<< x",  # here-string
+        "<<< x python -c \"import os\"",  # leading here-string
+        "echo payload | (python)",  # trailing paren head
+        "echo payload | ((python))",
+        "tr a b < /etc/passwd && python -c \"import os\"",
+    ],
+)
+def test_sanitize_command_blocks_final_delta_bypasses(temp_dir, command):
+    """Subshell parens (spaced/nested/trailing), fd duplication, process
+    substitution, and here-strings must not hide the executed command."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert not is_safe, (command, message)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "echo hi 2>&1",  # dup on a safe command: fine
+        "echo hi > out.txt 2>&1",
+        "(echo safe)",  # subshell of a safe command
+        "ls (nothing)",  # 'ls' heads; parens not executed
+    ],
+)
+def test_sanitize_command_final_delta_false_positives(temp_dir, command):
+    """Safe commands under the same spellings stay allowed."""
+    is_safe, message = sanitize_command(command, working_dir=str(temp_dir))
+    assert is_safe, (command, message)
+
+
+def test_sanitize_command_paren_only_segment_is_allowed(temp_dir):
+    """A segment consisting only of parentheses is skipped (nothing to
+    screen) and the command stays allowed."""
+    is_safe, _ = sanitize_command("(())", working_dir=str(temp_dir))
+    assert is_safe
+
+
+def test_dangerous_segment_reason_skips_empty_and_paren_segments(
+    temp_dir, monkeypatch
+):
+    """Defensive segment shapes are skipped rather than screened: an
+    empty segment (the splitter should never produce one) and a segment
+    made only of parenthesis tokens (word strips to empty, so no command
+    word exists)."""
+    import camel.toolkits.terminal_toolkit.utils as terminal_utils
+
+    original = terminal_utils._split_command_segments
+
+    # Empty first segment: skipped; real second segment screened.
+    monkeypatch.setattr(
+        terminal_utils,
+        "_split_command_segments",
+        lambda cmd: [[], ["echo", "hi"]],
+    )
+    from camel.toolkits.terminal_toolkit.utils import (
+        _dangerous_segment_reason,
+    )
+
+    assert _dangerous_segment_reason("echo hi") is None
+
+    # Dangerous command in the second segment still caught.
+    monkeypatch.setattr(
+        terminal_utils,
+        "_split_command_segments",
+        lambda cmd: [[], ["python", "-c", "import os"]],
+    )
+    assert _dangerous_segment_reason("python -c 'import os'") == "python"
+
+    # A segment of only parenthesis tokens: no command word at all.
+    monkeypatch.setattr(
+        terminal_utils,
+        "_split_command_segments",
+        lambda cmd: [["((", "))"]],
+    )
+    assert _dangerous_segment_reason("((  ))") is None
+
+    monkeypatch.setattr(terminal_utils, "_split_command_segments", original)
