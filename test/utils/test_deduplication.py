@@ -228,3 +228,26 @@ def test_deduplicate_internally_with_inconsistent_embeddings():
             # but the length of embeddings is 2.
             strategy="top1",
         )
+
+
+def test_deduplicate_internally_single_text_requires_embeddings():
+    r"""Argument checks must not be skipped just because there is one text."""
+    with pytest.raises(ValueError, match="Either 'embedding_instance'"):
+        deduplicate_internally(texts=["A"], threshold=0.9)
+
+
+def test_deduplicate_internally_single_text_validates_threshold():
+    with pytest.raises(ValueError, match="Threshold must be between 0 and 1"):
+        deduplicate_internally(
+            texts=["A"], threshold=5.0, embeddings=[[1.0, 0.0]]
+        )
+
+
+def test_deduplicate_internally_single_text_rejects_unimplemented_strategy():
+    with pytest.raises(NotImplementedError):
+        deduplicate_internally(
+            texts=["A"],
+            threshold=0.9,
+            embeddings=[[1.0, 0.0]],
+            strategy="llm-supervise",
+        )
