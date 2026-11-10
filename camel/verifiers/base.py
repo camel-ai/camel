@@ -105,12 +105,22 @@ class BaseVerifier(ABC):
             if self.extractor:
                 await self.extractor.setup()
             batch_size = max(1, self._initial_batch_size or 10)
-            max_parallel = max(1, self._max_parallel or 1)
-            self._batch_processor = BatchProcessor()
+            max_parallel = (
+                max(1, self._max_parallel)
+                if self._max_parallel is not None
+                else None
+            )
+            self._batch_processor = BatchProcessor(
+                max_workers=max_parallel,
+                initial_batch_size=batch_size,
+                cpu_threshold=self._cpu_threshold,
+                memory_threshold=self._memory_threshold,
+            )
 
             logger.info(
                 f"{self.__class__.__name__} initialized with "
-                f"batch_size={batch_size}, max_parallel={max_parallel}"
+                f"batch_size={self._batch_processor.batch_size}, "
+                f"max_parallel={self._batch_processor.max_workers}"
             )
 
             await self._setup(**kwargs)
