@@ -519,7 +519,6 @@ def test_check_server_running_uses_scheme_default_port(monkeypatch):
     seen = {}
 
     class FakeSocket:
-
         def connect_ex(self, address):
             seen['address'] = address
             return 0
@@ -527,9 +526,10 @@ def test_check_server_running_uses_scheme_default_port(monkeypatch):
         def close(self):
             return None
 
-    monkeypatch.setattr(
-        'camel.utils.commons.socket.socket', lambda *args, **kwargs: FakeSocket()
-    )
+    def fake_socket(*args, **kwargs):
+        return FakeSocket()
+
+    monkeypatch.setattr('camel.utils.commons.socket.socket', fake_socket)
 
     assert check_server_running('http://127.0.0.1') is True
     assert seen['address'] == ('127.0.0.1', 80)
