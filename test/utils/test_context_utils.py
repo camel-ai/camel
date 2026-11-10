@@ -258,6 +258,23 @@ def test_save_and_load_markdown_file(context_utility_fixture):
     assert test_content in loaded_content
 
 
+def test_save_markdown_file_reports_write_failure(context_utility_fixture):
+    r"""Test that a failed write is reported instead of "success"."""
+    context_util = context_utility_fixture
+
+    # The parent directory does not exist, so the note cannot be written.
+    status = context_util.save_markdown_file(
+        filename="missing_subdir/note",
+        content="this content can never reach the disk",
+    )
+
+    assert status != "success"
+    assert status.startswith("Error:")
+    assert not (
+        context_util.get_working_directory() / "missing_subdir" / "note.md"
+    ).exists()
+
+
 if __name__ == "__main__":
     import sys
 
