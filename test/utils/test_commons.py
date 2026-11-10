@@ -23,8 +23,8 @@ from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import (
     BatchProcessor,
-    create_chunks,
     api_keys_required,
+    create_chunks,
     dependencies_required,
     get_system_information,
     get_task_list,
@@ -518,7 +518,7 @@ def test_safe_extract_parsed_returns_none_when_parsed_is_none():
 def test_create_chunks_rejects_non_positive_size():
     # Used to hang: i never advanced, so empty chunks were appended forever.
     with pytest.raises(ValueError):
-        create_chunks("abcdef", 0)
+        create_chunks('abcdef', 0)
 
     with pytest.raises(ValueError):
-        create_chunks("abcdef", -1)
+        create_chunks('abcdef', -1)
