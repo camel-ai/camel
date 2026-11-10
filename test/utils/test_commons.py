@@ -24,6 +24,7 @@ from camel.toolkits.base import BaseToolkit
 from camel.utils import (
     BatchProcessor,
     api_keys_required,
+    check_server_running,
     dependencies_required,
     get_system_information,
     get_task_list,
@@ -512,3 +513,35 @@ def test_safe_extract_parsed_returns_none_when_parsed_is_none():
     response = _make_response(None)
     result = safe_extract_parsed(response, _DummySchema)
     assert result is None
+
+
+def test_check_server_running_uses_scheme_default_port(monkeypatch):
+    seen = {}
+
+    class FakeSocket:
+        def connect_ex(self, address):
+            seen['address'] = address
+            return 0
+
+        def close(self):
+            return None
+
+    def fake_socket(*args, **kwargs):
+        return FakeSocket()
+
+    monkeypatch.setattr('camel.utils.commons.socket.socket', fake_socket)
+
+    assert check_server_running('http://127.0.0.1') is True
+    assert seen['address'] == ('127.0.0.1', 80)
+
+    assert check_server_running('https://example.com') is True
+    assert seen['address'] == ('example.com', 443)
+
+    assert check_server_running('https://example.com:8443') is True
+    assert seen['address'] == ('example.com', 8443)
+
+
+def test_check_server_running_returns_false_for_unparseable_url():
+    # Used to raise TypeError: str, bytes or bytearray expected, not NoneType
+    assert check_server_running('127.0.0.1:8000') is False
+    assert check_server_running('') is False
