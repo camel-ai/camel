@@ -327,17 +327,16 @@ class ContextUtility:
 
         Returns:
             str: Success message.
+
+        Raises:
+            OSError: If the note file cannot be written.
         """
-        try:
-            # Ensure directory exists before writing
-            self._ensure_directory_exists()
-            file_path = self.working_directory / f"{note_name}.md"
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            return f"Note '{note_name}.md' created successfully"
-        except Exception as e:
-            logger.error(f"Error creating note {note_name}: {e}")
-            return f"Error creating note: {e}"
+        # Ensure directory exists before writing
+        self._ensure_directory_exists()
+        file_path = self.working_directory / f"{note_name}.md"
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        return f"Note '{note_name}.md' created successfully"
 
     def save_markdown_file(
         self,
