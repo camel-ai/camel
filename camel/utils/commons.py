@@ -684,6 +684,35 @@ def retry_on_error(
     """
 
     def decorator(func: Callable) -> Callable:
+        if inspect.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                delay = initial_delay
+                last_exception = None
+
+                for attempt in range(max_retries + 1):
+                    try:
+                        return await func(*args, **kwargs)
+                    except Exception as e:
+                        last_exception = e
+                        if attempt == max_retries:
+                            logger.warning(
+                                f"Failed after {max_retries} retries: {e!s}"
+                            )
+                            raise
+
+                        logger.warning(
+                            f"Attempt {attempt + 1} failed: {e!s}. "
+                            f"Retrying in {delay:.1f}s..."
+                        )
+                        await asyncio.sleep(delay)
+                        delay *= 2  # Exponential backoff
+
+                raise last_exception
+
+            return async_wrapper
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             delay = initial_delay
