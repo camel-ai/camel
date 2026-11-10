@@ -179,10 +179,20 @@ def check_server_running(server_url: str) -> bool:
         bool: Whether the port is open for packets (server is running).
     """
     parsed_url = urlparse(server_url)
-    url_tuple = (parsed_url.hostname, parsed_url.port)
+    if parsed_url.hostname is None:
+        # Not a URL the socket API can dial (e.g. "127.0.0.1:8000" without a
+        # scheme); report "not running" instead of raising.
+        return False
+
+    if parsed_url.port is not None:
+        port = parsed_url.port
+    else:
+        # ``parsed_url.port`` is None when the URL omits it; use the scheme
+        # default rather than passing None to socket.connect_ex.
+        port = 443 if parsed_url.scheme == 'https' else 80
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = sock.connect_ex(url_tuple)
+    result = sock.connect_ex((parsed_url.hostname, port))
     sock.close()
 
     # if the port is open, the result should be 0.
