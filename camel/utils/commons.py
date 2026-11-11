@@ -474,12 +474,18 @@ def json_to_function_code(json_obj: Dict) -> str:
         'number': 'float',
         'integer': 'int',
         'boolean': 'bool',
+        'array': 'list',
+        'object': 'dict',
     }
 
     for prop in required:
         # if no description, return empty string
         description = properties[prop].get('description', "")
         prop_type = properties[prop]['type']
+        if isinstance(prop_type, list):
+            # A nullable JSON type arrives as ["string", "null"]; the generated
+            # annotation has to stay executable, so use the first concrete type.
+            prop_type = next((t for t in prop_type if t != 'null'), 'string')
         python_type = prop_to_python.get(prop_type, prop_type)
         args.append(f"{prop}: {python_type}")
         docstring_args.append(
