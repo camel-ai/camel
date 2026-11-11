@@ -148,3 +148,47 @@ def test_score_based_context_creator_with_system_message():
     ]
     output, _ = context_creator.create_context(records=context_records)
     assert expected_output == output
+
+
+def test_cached_token_count_is_dropped_when_messages_are_removed():
+    r"""A context that shrinks invalidates the cached count, so a later context
+    with the same message count as the cached one must be recounted instead of
+    being answered with the stale value.
+    """
+
+    class FixedTokenCounter:
+        def __init__(self):
+            self.calls = 0
+
+        def count_tokens_from_messages(self, messages, tools=None):
+            self.calls += 1
+            return 42
+
+    counter = FixedTokenCounter()
+    context_creator = ScoreBasedContextCreator(counter, 1000)
+    context_creator.set_cached_token_count(token_count=1000, message_count=5)
+
+    def records(count):
+        return [
+            ContextRecord(
+                memory_record=MemoryRecord(
+                    message=BaseMessage.make_user_message(
+                        role_name="user", content=f"message {i}"
+                    ),
+                    role_at_backend=OpenAIBackendRole.USER,
+                ),
+                timestamp=float(i),
+                score=1.0,
+            )
+            for i in range(count)
+        ]
+
+    _, cached_tokens = context_creator.create_context(records(5))
+    assert cached_tokens == 1000
+
+    _, after_removal = context_creator.create_context(records(4))
+    assert after_removal == 42
+
+    _, after_regrowth = context_creator.create_context(records(5))
+    assert after_regrowth == 42, "stale cached count was reused"
+    assert counter.calls == 2
