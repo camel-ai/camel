@@ -209,6 +209,32 @@ def test_deduplicate_internally_chain_scenario():
     ], "Expected 'A' to have embedding [1.0, 0.0]."
 
 
+def test_deduplicate_internally_batch_size_does_not_change_result():
+    r"""Splitting the similarity computation into batches must not change
+    which texts are duplicates: the lower-triangle mask has to compare global
+    row indices, otherwise the first row of every batch after the first is
+    blanked out.
+    """
+    texts = ["A", "B", "A"]
+    embeddings = [
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.999, 0.0, 0.001],  # duplicates index 0
+    ]
+
+    whole = deduplicate_internally(
+        texts=texts, threshold=0.9, embeddings=embeddings, batch_size=1000
+    )
+    batched = deduplicate_internally(
+        texts=texts, threshold=0.9, embeddings=embeddings, batch_size=2
+    )
+
+    assert whole.unique_ids == [0, 1]
+    assert whole.duplicate_to_target_map == {2: 0}
+    assert batched.unique_ids == whole.unique_ids
+    assert batched.duplicate_to_target_map == whole.duplicate_to_target_map
+
+
 def test_deduplicate_internally_with_llm_supervision():
     with pytest.raises(NotImplementedError):
         deduplicate_internally(
