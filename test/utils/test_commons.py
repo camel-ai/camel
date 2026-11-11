@@ -522,3 +522,11 @@ def test_create_chunks_rejects_non_positive_size():
 
     with pytest.raises(ValueError):
         create_chunks('abcdef', -1)
+
+
+def test_create_chunks_rejects_non_integer_size():
+    # A float chunk size passes a bare `n < 1` check and then truncates through
+    # int(1.2 * n); a bool is an int subclass and makes no sense here either.
+    for bad_size in (2.5, 0.5, True, False):
+        with pytest.raises(ValueError):
+            create_chunks('abcdef', bad_size)
