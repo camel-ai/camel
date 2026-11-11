@@ -428,7 +428,9 @@ class BaseMessage:
             function_format = HermesFunctionFormatter()
 
         # Convert role type to ShareGPT 'from' field
-        if self.role_type == RoleType.USER:
+        if self.role_type == RoleType.SYSTEM:
+            from_ = "system"
+        elif self.role_type == RoleType.USER:
             from_ = "system" if self.role_name == "system" else "human"
         else:  # RoleType.ASSISTANT
             from_ = "gpt"
