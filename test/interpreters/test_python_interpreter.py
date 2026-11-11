@@ -445,3 +445,40 @@ def test_not_allow_builtins(
         not_allow_builtins_interpreter.execute(code)
     exec_msg = e.value.args[0]
     assert "The variable `len` is not defined." in exec_msg
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        "(1).__class__",
+        "getattr(1, '__class__')",
+        "getattr(getattr(1, '__class__'), '__subclasses__')()",
+        "getattr(1, '__cla' + 'ss__')",
+        "setattr((1).__class__, 'x', 1)",
+    ],
+)
+def test_block_dunder_access(
+    interpreter: InternalPythonInterpreter, code: str
+):
+    # Dunder access must be blocked whether spelled as attribute syntax
+    # or laundered through getattr/setattr, otherwise the sandbox escape
+    # (__class__ -> __subclasses__ MRO walk) stays reachable.
+    with pytest.raises(InterpreterError) as e:
+        interpreter.execute(code)
+    assert "is not allowed" in e.value.args[0]
+
+
+@pytest.mark.parametrize(
+    "code, expected",
+    [
+        ("getattr('abc', 'upper')()", "ABC"),
+        ("getattr({'a': 1}, 'keys')()", None),
+    ],
+)
+def test_safe_getattr_still_works(
+    interpreter: InternalPythonInterpreter, code: str, expected
+):
+    # Legitimate reflection on non-dunder attributes must keep working.
+    result = interpreter.execute(code)
+    if expected is not None:
+        assert result == expected
