@@ -15,7 +15,9 @@ from camel.messages.conversion.alpaca import AlpacaItem
 
 
 def test_alpaca_item_empty_input_roundtrip():
-    item = AlpacaItem(instruction="Summarize the text", input="", output="done")
+    item = AlpacaItem(
+        instruction="Summarize the text", input="", output="done"
+    )
     assert AlpacaItem.from_string(item.to_string()) == item
 
 
