@@ -25,13 +25,37 @@ from camel.utils import (
     BatchProcessor,
     api_keys_required,
     dependencies_required,
+    func_string_to_callable,
     get_system_information,
     get_task_list,
     is_docker_running,
+    json_to_function_code,
     retry_on_error,
     to_pascal,
     with_timeout,
 )
+
+
+def test_json_to_function_code_supports_array_and_nullable_types():
+    r"""A required 'array' property used to produce a ``list`` annotation named
+    ``array`` (NameError on exec), and a nullable ``["string", "null"]`` type
+    raised TypeError while building the signature.
+    """
+    array_schema = {
+        "type": "object",
+        "properties": {"tags": {"type": "array", "description": "tags"}},
+        "required": ["tags"],
+    }
+    func = func_string_to_callable(json_to_function_code(array_schema))
+    assert func.__annotations__["tags"] is list
+
+    nullable_schema = {
+        "type": "object",
+        "properties": {"name": {"type": ["string", "null"]}},
+        "required": ["name"],
+    }
+    func = func_string_to_callable(json_to_function_code(nullable_schema))
+    assert func.__annotations__["name"] is str
 
 
 def test_get_task_list():
