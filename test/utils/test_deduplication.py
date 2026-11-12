@@ -235,6 +235,31 @@ def test_deduplicate_internally_batch_size_does_not_change_result():
     assert batched.duplicate_to_target_map == whole.duplicate_to_target_map
 
 
+@pytest.mark.parametrize("batch_size", [1, 2, 3, 4])
+def test_deduplicate_internally_matches_across_batch_boundary(batch_size):
+    r"""Every duplicate pair here straddles a batch boundary at some batch
+    size (0-2 and 1-3), so a mask built from batch-relative row positions
+    drops them while one built from global row ids keeps them.
+    """
+    texts = ["A", "B", "A", "B"]
+    embeddings = [
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.999, 0.0, 0.001],  # duplicates index 0
+        [0.0, 0.999, 0.001],  # duplicates index 1
+    ]
+
+    result = deduplicate_internally(
+        texts=texts,
+        threshold=0.9,
+        embeddings=embeddings,
+        batch_size=batch_size,
+    )
+
+    assert result.unique_ids == [0, 1]
+    assert result.duplicate_to_target_map == {2: 0, 3: 1}
+
+
 def test_deduplicate_internally_with_llm_supervision():
     with pytest.raises(NotImplementedError):
         deduplicate_internally(
