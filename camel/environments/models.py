@@ -118,3 +118,19 @@ class Environment(Protocol):
     async def close(self) -> None:
         r"""Perform a full cleanup of all environment resources."""
         ...
+
+    def get_action_space(self) -> Any:
+        r"""Get the action space definition for this environment.
+
+        Returns:
+            Any: The action space definition for the environment.
+        """
+        ...
+
+    def get_observation_space(self) -> Any:
+        r"""Get the observation space definition for this environment.
+
+        Returns:
+            Any: The observation space definition for the environment.
+        """
+        ...
