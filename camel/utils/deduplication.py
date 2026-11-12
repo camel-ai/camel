@@ -198,9 +198,9 @@ def deduplicate_internally(
         # batch is the global index i + r; comparing against the local row
         # index would blank the first row of every batch after the first and
         # miss duplicates across the batch boundary.
-        tril_mask = np.arange(batch_end)[None, :] < np.arange(
-            i, batch_end
-        )[:, None]
+        tril_mask = (
+            np.arange(batch_end)[None, :] < np.arange(i, batch_end)[:, None]
+        )
         batch_similarities = batch_similarities * tril_mask
 
         # Find duplicates in current batch
