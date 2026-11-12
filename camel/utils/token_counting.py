@@ -182,7 +182,10 @@ class OpenAITokenCounter(BaseTokenCounter):
                     )
                 else:
                     for item in value:
-                        if isinstance(item, dict) and item.get("type") == "text":
+                        if (
+                            isinstance(item, dict)
+                            and item.get("type") == "text"
+                        ):
                             num_tokens += len(
                                 self.encoding.encode(
                                     str(
@@ -191,7 +194,10 @@ class OpenAITokenCounter(BaseTokenCounter):
                                     disallowed_special=(),
                                 )
                             )
-                        elif isinstance(item, dict) and item.get("type") == "image_url":
+                        elif (
+                            isinstance(item, dict)
+                            and item.get("type") == "image_url"
+                        ):
                             image_str: str = item["image_url"]["url"]
                             # OpenAI treats a missing detail as "auto"; message
                             # builders frequently omit the key.
@@ -229,7 +235,9 @@ class OpenAITokenCounter(BaseTokenCounter):
                             # zero tokens; encode the whole item so their
                             # payload is not silently dropped from the count.
                             num_tokens += len(
-                                self.encoding.encode(str(item), disallowed_special=())
+                                self.encoding.encode(
+                                    str(item), disallowed_special=()
+                                )
                             )
                 if key == "name":
                     num_tokens += self.tokens_per_name

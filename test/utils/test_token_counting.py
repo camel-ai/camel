@@ -14,8 +14,8 @@
 import pytest
 from PIL import Image
 
-from camel.types import ModelType, OpenAIVisionDetailType
 from camel.messages import OpenAIMessage
+from camel.types import ModelType, OpenAIVisionDetailType
 from camel.utils import OpenAITokenCounter
 
 
@@ -78,5 +78,7 @@ def test_openai_count_token_from_messages_tool_calls():
         "content": [{"type": "unknown_kind", "payload": "x" * 100}],
     }
     unknown_tokens = counter.count_tokens_from_messages([unknown_message])
-    payload_tokens = len(counter.encoding.encode("x" * 100, disallowed_special=()))
+    payload_tokens = len(
+        counter.encoding.encode("x" * 100, disallowed_special=())
+    )
     assert unknown_tokens > payload_tokens
