@@ -541,11 +541,20 @@ def create_chunks(text: str, n: int) -> List[str]:
 
     Args:
         text (str): The text to be split.
-        n (int): The max length of a single chunk.
+        n (int): The max length of a single chunk. Must be positive.
 
     Returns:
         List[str]: A list of split texts.
+
+    Raises:
+        ValueError: If `n` is not a positive integer.
     """
+
+    if not isinstance(n, int) or isinstance(n, bool) or n < 1:
+        # With n <= 0 the loop below can never advance; fail fast instead of
+        # appending empty chunks forever. A float (or bool) would reach
+        # int(1.2 * n) and silently truncate the chunk length instead.
+        raise ValueError(f"Chunk size must be a positive integer, got {n!r}")
 
     chunks = []
     i = 0
