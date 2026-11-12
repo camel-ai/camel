@@ -499,9 +499,7 @@ class BaseMessage:
                     # Fall back to PNG locally instead of writing
                     # ``image.format``, which would mutate the caller's
                     # image object (see to_dict() for the same pattern).
-                    img_format: str = (
-                        image.format if image.format else 'PNG'
-                    )
+                    img_format: str = image.format if image.format else 'PNG'
 
                     image_type: str = img_format.lower()
                     if image_type not in OpenAIImageType:
