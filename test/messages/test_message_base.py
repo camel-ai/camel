@@ -213,4 +213,6 @@ def test_system_message_to_sharegpt_keeps_the_system_role():
 
     assert sharegpt_message.from_ == "system"
     # The conversation validator requires the first turn to be system/human.
-    assert ShareGPTConversation(root=[sharegpt_message]).root[0].from_ == "system"
+    assert (
+        ShareGPTConversation(root=[sharegpt_message]).root[0].from_ == "system"
+    )
