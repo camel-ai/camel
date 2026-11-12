@@ -552,8 +552,8 @@ def create_chunks(text: str, n: int) -> List[str]:
 
     if not isinstance(n, int) or isinstance(n, bool) or n < 1:
         # With n <= 0 the loop below can never advance; fail fast instead of
-        # appending empty chunks forever. A float (or bool) reaching int(1.2 * n)
-        # would silently truncate the chunk length instead.
+        # appending empty chunks forever. A float (or bool) would reach
+        # int(1.2 * n) and silently truncate the chunk length instead.
         raise ValueError(f"Chunk size must be a positive integer, got {n!r}")
 
     chunks = []
