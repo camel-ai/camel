@@ -160,8 +160,10 @@ class MCPAgent(ChatAgent):
         self.function_calling_available = function_calling_available
 
         if function_calling_available:
-            sys_msg_content = "You are a helpful assistant, and you prefer "
-            "to use tools provided by the user to solve problems."
+            sys_msg_content = (
+                "You are a helpful assistant, and you prefer "
+                "to use tools provided by the user to solve problems."
+            )
         else:
             sys_msg_content = SYS_MSG_CONTENT
 
