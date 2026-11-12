@@ -182,7 +182,10 @@ class OpenAITokenCounter(BaseTokenCounter):
                     )
                 else:
                     for item in value:
-                        if item["type"] == "text":
+                        if (
+                            isinstance(item, dict)
+                            and item.get("type") == "text"
+                        ):
                             num_tokens += len(
                                 self.encoding.encode(
                                     str(
@@ -191,9 +194,14 @@ class OpenAITokenCounter(BaseTokenCounter):
                                     disallowed_special=(),
                                 )
                             )
-                        elif item["type"] == "image_url":
+                        elif (
+                            isinstance(item, dict)
+                            and item.get("type") == "image_url"
+                        ):
                             image_str: str = item["image_url"]["url"]
-                            detail = item["image_url"]["detail"]
+                            # OpenAI treats a missing detail as "auto"; message
+                            # builders frequently omit the key.
+                            detail = item["image_url"].get("detail") or "auto"
 
                             # Only count tokens for base64 encoded images
                             # For URLs, we cannot reliably determine token count without fetching the image
@@ -221,6 +229,16 @@ class OpenAITokenCounter(BaseTokenCounter):
                                 )
                             # Note: For regular URLs, token count cannot be determined without fetching the image
                             # The actual token usage will be reported by the API response
+                        else:
+                            # Tool calls ("function" items) and any other
+                            # structured list entries previously contributed
+                            # zero tokens; encode the whole item so their
+                            # payload is not silently dropped from the count.
+                            num_tokens += len(
+                                self.encoding.encode(
+                                    str(item), disallowed_special=()
+                                )
+                            )
                 if key == "name":
                     num_tokens += self.tokens_per_name
 
