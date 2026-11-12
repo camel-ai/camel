@@ -921,6 +921,7 @@ dependencies = [
 all = [
     { name = "aci-sdk" },
     { name = "agentops" },
+    { name = "aiohttp" },
     { name = "aiosqlite" },
     { name = "anthropic" },
     { name = "apify-client" },
@@ -935,6 +936,7 @@ all = [
     { name = "chunkr-ai" },
     { name = "cohere" },
     { name = "crawl4ai" },
+    { name = "croniter" },
     { name = "dappier" },
     { name = "datacommons-client", extra = ["pandas"] },
     { name = "datasets" },
@@ -1363,6 +1365,10 @@ storage = [
     { name = "surrealdb" },
     { name = "weaviate-client" },
 ]
+triggers = [
+    { name = "aiohttp" },
+    { name = "croniter" },
+]
 web-tools = [
     { name = "apify-client" },
     { name = "beautifulsoup4" },
@@ -1396,6 +1402,8 @@ requires-dist = [
     { name = "aci-sdk", marker = "extra == 'owl'", specifier = ">=1.0.0b1" },
     { name = "agentops", marker = "extra == 'all'", specifier = ">=0.3.21,<0.4" },
     { name = "agentops", marker = "extra == 'dev-tools'", specifier = ">=0.3.21,<0.4" },
+    { name = "aiohttp", marker = "extra == 'all'", specifier = ">=3.9,<4" },
+    { name = "aiohttp", marker = "extra == 'triggers'", specifier = ">=3.9,<4" },
     { name = "aiosqlite", marker = "extra == 'all'", specifier = ">=0.20.0,<0.21" },
     { name = "aiosqlite", marker = "extra == 'data-tools'", specifier = ">=0.20.0,<0.21" },
     { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.89.0,<0.90.0" },
@@ -1441,6 +1449,8 @@ requires-dist = [
     { name = "crawl4ai", marker = "extra == 'document-tools'", specifier = ">=0.3.745" },
     { name = "crawl4ai", marker = "extra == 'owl'", specifier = ">=0.3.745" },
     { name = "crawl4ai", marker = "extra == 'rag'", specifier = ">=0.3.745" },
+    { name = "croniter", marker = "extra == 'all'", specifier = ">=2.0.0,<7" },
+    { name = "croniter", marker = "extra == 'triggers'", specifier = ">=2.0.0,<7" },
     { name = "dappier", marker = "extra == 'all'", specifier = ">=0.3.3,<0.4" },
     { name = "dappier", marker = "extra == 'web-tools'", specifier = ">=0.3.3,<0.4" },
     { name = "datacommons-client", extras = ["pandas"], marker = "extra == 'all'", specifier = ">=2.1.5" },
@@ -1813,7 +1823,7 @@ requires-dist = [
     { name = "yt-dlp", marker = "extra == 'media-tools'", specifier = ">=2024.11.4,<2025" },
     { name = "yt-dlp", marker = "extra == 'owl'", specifier = ">=2024.11.4,<2025" },
 ]
-provides-extras = ["dev", "docs", "rag", "web-tools", "document-tools", "media-tools", "communication-tools", "data-tools", "research-tools", "dev-tools", "model-platforms", "huggingface", "storage", "owl", "eigent", "all", "earth-science"]
+provides-extras = ["dev", "docs", "rag", "web-tools", "document-tools", "media-tools", "communication-tools", "triggers", "data-tools", "research-tools", "dev-tools", "model-platforms", "huggingface", "storage", "owl", "eigent", "all", "earth-science"]
 
 [[package]]
 name = "certifi"
@@ -2526,6 +2536,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/88/33/3db87e8ae74441f70cd135342f21536c0bf59adfdb73a7f8d6ff9f4c256b/crawl4ai-0.4.24.tar.gz", hash = "sha256:d061508e48bec2bd260c571759391ea7dca5e903fe81db8f709468e8f96df2fe", size = 168597, upload-time = "2024-12-31T11:19:08.25Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cd/d0/c7090374d4566b881ea3f3c72b7e219095a9b9ca080d5d3cc73bf9aa4ec8/Crawl4AI-0.4.24-py3-none-any.whl", hash = "sha256:7f7b75b893965c0bfb96f9ea607765b2fc2ee34313d6ce1bf510df8102095da7", size = 177431, upload-time = "2024-12-31T11:19:06.308Z" },
+]
+
+[[package]]
+name = "croniter"
+version = "6.2.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dateutil" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/df/de/5832661ed55107b8a09af3f0a2e71e0957226a59eb1dcf0a445cce6daf20/croniter-6.2.2.tar.gz", hash = "sha256:ba60832a5ec8e12e51b8691c3309a113d1cf6526bdf1a48150ce8ec7a532d0ab", size = 113762, upload-time = "2026-03-15T08:43:48.112Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d0/39/783980e78cb92c2d7bdb1fc7dbc86e94ccc6d58224d76a7f1f51b6c51e30/croniter-6.2.2-py3-none-any.whl", hash = "sha256:a5d17b1060974d36251ea4faf388233eca8acf0d09cbd92d35f4c4ac8f279960", size = 45422, upload-time = "2026-03-15T08:43:46.626Z" },
 ]
 
 [[package]]
