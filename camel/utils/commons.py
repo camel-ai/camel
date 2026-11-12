@@ -484,7 +484,7 @@ def json_to_function_code(json_obj: Dict) -> str:
         prop_type = properties[prop]['type']
         if isinstance(prop_type, list):
             # A nullable JSON type arrives as ["string", "null"]; the generated
-            # annotation has to stay executable, so use the first concrete type.
+            # annotation must stay executable, so take the first concrete type
             prop_type = next((t for t in prop_type if t != 'null'), 'string')
         python_type = prop_to_python.get(prop_type, prop_type)
         args.append(f"{prop}: {python_type}")
