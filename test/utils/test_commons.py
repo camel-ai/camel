@@ -530,3 +530,14 @@ def test_create_chunks_rejects_non_integer_size():
     for bad_size in (2.5, 0.5, True, False):
         with pytest.raises(ValueError):
             create_chunks('abcdef', bad_size)
+
+
+def test_create_chunks_splits_text_into_bounded_chunks():
+    assert create_chunks("a" * 25, 10) == ["a" * 10, "a" * 10, "a" * 5]
+
+
+def test_create_chunks_prefers_sentence_boundaries():
+    # The full stop sits between 0.8 * n and 1.2 * n, so the chunk ends there
+    # instead of at the hard `n` boundary.
+    text = "0123456789abcdef." + "ghijklmnop"
+    assert create_chunks(text, 20) == ["0123456789abcdef.", "ghijklmnop"]
