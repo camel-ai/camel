@@ -123,14 +123,33 @@ async def test_python_set_strategy():
     # Test set with mixed types
     text = '{1, "two", 3.0}'
     result = await strategy.extract(text)
-    input_set = {1, "two", 3.0}
-    sorted_elements = sorted(input_set, key=lambda x: str(x))
-    assert result == repr(set(sorted_elements))
+    assert result == "{1, 3.0, 'two'}"
 
     # Test invalid cases
     assert await strategy.extract("not a set") is None
     assert await strategy.extract("{invalid") is None
     assert await strategy.extract("set(invalid)") is None
+
+
+@pytest.mark.asyncio
+async def test_python_set_strategy_normalizes_iteration_order():
+    r"""Test the normalized set string follows the sorted element order.
+
+    A set is walked in hash-table slot order, so ``{-1, 2}`` iterates as
+    ``2, -1`` even though the normalized value has to be ``{-1, 2}``.
+    Rendering the value through ``repr(set(...))`` leaks that order, and for
+    string elements the order even changes between processes started with
+    different ``PYTHONHASHSEED`` values.
+    """
+    strategy = PythonSetStrategy()
+
+    assert await strategy.extract("{-1, 2}") == "{-1, 2}"
+
+    # Elements whose ``str()`` collides must still be ordered stably.
+    assert await strategy.extract('{"1", 1}') == "{'1', 1}"
+
+    # An empty set has no literal form to sort.
+    assert await strategy.extract("set()") == "set()"
 
 
 @pytest.mark.asyncio
