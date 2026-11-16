@@ -496,14 +496,15 @@ class BaseMessage:
                     )
                 else:
                     # Image is a PIL Image object
-                    if image.format is None:
-                        # Set default format to PNG as fallback
-                        image.format = 'PNG'
+                    # Fall back to PNG locally instead of writing
+                    # ``image.format``, which would mutate the caller's
+                    # image object (see to_dict() for the same pattern).
+                    img_format: str = image.format if image.format else 'PNG'
 
-                    image_type: str = image.format.lower()
+                    image_type: str = img_format.lower()
                     if image_type not in OpenAIImageType:
                         raise ValueError(
-                            f"Image type {image.format} "
+                            f"Image type {img_format} "
                             f"is not supported by OpenAI vision model"
                         )
 
@@ -526,7 +527,7 @@ class BaseMessage:
                         # else: RGBA mode, keep as-is
 
                     with io.BytesIO() as buffer:
-                        img_to_save.save(fp=buffer, format=image.format)
+                        img_to_save.save(fp=buffer, format=img_format)
                         encoded_image = base64.b64encode(
                             buffer.getvalue()
                         ).decode("utf-8")
