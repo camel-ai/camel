@@ -76,9 +76,16 @@ class NoteTakingToolkit(BaseToolkit):
             # Reload registry to get latest state
             self._load_registry()
             note_path = self.working_directory / f"{note_name}.md"
-            if note_name not in self.registry or not note_path.exists():
-                self.create_note(note_name, content)
+            if not note_path.exists():
+                result = self.create_note(note_name, content)
+                if result.startswith("Error"):
+                    return result
                 return f"Note '{note_name}' created with content added."
+
+            # Adopt a note file that exists on disk but is not registered yet
+            # so appending does not silently drop the new content.
+            if note_name not in self.registry:
+                self._register_note(note_name)
 
             with note_path.open("a", encoding="utf-8") as f:
                 f.write(content + "\n")
