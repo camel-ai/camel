@@ -114,7 +114,9 @@ class HybridRetriever(BaseRetriever):
                 id_to_info[current_id] = {'text': text, 'vector_rank': rank}
                 current_id += 1
             else:
-                id_to_info[text_to_id[text]]['vector_rank'] = rank
+                # A duplicated result must keep its best rank, mirroring the
+                # `setdefault` used for the bm25 ranks below.
+                id_to_info[text_to_id[text]].setdefault('vector_rank', rank)
 
         # Iterate over bm25_retriever_results
         for rank, result in enumerate(bm25_retriever_results, start=1):
