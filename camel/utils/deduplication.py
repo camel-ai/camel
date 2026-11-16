@@ -129,12 +129,34 @@ def deduplicate_internally(
     import numpy as np
     from sklearn.metrics.pairwise import cosine_similarity
 
+    # Check if the parameters are valid. These checks run before the early
+    # returns below, so a bad argument is reported as the documented ValueError
+    # instead of being masked by the shortcut for empty or single-text input.
+    if not 0 <= threshold <= 1:
+        raise ValueError("Threshold must be between 0 and 1")
+
+    if strategy == "llm-supervise":
+        # TODO: Implement LLM-supervise deduplication.
+        raise NotImplementedError(
+            "LLM-supervise deduplication is not yet implemented."
+        )
+
     if len(texts) == 0:
         return DeduplicationResult(
             original_texts=[],
             unique_ids=[],
             unique_embeddings_dict={},
             duplicate_to_target_map={},
+        )
+
+    if embedding_instance is None and embeddings is None:
+        raise ValueError(
+            "Either 'embedding_instance' or 'embeddings' must be provided."
+        )
+    if embedding_instance is not None and embeddings is not None:
+        raise ValueError(
+            "Cannot provide both 'embedding_instance' and 'embeddings'. "
+            "Please choose only one way to supply embeddings."
         )
 
     if len(texts) == 1:
@@ -147,26 +169,6 @@ def deduplicate_internally(
                 else embedding_instance.embed_list(texts)[0]  # type: ignore[union-attr]
             },
             duplicate_to_target_map={},
-        )
-
-    if strategy == "llm-supervise":
-        # TODO: Implement LLM-supervise deduplication.
-        raise NotImplementedError(
-            "LLM-supervise deduplication is not yet implemented."
-        )
-
-    # Check if the parameters are valid.
-    if not 0 <= threshold <= 1:
-        raise ValueError("Threshold must be between 0 and 1")
-
-    if embedding_instance is None and embeddings is None:
-        raise ValueError(
-            "Either 'embedding_instance' or 'embeddings' must be provided."
-        )
-    if embedding_instance is not None and embeddings is not None:
-        raise ValueError(
-            "Cannot provide both 'embedding_instance' and 'embeddings'. "
-            "Please choose only one way to supply embeddings."
         )
 
     if embedding_instance is not None:
