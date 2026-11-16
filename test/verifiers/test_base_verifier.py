@@ -99,6 +99,33 @@ async def test_verifier_setup_and_cleanup(test_verifier):
 
 
 @pytest.mark.asyncio
+async def test_setup_applies_batch_configuration():
+    r"""Test that setup() forwards the batching configuration it validates."""
+    verifier = TestVerifier(
+        max_parallel=1,
+        initial_batch_size=3,
+        cpu_threshold=42.0,
+        memory_threshold=43.0,
+    )
+
+    await verifier.setup()
+
+    processor = verifier._batch_processor
+    assert processor.max_workers == 1
+    assert processor.batch_size == 3
+    assert processor.cpu_threshold == 42.0
+    assert processor.memory_threshold == 43.0
+
+    await verifier.cleanup()
+
+    # Without an explicit limit the worker count stays resource-derived.
+    dynamic_verifier = TestVerifier()
+    await dynamic_verifier.setup()
+    assert dynamic_verifier._batch_processor.max_workers >= 1
+    await dynamic_verifier.cleanup()
+
+
+@pytest.mark.asyncio
 async def test_verifier_setup_error():
     r"""Test handling of errors during setup."""
 
