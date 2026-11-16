@@ -219,6 +219,65 @@ Args:
 
 ### Principles 🛡️
 
+#### Explicit Over Implicit Arguments
+
+To ensure reliable use by an agent (LLM), function signatures should be fully explicit. 
+We should avoid `**kwargs` in favor of clearly defined, named arguments. 
+This minimizes ambiguity and potential errors when the agent passes parameters.
+
+**Examples:**
+- Bad: 
+  ```python
+  def process_data(**kwargs):
+      pass
+  ```
+- Good: 
+  ```python
+  def process_data(
+      input_file: str,
+      output_format: str,
+      max_size: int,
+      include_metadata: bool = True
+  ):
+      pass
+  ```
+
+#### Precise and Standardized Type Hints
+
+We should consistently use the typing library to provide specific and informative type hints. 
+For collection types like dictionaries, it's crucial to define their internal structure 
+(e.g., use `Dict[str, str]` instead of the generic `dict`).
+
+**Examples:**
+- Bad: 
+  ```python
+  def process_user_data(user_data: dict, config: dict) -> dict:
+      # Generic types don't help the agent understand structure
+      pass
+  ```
+- Good: 
+  ```python
+  def process_user_data(
+      user_data: Dict[str, Union[str, int, float]],
+      config: Dict[str, Any]
+  ) -> Dict[str, str]:
+      # Specific types help the agent understand expected data structures
+      pass
+  ```
+
+#### Testing with ChatAgent
+
+For any added function, test it with ChatAgent to ensure the agent could correctly 
+understand and execute the function. This validation step is crucial for 
+maintaining agent compatibility.
+
+**Testing Checklist:**
+- [ ] Function signature is clear and unambiguous
+- [ ] Type hints accurately represent expected inputs and outputs
+- [ ] Agent can successfully call the function with correct parameters
+- [ ] Agent handles edge cases and error conditions appropriately
+- [ ] Function behavior matches agent's expectations based on naming and documentation
+
 #### Naming Principle: Avoid Abbreviations in Naming
 
 - Abbreviations can lead to ambiguity, especially since variable names and code in CAMEL are directly used by agents.
