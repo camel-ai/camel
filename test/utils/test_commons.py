@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import inspect
 import os
 import time
 from unittest import TestCase
@@ -512,3 +513,33 @@ def test_safe_extract_parsed_returns_none_when_parsed_is_none():
     response = _make_response(None)
     result = safe_extract_parsed(response, _DummySchema)
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_retry_on_error_retries_async_functions():
+    attempts = []
+
+    @retry_on_error(max_retries=2, initial_delay=0.01)
+    async def flaky():
+        attempts.append(1)
+        if len(attempts) < 3:
+            raise ValueError('boom')
+        return 'ok'
+
+    assert inspect.iscoroutinefunction(flaky)
+    assert await flaky() == 'ok'
+    assert len(attempts) == 3
+
+
+@pytest.mark.asyncio
+async def test_retry_on_error_async_raises_after_max_retries():
+    attempts = []
+
+    @retry_on_error(max_retries=1, initial_delay=0.01)
+    async def always_failing():
+        attempts.append(1)
+        raise ValueError('boom')
+
+    with pytest.raises(ValueError):
+        await always_failing()
+    assert len(attempts) == 2
