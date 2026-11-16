@@ -23,6 +23,29 @@ from camel.utils import MCPServer
 logger = get_logger(__name__)
 
 
+def _node_link_graph(nx, payload: Dict[str, Any]):
+    r"""Rebuild a graph from a node-link payload.
+
+    networkx 3.6 renamed the default edge-list key from :obj:`links` to
+    :obj:`edges`. Read the key from the payload so graphs exported by
+    earlier camel versions stay importable, and fall back to the legacy
+    keyword for networkx versions that do not accept :obj:`edges`.
+
+    Args:
+        nx: The networkx module.
+        payload (Dict[str, Any]): The decoded node-link data.
+
+    Returns:
+        The reconstructed graph.
+    """
+    edges_key = 'edges' if 'edges' in payload else 'links'
+    try:
+        return nx.node_link_graph(payload, edges=edges_key)
+    except TypeError:
+        # networkx < 3.6 only knows the legacy keyword.
+        return nx.node_link_graph(payload, link=edges_key)
+
+
 @MCPServer()
 class NetworkXToolkit(BaseToolkit):
     _nx = None  # Class variable to store the networkx module
@@ -195,7 +218,7 @@ class NetworkXToolkit(BaseToolkit):
         """
         logger.info("Deserializing graph from JSON data.")
         nx = self._get_nx()
-        self.graph = nx.node_link_graph(json.loads(data))
+        self.graph = _node_link_graph(nx, json.loads(data))
 
     def export_to_file(self, file_path: str) -> None:
         r"""Exports the graph to a file in JSON format.
@@ -217,7 +240,7 @@ class NetworkXToolkit(BaseToolkit):
         logger.info(f"Importing graph from file: {file_path}")
         nx = self._get_nx()
         with open(file_path, "r") as file:
-            self.graph = nx.node_link_graph(json.load(file))
+            self.graph = _node_link_graph(nx, json.load(file))
 
     def clear_graph(self) -> None:
         r"""Clears the current graph."""
