@@ -17,6 +17,7 @@ import pytest
 
 from camel.memories import ContextRecord
 from camel.messages import BaseMessage
+from camel.messages.conversion import ShareGPTConversation
 from camel.models import ModelFactory
 from camel.prompts import CodePrompt, TextPrompt
 from camel.societies import RolePlaying
@@ -199,3 +200,19 @@ def test_roleplay_sharegpt_conversion():
         converted_back.append(BaseMessage.from_sharegpt(msg))
 
     assert converted_back == original_messages
+
+
+def test_system_message_to_sharegpt_keeps_the_system_role():
+    r"""A system message used to be exported as a ``gpt`` turn, so a prompt
+    exported to ShareGPT lost its system role and the resulting conversation
+    failed to validate.
+    """
+    system_message = BaseMessage.make_system_message("You are helpful")
+
+    sharegpt_message = system_message.to_sharegpt()
+
+    assert sharegpt_message.from_ == "system"
+    # The conversation validator requires the first turn to be system/human.
+    assert (
+        ShareGPTConversation(root=[sharegpt_message]).root[0].from_ == "system"
+    )
