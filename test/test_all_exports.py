@@ -12,6 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import pytest
+
 
 def test_all_exports_from_camel():
     # Simulate `from camel import *` and capture the resulting namespace
@@ -31,3 +33,36 @@ def test_all_exports_type():
 
     for item in camel.__all__:
         assert isinstance(item, str)
+
+
+def _star_import(module_name):
+    ns = {}
+    exec(f"from {module_name} import *", ns)
+    return ns
+
+
+def test_datagen_evol_instruct_all_exports_resolve():
+    # tqdm is imported unconditionally by camel.datagen.evol_instruct but is
+    # not a base dependency; on a bare install the module cannot be imported
+    # at all, so the __all__ invariant below is not reachable.
+    pytest.importorskip("tqdm")
+
+    import camel.datagen.evol_instruct as module
+
+    ns = _star_import(module.__name__)
+    missing = [name for name in module.__all__ if name not in ns]
+    assert not missing, (
+        f"{module.__name__}.__all__ advertises names that a star import "
+        f"cannot resolve: {missing}"
+    )
+
+
+def test_utils_all_exports_resolve():
+    import camel.utils as module
+
+    ns = _star_import(module.__name__)
+    missing = [name for name in module.__all__ if name not in ns]
+    assert not missing, (
+        f"{module.__name__}.__all__ advertises names that a star import "
+        f"cannot resolve: {missing}"
+    )
