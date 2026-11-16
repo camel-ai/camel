@@ -139,7 +139,7 @@ def test_extract_excel_content_xlsx(excel_toolkit):
         result = excel_toolkit.extract_excel_content("test.xlsx")
 
         # Verify the function was called correctly
-        mock_load_workbook.assert_called_once_with("test.xlsx", data_only=True)
+        mock_load_workbook.assert_any_call("test.xlsx", data_only=True)
         mock_read_excel.assert_called_once()
 
         # Check the result contains expected content
@@ -186,11 +186,76 @@ def test_extract_excel_content_xls(excel_toolkit):
         mock_xls_converter.to_xlsx.assert_called_once()
 
         # Verify the workbook was loaded
-        mock_load_workbook.assert_called_once()
+        mock_load_workbook.assert_any_call("test.xlsx", data_only=True)
 
         # Check the result contains expected content
         assert "Sheet Name: Sheet1" in result
         assert "Markdown View of the content" in result
+
+
+def test_extract_excel_content_keeps_workbook_for_follow_up_calls(
+    excel_toolkit, sample_xlsx_file
+):
+    r"""Test that extracting a workbook leaves it usable by the tool suite.
+
+    The workbook-scoped tools (``get_rows``, ``get_cell_value``,
+    ``export_sheet_to_csv``, ``save_workbook``, ...) operate on
+    ``self.wb``, so the documented entry point for existing files has to
+    keep the workbook it just read instead of dropping it.
+    """
+    result = excel_toolkit.extract_excel_content(sample_xlsx_file)
+    assert "Sheet Name: Sheet1" in result
+
+    rows = excel_toolkit.get_rows("Sheet1")
+    assert rows[0] == ["Name", "Age", "City"]
+    assert rows[1] == ["Alice", 25, "New York"]
+
+    assert excel_toolkit.get_cell_value("Sheet1", "B2") == 25
+
+    export_result = excel_toolkit.export_sheet_to_csv("Sheet1", "sheet1.csv")
+    assert "exported to" in export_result
+    assert os.path.isfile(
+        os.path.join(excel_toolkit.working_directory, "sheet1.csv")
+    )
+
+    save_result = excel_toolkit.save_workbook("copy.xlsx")
+    assert "successfully" in save_result
+    assert os.path.isfile(
+        os.path.join(excel_toolkit.working_directory, "copy.xlsx")
+    )
+
+
+def test_extract_excel_content_keeps_formulas_when_saving(excel_toolkit):
+    r"""Test that the workbook kept after extraction keeps its formulas.
+
+    The report is built from a ``data_only=True`` handle, which only sees
+    cached formula results. That handle must not become the editable one,
+    otherwise saving a workbook that was just extracted would replace every
+    formula with its cached value (``None`` when it was never computed).
+    """
+    from openpyxl import Workbook, load_workbook
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = os.path.join(temp_dir, "formulas.xlsx")
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Calc"
+        sheet["A1"] = 1
+        sheet["A2"] = 2
+        sheet["A3"] = "=SUM(A1:A2)"
+        workbook.save(source_path)
+
+        assert "Sheet Name: Calc" in excel_toolkit.extract_excel_content(
+            source_path
+        )
+
+        saved = excel_toolkit.save_workbook("formulas_copy.xlsx")
+        assert "successfully" in saved
+
+        copy_path = os.path.join(
+            excel_toolkit.working_directory, "formulas_copy.xlsx"
+        )
+        assert load_workbook(copy_path)["Calc"]["A3"].value == "=SUM(A1:A2)"
 
 
 def test_convert_to_markdown(excel_toolkit):
