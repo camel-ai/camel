@@ -234,9 +234,10 @@ class OpenAITokenCounter(BaseTokenCounter):
         r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
         resolution model will be treated as :obj:`"high"`. All images with
         :obj:`"low"` detail cost 85 tokens each. Images with :obj:`"high"` detail
-        are first scaled to fit within a 2048 x 2048 square, maintaining their
-        aspect ratio. Then, they are scaled such that the shortest side of the
-        image is 768px long. Finally, we count how many 512px squares the image
+        are first scaled down to fit within a 2048 x 2048 square, maintaining
+        their aspect ratio. Then, they are scaled down such that the shortest
+        side of the image is 768px long. Images that are already smaller than
+        those bounds are not scaled. Finally, we count how many 512px squares the image
         consists of. Each of those squares costs 170 tokens. Another 85 tokens are
         always added to the final total. For more details please refer to `OpenAI
         vision docs <https://platform.openai.com/docs/guides/vision>`_
@@ -258,9 +259,14 @@ class OpenAITokenCounter(BaseTokenCounter):
             width = int(width / scaling_factor)
             height = int(height / scaling_factor)
 
-        scaling_factor = min(width, height) / SHORTEST_SIDE_PIXELS
-        scaled_width = int(width / scaling_factor)
-        scaled_height = int(height / scaling_factor)
+        if min(width, height) > SHORTEST_SIDE_PIXELS:
+            scaling_factor = min(width, height) / SHORTEST_SIDE_PIXELS
+            scaled_width = int(width / scaling_factor)
+            scaled_height = int(height / scaling_factor)
+        else:
+            # Both scaling steps only ever shrink an image, so an image
+            # that is already smaller keeps its size.
+            scaled_width, scaled_height = width, height
 
         h = ceil(scaled_height / SQUARE_PIXELS)
         w = ceil(scaled_width / SQUARE_PIXELS)
