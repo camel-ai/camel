@@ -61,6 +61,22 @@ def test_append_note(note_taking_toolkit):
     assert "Second line" in content
 
 
+def test_append_note_to_existing_unregistered_file(note_taking_toolkit):
+    # A note file can exist on disk without being registered (e.g. it was
+    # created by another tool). Appending must keep the content instead of
+    # reporting success while dropping it.
+    note_path = note_taking_toolkit.working_directory / "orphan.md"
+    note_path.write_text("Existing content\n", encoding="utf-8")
+
+    result = note_taking_toolkit.append_note("orphan", "Appended line")
+
+    assert "successfully appended" in result
+    assert note_path.read_text(encoding="utf-8") == (
+        "Existing content\nAppended line\n"
+    )
+    assert "orphan" in note_taking_toolkit.registry
+
+
 def test_list_note(note_taking_toolkit):
     # Test listing when no notes exist
     result = note_taking_toolkit.list_note()
