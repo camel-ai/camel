@@ -66,15 +66,20 @@ class ChatHistoryMemory(AgentMemory):
 
     def retrieve(self) -> List[ContextRecord]:
         records = self._chat_history_block.retrieve(self._window_size)
-        if self._window_size is not None and len(records) == self._window_size:
-            warnings.warn(
-                f"Chat history window size limit ({self._window_size}) "
-                f"reached. Some earlier messages will not be included in "
-                f"the context. Consider increasing window_size if you need "
-                f"a longer context.",
-                UserWarning,
-                stacklevel=2,
-            )
+        if self._window_size is not None:
+            # A preserved system/developer message makes the returned list
+            # longer than `window_size`, so compare with the stored history
+            # to detect whether messages were actually dropped.
+            stored_count = len(self._chat_history_block.storage.load())
+            if len(records) < stored_count:
+                warnings.warn(
+                    f"Chat history window size limit ({self._window_size}) "
+                    f"reached. Some earlier messages will not be included "
+                    f"in the context. Consider increasing window_size if "
+                    f"you need a longer context.",
+                    UserWarning,
+                    stacklevel=2,
+                )
         return records
 
     def write_records(self, records: List[MemoryRecord]) -> None:
