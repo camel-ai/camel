@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import copy
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -517,3 +518,58 @@ def test_web_scraper_scrape(get_function):
             }
         )
         assert result == mock_response_data
+
+
+def _parameter_spec() -> dict:
+    r"""A minimal spec whose parameter and request body carry descriptions."""
+    return {
+        "openapi": "3.0.0",
+        "info": {"title": "Items", "version": "1.0.0"},
+        "paths": {
+            "/items": {
+                "get": {
+                    "operationId": "list_items",
+                    "description": "List items.",
+                    "parameters": [
+                        {
+                            "name": "limit",
+                            "in": "query",
+                            "description": "Maximum number of items.",
+                            "schema": {
+                                "type": "integer",
+                                "description": "Maximum number of items.",
+                            },
+                        }
+                    ],
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {"q": {"type": "string"}},
+                                }
+                            }
+                        }
+                    },
+                }
+            }
+        },
+    }
+
+
+def test_openapi_spec_to_openai_schemas_does_not_mutate_the_spec():
+    r"""Building schemas must leave the caller's specification untouched."""
+    spec = _parameter_spec()
+    original = copy.deepcopy(spec)
+
+    schemas = OpenAPIToolkit().openapi_spec_to_openai_schemas("items", spec)
+
+    assert spec == original
+    properties = schemas[0]["function"]["parameters"]["properties"]
+    # The parameter description wins, so the schema keeps only its type.
+    assert properties["limit_in_query"] == {
+        "description": "Maximum number of items.",
+        "type": "integer",
+    }
+    assert properties["requestBody"]["type"] == "object"
+    assert "description" in properties["requestBody"]
