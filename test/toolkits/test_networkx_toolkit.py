@@ -79,6 +79,16 @@ class TestNetworkXToolkit(unittest.TestCase):
         self.assertListEqual(nodes, ["A", "B"])
         self.assertListEqual(edges, [("A", "B")])
 
+    def test_deserialize_graph_edges_key(self):
+        data = """{"directed": false, "multigraph": false, "graph": {},
+         "nodes": [{"id": "A"}, {"id": "B"}],
+          "edges": [{"source": "A", "target": "B"}]}"""
+        self.graph.deserialize_graph(data)
+        nodes = self.graph.get_nodes()
+        edges = self.graph.get_edges()
+        self.assertListEqual(nodes, ["A", "B"])
+        self.assertListEqual(edges, [("A", "B")])
+
     def test_export_import_file(self):
         file_path = "test_graph.json"
         self.graph.add_edge("A", "B")
