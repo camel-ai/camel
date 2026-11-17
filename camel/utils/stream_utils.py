@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 from types import GeneratorType
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Tuple
 
@@ -113,7 +114,10 @@ async def _collect_async_stream(
         if stream_callback:
             try:
                 maybe = stream_callback(chunk)
-                if asyncio.iscoroutine(maybe):
+                # Callbacks may hand back a coroutine, a Task or a Future;
+                # anything awaitable has to be awaited here, otherwise the
+                # next chunk overtakes it and its errors never get logged.
+                if inspect.isawaitable(maybe):
                     await maybe
             except Exception:
                 logger.warning(
