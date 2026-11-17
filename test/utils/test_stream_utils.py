@@ -255,3 +255,58 @@ async def test_consume_response_content_async_callback_exception_is_swallowed(
     assert (
         "stream_callback failed while processing a stream chunk" in caplog.text
     )
+
+
+@pytest.mark.asyncio
+async def test_consume_response_content_async_awaits_returned_task():
+    chunks = [_make_chunk("a"), _make_chunk("b")]
+    seen: list[str] = []
+
+    async def handle(chunk: ChatAgentResponse) -> None:
+        await asyncio.sleep(0.01)
+        seen.append(chunk.msg.content)
+
+    await consume_response_content_async(
+        chunks, lambda chunk: asyncio.create_task(handle(chunk))
+    )
+
+    assert seen == ["a", "b"]
+
+
+@pytest.mark.asyncio
+async def test_consume_response_content_async_awaits_returned_future():
+    chunks = [_make_chunk("a")]
+    seen: list[str] = []
+
+    def callback(chunk: ChatAgentResponse) -> asyncio.Future:
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future = loop.create_future()
+
+        def resolve() -> None:
+            seen.append(chunk.msg.content)
+            future.set_result(None)
+
+        loop.call_soon(resolve)
+        return future
+
+    await consume_response_content_async(chunks, callback)
+
+    assert seen == ["a"]
+
+
+@pytest.mark.asyncio
+async def test_consume_response_content_async_task_exception_is_swallowed(
+    caplog,
+):
+    async def failing(chunk: ChatAgentResponse) -> None:
+        raise RuntimeError("callback failed")
+
+    final_response, content = await consume_response_content_async(
+        [_make_chunk("x")], lambda chunk: asyncio.create_task(failing(chunk))
+    )
+
+    assert final_response.msg.content == "x"
+    assert content == "x"
+    assert (
+        "stream_callback failed while processing a stream chunk" in caplog.text
+    )
