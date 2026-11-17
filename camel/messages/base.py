@@ -632,9 +632,13 @@ class BaseMessage:
             dict: The converted dictionary.
         """
         result = {
+            **(self.meta_dict or {}),
+            # Real fields are authoritative: a meta_dict entry that happens to
+            # share a name with a real field must not shadow it in the flat
+            # serialized dict, or MemoryRecord.from_dict() would rebuild the
+            # message with the metadata value as its identity.
             "role_name": self.role_name,
             "role_type": self.role_type.value,
-            **(self.meta_dict or {}),
             "content": self.content,
         }
 
