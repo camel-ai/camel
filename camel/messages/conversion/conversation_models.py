@@ -88,7 +88,11 @@ class ShareGPTConversation(RootModel):
         return self
 
     def model_dump(self, **kwargs):
-        return self.root
+        # Serialize the nested messages instead of returning the model
+        # instances: pydantic's contract is that `model_dump()` yields
+        # JSON-serializable data, and `by_alias=True` produces the ShareGPT
+        # wire keys ("from" instead of "from_").
+        return [m.model_dump(by_alias=True) for m in self.root]
 
     def __iter__(self):
         return iter(self.root)
