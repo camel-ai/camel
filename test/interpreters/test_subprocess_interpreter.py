@@ -162,3 +162,16 @@ def test_execute_command_require_confirm(subprocess_interpreter, monkeypatch):
     stdout, stderr = subprocess_interpreter.execute_command("echo Hello")
     assert "Hello" in stdout
     assert stderr == ""
+
+
+def test_run_empty_python_script(subprocess_interpreter, tmp_path):
+    r"""A comment-only script parses to an empty AST and must execute as an
+    empty run instead of raising UnboundLocalError."""
+    script = tmp_path / "comment_only.py"
+    script.write_text("# just a comment\n\n", encoding="utf-8")
+
+    result = subprocess_interpreter.run_file(script, "python")
+    assert result == ""
+
+    result = subprocess_interpreter.run("# just a comment\n", "python")
+    assert result == ""
