@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
 import tempfile
 from datetime import datetime
 from pathlib import Path
@@ -40,7 +41,8 @@ def memory(request):
             context_creator=context_creator, storage=InMemoryKeyValueStorage()
         )
     elif request.param == "json":
-        _, path = tempfile.mkstemp()
+        fd, path = tempfile.mkstemp()
+        os.close(fd)
         path = Path(path)
         yield ChatHistoryMemory(
             context_creator=context_creator, storage=JsonStorage(path)
