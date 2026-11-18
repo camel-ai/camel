@@ -46,15 +46,8 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    observe,
 )
-
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-else:
-    from camel.utils import observe
 
 
 class AWSBedrockConverseModel(BaseModelBackend):
@@ -848,7 +841,7 @@ class AWSBedrockConverseModel(BaseModelBackend):
             )
 
     @observe()
-    def _run(
+    def _run(  # type: ignore[override]
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
@@ -895,7 +888,7 @@ class AWSBedrockConverseModel(BaseModelBackend):
             yield chunk
 
     @observe()
-    async def _arun(
+    async def _arun(  # type: ignore[override]
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
