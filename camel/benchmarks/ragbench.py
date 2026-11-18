@@ -12,15 +12,25 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+)
 
-import numpy as np
-from datasets import Dataset, load_dataset
+if TYPE_CHECKING:
+    from datasets import Dataset
 
 from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
 from camel.logger import get_logger
 from camel.retrievers import AutoRetriever
+from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
 
@@ -34,10 +44,10 @@ class RagasFields:
 
 
 def annotate_dataset(
-    dataset: Dataset,
+    dataset: 'Dataset',
     context_call: Optional[Callable[[Dict[str, Any]], List[str]]],
     answer_call: Optional[Callable[[Dict[str, Any]], str]],
-) -> Dataset:
+) -> 'Dataset':
     r"""Annotate the dataset by adding context and answers using the provided
     functions.
 
@@ -75,6 +85,8 @@ def rmse(
     Returns:
         Optional[float]: RMSE value, or None if inputs have different lengths.
     """
+    import numpy as np
+
     if len(input_trues) != len(input_preds):
         logger.warning("Input lengths mismatch in RMSE calculation")
         return None
@@ -104,6 +116,7 @@ def auroc(trues: Sequence[bool], preds: Sequence[float]) -> float:
     Returns:
         float: AUROC score.
     """
+    import numpy as np
     from sklearn.metrics import roc_auc_score  # type: ignore[import-untyped]
 
     eval_idx = ~np.isnan(preds)
@@ -117,7 +130,7 @@ def auroc(trues: Sequence[bool], preds: Sequence[float]) -> float:
 
 
 def ragas_calculate_metrics(
-    dataset: Dataset,
+    dataset: 'Dataset',
     pred_context_relevance_field: Optional[str],
     pred_faithfulness_field: Optional[str],
     metrics_to_evaluate: Optional[List[str]] = None,
@@ -141,6 +154,8 @@ def ragas_calculate_metrics(
     Returns:
         Dict[str, Optional[float]]: Dictionary of calculated metrics.
     """
+    import numpy as np
+
     metrics_to_evaluate = metrics_to_evaluate or [
         "context_relevancy",
         "faithfulness",
@@ -172,11 +187,11 @@ def ragas_calculate_metrics(
 
 
 def ragas_evaluate_dataset(
-    dataset: Dataset,
+    dataset: 'Dataset',
     contexts_field_name: Optional[str],
     answer_field_name: Optional[str],
     metrics_to_evaluate: Optional[List[str]] = None,
-) -> Dataset:
+) -> 'Dataset':
     r"""Evaluate the dataset using RAGAS metrics.
 
     Args:
@@ -188,6 +203,7 @@ def ragas_evaluate_dataset(
     Returns:
         Dataset: Dataset with added evaluation metrics.
     """
+    from datasets import Dataset
     from ragas import evaluate  # type: ignore[import]
     from ragas.metrics import (  # type: ignore[import]
         context_relevancy,
@@ -236,6 +252,7 @@ class RAGBenchBenchmark(BaseBenchmark):
         split (str, optional): Dataset split to use (e.g., "test").
     """
 
+    @dependencies_required('datasets')
     def __init__(
         self,
         processes: int = 1,
@@ -258,10 +275,12 @@ class RAGBenchBenchmark(BaseBenchmark):
         super().__init__("ragbench", "rag_bench", "", processes)
         self.subset = subset
         self.split = split
-        self.dataset: Optional[Dataset] = None
+        self.dataset: Optional['Dataset'] = None
 
     def download(self):
         r"""Download the RAGBench dataset."""
+        from datasets import load_dataset
+
         try:
             self.dataset = load_dataset(
                 "rungalileo/ragbench", self.subset, split=self.split

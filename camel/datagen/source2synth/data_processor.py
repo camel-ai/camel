@@ -15,8 +15,6 @@
 import random
 from typing import Any, Dict, List, Optional, Sequence
 
-from tqdm import tqdm
-
 from camel.agents.multi_hop_generator_agent import MultiHopGeneratorAgent
 from camel.datagen.source2synth.user_data_processor_config import (
     ProcessorConfig,
@@ -171,6 +169,8 @@ class ExampleConstructor:
         """
         logger.info("Starting to construct training examples...")
         examples = []
+
+        from tqdm import tqdm
 
         for data in tqdm(raw_data, desc="Constructing examples"):
             # 1. Text preprocessing
