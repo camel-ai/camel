@@ -185,3 +185,11 @@ def test_faiss_storage_operations():
         with patch.object(FaissStorage, 'clear', autospec=True) as mock_clear:
             storage.clear()
             mock_clear.assert_called_once()
+
+
+def test_faiss_generate_collection_name_windows_safe(mock_faiss_module):
+    storage = FaissStorage(vector_dim=4)
+    prohibited_chars = set('<>:"/\\|?*')
+    assert not any(c in prohibited_chars for c in storage.collection_name)
+    assert ":" not in storage.collection_name
+    assert "." not in storage.collection_name
