@@ -311,3 +311,114 @@ def test_create_presentation_empty_content(pptx_toolkit):
     except ImportError:
         # If python-pptx is not available, just check file exists
         pass
+
+
+def _slide_text(presentation) -> str:
+    r"""Collect every text frame and table cell of a presentation."""
+    chunks = []
+    for slide in presentation.slides:
+        for shape in slide.shapes:
+            if shape.has_text_frame:
+                chunks.append(shape.text_frame.text)
+            if getattr(shape, "has_table", False):
+                for row in shape.table.rows:
+                    for cell in row.cells:
+                        chunks.append(cell.text)
+    return "\n".join(chunks)
+
+
+def test_create_presentation_nested_bullet_points(pptx_toolkit):
+    r"""Nested bullet lists are documented input and must be rendered."""
+    import json
+
+    import pptx
+
+    bullets = [
+        "Top level one",
+        ["Nested child A", "Nested child B"],
+        "Top level two",
+    ]
+    content = [
+        {"title": "Nested Bullets", "subtitle": "Regression"},
+        {"heading": "Outline", "bullet_points": bullets},
+    ]
+    filename = "test_nested_bullet_points.pptx"
+
+    result = pptx_toolkit.create_presentation(json.dumps(content), filename)
+
+    assert "successfully created" in result
+    file_path = pptx_toolkit._resolve_filepath(filename)
+    assert file_path.exists()
+
+    text = _slide_text(pptx.Presentation(str(file_path)))
+    for item in [
+        "Top level one",
+        "Nested child A",
+        "Nested child B",
+        "Top level two",
+    ]:
+        assert item in text
+
+
+def test_create_presentation_nested_step_by_step(pptx_toolkit):
+    r"""Steps inside a nested list are rendered as step-by-step shapes."""
+    import json
+
+    import pptx
+
+    content = [
+        {"title": "Nested Steps", "subtitle": "Regression"},
+        {
+            "heading": "Process",
+            "bullet_points": [
+                ">> Step 1: collect",
+                [">> Step 2: analyse", ">> Step 3: report"],
+                ">> Step 4: ship",
+            ],
+        },
+    ]
+    filename = "test_nested_step_by_step.pptx"
+
+    result = pptx_toolkit.create_presentation(json.dumps(content), filename)
+
+    assert "successfully created" in result
+    file_path = pptx_toolkit._resolve_filepath(filename)
+    assert file_path.exists()
+
+    text = _slide_text(pptx.Presentation(str(file_path)))
+    for step in [
+        "Step 1: collect",
+        "Step 2: analyse",
+        "Step 3: report",
+        "Step 4: ship",
+    ]:
+        assert step in text
+
+
+def test_create_presentation_step_by_step_outside_layout_range(
+    pptx_toolkit,
+):
+    r"""Step counts the chevron/pentagon layouts cannot hold keep their
+    content as bullet points."""
+    import json
+
+    import pptx
+
+    content = [
+        {"title": "Long Process", "subtitle": "Regression"},
+        {
+            "heading": "Seven steps",
+            "bullet_points": [f">> Step {index}" for index in range(1, 8)],
+        },
+    ]
+    filename = "test_step_by_step_outside_range.pptx"
+
+    result = pptx_toolkit.create_presentation(json.dumps(content), filename)
+
+    assert "successfully created" in result
+    file_path = pptx_toolkit._resolve_filepath(filename)
+    assert file_path.exists()
+
+    text = _slide_text(pptx.Presentation(str(file_path)))
+    for index in range(1, 8):
+        assert f"Step {index}" in text

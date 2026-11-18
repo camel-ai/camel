@@ -334,9 +334,12 @@ class PPTXToolkit(BaseToolkit):
                         slide_data,
                     )
                 elif 'bullet_points' in slide_data:
+                    flat_items_list = self._get_flat_list_of_contents(
+                        slide_data['bullet_points'], level=0
+                    )
                     if any(
-                        step.startswith(STEP_BY_STEP_PROCESS_MARKER)
-                        for step in slide_data['bullet_points']
+                        item_text.startswith(STEP_BY_STEP_PROCESS_MARKER)
+                        for item_text, _ in flat_items_list
                     ):
                         self._handle_step_by_step_process(
                             presentation,
@@ -684,7 +687,10 @@ class PPTXToolkit(BaseToolkit):
         from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
         from pptx.util import Inches, Pt
 
-        steps = slide_json['bullet_points']
+        flat_items_list = self._get_flat_list_of_contents(
+            slide_json['bullet_points'], level=0
+        )
+        steps = [item_text for item_text, _ in flat_items_list]
         n_steps = len(steps)
 
         bullet_slide_layout = presentation.slide_layouts[1]
@@ -741,6 +747,13 @@ class PPTXToolkit(BaseToolkit):
                     run.font.size = Pt(14)
                 top = Inches(top.inches + height.inches + Inches(0.3).inches)
                 left = Inches(left.inches + Inches(0.5).inches)
+        else:
+            # The chevron/pentagon layouts only cover three to six steps.
+            # Render the remaining counts as bullet points instead of
+            # leaving the slide empty.
+            self._add_bulleted_items(
+                shapes.placeholders[1].text_frame, flat_items_list
+            )
 
     def _remove_slide_number_from_heading(self, header: str) -> str:
         r"""Remove the slide number from a given slide header.
