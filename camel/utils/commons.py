@@ -773,7 +773,7 @@ class BatchProcessor:
 
     def _calculate_optimal_workers(self) -> int:
         r"""Calculate optimal number of workers based on system resources."""
-        cpu_count = self.psutil.cpu_count()
+        cpu_count = self.psutil.cpu_count() or 1
         cpu_percent = self.psutil.cpu_percent(interval=1)
         memory = self.psutil.virtual_memory()
 
