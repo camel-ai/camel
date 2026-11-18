@@ -102,6 +102,23 @@ All runtimes inherit from <b>BaseRuntime</b>, which defines core methods:
   ```
 </Card>
 
+## Authenticating the Runtime API Server
+
+<Card icon="lock" title="API server authentication" className="my-6">
+  The FastAPI server behind <code>DockerRuntime</code>, <code>UbuntuDockerRuntime</code> and <code>RemoteHttpRuntime</code> exposes every registered tool as an HTTP endpoint, so it requires an API key. Clients present it as <code>X-API-Key</code> or <code>Authorization: Bearer</code>.
+  <br/><br/>
+  When a runtime starts the server itself, the key is generated and passed through for you and nothing extra is needed. You only have to supply one when you connect to a server that was started separately — run it with <code>CAMEL_RUNTIME_API_KEY</code> set and hand the runtime the same value:
+  <br/><br/>
+  ```python
+  # On the remote host:
+  #   CAMEL_RUNTIME_API_KEY=my-secret python3 api.py camel.toolkits.MathToolkit
+
+  runtime = RemoteHttpRuntime("remote-host", api_key="my-secret")
+  ```
+  <br/>
+  Started by hand with no <code>CAMEL_RUNTIME_API_KEY</code> at all, the server refuses to start, rather than invent a key it would then have to write somewhere for you to read. Set the variable to an empty value to serve without authentication deliberately, on a trusted single-user network.
+</Card>
+
 ## Runtime Types: Key Features
 
 <AccordionGroup>

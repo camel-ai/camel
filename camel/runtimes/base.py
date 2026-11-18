@@ -11,10 +11,48 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+import secrets
 from abc import ABC, abstractmethod
-from typing import Any, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from camel.toolkits import FunctionTool
+
+
+def _resolve_api_key(api_key: Optional[str] = None) -> str:
+    r"""Determine the API key a runtime shares with its API server.
+
+    Falls back to the ``CAMEL_RUNTIME_API_KEY`` environment variable, then to
+    a freshly generated key, so that a runtime started without configuration
+    still authenticates rather than leaving its tool endpoints open. An empty
+    string is honoured as an explicit request to disable authentication.
+
+    Args:
+        api_key (Optional[str]): Explicitly supplied key, if any.
+            (default: :obj:`None`)
+
+    Returns:
+        str: The key to present to the API server, or an empty string when
+            authentication is disabled.
+    """
+    if api_key is None:
+        api_key = os.environ.get("CAMEL_RUNTIME_API_KEY")
+    if api_key is None:
+        api_key = secrets.token_urlsafe(32)
+    return api_key
+
+
+def _auth_headers(api_key: str) -> Dict[str, str]:
+    r"""Build the authentication headers for a runtime API request.
+
+    Args:
+        api_key (str): The key to present, or an empty string when
+            authentication is disabled.
+
+    Returns:
+        Dict[str, str]: Headers to merge into the request.
+    """
+    return {"X-API-Key": api_key} if api_key else {}
 
 
 class BaseRuntime(ABC):

@@ -14,6 +14,7 @@
 import atexit
 import json
 import logging
+import os
 import subprocess
 import time
 from functools import wraps
@@ -25,6 +26,7 @@ import requests
 from pydantic import BaseModel
 
 from camel.runtimes import BaseRuntime
+from camel.runtimes.base import _auth_headers, _resolve_api_key
 from camel.toolkits.function_tool import FunctionTool
 
 logger = logging.getLogger(__name__)
@@ -39,15 +41,27 @@ class RemoteHttpRuntime(BaseRuntime):
         port (int): The port of the remote server. (default: :obj:`8000`)
         python_exec (str): The python executable to run the API server.
             (default: :obj:`python3`)
+        api_key (Optional[str]): The API key the server expects. Required when
+            connecting to a server that was started separately; when this
+            runtime starts the server itself with :meth:`build`, the key is
+            passed on to it. Defaults to ``CAMEL_RUNTIME_API_KEY`` if set, and
+            to a generated key otherwise. Pass an empty string to talk to a
+            server that has authentication disabled.
+            (default: :obj:`None`)
     """
 
     def __init__(
-        self, host: str, port: int = 8000, python_exec: str = "python3"
+        self,
+        host: str,
+        port: int = 8000,
+        python_exec: str = "python3",
+        api_key: Optional[str] = None,
     ):
         super().__init__()
         self.host = host
         self.port = port
         self.python_exec = python_exec
+        self.api_key = _resolve_api_key(api_key)
         self.api_path = Path(__file__).parent / "api.py"
         self.entrypoint: Dict[str, str] = dict()
         self.process: Optional[Popen] = None
@@ -63,7 +77,8 @@ class RemoteHttpRuntime(BaseRuntime):
                 self.python_exec,
                 str(self.api_path),
                 *list(self.entrypoint.values()),
-            ]
+            ],
+            env={**os.environ, "CAMEL_RUNTIME_API_KEY": self.api_key},
         )
         atexit.register(self.cleanup)
         return self
@@ -120,6 +135,7 @@ class RemoteHttpRuntime(BaseRuntime):
                         kwargs=kwargs,
                         redirect_stdout=redirect_stdout,
                     ),
+                    headers=_auth_headers(self.api_key),
                 )
                 if resp.status_code != 200:
                     logger.error(
