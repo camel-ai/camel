@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 
 @MCPServer()
@@ -34,6 +34,7 @@ class GoogleScholarToolkit(BaseToolkit):
             manual assignment if desired.
     """
 
+    @dependencies_required('scholarly')
     def __init__(
         self,
         author_identifier: str,
@@ -168,6 +169,7 @@ class GoogleScholarToolkit(BaseToolkit):
                 return self.scholarly.fill(publication)
         return None  # Return None if not found
 
+    @dependencies_required('arxiv2text')
     def get_full_paper_content_by_link(self, pdf_url: str) -> Optional[str]:
         r"""Retrieves the full paper content from a given PDF URL using the
         arxiv2text tool.
