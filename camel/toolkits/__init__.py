@@ -88,6 +88,7 @@ from .wolfram_alpha_toolkit import WolframAlphaToolkit
 from .task_planning_toolkit import TaskPlanningToolkit
 from .hybrid_browser_toolkit import HybridBrowserToolkit
 from .edgeone_pages_mcp_toolkit import EdgeOnePagesMCPToolkit
+from .atomic_mail_toolkit import AtomicMailToolkit
 from .google_drive_mcp_toolkit import GoogleDriveMCPToolkit
 from .craw4ai_toolkit import Crawl4AIToolkit
 from .markitdown_toolkit import MarkItDownToolkit
@@ -186,6 +187,7 @@ __all__ = [
     'TaskPlanningToolkit',
     'HybridBrowserToolkit',
     'EdgeOnePagesMCPToolkit',
+    'AtomicMailToolkit',
     'GoogleDriveMCPToolkit',
     'Crawl4AIToolkit',
     'MarkItDownToolkit',
