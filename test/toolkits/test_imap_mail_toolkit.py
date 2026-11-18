@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import email
 import imaplib
 import os
 import smtplib
@@ -507,6 +508,54 @@ class TestIMAPMailToolkit(unittest.TestCase):
         # Assertions
         self.assertEqual(result["plain"], "Plain text content")
         self.assertEqual(result["html"], "<p>HTML content</p>")
+
+    def test_extract_email_body_uses_declared_charset(self):
+        r"""Test bodies encoded with a non-UTF-8 charset survive decoding."""
+        raw_message = (
+            b"From: sender@example.com\r\n"
+            b"To: receiver@example.com\r\n"
+            b"Subject: charset\r\n"
+            b"MIME-Version: 1.0\r\n"
+            b'Content-Type: text/plain; charset="iso-8859-1"\r\n'
+            b"Content-Transfer-Encoding: 8bit\r\n"
+            b"\r\n" + "Caf\u00e9 na\u00efve".encode("iso-8859-1") + b"\r\n"
+        )
+
+        result = self.toolkit._extract_email_body(
+            email.message_from_bytes(raw_message)
+        )
+
+        self.assertEqual(result["plain"].strip(), "Caf\u00e9 na\u00efve")
+        self.assertEqual(result["html"], "")
+
+    def test_extract_email_body_multipart_uses_per_part_charset(self):
+        r"""Test each multipart body part is decoded with its own charset."""
+        plain_text = "\u4f60\u597d\uff0c\u4e16\u754c"
+        html_text = "<p>\u4f60\u597d</p>"
+        raw_message = (
+            b"From: sender@example.com\r\n"
+            b"To: receiver@example.com\r\n"
+            b"Subject: charset\r\n"
+            b"MIME-Version: 1.0\r\n"
+            b'Content-Type: multipart/alternative; boundary="B"\r\n'
+            b"\r\n"
+            b"--B\r\n"
+            b'Content-Type: text/plain; charset="gb2312"\r\n'
+            b"Content-Transfer-Encoding: 8bit\r\n"
+            b"\r\n" + plain_text.encode("gb2312") + b"\r\n"
+            b"--B\r\n"
+            b'Content-Type: text/html; charset="gb2312"\r\n'
+            b"Content-Transfer-Encoding: 8bit\r\n"
+            b"\r\n" + html_text.encode("gb2312") + b"\r\n"
+            b"--B--\r\n"
+        )
+
+        result = self.toolkit._extract_email_body(
+            email.message_from_bytes(raw_message)
+        )
+
+        self.assertEqual(result["plain"].strip(), plain_text)
+        self.assertEqual(result["html"].strip(), html_text)
 
     def test_get_tools(self):
         r"""Test getting available tools."""
