@@ -258,6 +258,49 @@ def test_save_and_load_markdown_file(context_utility_fixture):
     assert test_content in loaded_content
 
 
+def test_load_markdown_context_to_memory_preserves_body_after_metadata(
+    mock_agent, context_utility_fixture
+):
+    r"""Metadata filtering must not drop the document body.
+
+    ``save_markdown_file`` writes the metadata block before the content, and
+    ``_filter_metadata_from_content`` used to stop skipping only at a level-2
+    heading.  A document whose body is plain text (or only ``###``
+    subsections) therefore lost everything after ``## Metadata`` when loaded
+    into an agent.
+    """
+    context_util = context_utility_fixture
+
+    context_util.save_markdown_file(
+        filename="summary_with_metadata",
+        content=(
+            "The user reported a billing bug.\n"
+            "Decision: escalate to the payments team.\n"
+        ),
+        title="Conversation Summary",
+        metadata={"agent_id": "test_agent_001", "message_count": 4},
+    )
+
+    saved_file = context_util.get_working_directory() / (
+        "summary_with_metadata.md"
+    )
+    assert "## Metadata" in saved_file.read_text(encoding="utf-8")
+
+    result = context_util.load_markdown_context_to_memory(
+        agent=mock_agent, filename="summary_with_metadata"
+    )
+    assert "Context appended to agent" in result
+
+    context_message = mock_agent.update_memory.call_args[0][0]
+
+    # metadata section is filtered out
+    assert "message_count" not in context_message.content
+    assert "agent_id" not in context_message.content
+    # body survives the filtering
+    assert "billing bug" in context_message.content
+    assert "payments team" in context_message.content
+
+
 if __name__ == "__main__":
     import sys
 
