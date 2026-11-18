@@ -90,3 +90,25 @@ def test_response_words_termination_is_terminated_after_reset():
     assert terminated == fresh_terminated
     assert reason == fresh_reason
     assert termination._word_count_dict == fresh._word_count_dict
+
+
+def test_response_words_termination_counts_occurrences_in_one_message():
+    r"""A word repeated inside a single response reaches the threshold.
+
+    The counter used to grow by one per message that merely *contains* the
+    word, so a threshold greater than one could never be reached from a single
+    response and the agent was not stopped.
+    """
+    termination = ResponseWordsTerminator(words_dict={"stop": 3})
+    message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict={},
+        content="STOP. STOP. STOP.",
+    )
+
+    terminated, reason = termination.is_terminated([message])
+
+    assert terminated
+    assert reason is not None
+    assert "Word `stop` appears 3 times" in reason
