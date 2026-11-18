@@ -50,7 +50,9 @@ class ACIToolkit(BaseToolkit):
         Args:
             api_key (Optional[str]): The API key for authentication.
                 (default: :obj:`None`)
-            base_url (Optional[str]): The base URL for the ACI API.
+            base_url (Optional[str]): The base URL for the ACI API. If not
+                provided, falls back to the `ACI_BASE_URL` environment variable,
+                and then to the default the `aci` client uses.
                 (default: :obj:`None`)
             linked_account_owner_id (Optional[str]): ID of the owner of the
                 linked account, e.g., "johndoe"
