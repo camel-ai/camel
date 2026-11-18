@@ -11,9 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+
 import pytest
 
 from camel.toolkits import FunctionTool, tool
+
+if not os.environ.get("OPENAI_API_KEY"):
+    pytest.skip(
+        "OPENAI_API_KEY is required by the synthesize_output=True "
+        "decorated function defined at module level below",
+        allow_module_level=True,
+    )
 
 
 @tool()

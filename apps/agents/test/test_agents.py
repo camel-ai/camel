@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+
 import gradio as gr
 import pytest
 
@@ -37,6 +39,10 @@ def test_utils():
 
 
 @pytest.mark.model_backend
+@pytest.mark.skipif(
+    not os.environ.get("OPENAI_API_KEY"),
+    reason="OPENAI_API_KEY is required for this end-to-end test",
+)
 def test_session():
     for society_name in ("AI Society", "Code"):
         state = State.empty()
