@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-"""Utility functions for parsing MCP tool calls from model output."""
+r"""Utility functions for parsing MCP tool calls from model output."""
 
 import ast
 import json
@@ -46,7 +46,19 @@ logger = logging.getLogger(__name__)
 
 
 def extract_tool_calls_from_text(content: str) -> List[Dict[str, Any]]:
-    """Extract tool call dictionaries from raw text output."""
+    r"""Extract tool call dictionaries from raw text output.
+
+    Scans the text for fenced code blocks and bare JSON-like segments,
+    parses each candidate, and collects every payload that carries a
+    ``tool_name`` field.
+
+    Args:
+        content (str): The raw model output text to parse.
+
+    Returns:
+        List[Dict[str, Any]]: Tool call dictionaries found in the text,
+            in the order encountered. Empty if nothing parses.
+    """
 
     if not content:
         return []
@@ -101,7 +113,21 @@ def extract_tool_calls_from_text(content: str) -> List[Dict[str, Any]]:
 def _collect_tool_calls(
     payload: Any, accumulator: List[Dict[str, Any]]
 ) -> None:
-    """Collect valid tool call dictionaries from parsed payloads."""
+    r"""Collect valid tool call dictionaries from parsed payloads.
+
+    Appends ``payload`` when it is a dict with a non-null ``tool_name``;
+    for lists, recurses into each item. Dicts without ``tool_name`` and
+    their values are not traversed.
+
+    Args:
+        payload (Any): A parsed JSON-like value to inspect.
+        accumulator (List[Dict[str, Any]]): The list that collected tool
+            calls are appended to.
+
+    Returns:
+        None: Collected tool calls are appended to ``accumulator`` in
+            place.
+    """
 
     if isinstance(payload, dict):
         if payload.get("tool_name") is None:
@@ -113,7 +139,18 @@ def _collect_tool_calls(
 
 
 def _try_parse_json_like(snippet: str) -> Optional[Any]:
-    """Parse a JSON or JSON-like snippet into Python data."""
+    r"""Parse a JSON or JSON-like snippet into Python data.
+
+    Tries strict JSON first, then YAML (when the optional ``yaml``
+    dependency is installed), then Python literal evaluation.
+
+    Args:
+        snippet (str): The snippet to parse.
+
+    Returns:
+        Optional[Any]: The parsed object, or ``None`` when no parser
+            accepts the snippet.
+    """
 
     try:
         return json.loads(snippet)
@@ -137,7 +174,20 @@ def _try_parse_json_like(snippet: str) -> Optional[Any]:
 
 
 def _find_json_candidate(content: str, start_idx: int) -> Optional[str]:
-    """Locate a balanced JSON-like segment starting at ``start_idx``."""
+    r"""Locate a balanced JSON-like segment starting at ``start_idx``.
+
+    Tracks brace/bracket depth with a stack while skipping quoted
+    strings, so a segment ends at the token that closes the opening
+    bracket.
+
+    Args:
+        content (str): The full text being scanned.
+        start_idx (int): Index of the opening ``{`` or ``[``.
+
+    Returns:
+        Optional[str]: The balanced segment, or ``None`` if the opening
+            is not a brace/bracket or it never closes.
+    """
 
     opening = content[start_idx]
     if opening not in "{[":
@@ -168,7 +218,18 @@ def _find_json_candidate(content: str, start_idx: int) -> Optional[str]:
 
 
 def _truncate_snippet(snippet: str, limit: int = 120) -> str:
-    """Return a truncated representation suitable for logging."""
+    r"""Return a truncated representation suitable for logging.
+
+    Collapses whitespace and shortens overly long snippets to ``limit``
+    characters with an ellipsis.
+
+    Args:
+        snippet (str): The snippet to format.
+        limit (int): Maximum length of the result. (default: :obj:`120`)
+
+    Returns:
+        str: The compacted, possibly truncated snippet.
+    """
 
     compact = " ".join(snippet.strip().split())
     if len(compact) <= limit:
