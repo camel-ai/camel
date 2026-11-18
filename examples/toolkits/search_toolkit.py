@@ -605,3 +605,19 @@ perplexity_agent = ChatAgent(
 usr_msg = "What are the latest developments in multi-agent AI systems?"
 response = perplexity_agent.step(input_message=usr_msg, response_format=None)
 print(response.msgs[0].content)
+
+# Example with ChatAgent using Keenable search, which needs no API key
+# (set KEENABLE_API_KEY for higher rate limits)
+keenable_toolkit = SearchToolkit()
+keenable_agent = ChatAgent(
+    system_message="""You are a helpful assistant that can search the web
+        with Keenable and read the pages it finds to answer questions.""",
+    tools=[
+        FunctionTool(keenable_toolkit.search_keenable),
+        FunctionTool(keenable_toolkit.fetch_keenable_content),
+    ],
+)
+
+usr_msg = "What changed in the latest Python release? Cite the release notes."
+response = keenable_agent.step(input_message=usr_msg, response_format=None)
+print(response.msgs[0].content)
