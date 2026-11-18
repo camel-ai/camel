@@ -856,24 +856,32 @@ class ContextUtility:
         lines = content.split('\n')
         filtered_lines = []
         skip_metadata = False
+        seen_metadata_entry = False
 
         for line in lines:
+            stripped = line.strip()
+
             # Check if we're starting a metadata section
-            if line.strip() == "## Metadata":
+            if not skip_metadata and stripped == "## Metadata":
                 skip_metadata = True
                 continue
 
-            # Check if we're starting a new section after metadata
-            if (
-                skip_metadata
-                and line.startswith("## ")
-                and "Metadata" not in line
-            ):
+            if skip_metadata:
+                if not stripped:
+                    # A blank line right after the entries closes the
+                    # section; blanks between the heading and the entries
+                    # are part of it.
+                    if seen_metadata_entry:
+                        skip_metadata = False
+                    continue
+                if stripped.startswith("-"):
+                    seen_metadata_entry = True
+                    continue
+                # Anything else (a heading, plain text, ...) ends the
+                # section and must be kept.
                 skip_metadata = False
 
-            # Add line if we're not in metadata section
-            if not skip_metadata:
-                filtered_lines.append(line)
+            filtered_lines.append(line)
 
         # Clean up any extra whitespace at the beginning
         result = '\n'.join(filtered_lines).strip()
