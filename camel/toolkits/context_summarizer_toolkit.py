@@ -421,8 +421,24 @@ Summary:"""
             # Use compression service directly to avoid tool calling loops
             summary = self._compress_and_save(memory_records)
 
+            # A failed summarization leaves nothing that could replace the
+            # conversation, so the live memory must be kept as it is.
+            if not summary or not summary.strip():
+                logger.warning(
+                    f"Summarization produced no summary for {message_count} "
+                    f"messages; keeping conversation memory unchanged."
+                )
+                return (
+                    "Context summarization failed, so the conversation "
+                    "history in memory was kept unchanged."
+                )
+
             # empty memory and replace it with the summary
-            self._refresh_context_with_summary(summary)
+            if not self._refresh_context_with_summary(summary):
+                return (
+                    "Context summarized, but the conversation memory could "
+                    "not be refreshed with the summary."
+                )
 
             logger.info(
                 f"Context compression completed - {message_count} "
