@@ -83,3 +83,44 @@ def test_speech_to_text_large_audio(mock_open, mock_getsize):
 
     assert response == "Mock transcription response"
     assert mock_client.audio.transcriptions.create.call_count == 1
+
+
+def test_text_to_speech_splits_long_text_without_full_stop():
+    openai_audio = OpenAIAudioModels(api_key="sk-test")
+    mock_client = Mock()
+    mock_client.audio.speech.create.return_value = Mock()
+    openai_audio._client = mock_client
+
+    # 5000 characters without any full stop: there is no sentence boundary
+    # to split on, so the text has to be split at the 4095 character limit.
+    input_text = "word " * 1000
+
+    openai_audio.text_to_speech(input_text)
+
+    chunks = [
+        call.kwargs["input"]
+        for call in mock_client.audio.speech.create.call_args_list
+    ]
+    assert [len(chunk) for chunk in chunks] == [4095, 905]
+    assert "".join(chunks) == input_text
+
+
+def test_text_to_speech_keeps_chunk_limit_after_sentence_boundary():
+    openai_audio = OpenAIAudioModels(api_key="sk-test")
+    mock_client = Mock()
+    mock_client.audio.speech.create.return_value = Mock()
+    openai_audio._client = mock_client
+
+    # The first full stop is at character 3003 and the remaining 8000
+    # characters contain none, so the following chunks still have to use the
+    # full 4095 character budget instead of the shortened first boundary.
+    input_text = "s." + "p" * 3000 + "." + "q" * 8000
+
+    openai_audio.text_to_speech(input_text)
+
+    chunks = [
+        call.kwargs["input"]
+        for call in mock_client.audio.speech.create.call_args_list
+    ]
+    assert [len(chunk) for chunk in chunks] == [3003, 4095, 3905]
+    assert "".join(chunks) == input_text
