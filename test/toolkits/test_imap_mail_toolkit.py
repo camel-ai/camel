@@ -518,14 +518,14 @@ class TestIMAPMailToolkit(unittest.TestCase):
             b"MIME-Version: 1.0\r\n"
             b'Content-Type: text/plain; charset="iso-8859-1"\r\n'
             b"Content-Transfer-Encoding: 8bit\r\n"
-            b"\r\n" + "Caf\u00e9 na\u00efve".encode("iso-8859-1") + b"\r\n"
+            b"\r\n" + "Café naïve".encode("iso-8859-1") + b"\r\n"
         )
 
         result = self.toolkit._extract_email_body(
             email.message_from_bytes(raw_message)
         )
 
-        self.assertEqual(result["plain"].strip(), "Caf\u00e9 na\u00efve")
+        self.assertEqual(result["plain"].strip(), "Café naïve")
         self.assertEqual(result["html"], "")
 
     def test_extract_email_body_multipart_uses_per_part_charset(self):
