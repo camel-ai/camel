@@ -46,6 +46,16 @@ def test_from_string_accepts_missing_input_section():
     assert item.output == "Done"
 
 
+def test_from_string_accepts_empty_input_section_without_blank_line():
+    text = "### Instruction:\nDo the thing\n### Input:\n### Response:\nDone"
+
+    item = AlpacaItem.from_string(text)
+
+    assert item.instruction == "Do the thing"
+    assert item.input == ""
+    assert item.output == "Done"
+
+
 def test_from_string_requires_instruction_and_response():
     r"""A text without the required sections is still rejected."""
     with pytest.raises(ValueError):
