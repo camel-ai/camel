@@ -38,6 +38,35 @@ def test_text_to_speech():
     )
 
 
+def test_audio_question_answering_includes_question():
+    openai_audio = OpenAIAudioModels(api_key="sk-test")
+    mock_completion = Mock()
+    mock_completion.choices = [Mock()]
+    mock_completion.choices[0].message.content = "Mock answer"
+    mock_client = Mock()
+    mock_client.chat.completions.create.return_value = mock_completion
+    openai_audio._client = mock_client
+
+    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+        temp_file.write(b'Test audio data')
+        temp_file_path = temp_file.name
+    try:
+        response = openai_audio.audio_question_answering(
+            temp_file_path, "What sound can you hear?"
+        )
+    finally:
+        os.remove(temp_file_path)
+
+    assert response == "Mock answer"
+    messages = mock_client.chat.completions.create.call_args.kwargs["messages"]
+    prompt = next(
+        part["text"]
+        for part in messages[1]["content"]
+        if part["type"] == "text"
+    )
+    assert "What sound can you hear?" in prompt
+
+
 def test_speech_to_text():
     openai_audio = OpenAIAudioModels()
     # Create a temporary audio file
