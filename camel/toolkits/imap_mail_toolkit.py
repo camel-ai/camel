@@ -38,6 +38,34 @@ class IMAP_RETURN_STATUS(Enum):
     NO = "NO"  # according to imap source code
 
 
+def _decode_email_payload(part: email.message.Message, payload: bytes) -> str:
+    r"""Decode a transfer-decoded MIME part payload into text.
+
+    :obj:`email.message.Message.get_payload(decode=True)` only undoes the
+    transfer encoding (base64, quoted-printable, ...); the bytes it returns are
+    still encoded with the charset declared by the part. Assuming UTF-8 drops
+    every non-ASCII character of ISO-8859-1, GB2312, Shift_JIS, ... messages,
+    so the declared charset is honoured instead.
+
+    Args:
+        part (email.message.Message): The MIME part that produced ``payload``.
+        payload (bytes): The payload bytes returned by
+            ``part.get_payload(decode=True)``.
+
+    Returns:
+        str: The decoded text, or the UTF-8 interpretation when the declared
+            charset is missing or unknown.
+    """
+    charset = part.get_content_charset()
+    if not isinstance(charset, str) or not charset:
+        charset = "utf-8"
+    try:
+        return payload.decode(charset, errors="ignore")
+    except LookupError:
+        # Unknown charset label; fall back to UTF-8.
+        return payload.decode("utf-8", errors="ignore")
+
+
 @MCPServer()
 class IMAPMailToolkit(BaseToolkit):
     r"""A toolkit for IMAP email operations.
@@ -674,14 +702,11 @@ class IMAPMailToolkit(BaseToolkit):
                 if "attachment" not in content_disposition:
                     payload = part.get_payload(decode=True)
                     if isinstance(payload, bytes):
+                        text = _decode_email_payload(part, payload)
                         if content_type == "text/plain":
-                            body_content["plain"] += payload.decode(
-                                'utf-8', errors='ignore'
-                            )
+                            body_content["plain"] += text
                         elif content_type == "text/html":
-                            body_content["html"] += payload.decode(
-                                'utf-8', errors='ignore'
-                            )
+                            body_content["html"] += text
                     elif isinstance(payload, str):
                         if content_type == "text/plain":
                             body_content["plain"] += payload
@@ -691,14 +716,11 @@ class IMAPMailToolkit(BaseToolkit):
             content_type = email_message.get_content_type()
             payload = email_message.get_payload(decode=True)
             if isinstance(payload, bytes):
+                text = _decode_email_payload(email_message, payload)
                 if content_type == "text/plain":
-                    body_content["plain"] = payload.decode(
-                        'utf-8', errors='ignore'
-                    )
+                    body_content["plain"] = text
                 elif content_type == "text/html":
-                    body_content["html"] = payload.decode(
-                        'utf-8', errors='ignore'
-                    )
+                    body_content["html"] = text
             elif isinstance(payload, str):
                 if content_type == "text/plain":
                     body_content["plain"] = payload
