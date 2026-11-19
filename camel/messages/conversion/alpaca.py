@@ -87,7 +87,9 @@ class AlpacaItem(BaseModel):
             r'###\s*Instruction:[ \t]*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
         )
         input_match = re.search(
-            r'###\s*Input:[ \t]*\n(.*?)(?=\n*###|\Z)', text, re.DOTALL
+            r'###\s*Input:[ \t]*\n(.*?)(?=\n*###\s*Response:|\Z)',
+            text,
+            re.DOTALL,
         )
         response_match = re.search(
             r'###\s*Response:[ \t]*\n(.+?)(?=\n###|\Z)', text, re.DOTALL

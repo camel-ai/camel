@@ -56,6 +56,19 @@ def test_from_string_accepts_empty_input_section_without_blank_line():
     assert item.output == "Done"
 
 
+def test_from_string_keeps_other_hash_headings_inside_input():
+    text = (
+        "### Instruction:\nDo the thing\n"
+        "### Input:\nUse this section:\n### Details\n"
+        "### Response:\nDone"
+    )
+
+    item = AlpacaItem.from_string(text)
+
+    assert item.input == "Use this section:\n### Details"
+    assert item.output == "Done"
+
+
 def test_from_string_requires_instruction_and_response():
     r"""A text without the required sections is still rejected."""
     with pytest.raises(ValueError):
