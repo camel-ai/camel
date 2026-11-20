@@ -45,8 +45,21 @@ def _is_cumulative(contents: list[str]) -> bool:
     )
 
 
+def _stream_accumulate_mode(chunk: Any) -> Optional[str]:
+    """Return the accumulate mode announced by ``chunk.info``, if any."""
+    info = getattr(chunk, "info", None)
+    if not isinstance(info, dict):
+        return None
+    # ``mode`` is a legacy/custom chunk fallback; current producers use
+    # ``stream_accumulate_mode``.
+    mode = info.get("stream_accumulate_mode", info.get("mode"))
+    return mode if mode in ("delta", "accumulate") else None
+
+
 def _finalize_stream(
-    contents: list[str], final_response: Optional[ChatAgentResponse]
+    contents: list[str],
+    final_response: Optional[ChatAgentResponse],
+    mode: Optional[str] = None,
 ) -> Tuple[ChatAgentResponse, str]:
     """Normalize collected chunks into ``(final_response, content)``."""
 
@@ -60,6 +73,17 @@ def _finalize_stream(
     if not contents:
         return final_response, ""
 
+    if mode == "accumulate":
+        # Chunks already carry the whole content, and the terminal chunk may
+        # repeat the content of the last partial one.
+        for content in reversed(contents):
+            if content:
+                return final_response, content
+        return final_response, ""
+
+    if mode == "delta":
+        return final_response, "".join(contents)
+
     if len(contents) == 1:
         return final_response, contents[0]
 
@@ -72,14 +96,16 @@ def _finalize_stream(
 def _collect_sync_stream(
     response: Any,
     stream_callback: Optional[Callable[[ChatAgentResponse], None]] = None,
-) -> Tuple[Optional[ChatAgentResponse], list[str]]:
+) -> Tuple[Optional[ChatAgentResponse], list[str], Optional[str]]:
     """Collect chunks from a sync streaming response."""
 
     final_response: Optional[ChatAgentResponse] = None
     contents: list[str] = []
+    mode: Optional[str] = None
 
     for chunk in response:
         final_response = chunk
+        mode = _stream_accumulate_mode(chunk) or mode
         if stream_callback:
             try:
                 stream_callback(chunk)
@@ -91,7 +117,7 @@ def _collect_sync_stream(
         if getattr(chunk, "msg", None) and chunk.msg.content is not None:
             contents.append(chunk.msg.content)
 
-    return final_response, contents
+    return final_response, contents, mode
 
 
 async def _collect_async_stream(
@@ -99,17 +125,19 @@ async def _collect_async_stream(
     stream_callback: Optional[
         Callable[[ChatAgentResponse], Optional[Awaitable[None]]]
     ] = None,
-) -> Tuple[Optional[ChatAgentResponse], list[str]]:
+) -> Tuple[Optional[ChatAgentResponse], list[str], Optional[str]]:
     """Collect chunks from an async streaming response."""
 
     final_response: Optional[ChatAgentResponse] = None
     contents: list[str] = []
+    mode: Optional[str] = None
 
     from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
 
     async def _handle_chunk(chunk: Any) -> None:
-        nonlocal final_response
+        nonlocal final_response, mode
         final_response = chunk
+        mode = _stream_accumulate_mode(chunk) or mode
         if stream_callback:
             try:
                 maybe = stream_callback(chunk)
@@ -130,7 +158,7 @@ async def _collect_async_stream(
         for chunk in response:
             await _handle_chunk(chunk)
 
-    return final_response, contents
+    return final_response, contents, mode
 
 
 def is_streaming_response(response: Any) -> bool:
@@ -208,8 +236,10 @@ def consume_response_content(
         )
         return response, content
 
-    final_response, contents = _collect_sync_stream(response, stream_callback)
-    return _finalize_stream(contents, final_response)
+    final_response, contents, mode = _collect_sync_stream(
+        response, stream_callback
+    )
+    return _finalize_stream(contents, final_response, mode)
 
 
 async def consume_response_content_async(
@@ -230,7 +260,7 @@ async def consume_response_content_async(
         )
         return response, content
 
-    final_response, contents = await _collect_async_stream(
+    final_response, contents, mode = await _collect_async_stream(
         response, stream_callback
     )
-    return _finalize_stream(contents, final_response)
+    return _finalize_stream(contents, final_response, mode)
