@@ -71,6 +71,12 @@ class CodeChunker(BaseChunker):
     def _split_oversized(self, line: str) -> List[str]:
         r"""Splits an oversized line into multiple chunks based on token limits
 
+        The original text is preserved verbatim: a token boundary may fall in
+        the middle of a multi-byte character, so each window is widened to the
+        enclosing character boundary instead of being decoded on its own. A
+        chunk can therefore exceed `chunk_size` by the tokens of the one
+        character that straddles its end, and no chunk ends inside a character.
+
         Args:
             line (str): The oversized line to be split.
 
@@ -79,21 +85,33 @@ class CodeChunker(BaseChunker):
                 oversized line.
         """
         tokens = self.tokenizer.encode(line, disallowed_special=())
-        chunks = []
-        buffer = []
-        current_count = 0
+        raw = self.tokenizer.decode_bytes(tokens)
 
+        # Byte offset of every token boundary, so that windows are cut in the
+        # byte space the tokenizer actually works in.
+        offsets = [0]
         for token in tokens:
-            buffer.append(token)
-            current_count += 1
+            offsets.append(
+                offsets[-1] + len(self.tokenizer.decode_bytes([token]))
+            )
 
-            if current_count >= self.chunk_size:
-                chunks.append(self.tokenizer.decode(buffer).strip())
-                buffer = []
-                current_count = 0
+        chunks = []
+        consumed = 0
+        for start in range(0, len(tokens), self.chunk_size):
+            # The previous window may already have covered the beginning of
+            # this one when its last character continued past the boundary.
+            start_byte = max(offsets[start], consumed)
+            end_byte = offsets[min(start + self.chunk_size, len(tokens))]
+            # Move the cut past the UTF-8 continuation bytes of a character
+            # that straddles the boundary, otherwise decoding would replace
+            # them with U+FFFD and lose the character.
+            while end_byte < len(raw) and raw[end_byte] & 0xC0 == 0x80:
+                end_byte += 1
+            if end_byte <= start_byte:
+                continue
+            chunks.append(raw[start_byte:end_byte].decode("utf-8"))
+            consumed = end_byte
 
-        if buffer:
-            chunks.append(self.tokenizer.decode(buffer))
         return chunks
 
     def chunk(self, content: List[str]) -> List["Element"]:
