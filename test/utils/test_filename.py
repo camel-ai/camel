@@ -110,6 +110,22 @@ def test_sanitize_filename_max_length():
     assert len(sanitize_filename("test.txt", max_length=5)) == 5
 
 
+def test_sanitize_filename_blank_and_padded():
+    """Blank input falls back to the default and padding is stripped."""
+    # Names that only contain whitespace are empty after sanitization
+    assert sanitize_filename("   ") == "index"
+    assert sanitize_filename(" \t\n ") == "index"
+    assert sanitize_filename("\t", default="download") == "download"
+
+    # Leading/trailing underscores and whitespace are removed
+    assert sanitize_filename("report ") == "report"
+    assert sanitize_filename("  spaced name  ") == "spaced name"
+    assert sanitize_filename(" _a_ ") == "a"
+
+    # Inner whitespace of a name is preserved
+    assert sanitize_filename("my  report.txt") == "my  report_txt"
+
+
 def test_sanitize_filename_invalid_max_length():
     """Test invalid max_length parameter."""
     with pytest.raises(ValueError):

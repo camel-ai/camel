@@ -67,7 +67,10 @@ def sanitize_filename(
     # Separators: my/file:name*.txt -> my_file_name.txt etc.
     url_name = re.sub(r'[\\/:*?"<>|.]', '_', url_name)
     url_name = re.sub(r'_+', '_', url_name)  # Collapse multiple underscores
-    url_name = url_name.strip('_')  # Remove leading/trailing underscores
+    # Remove leading and trailing underscores and whitespace. Padding would
+    # otherwise survive into the returned name, and Windows strips trailing
+    # spaces when the file is created.
+    url_name = re.sub(r'^[_\s]+|[_\s]+$', '', url_name)
 
     # Handle empty result if all characters are invalid:
     if not url_name:
