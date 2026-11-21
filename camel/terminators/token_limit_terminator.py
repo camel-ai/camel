@@ -26,6 +26,7 @@ class TokenLimitTerminator(BaseTerminator):
     def __init__(self, token_limit: int):
         super().__init__()
         self.token_limit = token_limit
+        self._validate()
 
     def _validate(self):
         if self.token_limit <= 0:

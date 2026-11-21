@@ -28,3 +28,9 @@ def test_token_limit_termination(num_tokens):
     if num_tokens == 10:
         assert terminated
         assert termination_reason == "max_tokens_exceeded"
+
+
+@pytest.mark.parametrize('token_limit', [0, -1, -100])
+def test_token_limit_must_be_positive(token_limit):
+    with pytest.raises(ValueError, match="should be a value larger than 0"):
+        TokenLimitTerminator(token_limit=token_limit)
