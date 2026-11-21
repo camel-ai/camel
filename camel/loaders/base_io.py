@@ -147,13 +147,18 @@ class File(ABC):
 def strip_consecutive_newlines(text: str) -> str:
     r"""Strips consecutive newlines from a string.
 
+    Runs of newlines, including any spaces or tabs on the blank lines between
+    them, are collapsed into a single newline. Indentation that follows a
+    single newline is preserved, so loaded source code, YAML or nested
+    Markdown lists keep their structure.
+
     Args:
         text (str): The string to strip.
 
     Returns:
         str: The string with consecutive newlines stripped.
     """
-    return re.sub(r"\s*\n\s*", "\n", text)
+    return re.sub(r"[^\S\n]*\n(?:[^\S\n]*\n)+", "\n", text)
 
 
 class DocxFile(File):
