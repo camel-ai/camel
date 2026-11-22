@@ -460,10 +460,15 @@ def json_to_function_code(json_obj: Dict) -> str:
     properties = json_obj.get('properties', {})
     required = json_obj.get('required', [])
 
-    if not properties or not required:
+    if not properties:
         raise ValueError(
-            "JSON schema must contain 'properties' and 'required' fields"
+            "JSON schema must contain a non-empty 'properties' field"
         )
+
+    # `required` is optional in the OpenAI tools schema: when it is omitted,
+    # every property is optional. Fall back to all properties so valid
+    # all-optional schemas still generate a function.
+    props_to_use = list(required) if required else list(properties)
 
     args = []
     docstring_args = []
@@ -476,7 +481,7 @@ def json_to_function_code(json_obj: Dict) -> str:
         'boolean': 'bool',
     }
 
-    for prop in required:
+    for prop in props_to_use:
         # if no description, return empty string
         description = properties[prop].get('description', "")
         prop_type = properties[prop]['type']
@@ -501,7 +506,7 @@ def {Constants.FUNC_NAME_FOR_STRUCTURED_OUTPUT}({args_str}):
     Returns:
         Dict: A dictionary containing {return_keys_str}.
     """
-    return {{{", ".join([f'"{prop}": {prop}' for prop in required])}}}
+    return {{{", ".join([f'"{prop}": {prop}' for prop in props_to_use])}}}
     '''
 
     return function_code
