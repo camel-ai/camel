@@ -22,6 +22,7 @@ import re
 import socket
 import subprocess
 import threading
+import textwrap
 import time
 import zipfile
 from functools import wraps
@@ -441,6 +442,11 @@ def func_string_to_callable(code: str):
         Callable[..., Any]: The callable function object extracted from the
             code string.
     """
+    # LLMs commonly emit the function uniformly indented (inside a Markdown
+    # block or an answer body); CPython's exec rejects a leading indent, so
+    # strip the common prefix while keeping relative indentation intact.
+    code = textwrap.dedent(code)
+
     local_vars: Mapping[str, object] = {}
     exec(code, globals(), local_vars)
     func = local_vars.get(Constants.FUNC_NAME_FOR_STRUCTURED_OUTPUT)
