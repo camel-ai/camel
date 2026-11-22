@@ -551,7 +551,7 @@ We use the CAMEL framework \cite{li2023camel} to develop the agents used in our 
 [star-image]: https://img.shields.io/github/stars/camel-ai/camel?label=stars&logo=github&color=brightgreen
 [star-url]: https://github.com/camel-ai/camel/stargazers
 [package-license-image]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
-[package-license-url]: https://github.com/camel-ai/camel/blob/master/licenses/LICENSE
+[package-license-url]: https://github.com/camel-ai/camel/blob/master/LICENSE
 [package-download-image]: https://img.shields.io/pypi/dm/camel-ai
 
 [colab-url]: https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing
