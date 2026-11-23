@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
 import tempfile
 from pathlib import Path
 
@@ -30,7 +31,8 @@ def storage(request):
     if request.param == "in-memory":
         yield InMemoryKeyValueStorage()
     elif request.param == "json":
-        _, path = tempfile.mkstemp()
+        fd, path = tempfile.mkstemp()
+        os.close(fd)
         path = Path(path)
         yield JsonStorage(path)
         path.unlink()
