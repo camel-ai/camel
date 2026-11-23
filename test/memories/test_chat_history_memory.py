@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import tempfile
+import warnings
 from datetime import datetime
 from pathlib import Path
 
@@ -157,3 +158,73 @@ def test_chat_history_memory_pop_records(memory: ChatHistoryMemory):
 
     with pytest.raises(ValueError):
         memory.pop_records(-1)
+
+
+def _make_windowed_memory(window_size: int) -> ChatHistoryMemory:
+    context_creator = ScoreBasedContextCreator(
+        OpenAITokenCounter(ModelType.GPT_4),
+        ModelType.GPT_4.token_limit,
+    )
+    return ChatHistoryMemory(
+        context_creator=context_creator,
+        storage=InMemoryKeyValueStorage(),
+        window_size=window_size,
+    )
+
+
+def _make_user_record(content: str) -> MemoryRecord:
+    return MemoryRecord(
+        message=BaseMessage(
+            "AI user",
+            role_type=RoleType.USER,
+            meta_dict=None,
+            content=content,
+        ),
+        role_at_backend=OpenAIBackendRole.USER,
+        timestamp=datetime.now().timestamp(),
+        agent_id="user",
+    )
+
+
+def test_window_warning_fires_when_history_is_truncated():
+    memory = _make_windowed_memory(window_size=2)
+    memory.write_record(
+        MemoryRecord(
+            message=BaseMessage(
+                "system",
+                role_type=RoleType.DEFAULT,
+                meta_dict=None,
+                content="System instructions",
+            ),
+            role_at_backend=OpenAIBackendRole.SYSTEM,
+            timestamp=datetime.now().timestamp(),
+            agent_id="system",
+        )
+    )
+    memory.write_records(
+        [_make_user_record(f"Message {idx}") for idx in range(5)]
+    )
+
+    with pytest.warns(UserWarning, match="window size limit"):
+        records = memory.retrieve()
+
+    # The system message is preserved on top of the window.
+    assert len(records) == 3
+
+
+def test_no_window_warning_when_nothing_is_dropped():
+    memory = _make_windowed_memory(window_size=3)
+    memory.write_records(
+        [_make_user_record(f"Message {idx}") for idx in range(3)]
+    )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        records = memory.retrieve()
+
+    assert len(records) == 3
+    assert not [
+        warning
+        for warning in caught
+        if "window size limit" in str(warning.message)
+    ]
