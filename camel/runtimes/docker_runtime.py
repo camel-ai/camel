@@ -24,7 +24,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import requests
 from pydantic import BaseModel
-from tqdm import tqdm
 
 from camel.runtimes import BaseRuntime, TaskConfig
 from camel.toolkits import FunctionTool
@@ -235,6 +234,8 @@ class DockerRuntime(BaseRuntime):
                 )
 
         if self.tasks:
+            from tqdm import tqdm
+
             for task in tqdm(self.tasks, desc="Running tasks"):
                 self.exec_run(task)
 
