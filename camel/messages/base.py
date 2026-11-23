@@ -693,4 +693,7 @@ class BaseMessage:
         if self.video_detail is not None:
             result["video_detail"] = self.video_detail
 
+        if self.reasoning_content is not None:
+            result["reasoning_content"] = self.reasoning_content
+
         return result
