@@ -189,9 +189,16 @@ class PythonSetStrategy(BaseExtractorStrategy):
             fixed_content = text.replace('\\"', '"')
             parsed = ast.literal_eval(fixed_content)
             if isinstance(parsed, set):
-                # Sort the set elements for normalization
-                sorted_set = sorted(parsed, key=lambda x: str(x))
-                return repr(set(sorted_set))
+                # Sort the set elements and render them in that order.
+                # Iterating a set (as `repr` does) follows its hash table, so
+                # the elements would otherwise be ordered by hash value, which
+                # changes between processes with different PYTHONHASHSEED.
+                sorted_elements = sorted(
+                    parsed, key=lambda element: (str(element), repr(element))
+                )
+                if not sorted_elements:
+                    return repr(parsed)  # empty set: "set()"
+                return "{" + ", ".join(repr(e) for e in sorted_elements) + "}"
             else:
                 logger.debug(f"Content is not a set, got {type(parsed)}")
                 return None
