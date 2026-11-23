@@ -30,16 +30,10 @@ from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
     dependencies_required,
-    get_current_agent_session_id,
-    update_langfuse_trace,
+    with_langfuse_trace,
 )
 
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
         from traceroot import trace as observe  # type: ignore[import]
     except ImportError:
@@ -1107,6 +1101,7 @@ class AnthropicModel(BaseModelBackend):
 
         return None
 
+    @with_langfuse_trace
     @observe()
     def _run(
         self,
@@ -1129,17 +1124,6 @@ class AnthropicModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "agent_id": agent_session_id,
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
 
         # Strip trailing whitespace from messages
         processed_messages = strip_trailing_whitespace_from_messages(messages)
@@ -1252,6 +1236,7 @@ class AnthropicModel(BaseModelBackend):
                 response, str(self.model_type)
             )
 
+    @with_langfuse_trace
     @observe()
     async def _arun(
         self,
@@ -1274,18 +1259,6 @@ class AnthropicModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "agent_id": agent_session_id,
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
-
         # Strip trailing whitespace from messages
         processed_messages = strip_trailing_whitespace_from_messages(messages)
 
