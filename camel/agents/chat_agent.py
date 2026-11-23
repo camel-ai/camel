@@ -1323,10 +1323,6 @@ class ChatAgent(BaseAgent):
         if result_tokens <= max_tokens:
             return result, False
 
-        # Reserve ~100 tokens for notice, use char-based truncation directly
-        target_tokens = max(max_tokens - 100, 100)
-        truncated = serialized[: target_tokens * 3]
-
         log_ref = ""
         if self._tool_log_dir is not None:
             log_path = self._save_tool_output_log(func_name, serialized)
@@ -1342,12 +1338,64 @@ class ChatAgent(BaseAgent):
             f"Tool executed successfully.{log_ref}"
         )
 
+        def _fit_within_tokens(
+            text: str, budget: int, prefix: str = ""
+        ) -> str:
+            if budget <= 0 or not text:
+                return prefix
+            initial_text = text[: max(budget * 3, 1)]
+            if self._get_token_count(prefix + initial_text) <= budget:
+                low = len(initial_text)
+                high = min(len(text), max(len(initial_text) * 2, 1))
+                while (
+                    high < len(text)
+                    and self._get_token_count(prefix + text[:high]) <= budget
+                ):
+                    low = high
+                    high = min(len(text), high * 2)
+            else:
+                low = 0
+                high = len(initial_text)
+
+            while low < high:
+                mid = (low + high + 1) // 2
+                if self._get_token_count(prefix + text[:mid]) <= budget:
+                    low = mid
+                else:
+                    high = mid - 1
+            return prefix + text[:low]
+
+        if max_tokens <= 0:
+            final_result = ""
+        else:
+            notice_candidates = [
+                notice,
+                (
+                    f"\n\n[TRUNCATED] Tool '{func_name}' output truncated "
+                    f"({result_tokens} > {max_tokens} tokens)."
+                ),
+                "\n\n[TRUNCATED]",
+            ]
+            chosen_notice = ""
+            for candidate in notice_candidates:
+                if self._get_token_count(candidate) <= max_tokens:
+                    chosen_notice = candidate
+                    break
+
+            if chosen_notice:
+                final_result = _fit_within_tokens(
+                    serialized, max_tokens, prefix=chosen_notice
+                )
+            else:
+                final_result = _fit_within_tokens(serialized, max_tokens)
+
+        final_tokens = self._get_token_count(final_result)
         logger.warning(
             f"Tool '{func_name}' result truncated: "
-            f"{result_tokens} -> ~{target_tokens} tokens"
+            f"{result_tokens} -> {final_tokens} tokens"
         )
 
-        return notice + truncated, True
+        return final_result, True
 
     def _clean_snapshot_line(self, line: str) -> str:
         r"""Clean a single snapshot line by removing prefixes and references.

@@ -198,3 +198,41 @@ class TestTruncateToolResult:
                 )
             )
         assert len(paths) == len(set(paths))
+
+    def test_truncated_result_fits_within_max_tokens_for_unicode_and_code(
+        self, agent
+    ):
+        agent._token_limit = 500
+        agent.summarize_threshold = None  # max_tokens = 450
+
+        unicode_text = "日本語テキスト🚀" * 200
+        truncated_unicode, was_truncated = agent._truncate_tool_result(
+            "search_web", unicode_text
+        )
+        assert was_truncated is True
+        assert agent._get_token_count(truncated_unicode) <= 450
+
+        code_text = "def fn(x): return x['a'][0] + 1;\n" * 100
+        truncated_code, was_truncated = agent._truncate_tool_result(
+            "run_code", code_text
+        )
+        assert was_truncated is True
+        assert agent._get_token_count(truncated_code) <= 450
+
+    def test_small_token_budget_does_not_exceed_allowance(self, agent):
+        agent._token_limit = 80
+        agent.summarize_threshold = 50  # max_tokens = 40 (< 100)
+        result, was_truncated = agent._truncate_tool_result(
+            "my_tool", "a" * 500
+        )
+        assert was_truncated is True
+        assert agent._get_token_count(result) <= 40
+
+    def test_tiny_budget_shortens_or_omits_notice_to_fit(self, agent):
+        agent._token_limit = 10
+        agent.summarize_threshold = 50  # max_tokens = 5
+        result, was_truncated = agent._truncate_tool_result(
+            "my_tool", "a" * 200
+        )
+        assert was_truncated is True
+        assert agent._get_token_count(result) <= 5
