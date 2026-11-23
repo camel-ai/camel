@@ -78,3 +78,26 @@ def test_query_without_initialization():
     retriever = BM25Retriever()
     with pytest.raises(ValueError, match="BM25 model is not initialized"):
         retriever.query('query')
+
+
+def test_query_top_k_exceeds_corpus_size():
+    # `np.argpartition` raises ValueError when `kth` falls outside the
+    # score array, so a top_k larger than the number of chunks must
+    # return the whole ranked corpus instead of crashing.
+    mock_bm25_instance = MagicMock()
+    mock_bm25_instance.get_scores.return_value = [0.1, 0.8, 0.5]
+
+    chunks = []
+    for i in range(3):
+        mock_chunk = MagicMock(text=f'Chunk {i} text')
+        mock_chunk.metadata.to_dict.return_value = {'id': f'chunk{i}'}
+        chunks.append(mock_chunk)
+
+    retriever = BM25Retriever()
+    retriever.bm25 = mock_bm25_instance
+    retriever.content_input_path = 'dummy_path'
+    retriever.chunks = chunks
+
+    results = retriever.query('query', top_k=10)
+    assert len(results) == 3
+    assert [r['similarity score'] for r in results] == [0.8, 0.5, 0.1]

@@ -95,3 +95,51 @@ def test_query_with_reranker(mock_hybrid_retriever):
     assert len(context) == 2
     assert context[0]['text'] == 'Document 3'
     assert context[1]['text'] == 'Document 1'
+
+
+def test_default_bm25_top_k_with_small_corpus(monkeypatch):
+    r"""The default ``bm25_retriever_top_k`` is 50; querying a corpus
+    with fewer chunks than that must still work instead of raising a
+    ``ValueError`` from ``np.argpartition``."""
+
+    class _FakeVectorRetriever:
+        def __init__(self, embedding_model=None, vector_storage=None):
+            pass
+
+        def query(self, query, top_k, similarity_threshold):
+            return [{'text': 'gamma document', 'similarity score': 0.9}]
+
+    monkeypatch.setattr(
+        'camel.retrievers.hybrid_retrival.VectorRetriever',
+        _FakeVectorRetriever,
+    )
+
+    chunks = [
+        UnstructuredIO.create_element_from_text(
+            text=text, filename=f'{name}.txt'
+        )
+        for text, name in (
+            ('alpha document', 'alpha'),
+            ('beta document', 'beta'),
+            ('gamma document', 'gamma'),
+        )
+    ]
+    monkeypatch.setattr(
+        UnstructuredIO,
+        'parse_file_or_url',
+        MagicMock(return_value=chunks),
+    )
+
+    hybrid_retriever = HybridRetriever()
+    hybrid_retriever.bm25.process(content_input_path="https://mock.com")
+    # chunk_by_title may merge the elements; what matters is that the
+    # corpus is far smaller than the default bm25_retriever_top_k=50.
+    assert 1 <= len(hybrid_retriever.bm25.chunks) < 50
+
+    results = hybrid_retriever.query(
+        query="alpha", top_k=2, return_detailed_info=True
+    )
+    # The BM25 corpus is smaller than the default
+    # bm25_retriever_top_k=50, so every chunk is a candidate alongside
+    # the vector result and the fused output is truncated to top_k.
+    assert len(results['Retrieved Context']) == 2
