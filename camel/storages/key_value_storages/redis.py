@@ -14,7 +14,6 @@
 
 import asyncio
 import json
-import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
@@ -22,8 +21,6 @@ from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
-
-logger = logging.getLogger(__name__)
 
 
 class RedisStorage(BaseKeyValueStorage):
@@ -96,65 +93,70 @@ class RedisStorage(BaseKeyValueStorage):
     def save(
         self, records: List[Dict[str, Any]], expire: Optional[int] = None
     ) -> None:
-        r"""Saves a batch of records to the key-value storage system."""
-        try:
-            self._run_async(self._async_save(records, expire))
-        except Exception as e:
-            logger.error(f"Error in save: {e}")
+        r"""Saves a batch of records to the key-value storage system.
+
+        Args:
+            records (List[Dict[str, Any]]): A list of dictionaries, where each
+                dictionary represents a unique record to be stored.
+            expire (Optional[int]): Expiration time in seconds for the stored
+                records. If :obj:`None`, the records never expire.
+                (default: :obj:`None`)
+
+        Raises:
+            ValueError: If the Redis client is not initialized.
+            Exception: Any error raised by the Redis client, e.g. a
+                connection failure, is propagated to the caller.
+        """
+        self._run_async(self._async_save(records, expire))
 
     def load(self) -> List[Dict[str, Any]]:
         r"""Loads all stored records from the key-value storage system.
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries, where each dictionary
-                represents a stored record.
+                represents a stored record. Returns an empty list if nothing
+                has been stored for this session.
+
+        Raises:
+            ValueError: If the Redis client is not initialized.
+            Exception: Any error raised by the Redis client, e.g. a
+                connection failure, is propagated to the caller.
         """
-        try:
-            return self._run_async(self._async_load())
-        except Exception as e:
-            logger.error(f"Error in load: {e}")
-            return []
+        return self._run_async(self._async_load())
 
     def clear(self) -> None:
-        r"""Removes all records from the key-value storage system."""
-        try:
-            self._run_async(self._async_clear())
-        except Exception as e:
-            logger.error(f"Error in clear: {e}")
+        r"""Removes all records from the key-value storage system.
+
+        Raises:
+            ValueError: If the Redis client is not initialized.
+            Exception: Any error raised by the Redis client, e.g. a
+                connection failure, is propagated to the caller.
+        """
+        self._run_async(self._async_clear())
 
     async def _async_save(
         self, records: List[Dict[str, Any]], expire: Optional[int] = None
     ) -> None:
         if self._client is None:
             raise ValueError("Redis client is not initialized")
-        try:
-            value = json.dumps(records, ensure_ascii=False)
-            if expire:
-                await self._client.setex(self._sid, expire, value)
-            else:
-                await self._client.set(self._sid, value)
-        except Exception as e:
-            logger.error(f"Error saving records: {e}")
+        value = json.dumps(records, ensure_ascii=False)
+        if expire:
+            await self._client.setex(self._sid, expire, value)
+        else:
+            await self._client.set(self._sid, value)
 
     async def _async_load(self) -> List[Dict[str, Any]]:
         if self._client is None:
             raise ValueError("Redis client is not initialized")
-        try:
-            value = await self._client.get(self._sid)
-            if value:
-                return json.loads(value)
-            return []
-        except Exception as e:
-            logger.error(f"Error loading records: {e}")
-            return []
+        value = await self._client.get(self._sid)
+        if value:
+            return json.loads(value)
+        return []
 
     async def _async_clear(self) -> None:
         if self._client is None:
             raise ValueError("Redis client is not initialized")
-        try:
-            await self._client.delete(self._sid)
-        except Exception as e:
-            logger.error(f"Error clearing records: {e}")
+        await self._client.delete(self._sid)
 
     def _run_async(self, coro):
         if not self._loop.is_running():
