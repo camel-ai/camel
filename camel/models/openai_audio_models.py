@@ -96,11 +96,18 @@ class OpenAIAudioModels(BaseAudioModel):
                         input = ''
                     else:
                         # Find the nearest period before the chunk size limit
-                        while input[max_chunk_size - 1] != '.':
-                            max_chunk_size -= 1
+                        split_index = max_chunk_size
+                        while (
+                            split_index > 0 and input[split_index - 1] != '.'
+                        ):
+                            split_index -= 1
+                        if split_index == 0:
+                            # No sentence boundary within the limit, so split
+                            # at the character limit instead.
+                            split_index = max_chunk_size
 
-                        chunk = input[:max_chunk_size]
-                        input = input[max_chunk_size:].lstrip()
+                        chunk = input[:split_index]
+                        input = input[split_index:].lstrip()
 
                     response = self._client.audio.speech.create(
                         model=model_type.value,
