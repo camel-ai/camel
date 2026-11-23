@@ -335,6 +335,8 @@ def sanitize_and_enforce_required(parameters_dict):
     - Removes invalid 'default' fields from the parameters schema.
     - Ensures all fields are marked as required or have null type for optional
       fields.
+    - Leaves parameters without type information (e.g. ``Any``) untouched and
+      disables strict mode so they can still accept real values.
     - Recursively adds additionalProperties: false to all nested objects.
     - Disables strict mode when an object intentionally allows additional
       properties.
@@ -436,8 +438,12 @@ def sanitize_and_enforce_required(parameters_dict):
                         # Array of types - add null if not present
                         field_schema['type'] = [*current_type, 'null']
                 else:
-                    # No type specified, add null type
-                    field_schema['type'] = ['null']
+                    # No type information (e.g. an ``Any``-annotated or
+                    # untyped parameter). Fabricating a null-only type would
+                    # make the parameter unable to accept any real value, so
+                    # leave the schema untouched and fall back to best-effort
+                    # (non-strict) function calling.
+                    parameters_dict['function']['strict'] = False
 
                 # Optional fields are still marked as required in strict mode
                 # but with null type to indicate they can be omitted
