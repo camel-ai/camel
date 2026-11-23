@@ -86,7 +86,11 @@ class ResponseWordsTerminator(ResponseTerminator):
                 else:
                     content = message.content.lower()
                 if special_word in content:
-                    self._word_count_dict[i][word] += 1
+                    # Count every occurrence inside the message, not just the
+                    # fact that the message contains the word once.
+                    self._word_count_dict[i][word] += content.count(
+                        special_word
+                    )
 
         num_reached: List[int] = []
         all_reasons: List[List[str]] = []
