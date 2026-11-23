@@ -12,7 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import inspect
-from typing import Any, Callable, Dict, Optional, Set, TypeVar, Union
+from string import Formatter
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    TypeVar,
+    Union,
+)
 
 from camel.interpreters import BaseInterpreter, SubprocessInterpreter
 from camel.types import RoleType
@@ -88,6 +98,36 @@ def wrap_prompt_functions(cls: T) -> T:
     return cls
 
 
+def _is_field_provided(
+    field_name: str,
+    positional_count: int,
+    keyword_names: Set[str],
+) -> bool:
+    r"""Check whether a format field is supplied by the call arguments.
+
+    Only the field's base name is inspected, so that placeholders carrying
+    attribute access, index lookups, conversions or format specs are handed
+    to :meth:`str.format` exactly as it would expect them.
+
+    Args:
+        field_name (str): The field name reported by
+            :class:`string.Formatter`, e.g. :obj:`"user.name"`.
+        positional_count (int): Number of positional arguments given to the
+            format call.
+        keyword_names (Set[str]): Names of the keyword arguments given to
+            the format call.
+
+    Returns:
+        bool: Whether the field's base name is supplied by the call.
+    """
+    base_name = field_name.split('.', 1)[0].split('[', 1)[0]
+    if not base_name:
+        return False
+    if base_name.isdigit():
+        return int(base_name) < positional_count
+    return base_name in keyword_names
+
+
 @wrap_prompt_functions
 class TextPrompt(str):
     r"""A class that represents a text prompt. The :obj:`TextPrompt` class
@@ -107,9 +147,10 @@ class TextPrompt(str):
         return get_prompt_template_key_words(self)
 
     def format(self, *args: Any, **kwargs: Any) -> 'TextPrompt':
-        r"""Overrides the built-in :obj:`str.format` method to allow for
-        default values in the format string. This is used to allow formatting
-        the partial string.
+        r"""Overrides the built-in :obj:`str.format` method to only replace
+        the placeholders that are supplied by the caller, leaving every other
+        placeholder untouched. This is used to allow formatting the partial
+        string.
 
         Args:
             *args (Any): Variable length argument list.
@@ -119,9 +160,37 @@ class TextPrompt(str):
             TextPrompt: A new :obj:`TextPrompt` object with the format string
                 replaced with the formatted string.
         """
-        default_kwargs = {key: '{' + f'{key}' + '}' for key in self.key_words}
-        default_kwargs.update(kwargs)
-        return TextPrompt(super().format(*args, **default_kwargs))
+        pieces: List[str] = []
+        keyword_names = set(kwargs)
+        auto_index = 0
+        for literal, field_name, format_spec, conversion in Formatter().parse(
+            self
+        ):
+            # The final ``str.format`` call re-interprets the assembled
+            # template, so literal text has to keep its braces escaped.
+            pieces.append(literal.replace('{', '{{').replace('}', '}}'))
+            if field_name is None:
+                continue
+            placeholder = '{' + field_name
+            if conversion:
+                placeholder += '!' + conversion
+            if format_spec:
+                placeholder += ':' + format_spec
+            placeholder += '}'
+            if field_name == '':
+                is_provided = auto_index < len(args)
+                auto_index += 1
+            else:
+                is_provided = _is_field_provided(
+                    field_name, len(args), keyword_names
+                )
+            if is_provided:
+                pieces.append(placeholder)
+            else:
+                pieces.append(
+                    placeholder.replace('{', '{{').replace('}', '}}')
+                )
+        return TextPrompt(''.join(pieces).format(*args, **kwargs))
 
 
 @wrap_prompt_functions

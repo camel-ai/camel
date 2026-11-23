@@ -91,6 +91,24 @@ def test_text_prompt_format():
     assert prompt.format(name=name) == 'Your name and age are: John, {age}'
 
 
+def test_text_prompt_format_keeps_unresolved_placeholders():
+    # Literal braces, e.g. a JSON answer shape, are not fields.
+    prompt = TextPrompt('Return {"tone": "formal"} and greet {name}.')
+    assert (
+        prompt.format(name="Ada") == 'Return {"tone": "formal"} and greet Ada.'
+    )
+
+    # Placeholders carrying a conversion or a format spec stay untouched
+    # until their value is supplied.
+    prompt = TextPrompt("Pad {value:>3} units for {name}")
+    assert prompt.format(name="x") == "Pad {value:>3} units for x"
+    assert prompt.format(name="x", value=7) == "Pad   7 units for x"
+
+    prompt = TextPrompt("Name: {name!r} and {age}")
+    assert prompt.format(age=30) == "Name: {name!r} and 30"
+    assert prompt.format(name="Ada", age=30) == "Name: 'Ada' and 30"
+
+
 def test_text_prompt_manipulate():
     prompt1 = TextPrompt('Hello, {name}!')
     prompt2 = TextPrompt('Welcome, {name}!')
