@@ -232,3 +232,20 @@ def test_strip_consecutive_newlines():
     text = "\nHello\nWorld\n"
     expected = "\nHello\nWorld\n"
     assert strip_consecutive_newlines(text) == expected
+
+
+def test_strip_consecutive_newlines_keeps_indentation():
+    # Indented lines must survive verbatim, so loaded code stays valid
+    text = "def add(a, b):\n    return a + b\n\n\nprint(add(1, 2))\n"
+    expected = "def add(a, b):\n    return a + b\nprint(add(1, 2))\n"
+    assert strip_consecutive_newlines(text) == expected
+
+    # Blank lines that only contain spaces or tabs are still collapsed
+    text = "a\n   \n\t\n    b\n"
+    expected = "a\n    b\n"
+    assert strip_consecutive_newlines(text) == expected
+
+    # The loaded document keeps the indentation of the original file
+    source = b"if ready:\n    run()\n\n\n"
+    txt_file = TxtFile.from_bytes(BytesIO(source), "sample.txt")
+    assert txt_file.docs[0]["page_content"] == "if ready:\n    run()"
