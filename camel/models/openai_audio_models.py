@@ -309,8 +309,10 @@ class OpenAIAudioModels(BaseAudioModel):
             file_format = file_suffix[1:].lower()
 
             # Prepare the prompt
-            text_prompt = "Answer the following question based on the "
-            f"given audio information:\n\n{question}"
+            text_prompt = (
+                "Answer the following question based on the "
+                f"given audio information:\n\n{question}"
+            )
 
             # Call the OpenAI API
             completion = self._client.chat.completions.create(
