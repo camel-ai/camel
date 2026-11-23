@@ -40,6 +40,12 @@ _PUSHD_PATTERN = re.compile(
     r'\bpushd\s+(?:--\s+)?(["\'][^"\']*["\']|[^\s;|&]+)'
 )
 _SHELL_SUBSTITUTION_PATTERN = re.compile(r'`|(?<!\\)\$\(')
+_ASSIGNMENT_TOKEN_PATTERN = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
+# A bare redirect operator takes the next token as its target;
+# an attached target (2>/dev/null) or &-duplication (2>&1) is
+# self-contained.
+_HEAD_METACHAR_PATTERN = re.compile(r'[<>|;&`]')
+_PROCESS_SUBSTITUTION_PATTERN = re.compile(r'[<>]\(')
 _CONTROL_FLOW_PATTERN = re.compile(r';|&&|\|\||[|&]')
 _SHELL_COMMANDS = {'bash', 'sh', 'zsh', 'dash', 'ksh', 'ash'}
 _SEPARATORS = {';', '&&', '||', '|', '&'}
@@ -109,6 +115,37 @@ DANGEROUS_COMMANDS: List[str] = [
     'rmmod',
     'insmod',
     'lsmod',
+    # Code interpreters: a single invocation can execute arbitrary code
+    # that static shell screening cannot inspect, e.g.
+    # `python -c "import os; os.system('...')"` (issue #4347)
+    'python',
+    'python2',
+    'python3',
+    'pypy',
+    'pypy3',
+    'ipython',
+    'node',
+    'nodejs',
+    'deno',
+    'bun',
+    'perl',
+    'ruby',
+    'php',
+    'lua',
+    'luajit',
+    'julia',
+    'rscript',
+    'pwsh',
+    'powershell',
+    'py',
+    'pyw',
+    'pythonw',
+    'awk',
+    'gawk',
+    'mawk',
+    'nawk',
+    'busybox',
+    'osascript',
 ]
 
 
@@ -118,6 +155,94 @@ def _normalize_command_name(command: str) -> str:
     if normalized.endswith('.exe'):
         normalized = normalized[:-4]
     return normalized
+
+
+def _dangerous_head_reason(segment_head: str) -> Optional[str]:
+    r"""Return the blocked base command for a segment head, if any.
+
+    The head is normalized to its basename, so pathed invocations
+    (``/usr/bin/python``, ``./venv/bin/python``) match the same way bare
+    names do (issue #4347). Trailing version components are stripped
+    before comparison, so ``python3.11`` still resolves to ``python``
+    while hyphenated tool names such as ``python3-config`` stay allowed.
+    """
+    name = _normalize_command_name(segment_head)
+    # 'python3.11' -> 'python', 'python3' -> 'python'; hyphenated names
+    # (python3-config) keep their tail and are not blocked.
+    # Strip trailing version components without a regex: the previous
+    # nested quantifier ((?:\.?\d+)+$) had quadratic-to-exponential
+    # backtracking on attacker-controlled heads made of many digits
+    # (CodeQL high alert), and even a char-class regex with the $
+    # anchor retries per start position (O(n^2)). rstrip is O(n).
+    base = name.rstrip('0123456789.')
+    # Read the module-level list at call time so downstream
+    # customization (import + extend) keeps working.
+    if any(base == dangerous.lower() for dangerous in DANGEROUS_COMMANDS):
+        return base
+    return None
+
+
+def _dangerous_segment_reason(command: str) -> Optional[str]:
+    r"""Screen every segment head of a command against the blacklist.
+
+    Matching the segment's first token (rather than scanning the raw
+    string) closes the bypasses of the previous anchor regex: pathed
+    interpreter calls (``/`` after the anchor defeats ``\b``), newline
+    separators (``^`` was not MULTILINE), and single ``&`` chaining are
+    all covered here. Before the head is matched, leading ``VAR=value``
+    assignments, redirections (with their targets), and subshell
+    parentheses are skipped — ``FOO=1 python -c ...``, ``> out python
+    ...`` and ``(python -c ...)`` run exactly the command that follows
+    them. Segments are matched only on their first token, so quoted or
+    mid-segment mentions (``echo python``, ``grep python x``) do not
+    trigger false positives. A head beginning with ``$`` is a variable
+    dereference executing an attacker-chosen binary and is rejected for
+    the same reason.
+
+    Args:
+        command (str): The raw command string.
+
+    Returns:
+        Optional[str]: The rejected base command name, the offending
+            head, or ``'unparsable'`` — anything non-``None`` means the
+            command must be rejected.
+    """
+    # Newlines separate shell commands under shell=True exactly like ';'.
+    normalized = command.replace('\r\n', ';').replace('\n', ';')
+    segments = _split_command_segments(normalized)
+    if segments is None:
+        # Unparsable quoting would still execute under shell=True; fail
+        # closed rather than guessing.
+        return 'unparsable'
+    for segment in segments:
+        if not segment:
+            continue
+        tokens = list(segment)
+        # Skip leading VAR=value assignments (a segment that is only
+        # assignments sets state and is allowed).
+        while len(tokens) > 1 and _ASSIGNMENT_TOKEN_PATTERN.match(tokens[0]):
+            tokens = tokens[1:]
+        # Find the command word: skip subshell parentheses (nested,
+        # possibly split across tokens).
+        word = None
+        for token in tokens:
+            word = token.strip('()')
+            if word:
+                break
+        if not word:
+            # All-parenthesis token(s): no command word to screen.
+            continue
+        # A head beginning with '$' is a variable dereference executing
+        # an attacker-chosen binary. A command word embedding any other
+        # shell metacharacter (process substitution <(...), redirection
+        # attached to the word, expansions) cannot be determined
+        # statically either — refuse both rather than guess.
+        if word.startswith('$') or _HEAD_METACHAR_PATTERN.search(word):
+            return word
+        base = _dangerous_head_reason(word)
+        if base is not None:
+            return base
+    return None
 
 
 def _split_command_segments(command: str) -> Optional[List[List[str]]]:
@@ -154,7 +279,15 @@ def _extract_shell_c_payloads(command: str) -> List[str]:
         if not segment:
             continue
 
-        if _normalize_command_name(segment[0]) not in _SHELL_COMMANDS:
+        # lstrip('(') covers subshell-wrapped shells like
+        # `(bash -c "rm -rf /")` and the split-token form
+        # `( bash -c "rm -rf /" )`, so the payload still gets screened.
+        head = ''
+        for token in segment:
+            head = _normalize_command_name(token.lstrip('('))
+            if head:
+                break
+        if head not in _SHELL_COMMANDS:
             continue
 
         args = segment[1:]
@@ -197,6 +330,23 @@ def check_command_safety(
         if not is_safe:
             return False, reason
 
+    # Command substitution executes the embedded command before the
+    # visible one and its output is attacker-shapable; it cannot be
+    # screened statically, so safe mode refuses it outright (the `cd`
+    # path has refused it for the same reason all along).
+    if _SHELL_SUBSTITUTION_PATTERN.search(command):
+        return (
+            False,
+            "Command substitution ($(...) or backticks) is not allowed "
+            "in safe mode.",
+        )
+    if _PROCESS_SUBSTITUTION_PATTERN.search(command):
+        return (
+            False,
+            "Process substitution (<(...) or >(...)) is not allowed in "
+            "safe mode.",
+        )
+
     # Remove quoted strings to avoid false positives
     clean_command = _QUOTED_STRING_PATTERN.sub(' ', command)
 
@@ -212,11 +362,24 @@ def check_command_safety(
                 )
         return True, ""
 
-    # Check for dangerous commands
-    for cmd in DANGEROUS_COMMANDS:
-        pattern = rf'(?:^|;|\||&&)\s*\b{re.escape(cmd)}\b'
-        if re.search(pattern, clean_command, re.IGNORECASE):
-            return False, f"Command '{cmd}' is blocked for safety."
+    # Screen every segment head (basename, newline/`&`-aware); see
+    # _dangerous_segment_reason for the bypasses this closes over the
+    # previous anchor regex.
+    head = _dangerous_segment_reason(command)
+    if head is not None:
+        if head == 'unparsable':
+            return (
+                False,
+                "Command could not be safely parsed; refusing to run it "
+                "in safe mode.",
+            )
+        if head.startswith('$'):
+            return (
+                False,
+                f"Command '{head}' is blocked for safety: variable "
+                "dereference can execute an unscreenable binary.",
+            )
+        return False, f"Command '{head}' is blocked for safety."
 
     return True, ""
 
