@@ -14,6 +14,7 @@
 import pytest
 
 from camel.toolkits import FunctionTool, tool
+from camel.toolkits.function_tool import _coerce_arg
 
 
 @tool()
@@ -110,6 +111,62 @@ def test_tool_without_parentheses():
 
     schema = subtract.get_openai_tool_schema()
     assert schema["function"]["name"] == "subtract"
+
+
+def test_coerce_scalar_string_arguments():
+    r"""Test that string arguments are coerced to scalar annotations.
+
+    LLM providers may emit numeric/boolean tool-call arguments as JSON
+    strings (e.g. ``"42"``, ``"true"``) even when the declared schema says
+    ``integer``/``boolean``. Those parseable strings should be coerced to
+    the annotated scalar type so downstream arithmetic works.
+    """
+    assert _coerce_arg("42", int) == 42
+    assert _coerce_arg("3.14", float) == 3.14
+    assert _coerce_arg("true", bool) is True
+    assert _coerce_arg("false", bool) is False
+    assert _coerce_arg("TRUE", bool) is True
+    assert _coerce_arg("1", bool) is True
+    assert _coerce_arg("0", bool) is False
+
+
+def test_coerce_scalar_unparsable_passes_through():
+    r"""Test that unparsable or already-typed values pass through
+    unchanged.
+    """
+    # Unparsable string forms stay as strings (preserving error surfacing).
+    assert _coerce_arg("abc", int) == "abc"
+    assert _coerce_arg("not-a-number", float) == "not-a-number"
+    # Already correctly typed values are left untouched.
+    assert _coerce_arg(42, int) == 42
+    assert _coerce_arg(42.0, float) == 42.0
+    assert _coerce_arg(True, bool) is True
+    # Non-scalar annotations (e.g. str) are unaffected.
+    assert _coerce_arg("hello", str) == "hello"
+
+
+def test_tool_scalar_string_arguments_execute():
+    r"""Test end-to-end scalar coercion through a decorated FunctionTool."""
+
+    @tool
+    def compute_total(
+        quantity: int, price: float, tax_included: bool
+    ) -> float:
+        r"""Compute a total, multiplying quantity and price.
+
+        Args:
+            quantity (int): The number of items.
+            price (float): The unit price.
+            tax_included (bool): Whether tax is already included.
+
+        Returns:
+            float: The computed total.
+        """
+        if tax_included:
+            return quantity * price
+        return quantity * price * 1.1
+
+    assert compute_total("42", "10.5", "true") == 441.0
 
 
 def test_custom_schema():
