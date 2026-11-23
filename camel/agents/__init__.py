@@ -16,6 +16,7 @@ from .chat_agent import ChatAgent
 from .critic_agent import CriticAgent
 from .knowledge_graph_agent import KnowledgeGraphAgent
 from .mcp_agent import MCPAgent
+from .paper_to_code_agent import PaperToCodeAgent
 from .repo_agent import RepoAgent
 from .role_assignment_agent import RoleAssignmentAgent
 from .search_agent import SearchAgent
@@ -39,4 +40,5 @@ __all__ = [
     'KnowledgeGraphAgent',
     'MCPAgent',
     'RepoAgent',
+    'PaperToCodeAgent',
 ]
