@@ -75,6 +75,24 @@ def _make_chat_completion_chunk(reasoning: str) -> ChatCompletionChunk:
     )
 
 
+def test_vllm_model_forwards_api_key():
+    r"""An explicit API key must reach the OpenAI client, not be replaced."""
+    model = VLLMModel(
+        ModelType.GPT_4O_MINI,
+        api_key="secret-key",
+        url="http://localhost:8000/v1",
+    )
+
+    assert model._api_key == "secret-key"
+
+
+def test_vllm_model_falls_back_to_placeholder_api_key():
+    r"""vLLM servers started by the toolkit are unauthenticated."""
+    model = VLLMModel(ModelType.GPT_4O_MINI, url="http://localhost:8000/v1")
+
+    assert model._api_key == "Not_Used"
+
+
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "model_type",

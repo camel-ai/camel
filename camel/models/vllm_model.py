@@ -81,7 +81,7 @@ class VLLMModel(OpenAICompatibleModel):
         super().__init__(
             model_type=self._model_type,
             model_config_dict=model_config_dict,
-            api_key="Not_Used",
+            api_key=api_key or "Not_Used",
             url=self._url,
             token_counter=token_counter,
             timeout=timeout,
