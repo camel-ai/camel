@@ -12,7 +12,7 @@ A class representing a toolkit for web search.
 
 This class provides methods for searching information on the web using
 search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave,
-Perplexity.
+Perplexity, Keenable.
 
 <a id="camel.toolkits.search_toolkit.SearchToolkit.__init__"></a>
 
@@ -694,6 +694,66 @@ contains a `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2__`,
 `__INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5____INLINE_CODE_6____INLINE_CODE_7__` and
 `__INLINE_CODE_8____INLINE_CODE_9____INLINE_CODE_10____INLINE_CODE_11____INLINE_CODE_12__` fields.
 On failure, returns a dictionary with an `__INLINE_CODE_13__` key.
+
+<a id="camel.toolkits.search_toolkit.SearchToolkit.search_keenable"></a>
+
+### search_keenable
+
+```python
+def search_keenable(
+    self,
+    query: str,
+    max_results: int = 10,
+    site: Optional[str] = None,
+    published_after: Optional[str] = None,
+    published_before: Optional[str] = None,
+    snippet_max_length: int = 1000
+):
+```
+
+Use Keenable Search API to retrieve web search results.
+
+Works without an API key: requests then go to Keenable's public endpoint, which is rate limited per IP. Set `KEENABLE_API_KEY` to use the authenticated endpoint and its higher limits. See https://docs.keenable.ai/api-reference/search for details.
+
+**Parameters:**
+
+- **query** (str): The search query.
+- **max_results** (int): Maximum number of results to return, between 1 and 50. (default: :obj:`10`)
+- **site** (Optional[str]): Restrict results to one site, for example `"docs.python.org"`. (default: :obj:`None`)
+- **published_after** (Optional[str]): Only return pages published at or after this point: a date (`"2026-01-15"`), an ISO 8601 timestamp, or a relative delta such as `"7d"` or `"6mo"`. (default: :obj:`None`)
+- **published_before** (Optional[str]): Only return pages published at or before this point, in the same formats as `published_after`. (default: :obj:`None`)
+- **snippet_max_length** (int): Maximum number of characters of page text per result, between 180 and 10000. Use `fetch_keenable_content` for a full page. (default: :obj:`1000`)
+
+**Returns:**
+
+  Dict[str, Any]: On success, a `results` list where each entry has `title`, `url` and `snippet` (text extracted from the page), plus `published_at` when it is known. On failure, a dictionary with an `error` key.
+
+<a id="camel.toolkits.search_toolkit.SearchToolkit.fetch_keenable_content"></a>
+
+### fetch_keenable_content
+
+```python
+def fetch_keenable_content(
+    self,
+    url: str,
+    max_chars: int = 50000,
+    live: bool = False
+):
+```
+
+Use Keenable Fetch API to read a web page as markdown.
+
+This is typically used after `search_keenable` to read the full page behind a result URL, since search results only carry an excerpt. Like `search_keenable`, it works without an API key. See https://docs.keenable.ai/api-reference/fetch for details.
+
+**Parameters:**
+
+- **url** (str): The URL of the page to read.
+- **max_chars** (int): Maximum number of characters of content to return; longer pages are truncated. (default: :obj:`50000`)
+- **live** (bool): Fetch the page from the source instead of Keenable's indexed copy. Needed for pages Keenable has not indexed. (default: :obj:`False`)
+
+**Returns:**
+
+  Dict[str, Any]: On success, the page's `url`, `title` and `content` (markdown). On failure, a dictionary with an `error` key.
 
 <a id="camel.toolkits.search_toolkit.SearchToolkit.get_tools"></a>
 
