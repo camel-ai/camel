@@ -163,6 +163,11 @@ class ScoreBasedContextCreator(BaseContextCreator):
                     self._cached_token_count + estimated_new_tokens,
                 )
             # current_count < cached: messages were removed, cache invalid
+            if current_count < self._cached_message_count:
+                # Drop the stale entry: otherwise a later context that happens
+                # to have the same message count as the cached one would be
+                # answered with the token count of the removed messages.
+                self.clear_cache()
 
         # No cache or cache is stale - do full calculation
         total_tokens = self.token_counter.count_tokens_from_messages(messages)
