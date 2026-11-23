@@ -54,6 +54,7 @@ from .human_toolkit import HumanToolkit
 from .stripe_toolkit import StripeToolkit
 from .video_download_toolkit import VideoDownloaderToolkit
 from .dappier_toolkit import DappierToolkit
+from .darkmoon_toolkit import DarkmoonToolkit
 from .networkx_toolkit import NetworkXToolkit
 from .semantic_scholar_toolkit import SemanticScholarToolkit
 from .zapier_toolkit import ZapierToolkit
@@ -150,6 +151,7 @@ __all__ = [
     'MeshyToolkit',
     'OpenBBToolkit',
     'DappierToolkit',
+    'DarkmoonToolkit',
     'NetworkXToolkit',
     'SemanticScholarToolkit',
     'ZapierToolkit',
