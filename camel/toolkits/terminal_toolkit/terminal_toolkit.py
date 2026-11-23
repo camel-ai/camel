@@ -96,7 +96,8 @@ class TerminalToolkit(BaseToolkit):
         timeout (Optional[float]): The default timeout in seconds for blocking
             commands. Defaults to 20.0.
         working_directory (Optional[str]): The base directory for operations.
-            For the local backend, this acts as a security sandbox.
+            For the local backend, safe mode checks path operands against
+            this directory; this does not provide OS-level isolation.
             For the Docker backend, this sets the working directory inside
             the container.
             If not specified, defaults to "./workspace" for local and
@@ -109,7 +110,9 @@ class TerminalToolkit(BaseToolkit):
             logs. Defaults to a 'terminal_logs' subfolder in the
             working directory.
         safe_mode (bool): Whether to apply security checks to commands.
-            Defaults to True.
+            Defaults to True. Shell expansion, redirection, path-qualified
+            executables and interpreter execution are rejected. Version/help
+            queries are permitted. Use an isolated backend for untrusted code.
         allowed_commands (Optional[List[str]]): List of allowed commands
             when safe_mode is True. If None, uses default safety rules.
         clone_current_env (bool): Whether to clone the current Python
@@ -202,7 +205,7 @@ class TerminalToolkit(BaseToolkit):
 
         # Initialize whitelist of allowed commands if provided
         self.allowed_commands = (
-            set(allowed_commands) if allowed_commands else None
+            set(allowed_commands) if allowed_commands is not None else None
         )
 
         # Environment management attributes
