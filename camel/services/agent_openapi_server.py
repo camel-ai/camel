@@ -13,9 +13,12 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-from typing import Any, Dict, List, Optional, Type, Union
+import hmac
+import threading
+from typing import Annotated, Any, Dict, List, Optional, Type, Union
 
-from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from camel.agents.chat_agent import ChatAgent
@@ -23,6 +26,8 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import FunctionTool
 from camel.types import RoleType
+
+_bearer = HTTPBearer(auto_error=False)
 
 
 class InitRequest(BaseModel):
@@ -107,12 +112,18 @@ class ChatAgentOpenAPIServer:
 
     Supports pluggable tool and response format registries for customizing
     agent behavior or output schemas.
+
+    Every agent route requires a configured Bearer token. Agent ownership is
+    derived from the token's server-side identity, never from request data.
+    With no API keys configured the API fails closed. This is a breaking change
+    for applications that previously exposed the API without authentication.
     """
 
     def __init__(
         self,
         tool_registry: Optional[Dict[str, List[FunctionTool]]] = None,
         response_format_registry: Optional[Dict[str, Type[BaseModel]]] = None,
+        api_keys: Optional[Dict[str, str]] = None,
     ):
         r"""Initializes the OpenAPI server for managing ChatAgents.
 
@@ -128,14 +139,66 @@ class ChatAgentOpenAPIServer:
                 A mapping from format names to Pydantic output schemas for
                 structured response parsing. Used for controlling the format
                 of step results. (default: :obj:`None`)
+            api_keys (Optional[Dict[str, str]]): Operator-configured mapping
+                from secret Bearer tokens (at least 32 characters) to stable
+                owner identities. Multiple tokens may share one identity for
+                key rotation. If omitted, all agent API requests are denied.
+                Tokens must be distributed securely and used over TLS.
+                (default: :obj:`None`)
         """
 
         # Initialize FastAPI app and agent
         self.app = FastAPI(title="CAMEL OpenAPI-compatible Server")
         self.agents: Dict[str, ChatAgent] = {}
+        self._api_keys = dict(api_keys or {})
+        if any(
+            not isinstance(token, str)
+            or len(token) < 32
+            or not token.strip()
+            or not isinstance(owner, str)
+            or not owner.strip()
+            for token, owner in self._api_keys.items()
+        ):
+            raise ValueError(
+                'api_keys must map tokens of at least 32 characters '
+                'to nonempty owner identities.'
+            )
+        self._agent_owners: Dict[str, str] = {}
+        self._agents_lock = threading.RLock()
         self.tool_registry = tool_registry or {}
         self.response_format_registry = response_format_registry or {}
         self._setup_routes()
+
+    def _authenticate(
+        self,
+        credentials: Annotated[
+            Optional[HTTPAuthorizationCredentials], Depends(_bearer)
+        ],
+    ) -> str:
+        r"""Authenticate before any agent or tool operation (fail closed)."""
+        owner = None
+        if credentials is not None:
+            supplied = credentials.credentials.encode('utf-8')
+            for token, candidate in self._api_keys.items():
+                if hmac.compare_digest(supplied, token.encode('utf-8')):
+                    owner = candidate
+        if owner is None:
+            raise HTTPException(
+                status_code=401,
+                detail='Invalid or missing Bearer credentials.',
+                headers={'WWW-Authenticate': 'Bearer'},
+            )
+        return owner
+
+    def _get_owned_agent(self, agent_id: str, owner: str) -> ChatAgent:
+        r"""Hide both unknown IDs and agents belonging to another identity."""
+        with self._agents_lock:
+            if (
+                agent_id not in self.agents
+                or self._agent_owners.get(agent_id) != owner
+            ):
+                raise HTTPException(status_code=404, detail='Agent not found.')
+            return self.agents[agent_id]
 
     def _parse_input_message_for_step(
         self, raw: Union[str, dict]
@@ -186,10 +249,14 @@ class ChatAgentOpenAPIServer:
         under the /v1/agents namespace.
         """
 
-        router = APIRouter(prefix="/v1/agents")
+        router = APIRouter(
+            prefix="/v1/agents", dependencies=[Depends(self._authenticate)]
+        )
 
         @router.post("/init")
-        def init_agent(request: InitRequest):
+        def init_agent(
+            request: InitRequest, owner: str = Depends(self._authenticate)
+        ):
             r"""Initializes a ChatAgent instance with a model,
             system message, and optional tools.
 
@@ -202,11 +269,13 @@ class ChatAgentOpenAPIServer:
             """
 
             agent_id = request.agent_id
-            if agent_id in self.agents:
-                return {
-                    "agent_id": agent_id,
-                    "message": "Agent already exists.",
-                }
+            with self._agents_lock:
+                if agent_id in self.agents:
+                    self._get_owned_agent(agent_id, owner)
+                    return {
+                        "agent_id": agent_id,
+                        "message": "Agent already exists.",
+                    }
 
             model_type = request.model_type
             model_platform = request.model_platform
@@ -243,11 +312,25 @@ class ChatAgentOpenAPIServer:
                 agent_id=agent_id,
             )
 
-            self.agents[agent_id] = agent
+            with self._agents_lock:
+                # Another initialization may have completed while the model
+                # and agent were being constructed. Never replace its owner.
+                if agent_id in self.agents:
+                    self._get_owned_agent(agent_id, owner)
+                    return {
+                        "agent_id": agent_id,
+                        "message": "Agent already exists.",
+                    }
+                self.agents[agent_id] = agent
+                self._agent_owners[agent_id] = owner
             return {"agent_id": agent_id, "message": "Agent initialized."}
 
         @router.post("/astep/{agent_id}")
-        async def astep_agent(agent_id: str, request: StepRequest):
+        async def astep_agent(
+            agent_id: str,
+            request: StepRequest,
+            owner: str = Depends(self._authenticate),
+        ):
             r"""Runs one async step of agent response.
 
             Args:
@@ -258,10 +341,7 @@ class ChatAgentOpenAPIServer:
                 dict: The model response in serialized form.
             """
 
-            if agent_id not in self.agents:
-                raise HTTPException(status_code=404, detail="Agent not found.")
-
-            agent = self.agents[agent_id]
+            agent = self._get_owned_agent(agent_id, owner)
             input_message = self._parse_input_message_for_step(
                 request.input_message
             )
@@ -281,16 +361,25 @@ class ChatAgentOpenAPIServer:
                 )
 
         @router.get("/list_agent_ids")
-        def list_agent_ids():
+        def list_agent_ids(owner: str = Depends(self._authenticate)):
             r"""Returns a list of all active agent IDs.
 
             Returns:
                 dict: A dictionary containing all registered agent IDs.
             """
-            return {"agent_ids": list(self.agents.keys())}
+            with self._agents_lock:
+                return {
+                    "agent_ids": [
+                        agent_id
+                        for agent_id in self.agents
+                        if self._agent_owners.get(agent_id) == owner
+                    ]
+                }
 
         @router.post("/delete/{agent_id}")
-        def delete_agent(agent_id: str):
+        def delete_agent(
+            agent_id: str, owner: str = Depends(self._authenticate)
+        ):
             r"""Deletes an agent from the server.
 
             Args:
@@ -299,14 +388,18 @@ class ChatAgentOpenAPIServer:
             Returns:
                 dict: A confirmation message upon successful deletion.
             """
-            if agent_id not in self.agents:
-                raise HTTPException(status_code=404, detail="Agent not found.")
-
-            del self.agents[agent_id]
+            with self._agents_lock:
+                self._get_owned_agent(agent_id, owner)
+                del self.agents[agent_id]
+                del self._agent_owners[agent_id]
             return {"message": f"Agent {agent_id} deleted."}
 
         @router.post("/step/{agent_id}")
-        def step_agent(agent_id: str, request: StepRequest):
+        def step_agent(
+            agent_id: str,
+            request: StepRequest,
+            owner: str = Depends(self._authenticate),
+        ):
             r"""Runs one step of synchronous agent response.
 
             Args:
@@ -316,10 +409,7 @@ class ChatAgentOpenAPIServer:
             Returns:
                 dict: The model response in serialized form.
             """
-            if agent_id not in self.agents:
-                raise HTTPException(status_code=404, detail="Agent not found.")
-
-            agent = self.agents[agent_id]
+            agent = self._get_owned_agent(agent_id, owner)
             input_message = self._parse_input_message_for_step(
                 request.input_message
             )
@@ -338,7 +428,9 @@ class ChatAgentOpenAPIServer:
                 )
 
         @router.post("/reset/{agent_id}")
-        def reset_agent(agent_id: str):
+        def reset_agent(
+            agent_id: str, owner: str = Depends(self._authenticate)
+        ):
             r"""Clears memory for a specific agent.
 
             Args:
@@ -347,13 +439,13 @@ class ChatAgentOpenAPIServer:
             Returns:
                 dict: A message confirming reset success.
             """
-            if agent_id not in self.agents:
-                raise HTTPException(status_code=404, detail="Agent not found.")
-            self.agents[agent_id].reset()
+            self._get_owned_agent(agent_id, owner).reset()
             return {"message": f"Agent {agent_id} reset."}
 
         @router.get("/history/{agent_id}")
-        def get_agent_chat_history(agent_id: str):
+        def get_agent_chat_history(
+            agent_id: str, owner: str = Depends(self._authenticate)
+        ):
             r"""Returns the chat history of an agent.
 
             Args:
@@ -362,11 +454,7 @@ class ChatAgentOpenAPIServer:
             Returns:
                 list: The list of conversation messages.
             """
-            if agent_id not in self.agents:
-                raise HTTPException(
-                    status_code=404, detail=f"Agent {agent_id} not found."
-                )
-            return self.agents[agent_id].chat_history
+            return self._get_owned_agent(agent_id, owner).chat_history
 
         # Register all routes to the main FastAPI app
         self.app.include_router(router)
