@@ -163,8 +163,15 @@ class ExcelToolkit(BaseToolkit):
             document_path = output_path
 
         try:
-            # Load the Excel workbook
+            # Load the Excel workbook for the report. `data_only=True` yields
+            # the cached value of a formula, which is what we want to show.
             wb = load_workbook(document_path, data_only=True)
+            # Keep an editable handle on the file that was just inspected so
+            # that the workbook-scoped tools (get_rows, set_cell_value,
+            # save_workbook, ...) work right after an extraction. It is
+            # loaded without `data_only` so that saving it never replaces
+            # formulas with their cached values.
+            self.wb = load_workbook(document_path)
             sheet_info_list = []
 
             # Iterate through all sheets
