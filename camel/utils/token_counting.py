@@ -193,7 +193,9 @@ class OpenAITokenCounter(BaseTokenCounter):
                             )
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
-                            detail = item["image_url"]["detail"]
+                            # `detail` is optional in OpenAI's image_url
+                            # object, where omitting it means "auto".
+                            detail = item["image_url"].get("detail") or "auto"
 
                             # Only count tokens for base64 encoded images
                             # For URLs, we cannot reliably determine token count without fetching the image
