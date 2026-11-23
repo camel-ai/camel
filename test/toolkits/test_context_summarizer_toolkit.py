@@ -381,6 +381,47 @@ def test_empty_memory_handling(context_summarizer_toolkit_fixture):
     assert "No conversation history found" in result
 
 
+def test_failed_summarization_keeps_conversation_memory(
+    context_summarizer_toolkit_fixture, sample_context_records
+):
+    r"""Test that a failed summarization does not discard the memory."""
+    toolkit = context_summarizer_toolkit_fixture
+    toolkit.agent.memory.retrieve.return_value = sample_context_records
+
+    with patch.object(
+        toolkit.summary_agent,
+        'step',
+        side_effect=RuntimeError("summarizer unavailable"),
+    ):
+        result = toolkit.summarize_full_conversation_history()
+
+    toolkit.agent.clear_memory.assert_not_called()
+    toolkit.agent.update_memory.assert_not_called()
+    assert "kept unchanged" in result
+    assert "Full context summarized" not in result
+
+
+def test_empty_summary_keeps_conversation_memory(
+    context_summarizer_toolkit_fixture, sample_context_records
+):
+    r"""Test that an empty summary does not discard the memory."""
+    toolkit = context_summarizer_toolkit_fixture
+    toolkit.agent.memory.retrieve.return_value = sample_context_records
+
+    mock_response = MagicMock()
+    mock_response.msgs = [MagicMock()]
+    mock_response.msgs[0].content = "   "
+
+    with patch.object(
+        toolkit.summary_agent, 'step', return_value=mock_response
+    ):
+        result = toolkit.summarize_full_conversation_history()
+
+    toolkit.agent.clear_memory.assert_not_called()
+    toolkit.agent.update_memory.assert_not_called()
+    assert "kept unchanged" in result
+
+
 if __name__ == "__main__":
     import sys
 
