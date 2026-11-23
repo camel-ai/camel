@@ -41,6 +41,14 @@ def _make_chunk(content: str | None) -> ChatAgentResponse:
     )
 
 
+def _make_mode_chunk(content: str, mode: str) -> ChatAgentResponse:
+    return ChatAgentResponse(
+        msgs=[BaseMessage.make_assistant_message("assistant", content)],
+        terminated=False,
+        info={"stream_accumulate_mode": mode},
+    )
+
+
 def _sync_stream(chunks: list[ChatAgentResponse]):
     for chunk in chunks:
         yield chunk
@@ -121,6 +129,49 @@ def test_consume_response_content_delta_stream_with_repeated_prefixes():
 
     assert final_response.msg.content == "Hello!"
     assert content == "Hello!Hello!Hello!"
+
+
+def test_consume_response_content_accumulate_mode_ignores_repeated_tail():
+    # Accumulate-mode streams repeat the full content in the terminal chunk,
+    # see ``ChatAgent`` streaming: the last piece must not be joined.
+    chunks = [
+        _make_mode_chunk("He", "accumulate"),
+        _make_mode_chunk("Hello", "accumulate"),
+        _make_mode_chunk("Hello", "accumulate"),
+    ]
+
+    final_response, content = consume_response_content(_sync_stream(chunks))
+
+    assert final_response.msg.content == "Hello"
+    assert content == "Hello"
+
+
+def test_consume_response_content_delta_mode_never_drops_pieces():
+    # The declared mode wins over the content-shape heuristic: "aab" extends
+    # the previous piece without being an accumulated version of it.
+    chunks = [
+        _make_mode_chunk("aa", "delta"),
+        _make_mode_chunk("aab", "delta"),
+    ]
+
+    _, content = consume_response_content(_sync_stream(chunks))
+
+    assert content == "aaaab"
+
+
+@pytest.mark.asyncio
+async def test_consume_response_content_async_accumulate_mode():
+    chunks = [
+        _make_mode_chunk("Hi", "accumulate"),
+        _make_mode_chunk("Hi", "accumulate"),
+    ]
+
+    final_response, content = await consume_response_content_async(
+        AsyncStreamingChatAgentResponse(_async_stream(chunks))
+    )
+
+    assert final_response.msg.content == "Hi"
+    assert content == "Hi"
 
 
 def test_consume_response_content_empty_stream_returns_placeholder():
