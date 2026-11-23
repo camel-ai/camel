@@ -859,3 +859,15 @@ def test_notebook_edit_returns_error_message_for_missing_file(
     )
 
     assert result.startswith("Error:")
+
+
+def test_edit_file_rejects_empty_old_content(file_write_toolkit):
+    note_path = file_write_toolkit.working_directory / "note.txt"
+    note_path.write_text("abc", encoding="utf-8")
+
+    result = file_write_toolkit.edit_file("note.txt", "", "X")
+
+    assert "old_content" in result
+    assert "empty" in result
+    assert note_path.read_text(encoding="utf-8") == "abc"
+    assert not list(file_write_toolkit.working_directory.glob("*.bak"))

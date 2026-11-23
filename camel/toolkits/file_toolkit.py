@@ -1263,6 +1263,12 @@ class FileToolkit(BaseToolkit):
         try:
             working_path = self._resolve_existing_filepath(file_path)
 
+            if not old_content:
+                return (
+                    "No replacement performed: 'old_content' must not be "
+                    f"empty in {working_path}."
+                )
+
             if not working_path.exists():
                 return f"Error: File {working_path} does not exist"
 
