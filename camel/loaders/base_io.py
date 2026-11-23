@@ -206,12 +206,15 @@ class PdfFile(File):
 
         pdf = fitz.open(stream=file.read(), filetype="pdf")
         docs = []
-        for i, page in enumerate(pdf):
-            text = page.get_text(sort=True)
-            text = strip_consecutive_newlines(text)
-            # Create a dictionary with the extracted text
-            doc = {"page_content": text.strip(), "page": i + 1}
-            docs.append(doc)
+        try:
+            for i, page in enumerate(pdf):
+                text = page.get_text(sort=True)
+                text = strip_consecutive_newlines(text)
+                # Create a dictionary with the extracted text
+                doc = {"page_content": text.strip(), "page": i + 1}
+                docs.append(doc)
+        finally:
+            pdf.close()
         # Calculate a unique identifier for the file
         file_id = md5(file.getvalue()).hexdigest()
         # Reset the file pointer to the beginning

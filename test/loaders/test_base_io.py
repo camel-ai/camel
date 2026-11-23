@@ -102,6 +102,28 @@ def test_pdf_file_with_multiple_pages():
     assert pdf_file.docs[2]["page_content"] == "Hello World 3"
 
 
+def test_pdf_file_closes_the_document(monkeypatch):
+    import fitz
+
+    filename = "test_hello.pdf"
+    raw = (SAMPLE_ROOT / filename).read_bytes()
+
+    opened = []
+    real_open = fitz.open
+
+    def tracking_open(*args, **kwargs):
+        document = real_open(*args, **kwargs)
+        opened.append(document)
+        return document
+
+    monkeypatch.setattr(fitz, "open", tracking_open)
+    pdf_file = PdfFile.from_bytes(BytesIO(raw), filename)
+
+    assert len(pdf_file.docs) == 1
+    assert len(opened) == 1
+    assert opened[0].is_closed, "the PDF document must be closed after parsing"
+
+
 def test_txt_file():
     filename = "test_hello.txt"
     with open(SAMPLE_ROOT / filename, "rb") as f:
