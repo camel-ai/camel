@@ -14,6 +14,7 @@
 
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -801,10 +802,13 @@ def test_grep_multiline_does_not_overcount_trailing_newline(
     result_lines = result.strip().splitlines()
     markers = {}
     for line in result_lines:
-        # format: "path:lineno:marker rest"
-        parts = line.split(":", 3)
-        lineno = int(parts[1])
-        marker = parts[2][0]
+        # format: "path:lineno:marker rest"; the path may itself contain a
+        # colon (e.g. the drive letter on Windows), so match the line number
+        # and marker from the left with a path that stops at the first ":<n>:".
+        match = re.match(r"^(.+?):(\d+):([> ]) (.*)$", line)
+        assert match is not None, line
+        lineno = int(match.group(2))
+        marker = match.group(3)
         markers[lineno] = marker
 
     assert markers[1] == " ", "aaa (context) should not be marked"
