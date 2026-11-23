@@ -81,13 +81,16 @@ class AlpacaItem(BaseModel):
 
         # Try to extract sections using regex
         instruction_match = re.search(
-            r'###\s*Instruction:\s*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
+            r'###\s*Instruction:[^\S\n]*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
         )
+        # The input section may be empty ('### Input:' followed by a blank
+        # line), so its capture must allow zero characters; '(.+?)' would
+        # otherwise run until the next header and swallow '### Response:'.
         input_match = re.search(
-            r'###\s*Input:\s*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
+            r'###\s*Input:[^\S\n]*\n(.*?)(?=\n###|\Z)', text, re.DOTALL
         )
         response_match = re.search(
-            r'###\s*Response:\s*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
+            r'###\s*Response:[^\S\n]*\n(.+?)(?=\n###|\Z)', text, re.DOTALL
         )
 
         if not instruction_match or not response_match:
