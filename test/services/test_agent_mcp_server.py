@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -19,6 +20,18 @@ from mcp.server.fastmcp import Context
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
 from camel.toolkits import FunctionTool
+
+if not all(
+    os.environ.get(key)
+    for key in ("OPENAI_API_KEY", "OPENROUTER_API_KEY", "DEEPSEEK_API_KEY")
+):
+    pytest.skip(
+        "OPENAI_API_KEY, OPENROUTER_API_KEY, and DEEPSEEK_API_KEY are all "
+        "required to construct the module-level agent fixtures in "
+        "services.agent_mcp.agent_config",
+        allow_module_level=True,
+    )
+
 from services.agent_mcp.agent_config import agents_dict, description_dict
 from services.agent_mcp.agent_mcp_server import (
     get_agent_info,
