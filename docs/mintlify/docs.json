@@ -503,6 +503,7 @@
             "pages": [
               "reference/camel.toolkits.aci_toolkit",
               "reference/camel.toolkits.agent_toolkit",
+              "reference/camel.toolkits.anysearch_toolkit",
               "reference/camel.toolkits.artifact_toolkit",
               "reference/camel.toolkits.arxiv_toolkit",
               "reference/camel.toolkits.ask_news_toolkit",
