@@ -2371,3 +2371,194 @@ def test_rate_limit_retry_respects_anthropic_error_when_installed():
         from openai import RateLimitError as OpenAIRateLimitError
 
         assert _RATE_LIMIT_ERRORS == (OpenAIRateLimitError,)
+
+
+def test_chat_agent_stream_tool_timeout_is_reported_not_raised(caplog):
+    r"""A streamed tool exceeding tool_execution_timeout must not raise.
+
+    concurrent.futures.as_completed raises TimeoutError from its iterator,
+    so the timeout has to be handled around the loop; otherwise the
+    TimeoutError escapes agent.step() instead of being reported as a
+    per-tool timeout.
+    """
+    import logging
+    import time
+
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+        ChoiceDeltaToolCall,
+        ChoiceDeltaToolCallFunction,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    from camel.models import StubModel
+
+    def slow_tool() -> str:
+        """Sleep longer than the configured tool execution timeout."""
+        time.sleep(0.5)
+        return "done"
+
+    model = StubModel(ModelType.STUB, model_config_dict={"stream": True})
+
+    chunks = [
+        ChatCompletionChunk(
+            id="mock_stream_tool_timeout",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(
+                        role="assistant",
+                        tool_calls=[
+                            ChoiceDeltaToolCall(
+                                index=0,
+                                id="call_slow",
+                                type="function",
+                                function=ChoiceDeltaToolCallFunction(
+                                    name="slow_tool", arguments="{}"
+                                ),
+                            )
+                        ],
+                    ),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="mock_stream_tool_timeout",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(),
+                    index=0,
+                    finish_reason="tool_calls",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+    ]
+
+    def mock_stream():
+        for chunk in chunks:
+            yield chunk
+
+    model.run = MagicMock(return_value=mock_stream())
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        tools=[FunctionTool(slow_tool)],
+        tool_execution_timeout=0.2,
+    )
+
+    with caplog.at_level(logging.WARNING):
+        responses = list(agent.step("use the tool"))
+
+    assert "Function 'slow_tool' timed out after 0.2 seconds" in caplog.text
+
+    tool_calls = [
+        tool_call
+        for response in responses
+        for tool_call in (response.info.get("tool_calls") or [])
+    ]
+    assert tool_calls == []
+
+
+def test_chat_agent_stream_reports_a_tool_own_timeout_error(caplog):
+    r"""A tool's own TimeoutError is reported as the tool's error.
+
+    concurrent.futures.TimeoutError is an alias of the builtin TimeoutError on
+    Python 3.11+, and the builtin is an OSError subclass, so the inner handler
+    in the executor loop would catch a tool that hits its own network deadline.
+    That handler is unreachable here: _execute_tool_from_stream_data catches
+    every Exception it can and returns a record, so future.result() never
+    raises. This pins the reporting so the branch cannot start swallowing it.
+    """
+    import logging
+
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+        ChoiceDeltaToolCall,
+        ChoiceDeltaToolCallFunction,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    from camel.models import StubModel
+
+    def tool_with_own_deadline() -> str:
+        """Fail with the tool's own deadline, well inside the agent budget."""
+        raise TimeoutError("the tool's own network deadline")
+
+    model = StubModel(ModelType.STUB, model_config_dict={"stream": True})
+
+    chunks = [
+        ChatCompletionChunk(
+            id="mock_stream_tool_error",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(
+                        role="assistant",
+                        tool_calls=[
+                            ChoiceDeltaToolCall(
+                                index=0,
+                                id="call_error",
+                                type="function",
+                                function=ChoiceDeltaToolCallFunction(
+                                    name="tool_with_own_deadline",
+                                    arguments="{}",
+                                ),
+                            )
+                        ],
+                    ),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="mock_stream_tool_error",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(),
+                    index=0,
+                    finish_reason="tool_calls",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+    ]
+
+    def mock_stream():
+        for chunk in chunks:
+            yield chunk
+
+    model.run = MagicMock(return_value=mock_stream())
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        tools=[FunctionTool(tool_with_own_deadline)],
+        tool_execution_timeout=30.0,
+    )
+
+    with caplog.at_level(logging.WARNING):
+        list(agent.step("use the tool"))
+
+    # The tool's own message survives, and the agent's budget is not blamed
+    assert "the tool's own network deadline" in caplog.text
+    assert "Error executing tool 'tool_with_own_deadline'" in caplog.text
+    assert "timed out after" not in caplog.text
