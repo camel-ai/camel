@@ -31,7 +31,7 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
-    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4.1-mini-2025-04-14")
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-6-luna")
 
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
@@ -46,6 +46,7 @@ class ModelType(UnifiedModelType, Enum):
     GPT_4_1 = "gpt-4.1"
     GPT_4_1_MINI = "gpt-4.1-mini-2025-04-14"
     GPT_4_1_NANO = "gpt-4.1-nano-2025-04-14"
+    GPT_6_LUNA = "gpt-6-luna"
     O4_MINI = "o4-mini"
     O3 = "o3"
     O3_PRO = "o3-pro"
@@ -237,6 +238,7 @@ class ModelType(UnifiedModelType, Enum):
     # Claude models
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
     CLAUDE_SONNET_4_5 = "claude-sonnet-4-5"
+    CLAUDE_SONNET_5_5 = "claude-sonnet-5-5"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
     CLAUDE_SONNET_4_6 = "claude-sonnet-4-6"
     CLAUDE_HAIKU_4_5 = "claude-haiku-4-5"
@@ -652,6 +654,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_6_LUNA,
             ModelType.GPT_5,
             ModelType.GPT_5_MINI,
             ModelType.GPT_5_NANO,
@@ -711,6 +714,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_6_LUNA,
             ModelType.GPT_5,
             ModelType.O4_MINI,
             ModelType.O3,
@@ -763,6 +767,7 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
+            ModelType.CLAUDE_SONNET_5_5,
             ModelType.CLAUDE_SONNET_4_6,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_HAIKU_4_5,
@@ -1661,6 +1666,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O3_PRO,
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
+            ModelType.CLAUDE_SONNET_5_5,
             ModelType.CLAUDE_OPUS_4_5,
             ModelType.CLAUDE_OPUS_4_6,
             ModelType.CLAUDE_SONNET_4,
@@ -1742,6 +1748,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_6_LUNA,
             ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
             ModelType.AVIAN_MINIMAX_M2_5,
             ModelType.ORCAROUTER_GEMINI_3_FLASH_PREVIEW,

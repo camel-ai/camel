@@ -44,6 +44,7 @@ from camel.utils import OpenAITokenCounter
         ModelType.GPT_4_1,
         ModelType.GPT_4_1_MINI,
         ModelType.GPT_4_1_NANO,
+        ModelType.GPT_6_LUNA,
     ],
 )
 def test_openai_model(model_type: ModelType):
@@ -583,3 +584,120 @@ def test_responses_mode_converts_tool_call_history_to_input_items():
         assert input_items[2]["type"] == "function_call_output"
         assert input_items[2]["call_id"] == "call_1"
         assert "tool_calls" not in input_items[1]
+
+
+def _mock_chat_completion_response(mock_client):
+    mock_response = MagicMock()
+    mock_response.id = "test-id"
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = "Hello"
+    mock_response.choices[0].finish_reason = "stop"
+    mock_response.usage = MagicMock()
+    mock_response.usage.prompt_tokens = 10
+    mock_response.usage.completion_tokens = 5
+    mock_response.usage.total_tokens = 15
+    mock_client.chat.completions.create.return_value = mock_response
+
+
+def _function_tool():
+    return {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get weather by city",
+            "parameters": {
+                "type": "object",
+                "properties": {"city": {"type": "string"}},
+                "required": ["city"],
+            },
+        },
+    }
+
+
+def test_gpt_6_luna_defaults_reasoning_effort_none_with_tools():
+    """camel-ai/camel#4542: GPT-6 Luna supports function calling on Chat
+    Completions only with reasoning_effort set to "none", so a tool-using
+    request on the default model must send it by default."""
+    with patch("camel.models.openai_model.OpenAI") as mock_openai:
+        mock_client = MagicMock()
+        mock_openai.return_value = mock_client
+        _mock_chat_completion_response(mock_client)
+
+        model = OpenAIModel(model_type=ModelType.GPT_6_LUNA)
+        model.run(
+            [{"role": "user", "content": "Hello"}],
+            tools=[_function_tool()],
+        )
+
+        call_kwargs = mock_client.chat.completions.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "none"
+
+
+def test_gpt_6_luna_no_reasoning_effort_without_tools():
+    """Without tools there is nothing to force: no reasoning_effort is
+    sent, so the model's default (medium) effort applies."""
+    with patch("camel.models.openai_model.OpenAI") as mock_openai:
+        mock_client = MagicMock()
+        mock_openai.return_value = mock_client
+        _mock_chat_completion_response(mock_client)
+
+        model = OpenAIModel(model_type=ModelType.GPT_6_LUNA)
+        model.run([{"role": "user", "content": "Hello"}])
+
+        call_kwargs = mock_client.chat.completions.create.call_args[1]
+        assert "reasoning_effort" not in call_kwargs
+
+
+def test_gpt_6_luna_keeps_explicit_reasoning_effort():
+    """An explicitly configured reasoning_effort is never overridden."""
+    with patch("camel.models.openai_model.OpenAI") as mock_openai:
+        mock_client = MagicMock()
+        mock_openai.return_value = mock_client
+        _mock_chat_completion_response(mock_client)
+
+        config = ChatGPTConfig(reasoning_effort="low").as_dict()
+        model = OpenAIModel(
+            model_type=ModelType.GPT_6_LUNA,
+            model_config_dict=config,
+        )
+        model.run(
+            [{"role": "user", "content": "Hello"}],
+            tools=[_function_tool()],
+        )
+
+        call_kwargs = mock_client.chat.completions.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "low"
+
+
+def test_gpt_6_luna_responses_mode_no_reasoning_effort_default():
+    """The Responses API supports function calling at any reasoning
+    effort, so the "none" default must not leak into that path."""
+    with patch("camel.models.openai_model.OpenAI") as mock_openai:
+        mock_client = MagicMock()
+        mock_openai.return_value = mock_client
+        mock_client.responses.create.return_value = {
+            "id": "resp_1",
+            "created_at": 1741294021,
+            "usage": {
+                "input_tokens": 1,
+                "output_tokens": 1,
+                "total_tokens": 2,
+            },
+            "output": [
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": "ok"}],
+                }
+            ],
+        }
+
+        model = OpenAIModel(
+            model_type=ModelType.GPT_6_LUNA,
+            api_mode="responses",
+            model_config_dict={"tools": [_function_tool()]},
+        )
+        model.run([{"role": "user", "content": "weather?"}])
+
+        call_kwargs = mock_client.responses.create.call_args.kwargs
+        assert "reasoning_effort" not in call_kwargs
