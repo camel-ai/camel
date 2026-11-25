@@ -862,6 +862,13 @@ class OpenAIModel(BaseModelBackend):
         request_config = self._prepare_request_config(tools)
         request_config = self._sanitize_config(request_config)
 
+        if (
+            self.model_type == ModelType.GPT_6_LUNA
+            and tools
+            and "reasoning_effort" not in request_config
+        ):
+            request_config["reasoning_effort"] = "none"
+
         return self._call_client(
             self._client.chat.completions.create,
             messages=messages,
@@ -876,6 +883,13 @@ class OpenAIModel(BaseModelBackend):
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         request_config = self._prepare_request_config(tools)
         request_config = self._sanitize_config(request_config)
+
+        if (
+            self.model_type == ModelType.GPT_6_LUNA
+            and tools
+            and "reasoning_effort" not in request_config
+        ):
+            request_config["reasoning_effort"] = "none"
 
         return await self._acall_client(
             self._async_client.chat.completions.create,
