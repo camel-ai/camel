@@ -172,13 +172,16 @@ class DaytonaRuntime(BaseRuntime):
                     )
                     return {"error": f"Upload failed: {e!s}"}
 
+                if not func_name.isidentifier():
+                    raise ValueError(f"Invalid function name: {func_name!r}")
+
                 exec_code = (
                     f"import sys\n"
                     f"sys.path.append('/home/daytona')\n"
                     f"import json\n"
                     f"from {func_name} import {func_name}\n"
-                    f"args = json.loads('{args_str}')\n"
-                    f"kwargs = json.loads('{kwargs_str}')\n"
+                    f"args = json.loads({args_str!r})\n"
+                    f"kwargs = json.loads({kwargs_str!r})\n"
                     f"result = {func_name}(*args, **kwargs)\n"
                     f"print(json.dumps(result) if result is not "
                     f"None else 'null')"
