@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import platform
+import posixpath
 import select
 import shlex
 import subprocess
@@ -21,7 +22,7 @@ import threading
 import time
 import uuid
 from queue import Empty, Full, Queue
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from camel.logger import get_logger
 from camel.toolkits import manual_timeout
@@ -509,7 +510,7 @@ class TerminalToolkit(BaseToolkit):
 
     def _docker_exec(
         self,
-        command: str,
+        command: Union[str, List[str]],
         *,
         check_exit_code: bool = True,
     ) -> tuple[Optional[int], bytes]:
@@ -1435,22 +1436,47 @@ class TerminalToolkit(BaseToolkit):
             f"> {file_path}\n"
         )
         if self.use_docker_backend:
+            base_docker_dir = posixpath.normpath(
+                self.docker_workdir or "/workspace"
+            )
+            posix_target = file_path.replace("\\", "/")
+            if not posixpath.isabs(posix_target):
+                dest_path_in_container = posixpath.normpath(
+                    posixpath.join(base_docker_dir, posix_target)
+                )
+            else:
+                dest_path_in_container = posixpath.normpath(posix_target)
+
+            if self.safe_mode:
+                try:
+                    common = posixpath.commonpath(
+                        [dest_path_in_container, base_docker_dir]
+                    )
+                    if common != base_docker_dir:
+                        return (
+                            "Error: Cannot write to a file outside of the "
+                            "working directory in safe mode."
+                        )
+                except ValueError:
+                    return (
+                        "Error: Cannot write to a file outside of the "
+                        "working directory in safe mode."
+                    )
+
             temp_host_path = None
             try:
-                # Ensure parent directory exists in container
-                parent_dir = os.path.dirname(file_path)
+                # Ensure parent directory exists in container without shell
+                parent_dir = posixpath.dirname(dest_path_in_container)
                 if parent_dir:
-                    quoted_dir = shlex.quote(parent_dir)
-                    mkdir_cmd = f'sh -lc "mkdir -p {quoted_dir}"'
-                    self._docker_exec(mkdir_cmd, check_exit_code=False)
+                    self._docker_exec(
+                        ["mkdir", "-p", parent_dir], check_exit_code=False
+                    )
 
                 # Write content to a temporary file on the host inside log_dir
                 temp_file_name = f"temp_{uuid.uuid4().hex}.txt"
                 temp_host_path = os.path.join(self.log_dir, temp_file_name)
                 with open(temp_host_path, "w", encoding="utf-8") as f:
                     f.write(content)
-                # Copy the temporary file into the Docker container
-                dest_path_in_container = file_path
                 container_dest = (
                     f"{self.container.name}:{dest_path_in_container}"
                 )
