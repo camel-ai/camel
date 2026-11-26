@@ -52,10 +52,39 @@ class NoteTakingToolkit(BaseToolkit):
         else:
             path = Path("camel_working_dir")
 
-        self.working_directory = path
+        self.working_directory = path.resolve()
         self.working_directory.mkdir(parents=True, exist_ok=True)
         self.registry_file = self.working_directory / ".note_register"
         self._load_registry()
+
+    def _resolve_note_path(self, note_name: str) -> Path:
+        r"""Validate note_name and resolve it within working_directory."""
+        if (
+            not isinstance(note_name, str)
+            or not note_name
+            or note_name in {".", ".."}
+            or "/" in note_name
+            or "\\" in note_name
+            or ".." in note_name
+            or Path(note_name).is_absolute()
+        ):
+            raise ValueError(
+                f"Invalid note_name '{note_name}': path separators and "
+                "traversal sequences are not allowed."
+            )
+        base_dir = self.working_directory.resolve()
+        raw_path = base_dir / f"{note_name}.md"
+        if raw_path.is_symlink():
+            raise ValueError(f"Symlink notes are not allowed: '{note_name}'.")
+        resolved = raw_path.resolve()
+        if (
+            not resolved.is_relative_to(base_dir)
+            or resolved.parent != base_dir
+        ):
+            raise ValueError(
+                f"Note '{note_name}' resolves outside working_directory."
+            )
+        return resolved
 
     def append_note(self, note_name: str, content: str) -> str:
         r"""Appends content to a note.
@@ -74,8 +103,8 @@ class NoteTakingToolkit(BaseToolkit):
         """
         try:
             # Reload registry to get latest state
+            note_path = self._resolve_note_path(note_name)
             self._load_registry()
-            note_path = self.working_directory / f"{note_name}.md"
             if note_name not in self.registry or not note_path.exists():
                 self.create_note(note_name, content)
                 return f"Note '{note_name}' created with content added."
@@ -97,7 +126,15 @@ class NoteTakingToolkit(BaseToolkit):
                     content = self.registry_file.read_text(
                         encoding='utf-8'
                     ).strip()
-                    self.registry = content.split('\n') if content else []
+                    raw_entries = content.split('\n') if content else []
+                    valid_entries: List[str] = []
+                    for entry in raw_entries:
+                        try:
+                            self._resolve_note_path(entry)
+                            valid_entries.append(entry)
+                        except ValueError:
+                            continue
+                    self.registry = valid_entries
                 else:
                     self.registry = []
                 return
@@ -162,7 +199,7 @@ class NoteTakingToolkit(BaseToolkit):
                 (when overwrite=False).
         """
         try:
-            note_path = self.working_directory / f"{note_name}.md"
+            note_path = self._resolve_note_path(note_name)
             existed_before = note_path.exists()
 
             if existed_before and not overwrite:
@@ -197,7 +234,7 @@ class NoteTakingToolkit(BaseToolkit):
 
             notes_info = []
             for note_name in self.registry:
-                note_path = self.working_directory / f"{note_name}.md"
+                note_path = self._resolve_note_path(note_name)
                 if note_path.exists():
                     size = note_path.stat().st_size
                     notes_info.append(f"- {note_name}.md ({size} bytes)")
@@ -230,12 +267,12 @@ class NoteTakingToolkit(BaseToolkit):
             # Reload registry to get latest state
             self._load_registry()
             if note_name and note_name != "all_notes":
+                note_path = self._resolve_note_path(note_name)
                 if note_name not in self.registry:
                     return (
                         f"Error: Note '{note_name}' is not registered "
                         f"or was not created by this toolkit."
                     )
-                note_path = self.working_directory / f"{note_name}.md"
                 if not note_path.exists():
                     return f"Note file '{note_path.name}' does not exist."
                 return note_path.read_text(encoding="utf-8")
@@ -245,9 +282,7 @@ class NoteTakingToolkit(BaseToolkit):
 
                 all_notes = []
                 for registered_note in self.registry:
-                    note_path = (
-                        self.working_directory / f"{registered_note}.md"
-                    )
+                    note_path = self._resolve_note_path(registered_note)
                     if note_path.exists():
                         content = note_path.read_text(encoding="utf-8")
                         all_notes.append(
