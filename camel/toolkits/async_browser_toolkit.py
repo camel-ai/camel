@@ -15,6 +15,7 @@
 # Enables postponed evaluation of annotations (for string-based type hints)
 from __future__ import annotations
 
+import ast
 import asyncio
 import datetime
 import io
@@ -88,6 +89,38 @@ ASYNC_ACTIONS = [
     "visit_page",
     "click_blank_area",
 ]
+
+_ALLOWED_BROWSER_ACTIONS = (
+    set(ACTION_WITH_FEEDBACK_LIST)
+    | set(ASYNC_ACTIONS)
+    | {
+        "get_url",
+        "show_interactive_elements",
+        "extract_url_content",
+        "get_webpage_content",
+    }
+)
+
+
+def _parse_browser_action_call(
+    action_code: str,
+) -> Tuple[str, List[Any], Dict[str, Any]]:
+    r"""Safely parse a browser action call without eval/exec."""
+    tree = ast.parse(action_code.strip(), mode="eval")
+    if not isinstance(tree.body, ast.Call) or not isinstance(
+        tree.body.func, ast.Name
+    ):
+        raise ValueError(f"Invalid browser action expression: {action_code!r}")
+    func_name = tree.body.func.id
+    if func_name not in _ALLOWED_BROWSER_ACTIONS:
+        raise ValueError(f"Disallowed browser action: {func_name!r}")
+    args = [ast.literal_eval(arg) for arg in tree.body.args]
+    kwargs: Dict[str, Any] = {}
+    for kw in tree.body.keywords:
+        if kw.arg is None:
+            raise ValueError("Keyword unpacking is not allowed in action_code")
+        kwargs[kw.arg] = ast.literal_eval(kw.value)
+    return func_name, args, kwargs
 
 
 def extract_function_name(s: str) -> str:
@@ -1218,15 +1251,18 @@ Here is a plan about how to solve the task step-by-step which you must follow:
             return f"{func_name}({', '.join(fixed_args)})"
 
         action_code = _fix_action_code(action_code)
-        prefix = "self.browser."
-        code = f"{prefix}{action_code}"
-        async_flag = extract_function_name(action_code) in ASYNC_ACTIONS
-        feedback_flag = _check_if_with_feedback(action_code)
 
         try:
+            func_name, args, kwargs = _parse_browser_action_call(action_code)
+            if func_name == "stop" and not hasattr(self.browser, "stop"):
+                await asyncio.sleep(1)
+                return True, "Action was successful."
+            async_flag = func_name in ASYNC_ACTIONS
+            feedback_flag = _check_if_with_feedback(func_name)
+            method = getattr(self.browser, func_name)
             result = "Action was successful."
             if async_flag:
-                temp_coroutine = eval(code)
+                temp_coroutine = method(*args, **kwargs)
                 if feedback_flag:
                     result = await temp_coroutine
                 else:
@@ -1235,9 +1271,9 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                 return True, result
             else:
                 if feedback_flag:
-                    result = eval(code)
+                    result = method(*args, **kwargs)
                 else:
-                    exec(code)
+                    method(*args, **kwargs)
                 await asyncio.sleep(1)
                 return True, result
 

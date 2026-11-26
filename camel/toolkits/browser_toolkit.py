@@ -15,6 +15,7 @@
 # Enables postponed evaluation of annotations (for string-based type hints)
 from __future__ import annotations
 
+import ast
 import datetime
 import io
 import os
@@ -83,6 +84,45 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 TOP_NO_LABEL_ZONE = 20
+
+_ALLOWED_BROWSER_ACTIONS = set(ACTION_WITH_FEEDBACK_LIST) | {
+    "fill_input_id",
+    "click_id",
+    "hover_id",
+    "scroll_to_bottom",
+    "scroll_to_top",
+    "scroll_up",
+    "scroll_down",
+    "back",
+    "stop",
+    "get_url",
+    "visit_page",
+    "click_blank_area",
+    "show_interactive_elements",
+    "extract_url_content",
+    "get_webpage_content",
+}
+
+
+def _parse_browser_action_call(
+    action_code: str,
+) -> Tuple[str, List[Any], Dict[str, Any]]:
+    r"""Safely parse a browser action call without eval/exec."""
+    tree = ast.parse(action_code.strip(), mode="eval")
+    if not isinstance(tree.body, ast.Call) or not isinstance(
+        tree.body.func, ast.Name
+    ):
+        raise ValueError(f"Invalid browser action expression: {action_code!r}")
+    func_name = tree.body.func.id
+    if func_name not in _ALLOWED_BROWSER_ACTIONS:
+        raise ValueError(f"Disallowed browser action: {func_name!r}")
+    args = [ast.literal_eval(arg) for arg in tree.body.args]
+    kwargs: Dict[str, Any] = {}
+    for kw in tree.body.keywords:
+        if kw.arg is None:
+            raise ValueError("Keyword unpacking is not allowed in action_code")
+        kwargs[kw.arg] = ast.literal_eval(kw.value)
+    return func_name, args, kwargs
 
 
 def _get_str(d: Any, k: str) -> str:
@@ -1072,18 +1112,19 @@ Here is a plan about how to solve the task step-by-step which you must follow:
             return f"{func_name}({', '.join(fixed_args)})"
 
         action_code = _fix_action_code(action_code)
-        prefix = "self.browser."
-        code = f"{prefix}{action_code}"
 
         try:
-            if _check_if_with_feedback(action_code):
-                # execute code, and get the executed result
-                result = eval(code)
+            func_name, args, kwargs = _parse_browser_action_call(action_code)
+            if func_name == "stop" and not hasattr(self.browser, "stop"):
+                time.sleep(1)
+                return True, "Action was successful."
+            method = getattr(self.browser, func_name)
+            if _check_if_with_feedback(func_name):
+                result = method(*args, **kwargs)
                 time.sleep(1)
                 return True, result
-
             else:
-                exec(code)
+                method(*args, **kwargs)
                 time.sleep(1)
                 return True, "Action was successful."
 
