@@ -133,13 +133,9 @@ class InternalPythonInterpreter(BaseInterpreter):
             'zip': zip,
             'range': range,
             'round': round,
-            'type': type,
             'isinstance': isinstance,
             'hasattr': hasattr,
-            'getattr': getattr,
-            'setattr': setattr,
             'dir': dir,
-            'help': help,
             'map': map,
             'filter': filter,
             'any': any,
@@ -301,6 +297,11 @@ class InternalPythonInterpreter(BaseInterpreter):
             # and return the new value
             return self._execute_augassign(expression)
         elif isinstance(expression, ast.Attribute):
+            if not self.unsafe_mode and expression.attr.startswith("_"):
+                raise InterpreterError(
+                    f"Access to private/dunder attribute "
+                    f"'{expression.attr}' is forbidden in safe mode."
+                )
             value = self._execute_ast(expression.value)
             return getattr(value, expression.attr)
         elif isinstance(expression, ast.BinOp):
@@ -464,6 +465,15 @@ class InternalPythonInterpreter(BaseInterpreter):
 
     def _execute_subscript(self, subscript: ast.Subscript):
         index = self._execute_ast(subscript.slice)
+        if (
+            not self.unsafe_mode
+            and isinstance(index, str)
+            and index.startswith("_")
+        ):
+            raise InterpreterError(
+                f"Subscript access with private/dunder key '{index}' "
+                "is forbidden in safe mode."
+            )
         value = self._execute_ast(subscript.value)
         if not isinstance(subscript.ctx, ast.Load):
             raise InterpreterError(
@@ -475,10 +485,13 @@ class InternalPythonInterpreter(BaseInterpreter):
         if index in value:
             return value[index]
         if isinstance(index, str) and isinstance(value, dict):
-            close_matches = difflib.get_close_matches(
-                index,
-                [key for key in list(value.keys()) if isinstance(key, str)],
-            )
+            candidate_keys = [
+                key
+                for key in list(value.keys())
+                if isinstance(key, str)
+                and (self.unsafe_mode or not key.startswith("_"))
+            ]
+            close_matches = difflib.get_close_matches(index, candidate_keys)
             if len(close_matches) > 0:
                 return value[close_matches[0]]
 
