@@ -90,9 +90,10 @@ class LLMGuardRuntime(BaseRuntime):
                 model_type=ModelType.DEFAULT,
                 model_config_dict=ChatGPTConfig().as_dict(),
             )
+        # Keep IgnoreRiskToolkit internal for host/human-in-the-loop approval;
+        # do not expose ignore_risk in self.tools_map to the monitored agent.
         self.ignore_toolkit = IgnoreRiskToolkit(verbose=verbose)
         self.ignore_tool = self.ignore_toolkit.get_tools()[0]
-        self.tools_map[self.ignore_tool.get_function_name()] = self.ignore_tool
 
         self.agent = ChatAgent(
             system_message=self.prompt,
