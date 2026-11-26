@@ -30,9 +30,10 @@ logger = get_logger(__name__)
 
 # Pre-compiled regex patterns for command safety checks
 _CMD_PATTERN = re.compile(
-    r'(?:^|;|\||&&)\s*\b([a-zA-Z_/][\w\-/]*)', re.IGNORECASE
+    r'(?:^|[;\n\r|&]|&&|\|\|)\s*\b([a-zA-Z_/][\w\-/]*)', re.IGNORECASE
 )
 _QUOTED_STRING_PATTERN = re.compile(r'''["'][^"']*["']''')
+_SINGLE_QUOTED_PATTERN = re.compile(r"'[^']*'")
 # Match cd command with optional quoted or unquoted path
 # Handles: cd path, cd "path with spaces", cd 'path with spaces'
 _CD_PATTERN = re.compile(r'\bcd\s+(?:--\s+)?(["\'][^"\']*["\']|[^\s;|&]+)')
@@ -40,7 +41,8 @@ _PUSHD_PATTERN = re.compile(
     r'\bpushd\s+(?:--\s+)?(["\'][^"\']*["\']|[^\s;|&]+)'
 )
 _SHELL_SUBSTITUTION_PATTERN = re.compile(r'`|(?<!\\)\$\(')
-_CONTROL_FLOW_PATTERN = re.compile(r';|&&|\|\||[|&]')
+_PROCESS_SUBSTITUTION_PATTERN = re.compile(r'[<>]\(')
+_CONTROL_FLOW_PATTERN = re.compile(r'[;\n\r]|&&|\|\||[|&]')
 _SHELL_COMMANDS = {'bash', 'sh', 'zsh', 'dash', 'ksh', 'ash'}
 _SEPARATORS = {';', '&&', '||', '|', '&'}
 _CD_OUTSIDE_WORKDIR_MESSAGE_TEMPLATE = (
@@ -122,8 +124,11 @@ def _normalize_command_name(command: str) -> str:
 
 def _split_command_segments(command: str) -> Optional[List[List[str]]]:
     r"""Split command by shell separators while preserving quoted content."""
+    normalized_cmd = command.replace('\r\n', '\n').replace('\n', ';')
     try:
-        lexer = shlex.shlex(command, posix=True, punctuation_chars=';&|')
+        lexer = shlex.shlex(
+            normalized_cmd, posix=True, punctuation_chars=';&|'
+        )
         lexer.whitespace_split = True
         tokens = list(lexer)
     except ValueError:
@@ -190,6 +195,22 @@ def check_command_safety(
     if not command.strip():
         return False, "Empty command is not allowed."
 
+    # Block command substitution ($(...) or `...`) and process substitution
+    # outside single-quoted literals (double-quoted strings still expand).
+    non_single_quoted = _SINGLE_QUOTED_PATTERN.sub(' ', command)
+    if _SHELL_SUBSTITUTION_PATTERN.search(non_single_quoted):
+        return (
+            False,
+            "Command substitution ($(...) or backticks) is not allowed "
+            "in safe mode.",
+        )
+    if _PROCESS_SUBSTITUTION_PATTERN.search(non_single_quoted):
+        return (
+            False,
+            "Process substitution (<(...) or >(...)) is not allowed "
+            "in safe mode.",
+        )
+
     # Recursively inspect shell-wrapper payloads to prevent bypasses such as
     # `bash -c "rm -rf /"` where the dangerous sub-command is quoted.
     for payload in _extract_shell_c_payloads(command):
@@ -212,9 +233,9 @@ def check_command_safety(
                 )
         return True, ""
 
-    # Check for dangerous commands
+    # Check for dangerous commands across ;, |, &&, ||, &, \n, and \r
     for cmd in DANGEROUS_COMMANDS:
-        pattern = rf'(?:^|;|\||&&)\s*\b{re.escape(cmd)}\b'
+        pattern = rf'(?:^|[;\n\r|&]|&&|\|\|)\s*\b{re.escape(cmd)}\b'
         if re.search(pattern, clean_command, re.IGNORECASE):
             return False, f"Command '{cmd}' is blocked for safety."
 
