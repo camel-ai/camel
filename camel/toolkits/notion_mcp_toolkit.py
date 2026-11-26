@@ -12,14 +12,55 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import re
 from typing import Any, ClassVar, Dict, List, Optional, Set
 
 from camel.toolkits import FunctionTool
+from camel.utils.mcp_client import create_mcp_client
 
 from .mcp_toolkit import MCPToolkit
 
 
-class NotionMCPToolkit(MCPToolkit):
+class _NotionMCPConnection:
+    # Keep credential-bearing initialization outside AgentOpsMeta, which
+    # instruments methods defined directly on a toolkit.
+    def __init__(
+        self,
+        timeout: Optional[float] = None,
+        *,
+        token: Optional[str] = None,
+    ) -> None:
+        r"""Initializes the NotionMCPToolkit.
+
+        Args:
+            timeout (Optional[float]): Connection timeout in seconds.
+                (default: :obj:`None`)
+            token (Optional[str]): Notion MCP token for direct Streamable HTTP
+                access. Omit it to use the interactive sign-in bridge.
+        """
+        url = "https://mcp.notion.com/mcp"
+        server: Dict[str, Any]
+        if token is None:
+            server = {
+                "command": "npx",
+                "args": ["-y", "mcp-remote@0.16.7", url],
+            }
+        else:
+            if not re.fullmatch(r"[A-Za-z0-9._~+/\-]+=*", token):
+                raise ValueError("Invalid Notion MCP token.")
+            server = {
+                "type": "streamable_http",
+                "url": url,
+                "headers": {"Authorization": f"Bearer {token}"},
+            }
+        if timeout is not None:
+            server["timeout"] = timeout
+        client = create_mcp_client(server, timeout=timeout)
+        # The parent records keyword arguments when AgentOps is enabled.
+        super().__init__([client], timeout=timeout)  # type: ignore[call-arg]
+
+
+class NotionMCPToolkit(_NotionMCPConnection, MCPToolkit):
     r"""NotionMCPToolkit provides an interface for interacting with Notion
     through the Model Context Protocol (MCP).
 
@@ -64,32 +105,6 @@ class NotionMCPToolkit(MCPToolkit):
         "maxItems",
         "uniqueItems",
     }
-
-    def __init__(
-        self,
-        timeout: Optional[float] = None,
-    ) -> None:
-        r"""Initializes the NotionMCPToolkit.
-
-        Args:
-            timeout (Optional[float]): Connection timeout in seconds.
-                (default: :obj:`None`)
-        """
-        config_dict = {
-            "mcpServers": {
-                "notionMCP": {
-                    "command": "npx",
-                    "args": [
-                        "-y",
-                        "mcp-remote",
-                        "https://mcp.notion.com/mcp",
-                    ],
-                }
-            }
-        }
-
-        # Initialize parent MCPToolkit with Notion configuration
-        super().__init__(config_dict=config_dict, timeout=timeout)
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of tools provided by the NotionMCPToolkit.
