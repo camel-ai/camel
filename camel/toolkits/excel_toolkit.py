@@ -82,12 +82,26 @@ class ExcelToolkit(BaseToolkit):
         Returns:
             bool: True if path is safe, False otherwise.
         """
-        normalized_path = os.path.normpath(file_path)
-
-        if '..' in normalized_path.split(os.path.sep):
+        parts = [p for p in file_path.replace('\\', '/').split('/') if p]
+        if '..' in parts:
             return False
-
+        normalized_path = os.path.normpath(file_path)
+        if '..' in normalized_path.replace('\\', '/').split('/'):
+            return False
         return True
+
+    def _resolve_workdir_path(self, filename: str) -> Optional[Path]:
+        r"""Resolve a filename strictly within self.working_directory."""
+        if not self._validate_file_path(filename):
+            return None
+        raw_path = Path(filename)
+        if raw_path.is_absolute():
+            return None
+        base_dir = self.working_directory.resolve()
+        candidate = (base_dir / raw_path).resolve()
+        if not candidate.is_relative_to(base_dir):
+            return None
+        return candidate
 
     def _convert_to_markdown(self, df: "DataFrame") -> str:
         r"""Convert DataFrame to Markdown format table.
@@ -157,7 +171,9 @@ class ExcelToolkit(BaseToolkit):
                 return f"Failed to process file {document_path}: {e}"
 
         if document_path.endswith("xls"):
-            output_path = document_path.replace(".xls", ".xlsx")
+            output_path = str(
+                self.working_directory / f"{Path(document_path).stem}.xlsx"
+            )
             x2x = XLS2XLSX(document_path)
             x2x.to_xlsx(output_path)
             document_path = output_path
@@ -259,6 +275,9 @@ class ExcelToolkit(BaseToolkit):
 
         if not self._validate_file_path(file_path):
             return "Error: Invalid file path for saving."
+        base_dir = self.working_directory.resolve()
+        if not Path(file_path).resolve().is_relative_to(base_dir):
+            return "Error: Invalid file path for saving."
 
         try:
             self.wb.save(file_path)
@@ -288,11 +307,12 @@ class ExcelToolkit(BaseToolkit):
         if not filename.endswith('.xlsx'):
             return "Error: Filename must end with .xlsx extension."
 
-        # Create full path in working directory
-        file_path = self.working_directory / filename
-        resolved_file_path = str(file_path.resolve())
+        # Resolve and validate containment within working directory
+        safe_path = self._resolve_workdir_path(filename)
+        if safe_path is None:
+            return "Error: Invalid file path for saving."
 
-        return self._save_workbook(resolved_file_path)
+        return self._save_workbook(str(safe_path))
 
     def create_workbook(
         self,
@@ -327,12 +347,11 @@ class ExcelToolkit(BaseToolkit):
         if not filename.endswith('.xlsx'):
             return "Error: Filename must end with .xlsx extension."
 
-        # Create full path in working directory
-        file_path = self.working_directory / filename
-        resolved_file_path = str(file_path.resolve())
-
-        if not self._validate_file_path(resolved_file_path):
+        # Resolve and validate containment within working directory
+        safe_path = self._resolve_workdir_path(filename)
+        if safe_path is None:
             return "Error: Invalid file path."
+        resolved_file_path = str(safe_path)
 
         # Check if file already exists
         if os.path.exists(resolved_file_path):
@@ -390,12 +409,11 @@ class ExcelToolkit(BaseToolkit):
         if not filename.endswith('.xlsx'):
             return "Error: Filename must end with .xlsx extension."
 
-        # Create full path in working directory
-        file_path = self.working_directory / filename
-        target_path = str(file_path.resolve())
-
-        if not self._validate_file_path(target_path):
+        # Resolve and validate containment within working directory
+        safe_path = self._resolve_workdir_path(filename)
+        if safe_path is None:
             return "Error: Invalid file path."
+        target_path = str(safe_path)
 
         if not os.path.exists(target_path):
             return (
@@ -852,12 +870,11 @@ class ExcelToolkit(BaseToolkit):
         if not csv_filename.endswith('.csv'):
             return "Error: CSV filename must end with .csv extension."
 
-        # Create full path in working directory
-        csv_path = self.working_directory / csv_filename
-        resolved_csv_path = str(csv_path.resolve())
-
-        if not self._validate_file_path(resolved_csv_path):
+        # Resolve and validate containment within working directory
+        safe_csv_path = self._resolve_workdir_path(csv_filename)
+        if safe_csv_path is None:
             return "Error: Invalid file path."
+        resolved_csv_path = str(safe_csv_path)
 
         try:
             # Get the worksheet
