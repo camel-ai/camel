@@ -24,6 +24,7 @@ import socket
 import subprocess
 import tempfile
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from camel.logger import get_logger
@@ -52,6 +53,7 @@ class WebDeployToolkit(BaseToolkit):
         tag_url: str = "https://github.com/camel-ai/camel",
         remote_server_ip: Optional[str] = None,
         remote_server_port: int = 8080,
+        working_directory: Optional[str] = None,
     ):
         r"""Initialize the WebDeployToolkit.
 
@@ -84,6 +86,15 @@ class WebDeployToolkit(BaseToolkit):
             else None
         )
         self.remote_server_port = self._validate_port(remote_server_port)
+        camel_workdir = os.environ.get("CAMEL_WORKDIR")
+        if working_directory:
+            self.working_directory: Optional[Path] = Path(
+                working_directory
+            ).resolve()
+        elif camel_workdir:
+            self.working_directory = Path(camel_workdir).resolve()
+        else:
+            self.working_directory = None
         self.server_registry_file = os.path.join(
             tempfile.gettempdir(), "web_deploy_servers.json"
         )
@@ -169,6 +180,32 @@ class WebDeployToolkit(BaseToolkit):
             raise ValueError(f"Invalid subdirectory format: {subdirectory}")
 
         return subdirectory
+
+    def _validate_file_name(self, file_name: str) -> str:
+        r"""Validate deployed file_name to prevent path traversal."""
+        if not isinstance(file_name, str):
+            raise ValueError("file_name must be a string")
+        safe_name = os.path.basename(file_name)
+        if (
+            safe_name != file_name
+            or safe_name in {"", ".", ".."}
+            or "/" in file_name
+            or "\\" in file_name
+            or not re.fullmatch(r"[A-Za-z0-9._-]+", safe_name)
+        ):
+            raise ValueError(f"Invalid file_name: {file_name}")
+        return safe_name
+
+    def _validate_source_path(self, source_path: str) -> str:
+        r"""Enforce working_directory containment when configured."""
+        if self.working_directory is not None:
+            resolved = Path(source_path).resolve()
+            if not resolved.is_relative_to(self.working_directory):
+                raise ValueError(
+                    f"Path '{source_path}' is outside allowed "
+                    f"working_directory '{self.working_directory}'"
+                )
+        return source_path
 
     def _is_port_available(self, port: int) -> bool:
         r"""Check if a port is available for binding."""
@@ -359,6 +396,7 @@ class WebDeployToolkit(BaseToolkit):
 
             # Read content from file if file path is provided
             if html_file_path:
+                self._validate_source_path(html_file_path)
                 if not os.path.exists(html_file_path):
                     return {
                         'success': False,
@@ -502,19 +540,26 @@ class WebDeployToolkit(BaseToolkit):
         """
         temp_dir = None
         try:
-            # Validate subdirectory
+            # Validate subdirectory and file_name
             subdirectory = self._validate_subdirectory(subdirectory)
+            safe_file_name = self._validate_file_name(file_name)
 
             # Create temporary directory
             temp_dir = tempfile.mkdtemp(prefix="web_deploy_")
 
             # Handle subdirectory for multi-user deployment
+            target_dir = (
+                os.path.join(temp_dir, subdirectory)
+                if subdirectory
+                else temp_dir
+            )
             if subdirectory:
-                deploy_dir = os.path.join(temp_dir, subdirectory)
-                os.makedirs(deploy_dir, exist_ok=True)
-                html_file_path = os.path.join(deploy_dir, file_name)
-            else:
-                html_file_path = os.path.join(temp_dir, file_name)
+                os.makedirs(target_dir, exist_ok=True)
+            html_file_path = os.path.join(target_dir, safe_file_name)
+            if not Path(html_file_path).resolve().is_relative_to(
+                Path(temp_dir).resolve()
+            ):
+                raise ValueError(f"Invalid deployment path: {file_name}")
 
             # Write enhanced HTML content to file
             with open(html_file_path, 'w', encoding='utf-8') as f:
@@ -701,6 +746,7 @@ class WebDeployToolkit(BaseToolkit):
             Dict[str, Any]: Deployment result with custom domain info.
         """
         try:
+            self._validate_source_path(folder_path)
             if not os.path.exists(folder_path):
                 return {
                     'success': False,
